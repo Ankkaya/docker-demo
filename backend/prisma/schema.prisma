@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 用户模型
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String?  @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 用户与角色多对多关系
+  roles     Role[]   @relation("UserRoles")
+}
+
+// 角色模型
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 角色与用户多对多关系
+  users       User[]   @relation("UserRoles")
+  // 角色与菜单多对多关系
+  menus       Menu[]   @relation("RoleMenus")
+}
+
+// 菜单模型（树形结构）
+model Menu {
+  id          Int       @id @default(autoincrement())
+  name        String
+  path        String?
+  icon        String?
+  component   String?
+  redirect    String?
+  parentId    Int?
+  order       Int       @default(0)
+  hidden      Boolean   @default(false)
+  alwaysShow  Boolean   @default(false)
+  type        String    @default("menu") // menu, button, iframe
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 自关联 - 父级菜单
+  parent      Menu?     @relation("MenuChildren", fields: [parentId], references: [id])
+  children    Menu[]    @relation("MenuChildren")
+
+  // 角色与菜单多对多关系
+  roles       Role[]    @relation("RoleMenus")
+}
