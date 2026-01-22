@@ -42,7 +42,7 @@ jobs:
 
       - name: Run backend tests
         working-directory: backend
-        run: pnpm test -- --runInBand
+        run: pnpm test --runInBand
 
       - name: Install frontend dependencies
         working-directory: frontend
