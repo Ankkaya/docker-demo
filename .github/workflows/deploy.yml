@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: "20"
           cache: "pnpm"
+          cache-dependency-path: |
+            backend/pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
 
       - name: Install backend dependencies
         working-directory: backend
@@ -48,7 +51,7 @@ jobs:
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Deploy over SSH
