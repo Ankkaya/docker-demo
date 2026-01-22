@@ -94,5 +94,22 @@ jobs:
             fi
             cd "$TARGET_DIR"
             git pull
-            docker compose pull || true
-            docker compose up -d --build
+            
+            # 1. 确保镜像最新
+            docker compose build
+
+            # 2. 启动数据库 (如果尚未启动)
+            docker compose up -d db
+            
+            # 3. 等待数据库准备就绪 (简单的延时，生产环境建议用 healthcheck)
+            echo "Waiting for database..."
+            sleep 10
+
+            # 4. 执行数据库迁移 (Prisma 会自动跳过已应用的迁移)
+            docker compose run --rm backend npx prisma migrate deploy
+
+            # 5. 执行数据填充 (Seed 脚本通常是幂等的)
+            docker compose run --rm backend npx prisma db seed
+
+            # 6. 启动/更新所有服务
+            docker compose up -d
