@@ -25,6 +25,9 @@ jobs:
           version: 10.26.2
           run_install: false
 
+      - name: Show pnpm version
+        run: pnpm -v
+
       - name: Enable corepack
         run: corepack enable
 
