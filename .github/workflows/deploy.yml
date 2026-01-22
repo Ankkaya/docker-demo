@@ -13,27 +13,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10.26.2
           run_install: false
 
-      - name: Show pnpm version
-        run: pnpm -v
-
-      - name: Enable corepack
-        run: corepack enable
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
 
       - name: Install backend dependencies
         working-directory: backend
-        run: pnpm install --frozen-lockfile || pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build backend
         working-directory: backend
@@ -45,7 +39,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: pnpm install --frozen-lockfile || pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build frontend
         working-directory: frontend
