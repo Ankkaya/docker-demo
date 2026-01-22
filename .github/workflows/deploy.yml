@@ -1,0 +1,69 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Build backend
+        working-directory: backend
+        run: pnpm build
+
+      - name: Run backend tests
+        working-directory: backend
+        run: pnpm test -- --runInBand
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile || pnpm install
+
+      - name: Build frontend
+        working-directory: frontend
+        run: pnpm build
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          TARGET_DIR: ${{ secrets.SSH_TARGET_DIR }}
+          REPO_URL: git@github.com:${{ github.repository }}.git
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: TARGET_DIR,REPO_URL
+          script: |
+            if [ ! -d "$TARGET_DIR/.git" ]; then
+              mkdir -p "$TARGET_DIR"
+              git clone "$REPO_URL" "$TARGET_DIR"
+            fi
+            cd "$TARGET_DIR"
+            git pull
+            docker compose pull || true
+            docker compose up -d --build
