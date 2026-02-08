@@ -1,14 +1,14 @@
 <template>
   <div class="dashboard">
-    <h2 class="text-2xl font-bold mb-6">欢迎回来，{{ user?.name || user?.username }}</h2>
+    <h2 class="text-2xl font-bold mb-6 text-base-text">欢迎回来，{{ user?.name || user?.username }}</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <n-card title="用户统计">
-        <div class="text-center text-4xl font-bold text-blue-500">{{ userCount }}</div>
+      <n-card title="用户统计" class="bg-container transition-theme">
+        <div class="text-center text-4xl font-bold text-primary">{{ userCount }}</div>
       </n-card>
-      <n-card title="菜单统计">
-        <div class="text-center text-4xl font-bold text-green-500">{{ menuCount }}</div>
+      <n-card title="菜单统计" class="bg-container transition-theme">
+        <div class="text-center text-4xl font-bold text-success">{{ menuCount }}</div>
       </n-card>
-      <n-card title="系统状态">
+      <n-card title="系统状态" class="bg-container transition-theme">
         <div class="flex items-center justify-center gap-2">
           <n-tag type="success" size="large">运行正常</n-tag>
         </div>

@@ -1,7 +1,12 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-      <h2 class="text-2xl font-bold text-center mb-8">Docker Demo Admin</h2>
+  <div class="min-h-screen flex items-center justify-center bg-layout transition-theme">
+    <!-- 主题切换按钮 -->
+    <div class="absolute top-4 right-4">
+      <ThemeSchemaSwitch :theme-scheme="themeStore.themeScheme" @switch="themeStore.toggleThemeScheme" />
+    </div>
+    
+    <div class="bg-container rounded-lg shadow-lg p-8 w-full max-w-md transition-theme">
+      <h2 class="text-2xl font-bold text-center mb-8 text-base-text">Docker Demo Admin</h2>
       <n-form
         ref="formRef"
         :model="form"
@@ -30,11 +35,6 @@
             登录
           </n-button>
         </n-form-item>
-        <n-form-item>
-          <n-button class="w-full" @click="handleRegister">
-            注册
-          </n-button>
-        </n-form-item>
       </n-form>
     </div>
   </div>
@@ -44,12 +44,15 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/store/modules/theme'
 import type { FormInst, FormRules } from 'naive-ui'
 import { useMessage } from 'naive-ui'
+import ThemeSchemaSwitch from '@/components/common/ThemeSchemaSwitch.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 const formRef = ref<FormInst>()
 const message = useMessage()
 
@@ -81,22 +84,6 @@ const handleLogin = async () => {
         message.success('登录成功')
       } else {
         message.error('登录失败')
-      }
-    }
-  })
-}
-
-const handleRegister = async () => {
-  if (!formRef.value) return
-
-  await formRef.value.validate(async (errors) => {
-    if (!errors) {
-      const success = await authStore.register(form.username, form.password)
-      if (success) {
-        router.push('/dashboard')
-        message.success('注册成功')
-      } else {
-        message.error('注册失败')
       }
     }
   })

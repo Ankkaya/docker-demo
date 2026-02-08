@@ -1,9 +1,9 @@
 <template>
   <div class="user-list">
-    <n-card>
+    <n-card class="bg-container transition-theme">
       <template #header>
         <div class="flex justify-between items-center">
-          <span>用户列表</span>
+          <span class="text-base-text">用户列表</span>
           <n-button type="primary" @click="handleCreate">新增用户</n-button>
         </div>
       </template>

@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 全局基础样式 */
+html {
+  overflow-x: hidden;
+  /* 基础文字颜色，所有未指定颜色的文本继承此值 */
+  color: rgb(var(--base-text-color));
+}
+
+/* 页面背景 */
+body {
+  background-color: rgb(var(--layout-bg-color));
+}
+
+/* 过渡动画 */
+.transition-theme {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 暗色模式下的边框颜色适配 */
+.dark .border-gray-200 {
+  border-color: rgb(55, 65, 81);
+}
+
+.dark .border-gray-300 {
+  border-color: rgb(75, 85, 99);
+}

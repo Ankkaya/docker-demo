@@ -1,9 +1,9 @@
 <template>
   <div class="menu-list">
-    <n-card>
+    <n-card class="bg-container transition-theme">
       <template #header>
         <div class="flex justify-between items-center">
-          <span>菜单列表</span>
+          <span class="text-base-text">菜单列表</span>
           <n-button type="primary" @click="handleCreate(null)">新增菜单</n-button>
         </div>
       </template>
@@ -89,7 +89,7 @@
 import { ref, reactive, onMounted, computed, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NSpace, NTag, NSwitch } from 'naive-ui'
+import { NButton, NSpace, NTag } from 'naive-ui'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import type { Menu, CreateMenuDto } from '@/types'
 

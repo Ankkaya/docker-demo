@@ -1,11 +1,14 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-screen flex flex-col bg-layout transition-theme">
     <!-- 顶部导航 -->
-    <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
+    <header class="bg-container shadow-header h-16 flex items-center justify-between px-6 z-10 transition-theme">
       <div class="flex items-center gap-4">
-        <h1 class="text-xl font-bold text-gray-800">Docker Demo Admin</h1>
+        <h1 class="text-xl font-bold text-base-text">Docker Demo Admin</h1>
       </div>
       <div class="flex items-center gap-4">
+        <!-- 主题切换按钮 -->
+        <ThemeSchemaSwitch :theme-scheme="themeStore.themeScheme" @switch="themeStore.toggleThemeScheme" />
+        
         <n-dropdown trigger="click" :options="dropdownOptions" @select="handleSelect">
           <div class="flex items-center gap-2 cursor-pointer">
             <n-avatar :size="32">
@@ -13,7 +16,7 @@
                 <n-icon><person-outline /></n-icon>
               </template>
             </n-avatar>
-            <span class="text-gray-700">{{ user?.name || user?.username }}</span>
+            <span class="text-base-text">{{ user?.name || user?.username }}</span>
             <n-icon><chevron-down-outline /></n-icon>
           </div>
         </n-dropdown>
@@ -23,12 +26,17 @@
     <!-- 主体区域 -->
     <div class="flex-1 flex overflow-hidden">
       <!-- 左侧菜单 -->
-      <aside class="w-64 bg-white border-r border-gray-200 overflow-y-auto">
-        <n-menu :value="activeMenu" :options="menuOptions" @update:value="handleMenuSelect" />
+      <aside class="w-64 bg-container border-r border-gray-200 dark:border-gray-700 overflow-y-auto shadow-sider transition-theme">
+        <n-menu 
+          :value="activeMenu" 
+          :options="menuOptions" 
+          @update:value="handleMenuSelect"
+          :theme="themeStore.darkMode ? 'dark' : 'light'"
+        />
       </aside>
 
       <!-- 右侧内容 -->
-      <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <main class="flex-1 overflow-y-auto p-6 bg-layout transition-theme">
         <router-view />
       </main>
     </div>
@@ -39,13 +47,16 @@
 import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useThemeStore } from '@/store/modules/theme'
 import { PersonOutline, ChevronDownOutline, HomeOutline, MenuOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
+import ThemeSchemaSwitch from '@/components/common/ThemeSchemaSwitch.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 
 const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
