@@ -2,32 +2,17 @@
   <div class="dashboard">
     <h2 class="text-2xl font-bold mb-6">欢迎回来，{{ user?.name || user?.username }}</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <el-card class="box-card">
-        <template #header>
-          <div class="card-header">
-            <span>用户统计</span>
-          </div>
-        </template>
+      <n-card title="用户统计">
         <div class="text-center text-4xl font-bold text-blue-500">{{ userCount }}</div>
-      </el-card>
-      <el-card class="box-card">
-        <template #header>
-          <div class="card-header">
-            <span>菜单统计</span>
-          </div>
-        </template>
+      </n-card>
+      <n-card title="菜单统计">
         <div class="text-center text-4xl font-bold text-green-500">{{ menuCount }}</div>
-      </el-card>
-      <el-card class="box-card">
-        <template #header>
-          <div class="card-header">
-            <span>系统状态</span>
-          </div>
-        </template>
+      </n-card>
+      <n-card title="系统状态">
         <div class="flex items-center justify-center gap-2">
-          <el-tag type="success" size="large">运行正常</el-tag>
+          <n-tag type="success" size="large">运行正常</n-tag>
         </div>
-      </el-card>
+      </n-card>
     </div>
   </div>
 </template>

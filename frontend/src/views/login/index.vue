@@ -2,40 +2,40 @@
   <div class="min-h-screen flex items-center justify-center bg-gray-100">
     <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
       <h2 class="text-2xl font-bold text-center mb-8">Docker Demo Admin</h2>
-      <el-form
+      <n-form
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-position="top"
+        label-placement="top"
         size="large"
       >
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="form.password"
+        <n-form-item label="用户名" path="username">
+          <n-input v-model:value="form.username" placeholder="请输入用户名" />
+        </n-form-item>
+        <n-form-item label="密码" path="password">
+          <n-input
+            v-model:value="form.password"
             type="password"
             placeholder="请输入密码"
-            show-password
+            show-password-on="click"
           />
-        </el-form-item>
-        <el-form-item>
-          <el-button
+        </n-form-item>
+        <n-form-item>
+          <n-button
             type="primary"
             class="w-full"
             :loading="authStore.loading"
             @click="handleLogin"
           >
             登录
-          </el-button>
-        </el-form-item>
-        <el-form-item>
-          <el-button class="w-full" @click="handleRegister">
+          </n-button>
+        </n-form-item>
+        <n-form-item>
+          <n-button class="w-full" @click="handleRegister">
             注册
-          </el-button>
-        </el-form-item>
-      </el-form>
+          </n-button>
+        </n-form-item>
+      </n-form>
     </div>
   </div>
 </template>
@@ -44,13 +44,14 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import type { FormInst, FormRules } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const formRef = ref<FormInstance>()
+const formRef = ref<FormInst>()
+const message = useMessage()
 
 const form = reactive({
   username: '',
@@ -71,15 +72,15 @@ const rules: FormRules = {
 const handleLogin = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
+  await formRef.value.validate(async (errors) => {
+    if (!errors) {
       const success = await authStore.login(form.username, form.password)
       if (success) {
         const redirect = route.query.redirect as string || '/dashboard'
         router.push(redirect)
-        ElMessage.success('登录成功')
+        message.success('登录成功')
       } else {
-        ElMessage.error('登录失败')
+        message.error('登录失败')
       }
     }
   })
@@ -88,14 +89,14 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
+  await formRef.value.validate(async (errors) => {
+    if (!errors) {
       const success = await authStore.register(form.username, form.password)
       if (success) {
         router.push('/dashboard')
-        ElMessage.success('注册成功')
+        message.success('注册成功')
       } else {
-        ElMessage.error('注册失败')
+        message.error('注册失败')
       }
     }
   })

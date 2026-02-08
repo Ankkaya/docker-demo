@@ -1,6 +1,5 @@
 import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
-import { ElMessage } from 'element-plus'
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -35,9 +34,8 @@ api.interceptors.response.use(
       if (data.code >= 200 && data.code < 300) {
         return data.data;
       } else {
-        // 业务错误
-        ElMessage.error(data.message || '请求失败');
-        return Promise.reject(data);
+        // 业务错误，返回包含错误信息的对象
+        return Promise.reject({ message: data.message || '请求失败', data });
       }
     }
     
@@ -46,37 +44,39 @@ api.interceptors.response.use(
   },
   (error) => {
     const { response } = error;
+    let errorMessage = '请求失败';
     
     // 处理HTTP错误
     if (response) {
       // 检查是否是标准错误格式
-      if (response.data && typeof response.data === 'object' && 'code' in response.data && 'message' in response.data) {
-        ElMessage.error(response.data.message || '请求失败');
-        return Promise.reject(response.data);
-      }
-      
-      // 处理HTTP状态码错误
-      switch (response.status) {
-        case 401:
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          break;
-        case 403:
-          ElMessage.error('没有权限');
-          break;
-        case 404:
-          ElMessage.error('请求的资源不存在');
-          break;
-        case 500:
-          ElMessage.error('服务器错误');
-          break;
-        default:
-          ElMessage.error(response.data?.message || '请求失败');
+      if (response.data && typeof response.data === 'object' && 'message' in response.data) {
+        errorMessage = response.data.message;
+      } else {
+        // 处理HTTP状态码错误
+        switch (response.status) {
+          case 401:
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+            errorMessage = '登录已过期';
+            break;
+          case 403:
+            errorMessage = '没有权限';
+            break;
+          case 404:
+            errorMessage = '请求的资源不存在';
+            break;
+          case 500:
+            errorMessage = '服务器错误';
+            break;
+          default:
+            errorMessage = response.data?.message || '请求失败';
+        }
       }
     } else {
-      ElMessage.error('网络连接异常');
+      errorMessage = '网络连接异常';
     }
-    return Promise.reject(error);
+    
+    return Promise.reject({ message: errorMessage, originalError: error });
   }
 )
 

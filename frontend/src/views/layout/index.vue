@@ -6,25 +6,17 @@
         <h1 class="text-xl font-bold text-gray-800">Docker Demo Admin</h1>
       </div>
       <div class="flex items-center gap-4">
-        <el-dropdown trigger="click" @command="handleCommand">
-          <span class="flex items-center gap-2 cursor-pointer">
-            <el-avatar :size="32" :src="user?.avatar">
-              <el-icon>
-                <User />
-              </el-icon>
-            </el-avatar>
+        <n-dropdown trigger="click" :options="dropdownOptions" @select="handleSelect">
+          <div class="flex items-center gap-2 cursor-pointer">
+            <n-avatar :size="32">
+              <template #icon>
+                <n-icon><person-outline /></n-icon>
+              </template>
+            </n-avatar>
             <span class="text-gray-700">{{ user?.name || user?.username }}</span>
-            <el-icon>
-              <ArrowDown />
-            </el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人信息</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+            <n-icon><chevron-down-outline /></n-icon>
+          </div>
+        </n-dropdown>
       </div>
     </header>
 
@@ -32,26 +24,7 @@
     <div class="flex-1 flex overflow-hidden">
       <!-- 左侧菜单 -->
       <aside class="w-64 bg-white border-r border-gray-200 overflow-y-auto">
-        <el-menu :default-active="activeMenu" :router="true" class="border-r-0">
-          <el-menu-item index="/dashboard">
-            <el-icon>
-              <HomeFilled />
-            </el-icon>
-            <span>首页</span>
-          </el-menu-item>
-          <el-menu-item index="/users/list">
-            <el-icon>
-              <User />
-            </el-icon>
-            <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="/menus/list">
-            <el-icon>
-              <Menu />
-            </el-icon>
-            <span>菜单管理</span>
-          </el-menu-item>
-        </el-menu>
+        <n-menu :value="activeMenu" :options="menuOptions" @update:value="handleMenuSelect" />
       </aside>
 
       <!-- 右侧内容 -->
@@ -63,19 +36,56 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, h } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { User, ArrowDown, HomeFilled, Menu } from '@element-plus/icons-vue'
+import { PersonOutline, ChevronDownOutline, HomeOutline, MenuOutline } from '@vicons/ionicons5'
+import { NIcon } from 'naive-ui'
+import type { MenuOption } from 'naive-ui'
 
 const route = useRoute()
+const router = useRouter()
 const authStore = useAuthStore()
 
 const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
 
-const handleCommand = (command: string) => {
-  switch (command) {
+// 图标渲染函数
+const renderIcon = (icon: any) => {
+  return () => h(NIcon, null, { default: () => h(icon) })
+}
+
+// 菜单选项
+const menuOptions: MenuOption[] = [
+  {
+    label: '首页',
+    key: '/dashboard',
+    icon: renderIcon(HomeOutline)
+  },
+  {
+    label: '用户管理',
+    key: '/users/list',
+    icon: renderIcon(PersonOutline)
+  },
+  {
+    label: '菜单管理',
+    key: '/menus/list',
+    icon: renderIcon(MenuOutline)
+  }
+]
+
+// 下拉选项
+const dropdownOptions = [
+  { label: '个人信息', key: 'profile' },
+  { label: '退出登录', key: 'logout' }
+]
+
+const handleMenuSelect = (key: string) => {
+  router.push(key)
+}
+
+const handleSelect = (key: string) => {
+  switch (key) {
     case 'profile':
       break
     case 'logout':

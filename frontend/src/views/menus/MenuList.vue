@@ -1,141 +1,106 @@
 <template>
   <div class="menu-list">
-    <el-card class="box-card">
+    <n-card>
       <template #header>
-        <div class="card-header flex justify-between items-center">
+        <div class="flex justify-between items-center">
           <span>菜单列表</span>
-          <el-button type="primary" @click="handleCreate(null)">新增菜单</el-button>
+          <n-button type="primary" @click="handleCreate(null)">新增菜单</n-button>
         </div>
       </template>
 
-      <el-table
+      <n-data-table
+        :columns="columns"
         :data="menus"
-        v-loading="loading"
-        row-key="id"
-        :tree-props="{ children: 'children' }"
+        :loading="loading"
+        striped
+        :row-key="(row: Menu) => row.id"
         default-expand-all
-        stripe
-      >
-        <el-table-column prop="name" label="菜单名称" min-width="150" />
-        <el-table-column prop="path" label="路由路径" min-width="120">
-          <template #default="{ row }">
-            {{ row.path || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="icon" label="图标" width="100">
-          <template #default="{ row }">
-            <el-icon v-if="row.icon"><component :is="row.icon" /></el-icon>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="order" label="排序" width="80" align="center" />
-        <el-table-column prop="type" label="类型" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getTypeTagType(row.type)">{{ getTypeLabel(row.type) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="hidden" label="隐藏" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.hidden ? 'danger' : 'success'" size="small">
-              {{ row.hidden ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" align="center">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleCreate(row)">
-              新增子菜单
-            </el-button>
-            <el-button link type="primary" size="small" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+      />
+    </n-card>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="dialogVisible"
+    <n-modal
+      v-model:show="dialogVisible"
       :title="isEdit ? '编辑菜单' : '新增菜单'"
-      width="600px"
+      preset="card"
+      style="width: 600px"
     >
-      <el-form
+      <n-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="100px"
-        size="default"
       >
-        <el-form-item label="菜单类型" prop="type">
-          <el-radio-group v-model="form.type">
-            <el-radio label="menu">菜单</el-radio>
-            <el-radio label="button">按钮</el-radio>
-            <el-radio label="iframe">iframe</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="菜单名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入菜单名称" />
-        </el-form-item>
-        <el-form-item label="路由路径" prop="path" v-if="form.type !== 'button'">
-          <el-input v-model="form.path" placeholder="如: /system" />
-        </el-form-item>
-        <el-form-item label="组件路径" prop="component" v-if="form.type === 'menu'">
-          <el-input v-model="form.component" placeholder="如: layout/System/index" />
-        </el-form-item>
-        <el-form-item label="图标" prop="icon" v-if="form.type !== 'button'">
-          <el-input v-model="form.icon" placeholder="图标名称" />
-        </el-form-item>
-        <el-form-item label="重定向" prop="redirect" v-if="form.type === 'menu'">
-          <el-input v-model="form.redirect" placeholder="重定向路径" />
-        </el-form-item>
-        <el-form-item label="父级菜单" prop="parentId">
-          <el-tree-select
-            v-model="form.parentId"
-            :data="menuOptions"
-            :props="{ label: 'name', value: 'id' }"
-            check-strictly
+        <n-form-item label="菜单类型" path="type">
+          <n-radio-group v-model:value="form.type">
+            <n-radio value="menu">菜单</n-radio>
+            <n-radio value="button">按钮</n-radio>
+            <n-radio value="iframe">iframe</n-radio>
+          </n-radio-group>
+        </n-form-item>
+        <n-form-item label="菜单名称" path="name">
+          <n-input v-model:value="form.name" placeholder="请输入菜单名称" />
+        </n-form-item>
+        <n-form-item label="路由路径" path="path" v-if="form.type !== 'button'">
+          <n-input v-model:value="form.path" placeholder="如: /system" />
+        </n-form-item>
+        <n-form-item label="组件路径" path="component" v-if="form.type === 'menu'">
+          <n-input v-model:value="form.component" placeholder="如: layout/System/index" />
+        </n-form-item>
+        <n-form-item label="图标" path="icon" v-if="form.type !== 'button'">
+          <n-input v-model:value="form.icon" placeholder="图标名称" />
+        </n-form-item>
+        <n-form-item label="重定向" path="redirect" v-if="form.type === 'menu'">
+          <n-input v-model:value="form.redirect" placeholder="重定向路径" />
+        </n-form-item>
+        <n-form-item label="父级菜单" path="parentId">
+          <n-tree-select
+            v-model:value="form.parentId"
+            :options="menuOptions"
+            check-strategy="parent"
             clearable
             placeholder="请选择父级菜单"
             class="w-full"
           />
-        </el-form-item>
-        <el-form-item label="排序" prop="order">
-          <el-input-number v-model="form.order" :min="0" :max="999" />
-        </el-form-item>
-        <el-form-item label="是否隐藏" prop="hidden">
-          <el-switch v-model="form.hidden" />
-        </el-form-item>
-        <el-form-item label="总是显示" prop="alwaysShow" v-if="form.type === 'menu'">
-          <el-switch v-model="form.alwaysShow" />
-        </el-form-item>
-      </el-form>
+        </n-form-item>
+        <n-form-item label="排序" path="order">
+          <n-input-number v-model:value="form.order" :min="0" :max="999" class="w-full" />
+        </n-form-item>
+        <n-form-item label="是否隐藏" path="hidden">
+          <n-switch v-model:value="form.hidden" />
+        </n-form-item>
+        <n-form-item label="总是显示" path="alwaysShow" v-if="form.type === 'menu'">
+          <n-switch v-model:value="form.alwaysShow" />
+        </n-form-item>
+      </n-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">
-          确定
-        </el-button>
+        <n-space justify="end">
+          <n-button @click="dialogVisible = false">取消</n-button>
+          <n-button type="primary" :loading="submitLoading" @click="handleSubmit">
+            确定
+          </n-button>
+        </n-space>
       </template>
-    </el-dialog>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, reactive, onMounted, computed, h } from 'vue'
+import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'naive-ui'
+import { useMessage, useDialog } from 'naive-ui'
+import { NButton, NSpace, NTag, NSwitch } from 'naive-ui'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import type { Menu, CreateMenuDto } from '@/types'
 
+const message = useMessage()
+const dialog = useDialog()
 const loading = ref(false)
 const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const menus = ref<Menu[]>([])
-const formRef = ref<FormInstance>()
+const formRef = ref<FormInst>()
 const currentMenuId = ref<number>()
 
 const form = reactive<CreateMenuDto>({
@@ -156,36 +121,27 @@ const rules: FormRules = {
   type: [{ required: true, message: '请选择菜单类型', trigger: 'change' }]
 }
 
-// 菜单选项（用于父级菜单选择）
-const menuOptions = computed(() => {
-  const options: { id: number; name: string; children?: Menu[] }[] = []
-  const buildOptions = (list: Menu[], level = 0) => {
-    list.forEach((menu) => {
-      options.push({
-        id: menu.id,
-        name: `${'　'.repeat(level)}${menu.name}`
-      })
-      if (menu.children && menu.children.length > 0) {
-        buildOptions(menu.children, level + 1)
-      }
-    })
-  }
-  buildOptions(menus.value)
-  return options
-})
-
-const fetchMenus = async () => {
-  loading.value = true
-  try {
-    const res = await getMenus()
-    menus.value = res
-  } catch (error) {
-    ElMessage.error('获取菜单列表失败')
-  } finally {
-    loading.value = false
-  }
+// 将菜单数据转换为树形选择选项
+const convertToTreeOptions = (list: Menu[], level = 0): TreeSelectOption[] => {
+  return list.map((menu) => {
+    const prefix = '　'.repeat(level)
+    const option: TreeSelectOption = {
+      label: `${prefix}${menu.name}`,
+      key: menu.id,
+      children: menu.children && menu.children.length > 0
+        ? convertToTreeOptions(menu.children, level + 1)
+        : undefined
+    }
+    return option
+  })
 }
 
+// 菜单选项（用于父级菜单选择）
+const menuOptions = computed<TreeSelectOption[]>(() => {
+  return convertToTreeOptions(menus.value)
+})
+
+// 获取类型标签
 const getTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
     menu: '菜单',
@@ -195,13 +151,89 @@ const getTypeLabel = (type: string) => {
   return labels[type] || type
 }
 
-const getTypeTagType = (type: string) => {
-  const types: Record<string, string> = {
+// 获取类型标签类型
+const getTypeTagType = (type: string): 'default' | 'error' | 'primary' | 'info' | 'success' | 'warning' => {
+  const types: Record<string, 'default' | 'error' | 'primary' | 'info' | 'success' | 'warning'> = {
     menu: 'success',
     button: 'warning',
     iframe: 'info'
   }
-  return types[type] || 'info'
+  return types[type] || 'default'
+}
+
+// 表格列定义
+const createColumns = (): DataTableColumns<Menu> => {
+  return [
+    { title: '菜单名称', key: 'name', minWidth: 150 },
+    {
+      title: '路由路径',
+      key: 'path',
+      minWidth: 120,
+      render: (row) => row.path || '-'
+    },
+    {
+      title: '图标',
+      key: 'icon',
+      width: 100,
+      render: (row) => row.icon || '-'
+    },
+    { title: '排序', key: 'order', width: 80, align: 'center' },
+    {
+      title: '类型',
+      key: 'type',
+      width: 100,
+      align: 'center',
+      render: (row) => h(NTag, { type: getTypeTagType(row.type) }, { default: () => getTypeLabel(row.type) })
+    },
+    {
+      title: '隐藏',
+      key: 'hidden',
+      width: 80,
+      align: 'center',
+      render: (row) => h(NTag, { type: row.hidden ? 'error' : 'success', size: 'small' }, { default: () => row.hidden ? '是' : '否' })
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 240,
+      align: 'center',
+      render: (row) => {
+        return h(NSpace, { justify: 'center' }, {
+          default: () => [
+            h(NButton, {
+              text: true,
+              type: 'primary',
+              onClick: () => handleCreate(row)
+            }, { default: () => '新增子菜单' }),
+            h(NButton, {
+              text: true,
+              type: 'primary',
+              onClick: () => handleEdit(row)
+            }, { default: () => '编辑' }),
+            h(NButton, {
+              text: true,
+              type: 'error',
+              onClick: () => handleDelete(row)
+            }, { default: () => '删除' })
+          ]
+        })
+      }
+    }
+  ]
+}
+
+const columns = createColumns()
+
+const fetchMenus = async () => {
+  loading.value = true
+  try {
+    const res = await getMenus()
+    menus.value = res
+  } catch (error) {
+    message.error('获取菜单列表失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleCreate = (row: Menu | null) => {
@@ -237,21 +269,23 @@ const handleEdit = (menu: Menu) => {
 
 const handleDelete = (menu: Menu) => {
   if (menu.children && menu.children.length > 0) {
-    ElMessage.warning('该菜单存在子菜单，无法删除')
+    message.warning('该菜单存在子菜单，无法删除')
     return
   }
 
-  ElMessageBox.confirm('确定要删除该菜单吗?', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteMenu(menu.id)
-      ElMessage.success('删除成功')
-      fetchMenus()
-    } catch (error: any) {
-      ElMessage.error(error.response?.data?.message || '删除失败')
+  dialog.warning({
+    title: '提示',
+    content: '确定要删除该菜单吗?',
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await deleteMenu(menu.id)
+        message.success('删除成功')
+        fetchMenus()
+      } catch (error: any) {
+        message.error(error.response?.data?.message || '删除失败')
+      }
     }
   })
 }
@@ -259,21 +293,21 @@ const handleDelete = (menu: Menu) => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
-    if (valid) {
+  await formRef.value.validate(async (errors) => {
+    if (!errors) {
       submitLoading.value = true
       try {
         if (isEdit.value && currentMenuId.value) {
           await updateMenu(currentMenuId.value, form)
-          ElMessage.success('更新成功')
+          message.success('更新成功')
         } else {
           await createMenu(form)
-          ElMessage.success('创建成功')
+          message.success('创建成功')
         }
         dialogVisible.value = false
         fetchMenus()
       } catch (error: any) {
-        ElMessage.error(error.response?.data?.message || '操作失败')
+        message.error(error.response?.data?.message || '操作失败')
       } finally {
         submitLoading.value = false
       }
