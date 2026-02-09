@@ -7,9 +7,9 @@ import {
   Param,
   Delete,
   UseGuards,
-  Request,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { MenusService } from './menus.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
@@ -23,50 +23,36 @@ export class MenusController {
   constructor(private readonly menusService: MenusService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new menu' })
+  @ApiOperation({ summary: '创建菜单' })
   create(@Body() createMenuDto: CreateMenuDto) {
     return this.menusService.create(createMenuDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all menus (tree structure)' })
-  findAll() {
+  @ApiQuery({ name: 'format', required: false, enum: ['tree', 'flat'], description: '返回格式：tree-树形(默认), flat-扁平列表' })
+  @ApiOperation({ summary: '获取菜单列表' })
+  findAll(@Query('format') format?: string) {
+    if (format === 'flat') {
+      return this.menusService.findAllFlat();
+    }
     return this.menusService.findAll();
   }
 
-  @Get('flat')
-  @ApiOperation({ summary: 'Get all menus (flat list)' })
-  findAllFlat() {
-    return this.menusService.findAllFlat();
-  }
-
   @Get(':id')
-  @ApiOperation({ summary: 'Get menu by ID' })
+  @ApiOperation({ summary: '根据ID获取菜单详情' })
   findOne(@Param('id') id: string) {
     return this.menusService.findOne(+id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update menu' })
+  @ApiOperation({ summary: '更新菜单' })
   update(@Param('id') id: string, @Body() updateMenuDto: UpdateMenuDto) {
     return this.menusService.update(+id, updateMenuDto);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete menu' })
+  @ApiOperation({ summary: '删除菜单' })
   remove(@Param('id') id: string) {
     return this.menusService.remove(+id);
-  }
-
-  @Get('role/:roleId')
-  @ApiOperation({ summary: 'Get menus by role ID' })
-  findByRole(@Param('roleId') roleId: string) {
-    return this.menusService.findMenusByRoleId(+roleId);
-  }
-
-  @Get('user/:userId')
-  @ApiOperation({ summary: 'Get menus by user ID' })
-  findByUser(@Param('userId') userId: string) {
-    return this.menusService.findMenusByUserId(+userId);
   }
 }

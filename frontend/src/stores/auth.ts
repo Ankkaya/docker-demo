@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, Menu } from '@/types'
-import { login as loginApi, register as registerApi, getCurrentUser } from '@/api/auth'
-import { getMenusByUser } from '@/api/menu'
+import { login as loginApi, register as registerApi } from '@/api/auth'
+import { getCurrentUser, getUserMenus } from '@/api/user'
 import router from '@/router'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -56,11 +56,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 获取用户菜单
+  // 获取当前用户菜单
   const fetchMenus = async () => {
     if (!user.value) return
     try {
-      const res = await getMenusByUser(user.value.id)
+      const res = await getUserMenus(user.value.id)
       menus.value = res
     } catch (error) {
       console.error('获取菜单失败')

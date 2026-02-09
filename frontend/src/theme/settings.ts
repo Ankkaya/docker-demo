@@ -1,6 +1,6 @@
 /** 默认主题配置 */
 export const themeSettings: App.Theme.ThemeSetting = {
-  themeScheme: 'light',
+  themeScheme: 'dark',
   grayscale: false,
   colourWeakness: false,
   themeColor: '#18A058',

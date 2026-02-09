@@ -14,7 +14,7 @@ export class RolesService {
     });
 
     if (existingRole) {
-      throw new ConflictException('Role code already exists');
+      throw new ConflictException('角色编码已存在');
     }
 
     const { menuIds, ...roleData } = createRoleDto;
@@ -68,7 +68,7 @@ export class RolesService {
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('角色不存在');
     }
 
     return role;
@@ -80,7 +80,7 @@ export class RolesService {
     });
 
     if (!existingRole) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('角色不存在');
     }
 
     // 如果更新code，检查是否重复
@@ -89,7 +89,7 @@ export class RolesService {
         where: { code: updateRoleDto.code },
       });
       if (duplicateRole) {
-        throw new ConflictException('Role code already exists');
+        throw new ConflictException('角色编码已存在');
       }
     }
 
@@ -123,6 +123,12 @@ export class RolesService {
 
   async remove(id: number) {
     const role = await this.findOne(id);
+
+    // 检查是否是默认角色（如 admin）
+    if (role.code === 'admin') {
+      throw new ConflictException('不能删除系统默认角色');
+    }
+
     await this.prisma.role.delete({ where: { id } });
     return role;
   }
@@ -149,5 +155,98 @@ export class RolesService {
     });
 
     return user?.roles || [];
+  }
+
+  // 获取角色的菜单
+  async getRoleMenus(roleId: number, format: string = 'tree') {
+    const role = await this.prisma.role.findUnique({
+      where: { id: roleId },
+      include: {
+        menus: {
+          include: {
+            children: true,
+          },
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+
+    if (!role) {
+      throw new NotFoundException('角色不存在');
+    }
+
+    const menus = role.menus;
+
+    // 根据格式返回
+    if (format === 'flat') {
+      return menus.map(menu => {
+        const { children, ...rest } = menu;
+        return rest;
+      });
+    }
+
+    // 默认返回树形结构
+    return this.buildTree(menus);
+  }
+
+  // 为角色分配菜单
+  async assignMenus(roleId: number, menuIds: number[]) {
+    const role = await this.prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!role) {
+      throw new NotFoundException('角色不存在');
+    }
+
+    return this.prisma.role.update({
+      where: { id: roleId },
+      data: {
+        menus: {
+          set: menuIds.map((id) => ({ id })),
+        },
+      },
+      include: {
+        menus: true,
+      },
+    });
+  }
+
+  // 构建树形结构
+  private buildTree(menus: any[]): any[] {
+    const menuMap = new Map<number, any>();
+    const roots: any[] = [];
+
+    // 先建立映射
+    menus.forEach((menu) => {
+      menuMap.set(menu.id, { ...menu, children: [] });
+    });
+
+    // 构建树
+    menus.forEach((menu) => {
+      const menuNode = menuMap.get(menu.id);
+      if (menu.parentId) {
+        const parent = menuMap.get(menu.parentId);
+        if (parent) {
+          parent.children.push(menuNode);
+        }
+      } else {
+        roots.push(menuNode);
+      }
+    });
+
+    // 移除空数组字段
+    const cleanMenu = (menu: any) => {
+      if (menu.children.length === 0) {
+        delete menu.children;
+      } else {
+        menu.children.forEach(cleanMenu);
+      }
+      delete menu.parent;
+    };
+
+    roots.forEach(cleanMenu);
+
+    return roots;
   }
 }

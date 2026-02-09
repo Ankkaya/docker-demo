@@ -31,7 +31,6 @@
           :value="activeMenu" 
           :options="menuOptions" 
           @update:value="handleMenuSelect"
-          :theme="themeStore.darkMode ? 'dark' : 'light'"
         />
       </aside>
 
