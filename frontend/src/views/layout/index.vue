@@ -47,42 +47,86 @@ import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/store/modules/theme'
-import { PersonOutline, ChevronDownOutline, HomeOutline, MenuOutline } from '@vicons/ionicons5'
-import { NIcon } from 'naive-ui'
+import { 
+  PersonOutline, 
+  ChevronDownOutline, 
+  HomeOutline, 
+  MenuOutline,
+  SettingsOutline,
+  PeopleOutline,
+  CubeOutline,
+  ScaleOutline,
+  GridOutline,
+  RibbonOutline,
+  BusinessOutline,
+  BriefcaseOutline,
+  PeopleCircleOutline
+} from '@vicons/ionicons5'
+import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import ThemeSchemaSwitch from '@/components/common/ThemeSchemaSwitch.vue'
+import type { Menu } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const message = useMessage()
 
 const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
 
+// 图标映射
+const iconMap: Record<string, any> = {
+  'home': HomeOutline,
+  'setting': SettingsOutline,
+  'user': PersonOutline,
+  'peoples': PeopleOutline,
+  'menu': MenuOutline,
+  'database': CubeOutline,
+  'measurement': ScaleOutline,
+  'category': GridOutline,
+  'brand': RibbonOutline,
+  'warehouse': BusinessOutline,
+  'supplier': BriefcaseOutline,
+  'customer': PeopleCircleOutline
+}
+
 // 图标渲染函数
-const renderIcon = (icon: any) => {
+const renderIcon = (iconName?: string) => {
+  if (!iconName) return undefined
+  const icon = iconMap[iconName] || MenuOutline
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
-// 菜单选项
-const menuOptions: MenuOption[] = [
-  {
+// 将后端菜单转换为 Naive UI 菜单选项
+const mapMenuToOption = (menu: Menu): MenuOption => {
+  return {
+    label: menu.name,
+    key: menu.path || String(menu.id),
+    icon: renderIcon(menu.icon),
+    children: menu.children?.map(mapMenuToOption)
+  }
+}
+
+// 动态菜单选项
+const menuOptions = computed<MenuOption[]>(() => {
+  const dashboardOption: MenuOption = {
     label: '首页',
     key: '/dashboard',
-    icon: renderIcon(HomeOutline)
-  },
-  {
-    label: '用户管理',
-    key: '/users/list',
-    icon: renderIcon(PersonOutline)
-  },
-  {
-    label: '菜单管理',
-    key: '/menus/list',
-    icon: renderIcon(MenuOutline)
+    icon: renderIcon('home')
   }
-]
+
+  console.log('Raw menus from store:', authStore.menus)
+  
+  const dynamicOptions = authStore.menus
+    .filter(menu => !menu.hidden)
+    .map(mapMenuToOption)
+  
+  console.log('Processed menu options:', dynamicOptions)
+
+  return [dashboardOption, ...dynamicOptions]
+})
 
 // 下拉选项
 const dropdownOptions = [
@@ -90,8 +134,23 @@ const dropdownOptions = [
   { label: '退出登录', key: 'logout' }
 ]
 
-const handleMenuSelect = (key: string) => {
-  router.push(key)
+const handleMenuSelect = (key: string, item: MenuOption) => {
+  console.log('Menu clicked:', key, 'Item:', item)
+  if (!key) {
+    console.warn('Menu key is empty')
+    return
+  }
+  // 检查是否有子菜单，有子菜单则不跳转
+  if (item.children && item.children.length > 0) {
+    console.log('Menu has children, expanding only')
+    return
+  }
+  router.push(key).then(() => {
+    console.log('Navigation successful:', key)
+  }).catch(err => {
+    console.error('Navigation failed:', err.message)
+    message.error('页面跳转失败: ' + err.message)
+  })
 }
 
 const handleSelect = (key: string) => {

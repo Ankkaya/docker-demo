@@ -2,7 +2,14 @@
 
 ## Project Overview
 
-This is a **full-stack RBAC (Role-Based Access Control) Admin System** with user management, role management, and menu management capabilities. The project follows a typical modern web architecture with a separate backend API and frontend SPA.
+This is a **full-stack Mall + Inventory Management System (商城+进销存系统)** built on top of an RBAC (Role-Based Access Control) Admin System. 
+
+**Current Progress:**
+- ✅ RBAC Core: User/Role/Menu management
+- ✅ v1.0 Basic Data: Unit/Category/Brand/Warehouse/Supplier/Customer
+- 🚧 v1.0 Product Management: SPU/SKU (Coming soon)
+- 🚧 v1.0 Inventory: Purchase/Sale/Stock (Coming soon)
+- 🚧 v1.0 Mall: Shopping/Order/Payment (Coming soon)
 
 **Language:** Chinese (zh-CN) - Code comments and documentation are primarily in Chinese.
 
@@ -16,8 +23,8 @@ This is a **full-stack RBAC (Role-Based Access Control) Admin System** with user
 | **ORM** | Prisma |
 | **Cache** | Redis |
 | **Auth** | JWT + Passport.js |
-| **UI Library** | Element Plus |
-| **Styling** | Tailwind CSS |
+| **UI Library** | Naive UI |
+| **Styling** | Tailwind CSS + UnoCSS |
 | **State Management** | Pinia |
 | **Containerization** | Docker, Docker Compose |
 | **CI/CD** | GitHub Actions |
@@ -34,6 +41,12 @@ docker-demo/
 │   │   ├── users/          # User management module
 │   │   ├── roles/          # Role management module
 │   │   ├── menus/          # Menu management module (tree structure)
+│   │   ├── units/          # [v1.0] 计量单位模块
+│   │   ├── categories/     # [v1.0] 商品分类模块（树形）
+│   │   ├── brands/         # [v1.0] 品牌管理模块
+│   │   ├── warehouses/     # [v1.0] 仓库管理模块
+│   │   ├── suppliers/      # [v1.0] 供应商管理模块
+│   │   ├── customers/      # [v1.0] 客户管理模块
 │   │   ├── prisma/         # Prisma service module
 │   │   ├── redis/          # Redis service
 │   │   ├── common/         # Shared utilities (filters, interceptors)
@@ -49,10 +62,23 @@ docker-demo/
 ├── frontend/               # Vue.js 3 Frontend
 │   ├── src/
 │   │   ├── api/            # API request modules
+│   │   │   ├── unit.ts     # [v1.0] 计量单位 API
+│   │   │   ├── category.ts # [v1.0] 商品分类 API
+│   │   │   ├── brand.ts    # [v1.0] 品牌 API
+│   │   │   ├── warehouse.ts# [v1.0] 仓库 API
+│   │   │   ├── supplier.ts # [v1.0] 供应商 API
+│   │   │   └── customer.ts # [v1.0] 客户 API
 │   │   ├── views/          # Page components
+│   │   │   ├── units/      # [v1.0] 计量单位页面
+│   │   │   ├── categories/ # [v1.0] 商品分类页面
+│   │   │   ├── brands/     # [v1.0] 品牌管理页面
+│   │   │   ├── warehouses/ # [v1.0] 仓库管理页面
+│   │   │   ├── suppliers/  # [v1.0] 供应商管理页面
+│   │   │   └── customers/  # [v1.0] 客户管理页面
 │   │   ├── router/         # Vue Router configuration
 │   │   ├── stores/         # Pinia stores
 │   │   ├── types/          # TypeScript type definitions
+│   │   │   └── basic-data.ts # [v1.0] 基础数据类型定义
 │   │   ├── App.vue         # Root component
 │   │   └── main.ts         # Application entry point
 │   ├── Dockerfile          # Multi-stage build with Nginx
@@ -60,6 +86,12 @@ docker-demo/
 │   └── package.json
 ├── docker-compose.yaml     # Full stack orchestration
 ├── .github/workflows/      # CI/CD workflows
+├── .claude/                # AI 助手配置
+│   ├── rules/              # 规则文档
+│   └── skills/             # Skill 定义
+│       └── doc-sync/       # 文档同步检查 Skill
+├── version/                # 版本计划文档
+│   └── v1.0.md             # V1.0 开发计划
 └── start-local.sh/ps1      # Local development scripts
 ```
 
@@ -154,27 +186,61 @@ docker-compose up -d --build
 
 ## Database Schema
 
-The database uses PostgreSQL with three main entities:
+The database uses PostgreSQL with the following entities:
 
-### User (用户)
+### Core RBAC Entities
+
+#### User (用户)
 - `id`, `username` (unique), `email` (unique), `password`
 - `name`, `createdAt`, `updatedAt`
 - Many-to-many relationship with Roles
+- One-to-one relationship with Customer (optional)
 
-### Role (角色)
+#### Role (角色)
 - `id`, `name` (unique), `code` (unique), `description`
 - Many-to-many relationships with Users and Menus
 
-### Menu (菜单) - Tree Structure
+#### Menu (菜单) - Tree Structure
 - `id`, `name`, `path`, `icon`, `component`, `redirect`
 - `parentId` (self-referencing for tree structure)
 - `order`, `hidden`, `alwaysShow`, `type` (menu/button/iframe)
 - Self-referential relationship for parent-child hierarchy
 
+### Basic Data Entities (v1.0)
+
+#### Unit (计量单位)
+- `id`, `name` (unique), `code` (unique), `sort`
+- Common units: 个、件、箱、kg、g、L、ml、m
+
+#### Category (商品分类) - Tree Structure
+- `id`, `name`, `code` (unique), `parentId`, `level`
+- `sort`, `icon`, `image`, `isEnabled`
+- Self-referential relationship for parent-child hierarchy
+
+#### Brand (品牌)
+- `id`, `name` (unique), `logo`, `description`
+- `sort`, `isEnabled`
+
+#### Warehouse (仓库)
+- `id`, `name`, `code` (unique), `address`, `contact`, `phone`
+- `isDefault`, `isEnabled`
+
+#### Supplier (供应商)
+- `id`, `name`, `code` (unique), `contact`, `phone`, `email`, `address`
+- `bankName`, `bankAccount`, `taxNo`
+- `creditLimit`, `period`, `isEnabled`, `remark`
+
+#### Customer (客户)
+- `id`, `name`, `code` (unique), `type` (INDIVIDUAL/COMPANY)
+- `contact`, `phone`, `email`, `address`
+- `creditLimit`, `period`, `isEnabled`, `remark`
+- `userId` (optional, link to User for mall customers)
+
 **Default seeded data:**
 - Admin user: `admin` / `123456`
 - Roles: `admin` (超级管理员), `user` (普通用户)
-- Menus: System Management tree (User, Role, Menu management)
+- Menus: System Management + Basic Data (11 menus)
+- Basic Data: Main warehouse, 8 common units, sample categories/brands/supplier
 
 ---
 
@@ -212,14 +278,29 @@ Error responses (via `HttpExceptionFilter`):
 
 ### Key Endpoints
 
+#### Auth
 | Endpoint | Method | Description | Auth Required |
 |----------|--------|-------------|---------------|
 | `/auth/register` | POST | User registration | No |
 | `/auth/login` | POST | User login | No |
 | `/auth/me` | GET | Get current user | Yes |
+
+#### RBAC Core
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
 | `/users` | GET/POST | User CRUD | Yes |
 | `/roles` | GET/POST | Role CRUD | Yes |
 | `/menus` | GET/POST | Menu CRUD | Yes |
+
+#### Basic Data (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/units` | GET/POST | Unit management | Yes |
+| `/categories` | GET/POST | Category tree | Yes |
+| `/brands` | GET/POST | Brand management | Yes |
+| `/warehouses` | GET/POST | Warehouse management | Yes |
+| `/suppliers` | GET/POST | Supplier management | Yes |
+| `/customers` | GET/POST | Customer management | Yes |
 
 Full API documentation available at `/api/docs` when backend is running.
 

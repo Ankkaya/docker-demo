@@ -18,6 +18,8 @@ model User {
 
   // 用户与角色多对多关系
   roles     Role[]   @relation("UserRoles")
+  // 关联客户档案（一个用户对应一个客户）
+  customer  Customer?
 }
 
 // 角色模型
@@ -57,4 +59,105 @@ model Menu {
 
   // 角色与菜单多对多关系
   roles       Role[]    @relation("RoleMenus")
+}
+
+// ==================== 基础数据模块 ====================
+
+// 计量单位
+model Unit {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // 单位名称：个、箱、kg
+  code      String   @unique // 单位编码
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 商品分类（树形结构）
+model Category {
+  id        Int        @id @default(autoincrement())
+  name      String     // 分类名称
+  code      String     @unique // 分类编码
+  parentId  Int?       // 父级ID
+  level     Int        @default(1) // 层级
+  sort      Int        @default(0)
+  icon      String?    // 图标
+  image     String?    // 分类图片
+  isEnabled Boolean    @default(true)
+  parent    Category?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryParent")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// 品牌
+model Brand {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique // 品牌名称
+  logo        String?   // 品牌logo
+  description String?   // 品牌描述
+  sort        Int       @default(0)
+  isEnabled   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// 仓库
+model Warehouse {
+  id          Int      @id @default(autoincrement())
+  name        String   // 仓库名称
+  code        String   @unique // 仓库编码
+  address     String?  // 地址
+  contact     String?  // 联系人
+  phone       String?  // 联系电话
+  isDefault   Boolean  @default(false) // 是否默认仓库
+  isEnabled   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 供应商
+model Supplier {
+  id          Int      @id @default(autoincrement())
+  name        String   // 供应商名称
+  code        String   @unique // 供应商编码
+  contact     String?  // 联系人
+  phone       String?  // 联系电话
+  email       String?  // 邮箱
+  address     String?  // 地址
+  bankName    String?  // 开户行
+  bankAccount String?  // 银行账号
+  taxNo       String?  // 税号
+  creditLimit Decimal? @db.Decimal(12, 2) // 信用额度
+  period      Int      @default(30) // 账期(天)
+  isEnabled   Boolean  @default(true)
+  remark      String?  // 备注
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 客户类型枚举
+enum CustomerType {
+  INDIVIDUAL  // 个人客户
+  COMPANY     // 企业客户
+}
+
+// 客户
+model Customer {
+  id          Int          @id @default(autoincrement())
+  name        String       // 客户名称
+  code        String       @unique // 客户编码
+  type        CustomerType @default(INDIVIDUAL) // 客户类型
+  contact     String?      // 联系人
+  phone       String?      // 联系电话
+  email       String?      // 邮箱
+  address     String?      // 地址
+  creditLimit Decimal?     @db.Decimal(12, 2) // 信用额度
+  period      Int          @default(0) // 账期(天)
+  isEnabled   Boolean      @default(true)
+  remark      String?      // 备注
+  userId      Int?         @unique // 关联系统用户（如果是注册用户）
+  user        User?        @relation(fields: [userId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }

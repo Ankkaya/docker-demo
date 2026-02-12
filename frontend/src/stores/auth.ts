@@ -21,6 +21,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = res.token
       user.value = res.user
       localStorage.setItem('token', res.token)
+      await fetchMenus()
       return true
     } catch (error) {
       return false
@@ -37,6 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = res.token
       user.value = res.user
       localStorage.setItem('token', res.token)
+      await fetchMenus()
       return true
     } catch (error) {
       return false

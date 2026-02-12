@@ -12,7 +12,7 @@ const pool = new Pool({
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
-  // 1. 创建默认管理员角色
+  // ==================== 1. 创建角色 ====================
   const adminRole = await prisma.role.upsert({
     where: { code: 'admin' },
     update: {},
@@ -23,7 +23,6 @@ async function main() {
     },
   });
 
-  // 2. 创建默认用户角色
   const userRole = await prisma.role.upsert({
     where: { code: 'user' },
     update: {},
@@ -34,7 +33,8 @@ async function main() {
     },
   });
 
-  // 3. 创建根级菜单
+  // ==================== 2. 创建菜单 ====================
+  // 系统管理菜单组
   const systemMenu = await prisma.menu.upsert({
     where: { id: 1 },
     update: {},
@@ -55,7 +55,7 @@ async function main() {
     create: {
       id: 2,
       name: '用户管理',
-      path: '/system/user',
+      path: '/users/list',
       icon: 'user',
       component: 'system/user/index',
       parentId: 1,
@@ -85,7 +85,7 @@ async function main() {
     create: {
       id: 4,
       name: '菜单管理',
-      path: '/system/menu',
+      path: '/menus/list',
       icon: 'menu',
       component: 'system/menu/index',
       parentId: 1,
@@ -94,22 +94,127 @@ async function main() {
     },
   });
 
-  // 4. 将所有菜单分配给管理员角色
+  // ==================== 3. 创建基础数据菜单 ====================
+  // 【必需】基础数据菜单组 - 没有这些菜单无法访问基础数据模块
+  const basicDataMenu = await prisma.menu.upsert({
+    where: { id: 10 },
+    update: {},
+    create: {
+      id: 10,
+      name: '基础数据',
+      path: '/basic',
+      icon: 'database',
+      component: 'Layout',
+      order: 2,
+      type: 'menu',
+    },
+  });
+
+  const unitMenu = await prisma.menu.upsert({
+    where: { id: 11 },
+    update: {},
+    create: {
+      id: 11,
+      name: '计量单位',
+      path: '/basic/units',
+      icon: 'measurement',
+      component: 'basic/unit/index',
+      parentId: 10,
+      order: 1,
+      type: 'menu',
+    },
+  });
+
+  const categoryMenu = await prisma.menu.upsert({
+    where: { id: 12 },
+    update: {},
+    create: {
+      id: 12,
+      name: '商品分类',
+      path: '/basic/categories',
+      icon: 'category',
+      component: 'basic/category/index',
+      parentId: 10,
+      order: 2,
+      type: 'menu',
+    },
+  });
+
+  const brandMenu = await prisma.menu.upsert({
+    where: { id: 13 },
+    update: {},
+    create: {
+      id: 13,
+      name: '品牌管理',
+      path: '/basic/brands',
+      icon: 'brand',
+      component: 'basic/brand/index',
+      parentId: 10,
+      order: 3,
+      type: 'menu',
+    },
+  });
+
+  const warehouseMenu = await prisma.menu.upsert({
+    where: { id: 14 },
+    update: {},
+    create: {
+      id: 14,
+      name: '仓库管理',
+      path: '/basic/warehouses',
+      icon: 'warehouse',
+      component: 'basic/warehouse/index',
+      parentId: 10,
+      order: 4,
+      type: 'menu',
+    },
+  });
+
+  const supplierMenu = await prisma.menu.upsert({
+    where: { id: 15 },
+    update: {},
+    create: {
+      id: 15,
+      name: '供应商管理',
+      path: '/basic/suppliers',
+      icon: 'supplier',
+      component: 'basic/supplier/index',
+      parentId: 10,
+      order: 5,
+      type: 'menu',
+    },
+  });
+
+  const customerMenu = await prisma.menu.upsert({
+    where: { id: 16 },
+    update: {},
+    create: {
+      id: 16,
+      name: '客户管理',
+      path: '/basic/customers',
+      icon: 'customer',
+      component: 'basic/customer/index',
+      parentId: 10,
+      order: 6,
+      type: 'menu',
+    },
+  });
+
+  // ==================== 4. 分配菜单给角色 ====================
   await prisma.role.update({
     where: { id: adminRole.id },
     data: {
       menus: {
         set: [
-          { id: 1 },
-          { id: 2 },
-          { id: 3 },
-          { id: 4 },
+          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 },           // 系统管理
+          { id: 10 }, { id: 11 }, { id: 12 }, { id: 13 },       // 基础数据
+          { id: 14 }, { id: 15 }, { id: 16 },
         ],
       },
     },
   });
 
-  // 5. 创建默认管理员用户
+  // ==================== 5. 创建默认管理员用户 ====================
   const hashedPassword = await bcrypt.hash('123456', 10);
   const adminUser = await prisma.user.upsert({
     where: { username: 'admin' },
@@ -125,6 +230,137 @@ async function main() {
     },
   });
 
+  // ==================== 6. 【必需】创建默认仓库 ====================
+  // 进销存系统至少需要一个仓库才能进行入库操作
+  const defaultWarehouse = await prisma.warehouse.upsert({
+    where: { code: 'MAIN' },
+    update: {},
+    create: {
+      name: '主仓库',
+      code: 'MAIN',
+      address: '默认仓库地址',
+      contact: '管理员',
+      phone: '',
+      isDefault: true,
+      isEnabled: true,
+    },
+  });
+
+  // ==================== 7. 【可选】常用计量单位 ====================
+  // 建议添加，方便用户直接使用，无需手动创建
+  const commonUnits = [
+    { name: '个', code: 'GE', sort: 1 },
+    { name: '件', code: 'JIAN', sort: 2 },
+    { name: '箱', code: 'XIANG', sort: 3 },
+    { name: '千克', code: 'KG', sort: 4 },
+    { name: '克', code: 'G', sort: 5 },
+    { name: '升', code: 'L', sort: 6 },
+    { name: '毫升', code: 'ML', sort: 7 },
+    { name: '米', code: 'M', sort: 8 },
+  ];
+
+  for (const unit of commonUnits) {
+    await prisma.unit.upsert({
+      where: { code: unit.code },
+      update: {},
+      create: unit,
+    });
+  }
+
+  // ==================== 8. 【可选】示例商品分类 ====================
+  // 帮助用户理解多级分类结构
+  const electronics = await prisma.category.upsert({
+    where: { code: 'ELEC' },
+    update: {},
+    create: {
+      name: '电子产品',
+      code: 'ELEC',
+      level: 1,
+      sort: 1,
+      isEnabled: true,
+    },
+  });
+
+  const phone = await prisma.category.upsert({
+    where: { code: 'PHONE' },
+    update: {},
+    create: {
+      name: '手机',
+      code: 'PHONE',
+      parentId: electronics.id,
+      level: 2,
+      sort: 1,
+      isEnabled: true,
+    },
+  });
+
+  const computer = await prisma.category.upsert({
+    where: { code: 'COMPUTER' },
+    update: {},
+    create: {
+      name: '电脑',
+      code: 'COMPUTER',
+      parentId: electronics.id,
+      level: 2,
+      sort: 2,
+      isEnabled: true,
+    },
+  });
+
+  const daily = await prisma.category.upsert({
+    where: { code: 'DAILY' },
+    update: {},
+    create: {
+      name: '日用百货',
+      code: 'DAILY',
+      level: 1,
+      sort: 2,
+      isEnabled: true,
+    },
+  });
+
+  // ==================== 9. 【可选】示例品牌 ====================
+  await prisma.brand.upsert({
+    where: { name: 'Apple' },
+    update: {},
+    create: {
+      name: 'Apple',
+      description: '美国苹果公司',
+      sort: 1,
+      isEnabled: true,
+    },
+  });
+
+  await prisma.brand.upsert({
+    where: { name: '华为' },
+    update: {},
+    create: {
+      name: '华为',
+      description: '华为技术有限公司',
+      sort: 2,
+      isEnabled: true,
+    },
+  });
+
+  // ==================== 10. 【可选】示例供应商 ====================
+  await prisma.supplier.upsert({
+    where: { code: 'SUP001' },
+    update: {},
+    create: {
+      name: '示例供应商',
+      code: 'SUP001',
+      contact: '张三',
+      phone: '13800138000',
+      email: 'supplier@example.com',
+      address: '北京市朝阳区示例路1号',
+      creditLimit: 50000,
+      period: 30,
+      isEnabled: true,
+      remark: '系统示例供应商',
+    },
+  });
+
+  // ==================== 输出日志 ====================
   console.log('🌱 Seed data created successfully!');
   console.log('-----------------------------------');
   console.log('Admin User:', {
@@ -140,7 +376,24 @@ async function main() {
     code: adminRole.code,
   });
   console.log('-----------------------------------');
-  console.log('Menus:', [systemMenu.name, userManagementMenu.name, roleManagementMenu.name, menuManagementMenu.name]);
+  console.log('System Menus:', ['系统管理', '用户管理', '角色管理', '菜单管理']);
+  console.log('-----------------------------------');
+  console.log('Basic Data Menus:', ['基础数据', '计量单位', '商品分类', '品牌管理', '仓库管理', '供应商管理', '客户管理']);
+  console.log('-----------------------------------');
+  console.log('【必需】Default Warehouse:', {
+    id: defaultWarehouse.id,
+    name: defaultWarehouse.name,
+    code: defaultWarehouse.code,
+    isDefault: defaultWarehouse.isDefault,
+  });
+  console.log('-----------------------------------');
+  console.log('【可选】Common Units:', commonUnits.map(u => u.name).join(', '));
+  console.log('-----------------------------------');
+  console.log('【可选】Categories:', ['电子产品(一级)', '- 手机(二级)', '- 电脑(二级)', '日用百货(一级)']);
+  console.log('-----------------------------------');
+  console.log('【可选】Brands:', ['Apple', '华为']);
+  console.log('-----------------------------------');
+  console.log('【可选】Supplier:', '示例供应商(SUP001)');
 }
 
 main()

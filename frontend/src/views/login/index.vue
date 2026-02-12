@@ -15,14 +15,16 @@
         size="large"
       >
         <n-form-item label="用户名" path="username">
-          <n-input v-model:value="form.username" placeholder="请输入用户名" />
+          <n-input v-model:value="form.username" name="username" placeholder="请输入用户名" autocomplete="username" />
         </n-form-item>
         <n-form-item label="密码" path="password">
           <n-input
             v-model:value="form.password"
             type="password"
+            name="password"
             placeholder="请输入密码"
             show-password-on="click"
+            autocomplete="current-password"
           />
         </n-form-item>
         <n-form-item>

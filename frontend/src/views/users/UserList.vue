@@ -42,13 +42,13 @@
         label-width="80px"
       >
         <n-form-item label="用户名" path="username">
-          <n-input v-model:value="form.username" :disabled="isEdit" />
+          <n-input v-model:value="form.username" :disabled="isEdit" autocomplete="username" />
         </n-form-item>
         <n-form-item label="邮箱" path="email">
-          <n-input v-model:value="form.email" />
+          <n-input v-model:value="form.email" autocomplete="email" />
         </n-form-item>
         <n-form-item label="密码" path="password" v-if="!isEdit">
-          <n-input v-model:value="form.password" type="password" show-password-on="click" />
+          <n-input v-model:value="form.password" type="password" show-password-on="click" autocomplete="new-password" />
         </n-form-item>
         <n-form-item label="姓名" path="name">
           <n-input v-model:value="form.name" />
