@@ -1,17 +1,17 @@
 import api from './request'
-import type { LoginDto, RegisterDto, AuthResponse, User } from '@/types'
+import type { AuthApi, LoginParams, RegisterParams } from '@/types/api'
 
 // 登录
-export const login = (data: LoginDto) => {
-  return api.post<any, AuthResponse>('/auth/login', data)
+export const login = (data: LoginParams) => {
+  return api.post<AuthApi.Login>('/auth/login', data)
 }
 
 // 注册
-export const register = (data: RegisterDto) => {
-  return api.post<any, AuthResponse>('/auth/register', data)
+export const register = (data: RegisterParams) => {
+  return api.post<AuthApi.Register>('/auth/register', data)
 }
 
 // 获取当前用户
 export const getCurrentUser = () => {
-  return api.get<any, User>('/auth/me')
+  return api.get<AuthApi.GetCurrentUser>('/auth/me')
 }

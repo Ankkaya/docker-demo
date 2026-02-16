@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/store'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -26,25 +26,25 @@ const router = createRouter({
     {
       path: '/system',
       component: () => import('@/views/layout/index.vue'),
-      redirect: '/system/role',
+      redirect: '/system/roles',
       meta: { title: '系统管理' },
       children: [
         {
-          path: 'role',
-          name: 'role-list',
-          component: () => import('@/views/roles/RoleList.vue'),
+          path: 'roles',
+          name: 'system-roles',
+          component: () => import('@/views/roles/index.vue'),
           meta: { title: '角色管理' }
         },
         {
-          path: 'menu',
-          name: 'menu-list',
-          component: () => import('@/views/menus/MenuList.vue'),
+          path: 'menus',
+          name: 'system-menus',
+          component: () => import('@/views/menus/index.vue'),
           meta: { title: '菜单列表' }
         },
         {
-          path: 'user',
-          name: 'user-list',
-          component: () => import('@/views/users/UserList.vue'),
+          path: 'users',
+          name: 'system-users',
+          component: () => import('@/views/users/index.vue'),
           meta: { title: '用户列表' }
         }
       ]
@@ -58,39 +58,119 @@ const router = createRouter({
       children: [
         {
           path: 'units',
-          name: 'unit-list',
-          component: () => import('@/views/units/UnitList.vue'),
+          name: 'basic-units',
+          component: () => import('@/views/units/index.vue'),
           meta: { title: '计量单位' }
         },
         {
           path: 'categories',
-          name: 'category-list',
-          component: () => import('@/views/categories/CategoryList.vue'),
+          name: 'basic-categories',
+          component: () => import('@/views/categories/index.vue'),
           meta: { title: '商品分类' }
         },
         {
           path: 'brands',
-          name: 'brand-list',
-          component: () => import('@/views/brands/BrandList.vue'),
+          name: 'basic-brands',
+          component: () => import('@/views/brands/index.vue'),
           meta: { title: '品牌管理' }
         },
         {
           path: 'warehouses',
-          name: 'warehouse-list',
-          component: () => import('@/views/warehouses/WarehouseList.vue'),
+          name: 'basic-warehouses',
+          component: () => import('@/views/warehouses/index.vue'),
           meta: { title: '仓库管理' }
         },
         {
           path: 'suppliers',
-          name: 'supplier-list',
-          component: () => import('@/views/suppliers/SupplierList.vue'),
+          name: 'basic-suppliers',
+          component: () => import('@/views/suppliers/index.vue'),
           meta: { title: '供应商管理' }
         },
         {
           path: 'customers',
-          name: 'customer-list',
-          component: () => import('@/views/customers/CustomerList.vue'),
+          name: 'basic-customers',
+          component: () => import('@/views/customers/index.vue'),
           meta: { title: '客户管理' }
+        }
+      ]
+    },
+    // ==================== 商品管理模块 ====================
+    {
+      path: '/products',
+      component: () => import('@/views/layout/index.vue'),
+      redirect: '/products/list',
+      meta: { title: '商品管理' },
+      children: [
+        {
+          path: 'list',
+          name: 'product-list',
+          component: () => import('@/views/products/index.vue'),
+          meta: { title: '商品列表' }
+        },
+        {
+          path: 'create',
+          name: 'product-create',
+          component: () => import('@/views/products/edit.vue'),
+          meta: { title: '新增商品' }
+        },
+        {
+          path: 'edit/:id',
+          name: 'product-edit',
+          component: () => import('@/views/products/edit.vue'),
+          meta: { title: '编辑商品' }
+        }
+      ]
+    },
+    {
+      path: '/inventories',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '库存查询' },
+      children: [
+        {
+          path: '',
+          name: 'basic-inventories',
+          component: () => import('@/views/inventories/index.vue'),
+          meta: { title: '库存查询' }
+        }
+      ]
+    },
+    // ==================== 进销存模块 ====================
+    {
+      path: '/purchases',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '采购订单' },
+      children: [
+        {
+          path: '',
+          name: 'purchase-list',
+          component: () => import('@/views/purchases/index.vue'),
+          meta: { title: '采购订单' }
+        }
+      ]
+    },
+    {
+      path: '/purchase-receipts',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '采购入库' },
+      children: [
+        {
+          path: '',
+          name: 'purchase-receipt-list',
+          component: () => import('@/views/purchase-receipts/index.vue'),
+          meta: { title: '采购入库' }
+        }
+      ]
+    },
+    {
+      path: '/purchase-returns',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '采购退货' },
+      children: [
+        {
+          path: '',
+          name: 'purchase-return-list',
+          component: () => import('@/views/purchase-returns/index.vue'),
+          meta: { title: '采购退货' }
         }
       ]
     },

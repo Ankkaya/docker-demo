@@ -2,23 +2,28 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
+import { MenuVo } from '@/menus/vo';
 
 @Injectable()
 export class MenusService {
   constructor(private prisma: PrismaService) {}
 
   async create(createMenuDto: CreateMenuDto) {
-    return this.prisma.menu.create({
+    const menu = await this.prisma.menu.create({
       data: createMenuDto,
     });
+    return MenuVo.fromEntity(menu);
   }
 
   async findAll() {
     const menus = await this.prisma.menu.findMany({
+      where: { deletedAt: null },
       orderBy: { order: 'asc' },
       include: {
         parent: true,
-        children: true,
+        children: {
+          where: { deletedAt: null },
+        },
         roles: {
           select: { id: true, name: true },
         },
@@ -26,12 +31,14 @@ export class MenusService {
     });
 
     // 构建树形结构
-    return this.buildTree(menus);
+    const treeMenus = this.buildTree(menus);
+    return MenuVo.fromEntities(treeMenus);
   }
 
   // 获取所有菜单（扁平化）
   async findAllFlat() {
     return this.prisma.menu.findMany({
+      where: { deletedAt: null },
       orderBy: { order: 'asc' },
       include: {
         parent: true,
@@ -41,10 +48,12 @@ export class MenusService {
 
   async findOne(id: number) {
     const menu = await this.prisma.menu.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: {
         parent: true,
-        children: true,
+        children: {
+          where: { deletedAt: null },
+        },
         roles: {
           select: { id: true, name: true },
         },
@@ -52,49 +61,57 @@ export class MenusService {
     });
 
     if (!menu) {
-      throw new NotFoundException('Menu not found');
+      throw new NotFoundException('菜单不存在');
     }
 
-    return menu;
+    return MenuVo.fromEntity(menu);
   }
 
   async update(id: number, updateMenuDto: UpdateMenuDto) {
     const existingMenu = await this.prisma.menu.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
     });
 
     if (!existingMenu) {
-      throw new NotFoundException('Menu not found');
+      throw new NotFoundException('菜单不存在');
     }
 
     // 不能将父级设置为自己
     if (updateMenuDto.parentId === id) {
-      throw new Error('Parent ID cannot be the same as the menu ID');
+      throw new Error('父级菜单不能是自己');
     }
 
-    return this.prisma.menu.update({
+    const updatedMenu = await this.prisma.menu.update({
       where: { id },
       data: updateMenuDto,
       include: {
         parent: true,
-        children: true,
+        children: {
+          where: { deletedAt: null },
+        },
       },
     });
+    return MenuVo.fromEntity(updatedMenu);
   }
 
   async remove(id: number) {
     const menu = await this.findOne(id);
 
-    // 检查是否有子菜单
+    // 检查是否有子菜单（未软删除的）
     const childCount = await this.prisma.menu.count({
-      where: { parentId: id },
+      where: { parentId: id, deletedAt: null },
     });
 
     if (childCount > 0) {
-      throw new Error('Cannot delete menu with children');
+      throw new Error('不能删除有子菜单的菜单');
     }
 
-    await this.prisma.menu.delete({ where: { id } });
+    // 软删除：更新 deletedAt 字段
+    await this.prisma.menu.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
     return menu;
   }
 
@@ -104,15 +121,18 @@ export class MenusService {
       where: { id: roleId },
       include: {
         menus: {
+          where: { deletedAt: null },
           include: {
-            children: true,
+            children: {
+              where: { deletedAt: null },
+            },
           },
         },
       },
     });
 
     if (!role) {
-      throw new NotFoundException('Role not found');
+      throw new NotFoundException('角色不存在');
     }
 
     const menus = role.menus;
@@ -128,8 +148,11 @@ export class MenusService {
         roles: {
           include: {
             menus: {
+              where: { deletedAt: null },
               include: {
-                children: true,
+                children: {
+                  where: { deletedAt: null },
+                },
               },
             },
           },
@@ -138,7 +161,7 @@ export class MenusService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('用户不存在');
     }
 
     // 获取所有角色的菜单并去重
@@ -155,7 +178,8 @@ export class MenusService {
     }
 
     // 构建树形结构
-    return this.buildTree(menus);
+    const treeMenus = this.buildTree(menus);
+    return MenuVo.fromEntities(treeMenus);
   }
 
   // 构建树形结构

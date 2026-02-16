@@ -55,7 +55,7 @@ async function main() {
     create: {
       id: 2,
       name: '用户管理',
-      path: '/users/list',
+      path: '/system/users',
       icon: 'user',
       component: 'system/user/index',
       parentId: 1,
@@ -70,7 +70,7 @@ async function main() {
     create: {
       id: 3,
       name: '角色管理',
-      path: '/system/role',
+      path: '/system/roles',
       icon: 'peoples',
       component: 'system/role/index',
       parentId: 1,
@@ -85,7 +85,7 @@ async function main() {
     create: {
       id: 4,
       name: '菜单管理',
-      path: '/menus/list',
+      path: '/system/menus',
       icon: 'menu',
       component: 'system/menu/index',
       parentId: 1,
@@ -200,7 +200,119 @@ async function main() {
     },
   });
 
-  // ==================== 4. 分配菜单给角色 ====================
+  // ==================== 3.1 创建商品管理菜单 ====================
+  // ==================== 3.1 创建商品管理菜单 ====================
+  const productMenu = await prisma.menu.upsert({
+    where: { id: 20 },
+    update: {},
+    create: {
+      id: 20,
+      name: '商品管理',
+      path: '/products',
+      icon: 'shopping',        // 购物袋图标 - 代表商品管理
+      component: 'Layout',
+      order: 3,
+      type: 'menu',
+    },
+  });
+
+  const productListMenu = await prisma.menu.upsert({
+    where: { id: 21 },
+    update: {},
+    create: {
+      id: 21,
+      name: '商品列表',
+      path: '/products/list',
+      icon: 'goods',           // 带勾选购物袋 - 代表商品清单
+      component: 'product/list/index',
+      parentId: 20,
+      order: 1,
+      type: 'menu',
+    },
+  });
+
+  const inventoryMenu = await prisma.menu.upsert({
+    where: { id: 22 },
+    update: {},
+    create: {
+      id: 22,
+      name: '库存查询',
+      path: '/inventories',
+      icon: 'inventory',       // 层叠图标 - 代表库存/仓储
+      component: 'inventory/index',
+      parentId: 20,
+      order: 2,
+      type: 'menu',
+    },
+  });
+
+  // ==================== 4. 创建进销存菜单 ====================
+  const inventoryMgmtMenu = await prisma.menu.upsert({
+    where: { id: 30 },
+    update: {},
+    create: {
+      id: 30,
+      name: '进销存',
+      path: '/inventory-mgmt',
+      icon: 'inventory-2',     // 仓库图标 - 代表进销存
+      component: 'Layout',
+      order: 4,
+      type: 'menu',
+    },
+  });
+
+  const purchaseMenu = await prisma.menu.upsert({
+    where: { id: 31 },
+    update: {
+      component: 'purchases/index',
+    },
+    create: {
+      id: 31,
+      name: '采购订单',
+      path: '/purchases',
+      icon: 'order',           // 订单图标
+      component: 'purchases/index',
+      parentId: 30,
+      order: 1,
+      type: 'menu',
+    },
+  });
+
+  const purchaseReceiptMenu = await prisma.menu.upsert({
+    where: { id: 32 },
+    update: {
+      component: 'purchase-receipts/index',
+    },
+    create: {
+      id: 32,
+      name: '采购入库',
+      path: '/purchase-receipts',
+      icon: 'inbound',         // 入库图标
+      component: 'purchase-receipts/index',
+      parentId: 30,
+      order: 2,
+      type: 'menu',
+    },
+  });
+
+  const purchaseReturnMenu = await prisma.menu.upsert({
+    where: { id: 33 },
+    update: {
+      component: 'purchase-returns/index',
+    },
+    create: {
+      id: 33,
+      name: '采购退货',
+      path: '/purchase-returns',
+      icon: 'return',          // 退货图标
+      component: 'purchase-returns/index',
+      parentId: 30,
+      order: 3,
+      type: 'menu',
+    },
+  });
+
+  // ==================== 5. 分配菜单给角色 ====================
   await prisma.role.update({
     where: { id: adminRole.id },
     data: {
@@ -209,6 +321,8 @@ async function main() {
           { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 },           // 系统管理
           { id: 10 }, { id: 11 }, { id: 12 }, { id: 13 },       // 基础数据
           { id: 14 }, { id: 15 }, { id: 16 },
+          { id: 20 }, { id: 21 }, { id: 22 },                   // 商品管理
+          { id: 30 }, { id: 31 }, { id: 32 }, { id: 33 },       // 进销存
         ],
       },
     },
@@ -379,6 +493,8 @@ async function main() {
   console.log('System Menus:', ['系统管理', '用户管理', '角色管理', '菜单管理']);
   console.log('-----------------------------------');
   console.log('Basic Data Menus:', ['基础数据', '计量单位', '商品分类', '品牌管理', '仓库管理', '供应商管理', '客户管理']);
+  console.log('-----------------------------------');
+  console.log('Product Menus:', ['商品管理', '商品列表', '库存查询']);
   console.log('-----------------------------------');
   console.log('【必需】Default Warehouse:', {
     id: defaultWarehouse.id,

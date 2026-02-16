@@ -2,15 +2,19 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { RoleVo, RoleWithMenusVo } from '@/roles/vo';
 
 @Injectable()
 export class RolesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createRoleDto: CreateRoleDto) {
-    // 检查角色编码是否存在
+    // 检查角色编码是否存在（排除已删除的）
     const existingRole = await this.prisma.role.findFirst({
-      where: { code: createRoleDto.code },
+      where: { 
+        code: createRoleDto.code,
+        deletedAt: null,
+      },
     });
 
     if (existingRole) {
@@ -41,11 +45,12 @@ export class RolesService {
       });
     }
 
-    return role;
+    return RoleVo.fromEntity(role);
   }
 
   async findAll() {
-    return this.prisma.role.findMany({
+    const roles = await this.prisma.role.findMany({
+      where: { deletedAt: null },
       include: {
         menus: true,
         users: {
@@ -54,11 +59,13 @@ export class RolesService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return RoleVo.fromEntities(roles);
   }
 
   async findOne(id: number) {
     const role = await this.prisma.role.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
       include: {
         menus: true,
         users: {
@@ -71,22 +78,25 @@ export class RolesService {
       throw new NotFoundException('角色不存在');
     }
 
-    return role;
+    return RoleWithMenusVo.fromEntity(role);
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
     const existingRole = await this.prisma.role.findUnique({
-      where: { id },
+      where: { id, deletedAt: null },
     });
 
     if (!existingRole) {
       throw new NotFoundException('角色不存在');
     }
 
-    // 如果更新code，检查是否重复
+    // 如果更新code，检查是否重复（排除已删除的）
     if (updateRoleDto.code && updateRoleDto.code !== existingRole.code) {
       const duplicateRole = await this.prisma.role.findFirst({
-        where: { code: updateRoleDto.code },
+        where: { 
+          code: updateRoleDto.code,
+          deletedAt: null,
+        },
       });
       if (duplicateRole) {
         throw new ConflictException('角色编码已存在');
@@ -118,7 +128,7 @@ export class RolesService {
       });
     }
 
-    return this.findOne(id);
+    return RoleVo.fromEntity(role);
   }
 
   async remove(id: number) {
@@ -129,16 +139,23 @@ export class RolesService {
       throw new ConflictException('不能删除系统默认角色');
     }
 
-    await this.prisma.role.delete({ where: { id } });
+    // 软删除：更新 deletedAt 字段
+    await this.prisma.role.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
     return role;
   }
 
   // 根据角色编码查找
   async findByCode(code: string) {
-    return this.prisma.role.findUnique({
-      where: { code },
+    const role = await this.prisma.role.findUnique({
+      where: { code, deletedAt: null },
       include: { menus: true },
     });
+
+    return role ? RoleWithMenusVo.fromEntity(role) : null;
   }
 
   // 根据用户ID获取角色
@@ -147,6 +164,7 @@ export class RolesService {
       where: { id: userId },
       include: {
         roles: {
+          where: { deletedAt: null },
           include: {
             menus: true,
           },
@@ -154,13 +172,14 @@ export class RolesService {
       },
     });
 
-    return user?.roles || [];
+    const roles = user?.roles || [];
+    return RoleWithMenusVo.fromEntities(roles);
   }
 
   // 获取角色的菜单
   async getRoleMenus(roleId: number, format: string = 'tree') {
     const role = await this.prisma.role.findUnique({
-      where: { id: roleId },
+      where: { id: roleId, deletedAt: null },
       include: {
         menus: {
           include: {
@@ -192,14 +211,14 @@ export class RolesService {
   // 为角色分配菜单
   async assignMenus(roleId: number, menuIds: number[]) {
     const role = await this.prisma.role.findUnique({
-      where: { id: roleId },
+      where: { id: roleId, deletedAt: null },
     });
 
     if (!role) {
       throw new NotFoundException('角色不存在');
     }
 
-    return this.prisma.role.update({
+    const updatedRole = await this.prisma.role.update({
       where: { id: roleId },
       data: {
         menus: {
@@ -210,6 +229,8 @@ export class RolesService {
         menus: true,
       },
     });
+
+    return RoleWithMenusVo.fromEntity(updatedRole);
   }
 
   // 构建树形结构

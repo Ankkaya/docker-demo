@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CategoryVo, CategoryTreeVo, CategoryWithParentVo } from '@/categories/vo';
 
 @Injectable()
 export class CategoriesService {
@@ -20,7 +21,10 @@ export class CategoriesService {
     // 如果有父级，检查父级是否存在
     if (createCategoryDto.parentId) {
       const parent = await this.prisma.category.findUnique({
-        where: { id: createCategoryDto.parentId },
+        where: { 
+          id: createCategoryDto.parentId,
+          deletedAt: null,
+        },
       });
 
       if (!parent) {
@@ -33,40 +37,54 @@ export class CategoriesService {
       createCategoryDto.level = 1;
     }
 
-    return this.prisma.category.create({
+    const category = await this.prisma.category.create({
       data: createCategoryDto,
     });
+
+    return CategoryVo.fromEntity(category);
   }
 
   async findAll() {
     const categories = await this.prisma.category.findMany({
+      where: { deletedAt: null },
       orderBy: { sort: 'asc' },
       include: {
         parent: true,
-        children: true,
+        children: {
+          where: { deletedAt: null },
+        },
       },
     });
 
     // 构建树形结构
-    return this.buildTree(categories);
+    const tree = this.buildTree(categories);
+    return CategoryTreeVo.fromEntities(tree);
   }
 
   // 获取扁平化列表
   async findAllFlat() {
-    return this.prisma.category.findMany({
+    const categories = await this.prisma.category.findMany({
+      where: { deletedAt: null },
       orderBy: { sort: 'asc' },
       include: {
         parent: true,
       },
     });
+
+    return CategoryWithParentVo.fromEntities(categories);
   }
 
   async findOne(id: number) {
     const category = await this.prisma.category.findUnique({
-      where: { id },
+      where: { 
+        id,
+        deletedAt: null,
+      },
       include: {
         parent: true,
-        children: true,
+        children: {
+          where: { deletedAt: null },
+        },
       },
     });
 
@@ -74,12 +92,15 @@ export class CategoriesService {
       throw new NotFoundException('分类不存在');
     }
 
-    return category;
+    return CategoryWithParentVo.fromEntity(category);
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
     const existing = await this.prisma.category.findUnique({
-      where: { id },
+      where: { 
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!existing) {
@@ -92,6 +113,7 @@ export class CategoriesService {
         where: {
           id: { not: id },
           code: updateCategoryDto.code,
+          deletedAt: null,
         },
       });
 
@@ -113,7 +135,10 @@ export class CategoriesService {
       }
 
       const parent = await this.prisma.category.findUnique({
-        where: { id: updateCategoryDto.parentId },
+        where: { 
+          id: updateCategoryDto.parentId,
+          deletedAt: null,
+        },
       });
 
       if (!parent) {
@@ -123,39 +148,52 @@ export class CategoriesService {
       updateCategoryDto.level = parent.level + 1;
     }
 
-    return this.prisma.category.update({
+    const updated = await this.prisma.category.update({
       where: { id },
       data: updateCategoryDto,
     });
+
+    return CategoryVo.fromEntity(updated);
   }
 
   async remove(id: number) {
     const category = await this.prisma.category.findUnique({
-      where: { id },
+      where: { 
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!category) {
       throw new NotFoundException('分类不存在');
     }
 
-    // 检查是否有子分类
+    // 检查是否有子分类（未删除的）
     const childCount = await this.prisma.category.count({
-      where: { parentId: id },
+      where: { 
+        parentId: id,
+        deletedAt: null,
+      },
     });
 
     if (childCount > 0) {
       throw new BadRequestException('不能删除有子分类的分类');
     }
 
-    return this.prisma.category.delete({
+    // 软删除：更新 deletedAt 字段
+    return this.prisma.category.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
   // 获取所有子分类ID（递归）
   private async getAllChildren(parentId: number): Promise<number[]> {
     const children = await this.prisma.category.findMany({
-      where: { parentId },
+      where: { 
+        parentId,
+        deletedAt: null,
+      },
       select: { id: true },
     });
 

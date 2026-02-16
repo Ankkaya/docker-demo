@@ -50,7 +50,19 @@
           <n-input v-model:value="form.icon" placeholder="请输入图标名称" />
         </n-form-item>
         <n-form-item label="分类图片" path="image">
-          <n-input v-model:value="form.image" placeholder="请输入图片URL" />
+          <n-space vertical>
+            <n-upload
+              list-type="image-card"
+              :max="1"
+              :custom-request="handleImageUpload"
+              v-model:file-list="imageFileList"
+              @change="handleImageChange"
+              accept="image/*"
+            >
+              <n-button>上传图片</n-button>
+            </n-upload>
+            <n-input v-model:value="form.image" placeholder="或输入图片URL" />
+          </n-space>
         </n-form-item>
         <n-form-item label="排序号" path="sort">
           <n-input-number v-model:value="form.sort" :min="0" style="width: 100%" />
@@ -77,6 +89,7 @@ import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'na
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace, NSwitch } from 'naive-ui'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/category'
+import { uploadFile } from '@/api/file'
 import type { Category, CreateCategoryDto } from '@/types/basic-data'
 
 const message = useMessage()
@@ -99,6 +112,37 @@ const form = reactive<CreateCategoryDto & { isEnabled: boolean }>({
   sort: 0,
   isEnabled: true
 })
+
+// 分类图片上传文件列表
+const imageFileList = ref<any[]>([])
+
+// 自定义上传请求 - 分类图片
+const handleImageUpload = async ({ file, onFinish, onError }: any) => {
+  try {
+    const result = await uploadFile(file.file, 'categories')
+    console.log('[图片上传] 上传成功，URL:', result.data.url)
+    
+    // 关键修复：确保文件对象上有 url 属性，供 onChange 使用
+    file.url = result.data.url
+    
+    // 调用 onFinish 并传入文件信息，更新组件内部的 fileList
+    onFinish({ url: result.data.url })
+    message.success('上传成功')
+  } catch (error) {
+    console.error('[图片上传] 上传失败:', error)
+    message.error('上传失败')
+    onError()
+  }
+}
+
+// 图片上传状态变化 - 统一通过 fileList 同步数据
+const handleImageChange = (options: any) => {
+  console.log('[图片上传] onChange 触发，fileList:', options.fileList)
+  // 查找已完成且有 URL 的图片
+  const file = options.fileList.find((f: any) => f.status === 'finished' && f.url)
+  form.image = file ? file.url : ''
+  console.log('[图片上传] 图片更新:', form.image)
+}
 
 const rules: FormRules = {
   name: [
@@ -126,6 +170,20 @@ const createColumns = (): DataTableColumns<Category> => {
   return [
     { title: '分类名称', key: 'name' },
     { title: '分类编码', key: 'code' },
+    {
+      title: '图片',
+      key: 'image',
+      width: 80,
+      render: (row) => {
+        if (row.image) {
+          return h('img', {
+            src: row.image,
+            style: 'width: 50px; height: 50px; object-fit: cover; border-radius: 4px;'
+          })
+        }
+        return '-'
+      }
+    },
     { title: '层级', key: 'level', width: 80 },
     { title: '排序号', key: 'sort', width: 100 },
     {
@@ -199,6 +257,7 @@ const handleCreate = () => {
   form.image = ''
   form.sort = 0
   form.isEnabled = true
+  imageFileList.value = []  // 清空图片列表
   dialogVisible.value = true
 }
 
@@ -211,6 +270,7 @@ const handleAddChild = (category: Category) => {
   form.image = ''
   form.sort = 0
   form.isEnabled = true
+  imageFileList.value = []  // 清空图片列表
   dialogVisible.value = true
 }
 
@@ -224,6 +284,17 @@ const handleEdit = (category: Category) => {
   form.image = category.image || ''
   form.sort = category.sort
   form.isEnabled = category.isEnabled
+  // 加载图片到文件列表（用于回显）
+  if (category.image) {
+    imageFileList.value = [{
+      id: 'category-image',
+      name: '分类图片',
+      status: 'finished',
+      url: category.image,
+    }]
+  } else {
+    imageFileList.value = []
+  }
   dialogVisible.value = true
 }
 
@@ -247,6 +318,9 @@ const handleDelete = (category: Category) => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
+
+  // 调试：打印图片数据
+  console.log('[表单提交] 分类图片:', form.image)
 
   await formRef.value.validate(async (errors) => {
     if (!errors) {

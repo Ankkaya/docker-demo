@@ -10,6 +10,14 @@ import { BrandsModule } from './brands/brands.module';
 import { WarehousesModule } from './warehouses/warehouses.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { CustomersModule } from './customers/customers.module';
+import { ProductsModule } from './products/products.module';
+import { InventoriesModule } from './inventories/inventories.module';
+import { MallModule } from './mall/mall.module';
+import { MinioModule } from './minio/minio.module';
+import { PurchasesModule } from './purchases/purchases.module';
+import { PurchaseReceiptsModule } from './purchase-receipts/purchase-receipts.module';
+import { PurchaseReturnsModule } from './purchase-returns/purchase-returns.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -24,6 +32,14 @@ import { CustomersModule } from './customers/customers.module';
     WarehousesModule,
     SuppliersModule,
     CustomersModule,
+    ProductsModule,
+    InventoriesModule,
+    MallModule,
+    MinioModule,
+    PurchasesModule,
+    PurchaseReceiptsModule,
+    PurchaseReturnsModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}

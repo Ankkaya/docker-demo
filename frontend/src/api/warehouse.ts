@@ -1,27 +1,27 @@
-import api from './request';
-import type { Warehouse, CreateWarehouseDto, UpdateWarehouseDto } from '@/types/basic-data';
+import api from './request'
+import type { WarehouseApi } from '@/types/api'
 
 // 获取仓库列表
 export const getWarehouses = () => {
-  return api.get<any, Warehouse[]>('/warehouses');
-};
+  return api.get<WarehouseApi.List>('/warehouses')
+}
 
 // 获取单个仓库
 export const getWarehouse = (id: number) => {
-  return api.get<any, Warehouse>(`/warehouses/${id}`);
-};
+  return api.get<WarehouseApi.Detail>(`/warehouses/${id}`)
+}
 
 // 创建仓库
-export const createWarehouse = (data: CreateWarehouseDto) => {
-  return api.post<any, Warehouse>('/warehouses', data);
-};
+export const createWarehouse = (data: WarehouseApi.CreateParams) => {
+  return api.post<WarehouseApi.Create>('/warehouses', data)
+}
 
 // 更新仓库
-export const updateWarehouse = (id: number, data: UpdateWarehouseDto) => {
-  return api.patch<any, Warehouse>(`/warehouses/${id}`, data);
-};
+export const updateWarehouse = (id: number, data: WarehouseApi.UpdateParams) => {
+  return api.patch<WarehouseApi.Update>(`/warehouses/${id}`, data)
+}
 
 // 删除仓库
 export const deleteWarehouse = (id: number) => {
-  return api.delete(`/warehouses/${id}`);
-};
+  return api.delete<WarehouseApi.Delete>(`/warehouses/${id}`)
+}

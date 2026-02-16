@@ -1,4 +1,23 @@
 services:
+  minio:
+    image: minio/minio:latest
+    container_name: demo-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   db:
     image: postgres:16-alpine
     container_name: demo-postgres
@@ -27,8 +46,16 @@ services:
       PORT: 3001
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       NODE_ENV: production
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: false
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_NAME: docker-demo
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     ports:
       - "3001:3001"
@@ -45,3 +72,4 @@ services:
 
 volumes:
   db-data:
+  minio-data:

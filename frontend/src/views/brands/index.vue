@@ -33,7 +33,19 @@
           <n-input v-model:value="form.name" placeholder="请输入品牌名称" />
         </n-form-item>
         <n-form-item label="品牌Logo" path="logo">
-          <n-input v-model:value="form.logo" placeholder="请输入Logo URL" />
+          <n-space vertical>
+            <n-upload
+              list-type="image-card"
+              :max="1"
+              :custom-request="handleLogoUpload"
+              v-model:file-list="logoFileList"
+              @change="handleLogoChange"
+              accept="image/*"
+            >
+              <n-button>上传Logo</n-button>
+            </n-upload>
+            <n-input v-model:value="form.logo" placeholder="或输入图片URL" />
+          </n-space>
         </n-form-item>
         <n-form-item label="品牌描述" path="description">
           <n-input v-model:value="form.description" type="textarea" placeholder="请输入品牌描述" />
@@ -63,6 +75,7 @@ import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace, NSwitch } from 'naive-ui'
 import { getBrands, createBrand, updateBrand, deleteBrand } from '@/api/brand'
+import { uploadFile } from '@/api/file'
 import type { Brand, CreateBrandDto } from '@/types/basic-data'
 
 const message = useMessage()
@@ -82,6 +95,37 @@ const form = reactive<CreateBrandDto & { isEnabled: boolean }>({
   sort: 0,
   isEnabled: true
 })
+
+// Logo 上传文件列表
+const logoFileList = ref<any[]>([])
+
+// 自定义上传请求 - 品牌Logo
+const handleLogoUpload = async ({ file, onFinish, onError }: any) => {
+  try {
+    const result = await uploadFile(file.file, 'brands')
+    console.log('[图片上传] 上传成功，URL:', result.data.url)
+    
+    // 关键修复：确保文件对象上有 url 属性，供 onChange 使用
+    file.url = result.data.url
+    
+    // 调用 onFinish 并传入文件信息，更新组件内部的 fileList
+    onFinish({ url: result.data.url })
+    message.success('上传成功')
+  } catch (error) {
+    console.error('[图片上传] 上传失败:', error)
+    message.error('上传失败')
+    onError()
+  }
+}
+
+// Logo 上传状态变化 - 统一通过 fileList 同步数据
+const handleLogoChange = (options: any) => {
+  console.log('[图片上传] onChange 触发，fileList:', options.fileList)
+  // 查找已完成且有 URL 的图片
+  const file = options.fileList.find((f: any) => f.status === 'finished' && f.url)
+  form.logo = file ? file.url : ''
+  console.log('[图片上传] Logo更新:', form.logo)
+}
 
 const rules: FormRules = {
   name: [
@@ -168,6 +212,7 @@ const handleCreate = () => {
   form.description = ''
   form.sort = 0
   form.isEnabled = true
+  logoFileList.value = []  // 清空图片列表
   dialogVisible.value = true
 }
 
@@ -179,6 +224,17 @@ const handleEdit = (brand: Brand) => {
   form.description = brand.description || ''
   form.sort = brand.sort
   form.isEnabled = brand.isEnabled
+  // 加载Logo到文件列表（用于回显）
+  if (brand.logo) {
+    logoFileList.value = [{
+      id: 'brand-logo',
+      name: 'Logo',
+      status: 'finished',
+      url: brand.logo,
+    }]
+  } else {
+    logoFileList.value = []
+  }
   dialogVisible.value = true
 }
 
@@ -202,6 +258,9 @@ const handleDelete = (brand: Brand) => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
+
+  // 调试：打印图片数据
+  console.log('[表单提交] Logo:', form.logo)
 
   await formRef.value.validate(async (errors) => {
     if (!errors) {

@@ -7,8 +7,8 @@ This is a **full-stack Mall + Inventory Management System (商城+进销存系�
 **Current Progress:**
 - ✅ RBAC Core: User/Role/Menu management
 - ✅ v1.0 Basic Data: Unit/Category/Brand/Warehouse/Supplier/Customer
-- 🚧 v1.0 Product Management: SPU/SKU (Coming soon)
-- 🚧 v1.0 Inventory: Purchase/Sale/Stock (Coming soon)
+- ✅ v1.0 Product Management: SPU/SKU/Inventory/Stock Query
+- 🚧 v1.0 Purchase/Sale: Purchase orders/Sale orders (Coming soon)
 - 🚧 v1.0 Mall: Shopping/Order/Payment (Coming soon)
 
 **Language:** Chinese (zh-CN) - Code comments and documentation are primarily in Chinese.
@@ -47,6 +47,9 @@ docker-demo/
 │   │   ├── warehouses/     # [v1.0] 仓库管理模块
 │   │   ├── suppliers/      # [v1.0] 供应商管理模块
 │   │   ├── customers/      # [v1.0] 客户管理模块
+│   │   ├── products/       # [v1.0] 商品管理模块（SPU/SKU）
+│   │   ├── inventories/    # [v1.0] 库存管理模块
+│   │   ├── mall/           # [v1.0] 商城前台接口模块
 │   │   ├── prisma/         # Prisma service module
 │   │   ├── redis/          # Redis service
 │   │   ├── common/         # Shared utilities (filters, interceptors)
@@ -67,18 +70,39 @@ docker-demo/
 │   │   │   ├── brand.ts    # [v1.0] 品牌 API
 │   │   │   ├── warehouse.ts# [v1.0] 仓库 API
 │   │   │   ├── supplier.ts # [v1.0] 供应商 API
-│   │   │   └── customer.ts # [v1.0] 客户 API
+│   │   │   ├── customer.ts # [v1.0] 客户 API
+│   │   │   └── product.ts  # [v1.0] 商品/库存 API
 │   │   ├── views/          # Page components
 │   │   │   ├── units/      # [v1.0] 计量单位页面
+│   │   │   │   └── index.vue
 │   │   │   ├── categories/ # [v1.0] 商品分类页面
+│   │   │   │   └── index.vue
 │   │   │   ├── brands/     # [v1.0] 品牌管理页面
+│   │   │   │   └── index.vue
 │   │   │   ├── warehouses/ # [v1.0] 仓库管理页面
+│   │   │   │   └── index.vue
 │   │   │   ├── suppliers/  # [v1.0] 供应商管理页面
-│   │   │   └── customers/  # [v1.0] 客户管理页面
+│   │   │   │   └── index.vue
+│   │   │   ├── customers/  # [v1.0] 客户管理页面
+│   │   │   │   └── index.vue
+│   │   │   ├── products/   # [v1.0] 商品管理页面
+│   │   │   │   ├── index.vue     # 商品列表
+│   │   │   │   └── edit.vue      # 商品编辑
+│   │   │   ├── inventories/# [v1.0] 库存查询页面
+│   │   │   │   └── index.vue
+│   │   │   ├── roles/      # 角色管理页面
+│   │   │   │   └── index.vue
+│   │   │   ├── menus/      # 菜单管理页面
+│   │   │   │   └── index.vue
+│   │   │   ├── users/      # 用户管理页面
+│   │   │   │   └── index.vue
+│   │   │   └── login/      # 登录页面
+│   │   │       └── index.vue
 │   │   ├── router/         # Vue Router configuration
 │   │   ├── stores/         # Pinia stores
 │   │   ├── types/          # TypeScript type definitions
-│   │   │   └── basic-data.ts # [v1.0] 基础数据类型定义
+│   │   │   ├── basic-data.ts # [v1.0] 基础数据类型定义
+│   │   │   └── product.ts  # [v1.0] 商品管理类型定义
 │   │   ├── App.vue         # Root component
 │   │   └── main.ts         # Application entry point
 │   ├── Dockerfile          # Multi-stage build with Nginx
@@ -236,10 +260,34 @@ The database uses PostgreSQL with the following entities:
 - `creditLimit`, `period`, `isEnabled`, `remark`
 - `userId` (optional, link to User for mall customers)
 
+### Product Entities (v1.0)
+
+#### Product (商品SPU)
+- `id`, `name`, `spuCode` (unique), `description`, `detail` (富文本)
+- `categoryId`, `brandId`, `unitId`
+- `mainImage`, `images` (数组)
+- `specTemplate` (JSON, 规格模板)
+- `status` (DRAFT/PENDING/APPROVED/REJECTED/DISABLED), `isEnabled`
+- One-to-many relationship with ProductSku
+
+#### ProductSku (商品SKU)
+- `id`, `skuCode` (unique), `productId`
+- `specs` (JSON, 规格组合如 {"颜色": "红", "尺码": "XL"})
+- `costPrice`, `salePrice`, `marketPrice`
+- `image`, `barcode`, `weight`, `volume`
+- `isDefault`, `sort`, `status` (ACTIVE/INACTIVE/DELETED)
+- One-to-many relationship with Inventory
+
+#### Inventory (库存)
+- `id`, `skuId`, `warehouseId`
+- `quantity` (实际库存), `locked` (锁定库存), `available` (可用库存)
+- `minStock` (安全库存), `maxStock` (库存上限), `location` (库位)
+- Unique constraint on [skuId, warehouseId]
+
 **Default seeded data:**
 - Admin user: `admin` / `123456`
 - Roles: `admin` (超级管理员), `user` (普通用户)
-- Menus: System Management + Basic Data (11 menus)
+- Menus: System Management + Basic Data + Product Management (14 menus)
 - Basic Data: Main warehouse, 8 common units, sample categories/brands/supplier
 
 ---
@@ -301,6 +349,33 @@ Error responses (via `HttpExceptionFilter`):
 | `/warehouses` | GET/POST | Warehouse management | Yes |
 | `/suppliers` | GET/POST | Supplier management | Yes |
 | `/customers` | GET/POST | Customer management | Yes |
+
+#### Product Management (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/products` | GET/POST | Product list / Create | Yes |
+| `/products/:id` | GET/PATCH/DELETE | Product CRUD | Yes |
+| `/products/:id/status` | PATCH | Toggle status | Yes |
+| `/products/:id/skus` | GET | Get SKU list | Yes |
+| `/skus/:id` | PATCH | Update SKU | Yes |
+| `/skus/:id/price` | PATCH | Update price | Yes |
+
+#### Inventory Management (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/inventories` | GET | Inventory list | Yes |
+| `/inventories/stats` | GET | Inventory stats | Yes |
+| `/inventories/warnings` | GET | Stock warnings | Yes |
+| `/inventories/:id` | PATCH | Update inventory | Yes |
+| `/inventories/initialize` | POST | Init inventory | Yes |
+
+#### Mall (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/mall/products` | GET | Mall product list | No |
+| `/mall/products/:id` | GET | Product detail | No |
+| `/mall/categories` | GET | Category list | No |
+| `/mall/brands` | GET | Brand list | No |
 
 Full API documentation available at `/api/docs` when backend is running.
 

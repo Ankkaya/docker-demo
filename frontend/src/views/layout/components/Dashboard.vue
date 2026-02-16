@@ -19,7 +19,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/store'
 import { getUsers } from '@/api/user'
 import { getMenus } from '@/api/menu'
 

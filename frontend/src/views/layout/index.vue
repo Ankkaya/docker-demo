@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { computed, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/store'
 import { useThemeStore } from '@/store/modules/theme'
 import { 
   PersonOutline, 
@@ -60,7 +60,17 @@ import {
   RibbonOutline,
   BusinessOutline,
   BriefcaseOutline,
-  PeopleCircleOutline
+  PeopleCircleOutline,
+  BagOutline,
+  BagCheckOutline,
+  BarcodeOutline,
+  AppsOutline,
+  LayersOutline,
+  // 进销存模块图标
+  CartOutline,          // 采购订单
+  DownloadOutline,      // 采购入库
+  ReturnUpBackOutline,  // 采购退货
+  DocumentTextOutline   // 进销存父菜单
 } from '@vicons/ionicons5'
 import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
@@ -89,7 +99,19 @@ const iconMap: Record<string, any> = {
   'brand': RibbonOutline,
   'warehouse': BusinessOutline,
   'supplier': BriefcaseOutline,
-  'customer': PeopleCircleOutline
+  'customer': PeopleCircleOutline,
+  // 商品管理模块图标
+  'shopping': BagOutline,           // 购物袋 - 商品管理主菜单
+  'goods': BagCheckOutline,         // 带勾选购物袋 - 商品列表
+  'inventory': LayersOutline,       // 层叠 - 库存查询
+  'sku': BarcodeOutline,            // 条形码 - SKU管理
+  'product': AppsOutline,           // 应用网格 - 商品分类
+  // 进销存模块图标
+  'purchase': DocumentTextOutline,  // 进销存父菜单
+  'inventory-2': LayersOutline,     // 进销存主菜单（使用与库存相同的图标）
+  'order': CartOutline,             // 购物车 - 采购订单
+  'inbound': DownloadOutline,       // 下载 - 采购入库
+  'return': ReturnUpBackOutline     // 返回 - 采购退货
 }
 
 // 图标渲染函数

@@ -1,27 +1,27 @@
-import api from './request';
-import type { Supplier, CreateSupplierDto, UpdateSupplierDto } from '@/types/basic-data';
+import api from './request'
+import type { SupplierApi } from '@/types'
 
 // 获取供应商列表
 export const getSuppliers = () => {
-  return api.get<any, Supplier[]>('/suppliers');
-};
+  return api.get<SupplierApi.List>('/suppliers')
+}
 
 // 获取单个供应商
 export const getSupplier = (id: number) => {
-  return api.get<any, Supplier>(`/suppliers/${id}`);
-};
+  return api.get<SupplierApi.Detail>(`/suppliers/${id}`)
+}
 
 // 创建供应商
-export const createSupplier = (data: CreateSupplierDto) => {
-  return api.post<any, Supplier>('/suppliers', data);
-};
+export const createSupplier = (data: SupplierApi.CreateParams) => {
+  return api.post<SupplierApi.Create>('/suppliers', data)
+}
 
 // 更新供应商
-export const updateSupplier = (id: number, data: UpdateSupplierDto) => {
-  return api.patch<any, Supplier>(`/suppliers/${id}`, data);
-};
+export const updateSupplier = (id: number, data: SupplierApi.UpdateParams) => {
+  return api.patch<SupplierApi.Update>(`/suppliers/${id}`, data)
+}
 
 // 删除供应商
 export const deleteSupplier = (id: number) => {
-  return api.delete(`/suppliers/${id}`);
-};
+  return api.delete<SupplierApi.Delete>(`/suppliers/${id}`)
+}

@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { useAuthStore } from '@/store'
 import { useThemeStore } from '@/store/modules/theme'
 import type { FormInst, FormRules } from 'naive-ui'
 import { useMessage } from 'naive-ui'

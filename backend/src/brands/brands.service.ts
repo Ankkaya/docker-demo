@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { BrandVo } from '@/brands/vo';
 
 @Injectable()
 export class BrandsService {
@@ -17,44 +18,48 @@ export class BrandsService {
       throw new ConflictException('品牌名称已存在');
     }
 
-    return this.prisma.brand.create({
+    const brand = await this.prisma.brand.create({
       data: createBrandDto,
     });
+    return BrandVo.fromEntity(brand);
   }
 
   async findAll() {
-    return this.prisma.brand.findMany({
+    const brands = await this.prisma.brand.findMany({
+      where: { deletedAt: null },
       orderBy: { sort: 'asc' },
     });
+    return BrandVo.fromEntities(brands);
   }
 
   async findOne(id: number) {
-    const brand = await this.prisma.brand.findUnique({
-      where: { id },
+    const brand = await this.prisma.brand.findFirst({
+      where: { id, deletedAt: null },
     });
 
     if (!brand) {
       throw new NotFoundException('品牌不存在');
     }
 
-    return brand;
+    return BrandVo.fromEntity(brand);
   }
 
   async update(id: number, updateBrandDto: UpdateBrandDto) {
-    const existing = await this.prisma.brand.findUnique({
-      where: { id },
+    const existing = await this.prisma.brand.findFirst({
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
       throw new NotFoundException('品牌不存在');
     }
 
-    // 检查名称是否与其他记录冲突
+    // 检查名称是否与其他非删除记录冲突
     if (updateBrandDto.name) {
       const conflict = await this.prisma.brand.findFirst({
         where: {
           id: { not: id },
           name: updateBrandDto.name,
+          deletedAt: null,
         },
       });
 
@@ -63,23 +68,25 @@ export class BrandsService {
       }
     }
 
-    return this.prisma.brand.update({
+    const updated = await this.prisma.brand.update({
       where: { id },
       data: updateBrandDto,
     });
+    return BrandVo.fromEntity(updated);
   }
 
   async remove(id: number) {
-    const existing = await this.prisma.brand.findUnique({
-      where: { id },
+    const existing = await this.prisma.brand.findFirst({
+      where: { id, deletedAt: null },
     });
 
     if (!existing) {
       throw new NotFoundException('品牌不存在');
     }
 
-    return this.prisma.brand.delete({
+    return this.prisma.brand.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 }
