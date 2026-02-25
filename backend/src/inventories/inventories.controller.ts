@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoriesService } from './inventories.service';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { QueryInventoryDto, QueryInventoryWarningDto } from './dto/query-inventory.dto';
+import { QueryInventoryLogDto } from './dto/query-inventory-log.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('库存管理')
@@ -38,6 +39,12 @@ export class InventoriesController {
   @ApiOperation({ summary: '获取库存预警列表' })
   findWarnings(@Query() query: QueryInventoryWarningDto) {
     return this.inventoriesService.findWarnings(query);
+  }
+
+  @Get('logs/list')
+  @ApiOperation({ summary: '获取库存流水列表' })
+  findLogs(@Query() query: QueryInventoryLogDto) {
+    return this.inventoriesService.findLogs(query);
   }
 
   @Get(':id')

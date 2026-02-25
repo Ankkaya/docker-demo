@@ -6,8 +6,9 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { QueryInventoryDto, QueryInventoryWarningDto } from './dto/query-inventory.dto';
+import { QueryInventoryLogDto } from './dto/query-inventory-log.dto';
 import { Prisma } from '@prisma/client';
-import { InventoryVo, InventoryFullVo } from '@/inventories/vo';
+import { InventoryVo, InventoryFullVo, InventoryLogVo } from '@/inventories/vo';
 
 @Injectable()
 export class InventoriesService {
@@ -452,6 +453,58 @@ export class InventoriesService {
       totalAvailable,
       totalLocked,
       lowStockCount,
+    };
+  }
+
+  // 查询库存流水
+  async findLogs(query: QueryInventoryLogDto) {
+    const { skuId, warehouseId, type, bizNo, page = 1, pageSize = 10 } = query;
+
+    const where: Prisma.InventoryLogWhereInput = {};
+
+    if (skuId) {
+      where.skuId = skuId;
+    }
+
+    if (warehouseId) {
+      where.warehouseId = warehouseId;
+    }
+
+    if (type) {
+      where.type = type;
+    }
+
+    if (bizNo) {
+      where.bizNo = { contains: bizNo, mode: 'insensitive' };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.inventoryLog.findMany({
+        where,
+        include: {
+          sku: {
+            select: {
+              skuCode: true,
+              product: { select: { name: true } },
+              specs: true,
+            },
+          },
+        },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.inventoryLog.count({ where }),
+    ]);
+
+    return {
+      data: InventoryLogVo.fromEntities(data),
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     };
   }
 }

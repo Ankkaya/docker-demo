@@ -201,9 +201,18 @@ const rules: FormRules = {
 const loadReturnableReceipts = async (supplierId?: number) => {
   try {
     const res = await getReturnableReceipts(supplierId);
-    if (res.data.code === 200) {
-      returnableReceipts.value = res.data.data;
-      receiptOptions.value = res.data.data.map((r) => ({
+    // @ts-ignore
+    const data = res.data || res;
+    if (Array.isArray(data)) {
+      returnableReceipts.value = data;
+      receiptOptions.value = data.map((r) => ({
+        label: `${r.receiptNo} - ${r.purchase.supplier.name} - ${r.warehouse.name}`,
+        value: r.id,
+      }));
+    } else if (data && (data as any).code === 200) {
+      const list = (data as any).data;
+      returnableReceipts.value = list;
+      receiptOptions.value = list.map((r: any) => ({
         label: `${r.receiptNo} - ${r.purchase.supplier.name} - ${r.warehouse.name}`,
         value: r.id,
       }));
@@ -218,8 +227,21 @@ const loadReturnableReceipts = async (supplierId?: number) => {
 const loadSuppliers = async () => {
   try {
     const res = await getSuppliers();
-    if (res.data.code === 200) {
-      const list = (res.data.data as any).data || [];
+    // @ts-ignore
+    const data = res.data || res;
+    let list = [];
+    if (Array.isArray(data)) {
+      list = data;
+    } else if (data && (data as any).code === 200) {
+      list = (data as any).data;
+      if (list && (list as any).data) {
+        list = (list as any).data;
+      }
+    } else if (data && (data as any).data && Array.isArray((data as any).data)) {
+      list = (data as any).data;
+    }
+
+    if (Array.isArray(list)) {
       supplierOptions.value = list
         .filter((s: Supplier) => s.isEnabled)
         .map((s: Supplier) => ({

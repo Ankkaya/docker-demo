@@ -386,11 +386,31 @@ export class PurchaseReturnsService {
               );
             }
 
+            const beforeQty = inventory.quantity;
+            const afterQty = beforeQty - item.quantity;
+
             await tx.inventory.update({
               where: { id: inventory.id },
               data: {
                 quantity: { decrement: item.quantity },
                 available: { decrement: item.quantity },
+              },
+            });
+
+            // 创建出库流水
+            await tx.inventoryLog.create({
+              data: {
+                type: 'OUT_PURCHASE_RETURN',
+                skuId: item.skuId,
+                warehouseId: existing.warehouseId,
+                quantity: -item.quantity,
+                before: beforeQty,
+                after: afterQty,
+                bizType: 'PURCHASE_RETURN',
+                bizId: existing.id,
+                bizNo: existing.returnNo,
+                remark: `采购退货出库: ${existing.receipt.purchase.orderNo}`,
+                createdBy: userId,
               },
             });
           }

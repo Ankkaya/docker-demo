@@ -18,6 +18,12 @@ import { PurchasesModule } from './purchases/purchases.module';
 import { PurchaseReceiptsModule } from './purchase-receipts/purchase-receipts.module';
 import { PurchaseReturnsModule } from './purchase-returns/purchase-returns.module';
 import { PaymentsModule } from './payments/payments.module';
+import { OrdersModule } from './orders/orders.module';
+import { ShipmentsModule } from './shipments/shipments.module';
+import { SaleReturnsModule } from './sale-returns/sale-returns.module';
+import { TransfersModule } from './transfers/transfers.module';
+import { AdjustmentsModule } from './adjustments/adjustments.module';
+import { CartsModule } from './carts/carts.module';
 
 @Module({
   imports: [
@@ -40,6 +46,12 @@ import { PaymentsModule } from './payments/payments.module';
     PurchaseReceiptsModule,
     PurchaseReturnsModule,
     PaymentsModule,
+    OrdersModule,
+    ShipmentsModule,
+    SaleReturnsModule,
+    TransfersModule,
+    AdjustmentsModule,
+    CartsModule,
   ],
 })
 export class AppModule {}

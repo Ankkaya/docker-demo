@@ -21,6 +21,8 @@ model User {
   roles     Role[]    @relation("UserRoles")
   // 关联客户档案（一个用户对应一个客户）
   customer  Customer?
+  // 关联购物车
+  carts     Cart[]
 
   @@index([deletedAt])
 }
@@ -137,6 +139,11 @@ model Warehouse {
   inventories Inventory[]
   receipts    PurchaseReceipt[]
   returns     PurchaseReturn[] // 采购退货单
+  shipments   Shipment[]       // 发货单
+  saleReturns SaleReturn[]     // 销售退货单
+  transfersFrom Transfer[]     @relation("TransferFrom") // 调拨出库
+  transfersTo   Transfer[]     @relation("TransferTo")   // 调拨入库
+  adjustments   Adjustment[]   // 库存调整单
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -191,6 +198,8 @@ model Customer {
   userId      Int?         @unique // 关联系统用户（如果是注册用户）
   user        User?        @relation(fields: [userId], references: [id])
   deletedAt   DateTime?    // 软删除标记
+  orders      Order[]      // 销售订单
+  saleReturns SaleReturn[] // 销售退货单
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -268,6 +277,18 @@ model ProductSku {
   purchaseItems       PurchaseItem[]
   purchaseReceiptItems PurchaseReceiptItem[]
   purchaseReturnItems PurchaseReturnItem[]
+  
+  // 销售关联
+  orderItems          OrderItem[]
+  shipmentItems       ShipmentItem[]
+  saleReturnItems     SaleReturnItem[]
+  
+  // 库存管理关联
+  inventoryLogs       InventoryLog[]  // 库存流水
+  transferItems       TransferItem[]  // 调拨明细
+  adjustmentItems     AdjustmentItem[] // 调整明细
+  // 购物车关联
+  carts               Cart[]          // 购物车
   
   // 商城显示
   isDefault   Boolean     @default(false) // 是否默认SKU
@@ -484,6 +505,368 @@ model PurchaseReturnItem {
   @@index([skuId])
 }
 
+// ==================== 销售管理模块 ====================
+
+// 订单类型
+enum OrderType {
+  SALE      // 销售订单（后台）
+  MALL      // 商城订单
+}
+
+// 订单状态
+enum OrderStatus {
+  PENDING     // 待处理
+  CONFIRMED   // 已确认
+  PROCESSING  // 处理中
+  SHIPPED     // 已发货
+  COMPLETED   // 已完成
+  CANCELLED   // 已取消
+  REFUNDING   // 退款中
+  REFUNDED    // 已退款
+}
+
+// 支付状态
+enum PayStatus {
+  UNPAID      // 未支付
+  PARTIAL     // 部分支付
+  PAID        // 已支付
+  REFUNDING   // 退款中
+  REFUNDED    // 已退款
+}
+
+// 发货状态
+enum ShipStatus {
+  UNSHIPPED   // 未发货
+  PARTIAL     // 部分发货
+  SHIPPED     // 已发货
+  RECEIVED    // 已收货
+}
+
+// 发货单状态
+enum ShipmentStatus {
+  PENDING     // 待发货
+  SHIPPED     // 已发货
+  RECEIVED    // 已收货
+  CANCELLED   // 已取消
+}
+
+// 销售订单
+model Order {
+  id           Int         @id @default(autoincrement())
+  orderNo      String      @unique // 订单号 SO202402010001
+  type         OrderType   @default(SALE)
+  
+  // 客户信息
+  customerId   Int
+  customer     Customer    @relation(fields: [customerId], references: [id])
+  
+  // 收货信息
+  receiverName    String?
+  receiverPhone   String?
+  receiverAddress String?
+  
+  // 金额
+  totalAmount  Decimal     @db.Decimal(12, 2)
+  discount     Decimal     @default(0) @db.Decimal(12, 2)
+  freight      Decimal     @default(0) @db.Decimal(12, 2)
+  payable      Decimal     @db.Decimal(12, 2)
+  paid         Decimal     @default(0) @db.Decimal(12, 2)
+  
+  // 状态
+  status       OrderStatus @default(PENDING)
+  payStatus    PayStatus   @default(UNPAID)
+  shipStatus   ShipStatus  @default(UNSHIPPED)
+  
+  // 时间
+  orderDate    DateTime    @default(now())
+  payDate      DateTime?
+  shipDate     DateTime?
+  receiveDate  DateTime?
+  
+  // 关联
+  items        OrderItem[]
+  shipments    Shipment[]
+  payments     Payment[]
+  
+  remark       String?
+  createdBy    Int?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([customerId])
+  @@index([orderNo])
+}
+
+model OrderItem {
+  id        Int        @id @default(autoincrement())
+  orderId   Int
+  order     Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  skuId     Int
+  sku       ProductSku @relation(fields: [skuId], references: [id])
+  
+  quantity  Int
+  shipped   Int        @default(0)
+  price     Decimal    @db.Decimal(12, 2)
+  amount    Decimal    @db.Decimal(12, 2)
+  
+  createdAt DateTime   @default(now())
+
+  @@index([orderId])
+  @@index([skuId])
+}
+
+// 发货单
+model Shipment {
+  id          Int            @id @default(autoincrement())
+  shipmentNo  String         @unique // 发货单号 FH202402010001
+  orderId     Int
+  order       Order          @relation(fields: [orderId], references: [id])
+  warehouseId Int
+  warehouse   Warehouse      @relation(fields: [warehouseId], references: [id])
+  
+  // 物流
+  logisticsCompany String?
+  trackingNo       String?
+  
+  status      ShipmentStatus @default(PENDING)
+  items       ShipmentItem[]
+  saleReturns SaleReturn[]   // 销售退货单
+  
+  remark      String?
+  createdBy   Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([orderId])
+}
+
+model ShipmentItem {
+  id         Int      @id @default(autoincrement())
+  shipmentId Int
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  skuId      Int
+  sku        ProductSku @relation(fields: [skuId], references: [id])
+  quantity   Int
+  
+  createdAt  DateTime @default(now())
+
+  @@index([shipmentId])
+  @@index([skuId])
+}
+
+// ==================== 销售退货模块 ====================
+
+// 销售退货单
+model SaleReturn {
+  id          Int                 @id @default(autoincrement())
+  returnNo    String              @unique // 退货单号 XSTH202402010001
+  shipmentId  Int                 // 关联发货单
+  shipment    Shipment            @relation(fields: [shipmentId], references: [id])
+  customerId  Int                 // 客户
+  customer    Customer            @relation(fields: [customerId], references: [id])
+  warehouseId Int                 // 退货仓库（入库）
+  warehouse   Warehouse           @relation(fields: [warehouseId], references: [id])
+
+  // 金额
+  totalAmount Decimal             @db.Decimal(12, 2) // 退货总金额
+
+  // 状态
+  status      ReturnStatus        @default(PENDING)
+
+  // 关联
+  items       SaleReturnItem[]
+
+  remark      String?
+  createdBy   Int
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  deletedAt   DateTime?           // 软删除标记
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([shipmentId])
+  @@index([customerId])
+}
+
+// 销售退货明细
+model SaleReturnItem {
+  id        Int            @id @default(autoincrement())
+  returnId  Int
+  return    SaleReturn     @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  skuId     Int
+  sku       ProductSku     @relation(fields: [skuId], references: [id])
+
+  quantity  Int            // 退货数量
+  price     Decimal        @db.Decimal(12, 2) // 退货单价
+  amount    Decimal        @db.Decimal(12, 2) // 金额
+
+  createdAt DateTime       @default(now())
+
+  @@index([returnId])
+  @@index([skuId])
+}
+
+// ==================== 库存管理模块（调拨、调整、流水）====================
+
+// 库存流水类型
+enum InventoryType {
+  IN_PURCHASE    // 采购入库
+  IN_SALE_RETURN // 销售退货入库
+  IN_TRANSFER    // 调拨入库
+  IN_ADJUST      // 盘点入库
+  OUT_SALE       // 销售出库
+  OUT_PURCHASE_RETURN // 采购退货出库
+  OUT_TRANSFER   // 调拨出库
+  OUT_ADJUST     // 盘点出库
+}
+
+// 库存流水（所有库存变动记录）
+model InventoryLog {
+  id          Int           @id @default(autoincrement())
+  type        InventoryType // 变动类型
+  skuId       Int
+  sku         ProductSku    @relation(fields: [skuId], references: [id])
+  warehouseId Int
+  
+  quantity    Int           // 变动数量（正数入库，负数出库）
+  before      Int           // 变动前库存
+  after       Int           // 变动后库存
+  
+  // 关联业务
+  bizType     String?       // 业务类型：PURCHASE/SALE/TRANSFER/ADJUST
+  bizId       Int?          // 业务单据ID
+  bizNo       String?       // 业务单据号
+  
+  remark      String?
+  createdBy   Int?
+  createdAt   DateTime      @default(now())
+
+  @@index([skuId])
+  @@index([warehouseId])
+  @@index([createdAt])
+  @@index([bizType, bizId])
+}
+
+// 调拨单状态
+enum TransferStatus {
+  PENDING     // 待出库
+  OUT         // 已出库
+  IN          // 已入库
+  COMPLETED   // 已完成
+  CANCELLED   // 已取消
+}
+
+// 库存调拨单
+model Transfer {
+  id          Int            @id @default(autoincrement())
+  transferNo  String         @unique // 调拨单号 DB202402010001
+  fromId      Int            // 出库仓库
+  from        Warehouse      @relation("TransferFrom", fields: [fromId], references: [id])
+  toId        Int            // 入库仓库
+  to          Warehouse      @relation("TransferTo", fields: [toId], references: [id])
+  
+  status      TransferStatus @default(PENDING)
+  
+  items       TransferItem[]
+  
+  remark      String?
+  createdBy   Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?      // 软删除标记
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([fromId])
+  @@index([toId])
+}
+
+model TransferItem {
+  id         Int      @id @default(autoincrement())
+  transferId Int
+  transfer   Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  skuId      Int
+  sku        ProductSku @relation(fields: [skuId], references: [id])
+  quantity   Int        // 调拨数量
+  
+  createdAt  DateTime @default(now())
+
+  @@index([transferId])
+  @@index([skuId])
+}
+
+// 调整单状态
+enum AdjustmentStatus {
+  PENDING     // 待审核
+  APPROVED    // 已审核
+  COMPLETED   // 已完成
+  CANCELLED   // 已取消
+}
+
+// 库存调整单（盘点用）
+model Adjustment {
+  id          Int               @id @default(autoincrement())
+  adjustNo    String            @unique // 调整单号 TZ202402010001
+  warehouseId Int
+  warehouse   Warehouse         @relation(fields: [warehouseId], references: [id])
+  
+  status      AdjustmentStatus  @default(PENDING)
+  
+  items       AdjustmentItem[]
+  
+  remark      String?
+  createdBy   Int
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  deletedAt   DateTime?         // 软删除标记
+
+  @@index([deletedAt])
+  @@index([status])
+  @@index([warehouseId])
+}
+
+model AdjustmentItem {
+  id           Int        @id @default(autoincrement())
+  adjustmentId Int
+  adjustment   Adjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  skuId        Int
+  sku          ProductSku @relation(fields: [skuId], references: [id])
+  
+  bookQty      Int        // 账面数量
+  actualQty    Int        // 实盘数量
+  diffQty      Int        // 差异数量
+  
+  createdAt    DateTime   @default(now())
+
+  @@index([adjustmentId])
+  @@index([skuId])
+}
+
+// ==================== 商城模块（购物车）====================
+
+// 购物车
+model Cart {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skuId     Int
+  sku       ProductSku @relation(fields: [skuId], references: [id])
+  quantity  Int        // 数量
+  selected  Boolean    @default(true) // 是否选中
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  @@unique([userId, skuId])
+  @@index([userId])
+  @@index([skuId])
+}
+
 // ==================== 财务管理模块 ====================
 
 // 收付款类型
@@ -516,6 +899,7 @@ model Payment {
   
   // 关联单据
   orderId     Int?          // 销售订单ID
+  order       Order?        @relation(fields: [orderId], references: [id])
   purchaseId  Int?          // 采购订单ID
   purchase    Purchase?     @relation(fields: [purchaseId], references: [id])
   
@@ -533,4 +917,5 @@ model Payment {
   @@index([type])
   @@index([status])
   @@index([purchaseId])
+  @@index([orderId])
 }

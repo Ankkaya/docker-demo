@@ -8,7 +8,7 @@ This is a **full-stack Mall + Inventory Management System (商城+进销存系�
 - ✅ RBAC Core: User/Role/Menu management
 - ✅ v1.0 Basic Data: Unit/Category/Brand/Warehouse/Supplier/Customer
 - ✅ v1.0 Product Management: SPU/SKU/Inventory/Stock Query
-- 🚧 v1.0 Purchase/Sale: Purchase orders/Sale orders (Coming soon)
+- ✅ v1.0 Purchase/Sale: Purchase orders/Sale orders/Shipments
 - 🚧 v1.0 Mall: Shopping/Order/Payment (Coming soon)
 
 **Language:** Chinese (zh-CN) - Code comments and documentation are primarily in Chinese.
@@ -284,10 +284,27 @@ The database uses PostgreSQL with the following entities:
 - `minStock` (安全库存), `maxStock` (库存上限), `location` (库位)
 - Unique constraint on [skuId, warehouseId]
 
+#### Purchase Management (采购管理)
+- **Purchase**: `id`, `orderNo`, `supplierId`, `warehouseId`, `totalAmount`, `discount`, `payable`, `paid`, `status`
+- **PurchaseItem**: `id`, `purchaseId`, `skuId`, `quantity`, `received`, `price`, `amount`
+- **PurchaseReceipt**: `id`, `receiptNo`, `purchaseId`, `warehouseId`, `totalAmount`, `status`
+- **PurchaseReceiptItem**: `id`, `receiptId`, `skuId`, `quantity`, `price`
+- **PurchaseReturn**: `id`, `returnNo`, `receiptId`, `supplierId`, `warehouseId`, `totalAmount`, `status`
+- **PurchaseReturnItem**: `id`, `returnId`, `skuId`, `quantity`, `price`, `amount`
+
+#### Sales Management (销售管理)
+- **Order**: `id`, `orderNo`, `type` (SALE/MALL), `customerId`, `totalAmount`, `discount`, `freight`, `payable`, `paid`, `status`, `payStatus`, `shipStatus`
+- **OrderItem**: `id`, `orderId`, `skuId`, `quantity`, `shipped`, `price`, `amount`
+- **Shipment**: `id`, `shipmentNo`, `orderId`, `warehouseId`, `logisticsCompany`, `trackingNo`, `status`
+- **ShipmentItem**: `id`, `shipmentId`, `skuId`, `quantity`
+
+#### Finance (财务管理)
+- **Payment**: `id`, `type` (RECEIPT/PAYMENT), `bizType`, `orderId`, `purchaseId`, `amount`, `method`, `status`
+
 **Default seeded data:**
 - Admin user: `admin` / `123456`
 - Roles: `admin` (超级管理员), `user` (普通用户)
-- Menus: System Management + Basic Data + Product Management (14 menus)
+- Menus: System Management + Basic Data + Product Management + Purchase/Sales (17+ menus)
 - Basic Data: Main warehouse, 8 common units, sample categories/brands/supplier
 
 ---
@@ -368,6 +385,42 @@ Error responses (via `HttpExceptionFilter`):
 | `/inventories/warnings` | GET | Stock warnings | Yes |
 | `/inventories/:id` | PATCH | Update inventory | Yes |
 | `/inventories/initialize` | POST | Init inventory | Yes |
+
+#### Inventory Management (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/inventories` | GET | Inventory list | Yes |
+| `/inventories/stats` | GET | Inventory stats | Yes |
+| `/inventories/warnings` | GET | Stock warnings | Yes |
+| `/inventories/:id` | PATCH | Update inventory | Yes |
+
+#### Purchase Management (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/purchases` | GET/POST | Purchase orders | Yes |
+| `/purchases/:id` | GET/PATCH | Purchase detail/update | Yes |
+| `/purchases/:id/audit` | PATCH | Audit purchase | Yes |
+| `/purchase-receipts` | GET/POST | Purchase receipts | Yes |
+| `/purchase-receipts/:id/confirm` | PATCH | Confirm receipt | Yes |
+| `/purchase-returns` | GET/POST | Purchase returns | Yes |
+| `/purchase-returns/:id/audit` | PATCH | Audit return | Yes |
+
+#### Sales Management (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/orders` | GET/POST | Sales orders | Yes |
+| `/orders/:id` | GET/PATCH | Order detail/update | Yes |
+| `/orders/:id/confirm` | PATCH | Confirm order | Yes |
+| `/orders/:id/cancel` | PATCH | Cancel order | Yes |
+| `/shipments` | GET/POST | Shipments | Yes |
+| `/shipments/:id/ship` | PATCH | Confirm shipment | Yes |
+| `/shipments/:id/receive` | PATCH | Confirm receive | Yes |
+
+#### Finance (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/payments` | GET/POST | Payment records | Yes |
+| `/payments/stats/payable` | GET | Payable stats | Yes |
 
 #### Mall (v1.0)
 | Endpoint | Method | Description | Auth Required |
@@ -628,4 +681,4 @@ Default ports used:
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [NestJS Documentation](https://docs.nestjs.com)
 - [Vue.js Documentation](https://vuejs.org/guide/introduction.html)
-- [Element Plus Documentation](https://element-plus.org)
+- [Naive UI Documentation](https://www.naiveui.com)

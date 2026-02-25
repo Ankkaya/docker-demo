@@ -134,6 +134,45 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/transfers',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '库存调拨' },
+      children: [
+        {
+          path: '',
+          name: 'inventory-transfer',
+          component: () => import('@/views/transfers/index.vue'),
+          meta: { title: '库存调拨' }
+        }
+      ]
+    },
+    {
+      path: '/adjustments',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '库存调整' },
+      children: [
+        {
+          path: '',
+          name: 'inventory-adjustment',
+          component: () => import('@/views/adjustments/index.vue'),
+          meta: { title: '库存调整' }
+        }
+      ]
+    },
+    {
+      path: '/inventory-logs',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '库存流水' },
+      children: [
+        {
+          path: '',
+          name: 'inventory-logs',
+          component: () => import('@/views/inventory-logs/index.vue'),
+          meta: { title: '库存流水' }
+        }
+      ]
+    },
     // ==================== 进销存模块 ====================
     {
       path: '/purchases',
@@ -171,6 +210,59 @@ const router = createRouter({
           name: 'purchase-return-list',
           component: () => import('@/views/purchase-returns/index.vue'),
           meta: { title: '采购退货' }
+        }
+      ]
+    },
+    {
+      path: '/orders',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '销售订单' },
+      children: [
+        {
+          path: '',
+          name: 'order-list',
+          component: () => import('@/views/orders/index.vue'),
+          meta: { title: '销售订单' }
+        }
+      ]
+    },
+    {
+      path: '/shipments',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '发货管理' },
+      children: [
+        {
+          path: '',
+          name: 'shipment-list',
+          component: () => import('@/views/shipments/index.vue'),
+          meta: { title: '发货管理' }
+        }
+      ]
+    },
+    {
+      path: '/sale-returns',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '销售退货' },
+      children: [
+        {
+          path: '',
+          name: 'sale-return-list',
+          component: () => import('@/views/sale-returns/index.vue'),
+          meta: { title: '销售退货' }
+        }
+      ]
+    },
+    // ==================== 商城管理模块 ====================
+    {
+      path: '/carts',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '购物车管理' },
+      children: [
+        {
+          path: '',
+          name: 'cart-list',
+          component: () => import('@/views/carts/index.vue'),
+          meta: { title: '购物车管理' }
         }
       ]
     },

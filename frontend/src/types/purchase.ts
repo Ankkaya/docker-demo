@@ -296,6 +296,227 @@ export interface QueryReturnParams {
   pageSize?: number;
 }
 
+// 订单类型
+export type OrderType = 'SALE' | 'MALL';
+
+// 订单状态
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDING' | 'REFUNDED';
+
+// 订单明细
+export interface OrderItem {
+  id: number;
+  skuId: number;
+  skuCode: string;
+  skuName: string;
+  productName: string;
+  specs: Record<string, string>;
+  quantity: number;
+  shipped: number;
+  price: number;
+  amount: number;
+}
+
+// 订单
+export interface Order {
+  id: number;
+  orderNo: string;
+  type: OrderType;
+  customerId: number;
+  customerName: string;
+  receiverName?: string;
+  receiverPhone?: string;
+  receiverAddress?: string;
+  totalAmount: number;
+  discount: number;
+  freight: number;
+  payable: number;
+  paid: number;
+  status: OrderStatus;
+  payStatus: PayStatus;
+  shipStatus: ShipStatus;
+  orderDate: string;
+  payDate?: string;
+  shipDate?: string;
+  receiveDate?: string;
+  remark?: string;
+  createdBy?: number;
+  createdAt: string;
+  updatedAt: string;
+  items?: OrderItem[];
+  shipments?: {
+    id: number;
+    shipmentNo: string;
+    status: string;
+    logisticsCompany?: string;
+    trackingNo?: string;
+    createdAt: string;
+  }[];
+}
+
+// 发货单状态
+export type ShipmentStatus = 'PENDING' | 'SHIPPED' | 'RECEIVED' | 'CANCELLED';
+
+// 发货明细
+export interface ShipmentItem {
+  id: number;
+  skuId: number;
+  skuCode: string;
+  skuName: string;
+  productName: string;
+  specs: Record<string, string>;
+  quantity: number;
+}
+
+// 发货单
+export interface Shipment {
+  id: number;
+  shipmentNo: string;
+  orderId: number;
+  orderNo: string;
+  warehouseId: number;
+  warehouseName: string;
+  logisticsCompany?: string;
+  trackingNo?: string;
+  status: ShipmentStatus;
+  remark?: string;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+  items?: ShipmentItem[];
+}
+
+// 创建订单DTO
+export interface CreateOrderDto {
+  customerId: number;
+  items: {
+    skuId: number;
+    quantity: number;
+    price: number;
+  }[];
+  discount?: number;
+  freight?: number;
+  receiverName?: string;
+  receiverPhone?: string;
+  receiverAddress?: string;
+  remark?: string;
+}
+
+// 更新订单DTO
+export type UpdateOrderDto = Partial<CreateOrderDto>;
+
+// 查询订单参数
+export interface QueryOrderParams {
+  keyword?: string;
+  customerId?: number;
+  status?: OrderStatus;
+  payStatus?: PayStatus;
+  shipStatus?: ShipStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+// 创建发货单DTO
+export interface CreateShipmentDto {
+  orderId: number;
+  warehouseId: number;
+  items: {
+    skuId: number;
+    quantity: number;
+  }[];
+  logisticsCompany?: string;
+  trackingNo?: string;
+  remark?: string;
+}
+
+// 查询发货单参数
+export interface QueryShipmentParams {
+  keyword?: string;
+  orderId?: number;
+  status?: ShipmentStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+// 销售退货单
+export interface SaleReturn {
+  id: number;
+  returnNo: string;
+  shipmentId: number;
+  shipmentNo: string;
+  customerId: number;
+  customerName: string;
+  warehouseId: number;
+  warehouseName: string;
+  totalAmount: number;
+  status: ReturnStatus;
+  remark?: string;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+  items?: ReturnItem[];
+}
+
+// 可退货的发货单（用于创建销售退货单）
+export interface ReturnableShipment {
+  id: number;
+  shipmentNo: string;
+  order: {
+    orderNo: string;
+    customer: {
+      id: number;
+      name: string;
+    };
+  };
+  warehouse: {
+    id: number;
+    name: string;
+  };
+  items: {
+    id: number;
+    skuId: number;
+    sku: {
+      skuCode: string;
+      product: {
+        id: number;
+        name: string;
+      };
+      specs: Record<string, string>;
+    };
+    quantity: number;
+    availableQty: number;
+    returnedQty: number;
+  }[];
+}
+
+// 创建销售退货单DTO
+export interface CreateSaleReturnDto {
+  shipmentId: number;
+  customerId: number;
+  items: {
+    skuId: number;
+    quantity: number;
+    price: number;
+  }[];
+  remark?: string;
+}
+
+// 更新销售退货单DTO
+export type UpdateSaleReturnDto = Partial<CreateSaleReturnDto>;
+
+// 审核销售退货单DTO
+export interface AuditSaleReturnDto {
+  action: 'APPROVE' | 'REJECT';
+}
+
+// 查询销售退货单参数
+export interface QuerySaleReturnParams {
+  keyword?: string;
+  customerId?: number;
+  status?: ReturnStatus;
+  page?: number;
+  pageSize?: number;
+}
+
 // 分页响应
 export interface PaginatedResponse<T> {
   data: T[];

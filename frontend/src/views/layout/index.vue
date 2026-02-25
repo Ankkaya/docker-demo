@@ -70,7 +70,11 @@ import {
   CartOutline,          // 采购订单
   DownloadOutline,      // 采购入库
   ReturnUpBackOutline,  // 采购退货
-  DocumentTextOutline   // 进销存父菜单
+  DocumentTextOutline,  // 进销存父菜单
+  // 库存管理模块图标
+  RepeatOutline,        // 调拨
+  OptionsOutline,       // 调整
+  TimeOutline           // 流水
 } from '@vicons/ionicons5'
 import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
@@ -111,7 +115,11 @@ const iconMap: Record<string, any> = {
   'inventory-2': LayersOutline,     // 进销存主菜单（使用与库存相同的图标）
   'order': CartOutline,             // 购物车 - 采购订单
   'inbound': DownloadOutline,       // 下载 - 采购入库
-  'return': ReturnUpBackOutline     // 返回 - 采购退货
+  'return': ReturnUpBackOutline,    // 返回 - 采购退货
+  // 库存管理模块图标
+  'transfer': RepeatOutline,        // 循环 - 调拨
+  'adjust': OptionsOutline,         // 选项 - 调整
+  'log': TimeOutline                // 时间 - 流水
 }
 
 // 图标渲染函数

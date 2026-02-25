@@ -197,3 +197,66 @@ export namespace PurchaseReturnApi {
   export type Delete = import('./api').ApiResponse<{ success: boolean }>
   export type ReturnableReceipts = import('./api').ApiResponse<import('./purchase').ReturnableReceipt[]>
 }
+
+// 销售订单 API
+export namespace OrderApi {
+  export interface QueryParams {
+    keyword?: string
+    customerId?: number
+    status?: import('./purchase').OrderStatus
+    payStatus?: import('./purchase').PayStatus
+    shipStatus?: import('./purchase').ShipStatus
+    page?: number
+    pageSize?: number
+  }
+  export type List = import('./api').ApiResponse<import('./purchase').PaginatedResponse<import('./purchase').Order>>
+  export type Detail = import('./api').ApiResponse<import('./purchase').Order>
+  export type CreateParams = import('./purchase').CreateOrderDto
+  export type Create = import('./api').ApiResponse<import('./purchase').Order>
+  export type UpdateParams = import('./purchase').UpdateOrderDto
+  export type Update = import('./api').ApiResponse<import('./purchase').Order>
+  export type Confirm = import('./api').ApiResponse<import('./purchase').Order>
+  export type Cancel = import('./api').ApiResponse<import('./purchase').Order>
+  export type Delete = import('./api').ApiResponse<{ success: boolean }>
+}
+
+// 发货单 API
+export namespace ShipmentApi {
+  export interface QueryParams {
+    keyword?: string
+    orderId?: number
+    status?: import('./purchase').ShipmentStatus
+    page?: number
+    pageSize?: number
+  }
+  export type List = import('./api').ApiResponse<import('./purchase').PaginatedResponse<import('./purchase').Shipment>>
+  export type Detail = import('./api').ApiResponse<import('./purchase').Shipment>
+  export type CreateParams = import('./purchase').CreateShipmentDto
+  export type Create = import('./api').ApiResponse<import('./purchase').Shipment>
+  export type Ship = import('./api').ApiResponse<import('./purchase').Shipment>
+  export type Receive = import('./api').ApiResponse<import('./purchase').Shipment>
+  export type Delete = import('./api').ApiResponse<{ success: boolean }>
+}
+
+// 销售退货 API
+export namespace SaleReturnApi {
+  export interface QueryParams {
+    keyword?: string
+    customerId?: number
+    status?: import('./purchase').ReturnStatus
+    page?: number
+    pageSize?: number
+  }
+  export type List = import('./api').ApiResponse<import('./purchase').PaginatedResponse<import('./purchase').SaleReturn>>
+  export type Detail = import('./api').ApiResponse<import('./purchase').SaleReturn>
+  export type CreateParams = import('./purchase').CreateSaleReturnDto
+  export type Create = import('./api').ApiResponse<import('./purchase').SaleReturn>
+  export type UpdateParams = import('./purchase').UpdateSaleReturnDto
+  export type Update = import('./api').ApiResponse<import('./purchase').SaleReturn>
+  export type AuditParams = import('./purchase').AuditSaleReturnDto
+  export type Audit = import('./api').ApiResponse<import('./purchase').SaleReturn>
+  export type Complete = import('./api').ApiResponse<import('./purchase').SaleReturn>
+  export type Cancel = import('./api').ApiResponse<import('./purchase').SaleReturn>
+  export type Delete = import('./api').ApiResponse<{ success: boolean }>
+  export type ReturnableShipments = import('./api').ApiResponse<import('./purchase').ReturnableShipment[]>
+}

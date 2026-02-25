@@ -37,8 +37,21 @@ export class PaymentsService {
         }
       }
     } else if (bizType === 'SALE') {
-      // 销售订单逻辑（后续实现）
-      throw new BadRequestException('销售订单收付款暂未实现');
+      const order = await this.prisma.order.findFirst({
+        where: { id: bizId, deletedAt: null },
+      });
+      if (!order) {
+        throw new NotFoundException('销售订单不存在');
+      }
+      orderNo = order.orderNo;
+
+      // 验证收款金额
+      if (type === PaymentType.RECEIPT) {
+        const remaining = Number(order.payable) - Number(order.paid);
+        if (amount > remaining) {
+          throw new BadRequestException(`收款金额超过未收金额(未收:${remaining})`);
+        }
+      }
     } else {
       throw new BadRequestException('无效的业务类型');
     }
@@ -103,6 +116,7 @@ export class PaymentsService {
         where,
         include: {
           purchase: { select: { orderNo: true } },
+          order: { select: { orderNo: true } },
         },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -128,6 +142,7 @@ export class PaymentsService {
       where: { id, deletedAt: null },
       include: {
         purchase: { select: { orderNo: true } },
+        order: { select: { orderNo: true } },
       },
     });
 
@@ -166,6 +181,11 @@ export class PaymentsService {
         where: { id: payment.purchaseId },
         data: { paid: { increment: payment.amount } },
       });
+    } else if (payment.bizType === 'SALE' && payment.type === PaymentType.RECEIPT && payment.orderId) {
+      await this.prisma.order.update({
+        where: { id: payment.orderId },
+        data: { paid: { increment: payment.amount } },
+      });
     }
 
     return PaymentVo.fromEntity(updated);
@@ -195,6 +215,17 @@ export class PaymentsService {
           const newPaid = Math.max(0, Number(purchase.paid) - Number(payment.amount));
           await this.prisma.purchase.update({
             where: { id: payment.purchaseId },
+            data: { paid: newPaid },
+          });
+        }
+      } else if (payment.bizType === 'SALE' && payment.type === PaymentType.RECEIPT && payment.orderId) {
+        const order = await this.prisma.order.findUnique({
+          where: { id: payment.orderId },
+        });
+        if (order) {
+          const newPaid = Math.max(0, Number(order.paid) - Number(payment.amount));
+          await this.prisma.order.update({
+            where: { id: payment.orderId },
             data: { paid: newPaid },
           });
         }

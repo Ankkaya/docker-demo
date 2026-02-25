@@ -202,6 +202,7 @@ export class PurchaseReceiptsService {
         purchase: {
           include: {
             items: true,
+            supplier: { select: { name: true } },
           },
         },
       },
@@ -258,6 +259,9 @@ export class PurchaseReceiptsService {
           },
         });
 
+        let beforeQty = 0;
+        let afterQty = 0;
+
         if (inventory) {
           // 更新现有库存，使用加权平均计算新成本
           const oldQty = inventory.quantity;
@@ -268,6 +272,9 @@ export class PurchaseReceiptsService {
           const avgCost = totalQty > 0
             ? (oldQty * oldCost + newQty * newCost) / totalQty
             : newCost;
+
+          beforeQty = inventory.quantity;
+          afterQty = inventory.quantity + item.quantity;
 
           await tx.inventory.update({
             where: { id: inventory.id },
@@ -284,6 +291,9 @@ export class PurchaseReceiptsService {
           });
         } else {
           // 创建新库存记录
+          beforeQty = 0;
+          afterQty = item.quantity;
+
           await tx.inventory.create({
             data: {
               skuId: item.skuId,
@@ -300,6 +310,23 @@ export class PurchaseReceiptsService {
             data: { costPrice: item.price },
           });
         }
+
+        // 创建入库流水
+        await tx.inventoryLog.create({
+          data: {
+            type: 'IN_PURCHASE',
+            skuId: item.skuId,
+            warehouseId: receipt.warehouseId,
+            quantity: item.quantity,
+            before: beforeQty,
+            after: afterQty,
+            bizType: 'PURCHASE',
+            bizId: receipt.id,
+            bizNo: receipt.receiptNo,
+            remark: `采购入库: ${receipt.purchase.supplier.name}`,
+            createdBy: userId,
+          },
+        });
 
         // 3. 更新采购订单明细的已入库数量
         const purchaseItem = receipt.purchase.items.find(
