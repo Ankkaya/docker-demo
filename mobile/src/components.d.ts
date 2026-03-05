@@ -7,6 +7,11 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    BaseBaseFixed: typeof import('./components/base/BaseFixed.vue')['default']
+    BaseBaseInnerNavbar: typeof import('./components/base/BaseInnerNavbar.vue')['default']
+    BaseBaseLayout: typeof import('./components/base/BaseLayout.vue')['default']
+    BaseBaseNavbar: typeof import('./components/base/BaseNavbar.vue')['default']
+    BaseBaseStatusbar: typeof import('./components/base/BaseStatusbar.vue')['default']
     DemoBlock: typeof import('./components/DemoBlock.vue')['default']
     GlobalLoading: typeof import('./components/GlobalLoading.vue')['default']
     GlobalMessage: typeof import('./components/GlobalMessage.vue')['default']
@@ -15,7 +20,6 @@ declare module 'vue' {
     UniEcharts: typeof import('uni-echarts')['default']
     WdActionSheet: typeof import('wot-design-uni/components/wd-action-sheet/wd-action-sheet.vue')['default']
     WdButton: typeof import('wot-design-uni/components/wd-button/wd-button.vue')['default']
-    WdCard: typeof import('wot-design-uni/components/wd-card/wd-card.vue')['default']
     WdCell: typeof import('wot-design-uni/components/wd-cell/wd-cell.vue')['default']
     WdCellGroup: typeof import('wot-design-uni/components/wd-cell-group/wd-cell-group.vue')['default']
     WdConfigProvider: typeof import('wot-design-uni/components/wd-config-provider/wd-config-provider.vue')['default']
