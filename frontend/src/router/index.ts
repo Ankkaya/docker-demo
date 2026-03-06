@@ -267,6 +267,18 @@ const router = createRouter({
       ]
     },
     {
+      path: '/redirect',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { hidden: true },
+      children: [
+        {
+          path: '',
+          component: () => import('@/views/layout/components/Redirect.vue'),
+          meta: { hidden: true }
+        }
+      ]
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/dashboard'
     }
@@ -275,7 +287,6 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
-  void from
   const authStore = useAuthStore()
 
   if (to.meta.public) {

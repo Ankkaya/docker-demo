@@ -35,15 +35,25 @@
       </aside>
 
       <!-- 右侧内容 -->
-      <main class="flex-1 overflow-y-auto p-6 bg-layout transition-theme">
-        <router-view />
+      <main class="flex-1 flex flex-col overflow-hidden bg-layout transition-theme">
+        <!-- 选项卡栏 -->
+        <TabBar />
+        
+        <!-- 页面内容 -->
+        <div class="flex-1 overflow-y-auto p-6">
+          <router-view v-slot="{ Component, route }">
+            <keep-alive :include="cachedViews">
+              <component :is="Component" :key="route.fullPath" />
+            </keep-alive>
+          </router-view>
+        </div>
       </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store'
 import { useThemeStore } from '@/store/modules/theme'
@@ -79,13 +89,28 @@ import {
 import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
 import ThemeSchemaSwitch from '@/components/common/ThemeSchemaSwitch.vue'
+import TabBar from '@/components/TabBar/index.vue'
+import { useTabStore } from '@/store/modules/tab'
 import type { Menu } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const tabStore = useTabStore()
 const message = useMessage()
+
+// 页面缓存列表
+const cachedViews = computed(() => tabStore.cachedViews)
+
+// 监听路由变化，添加标签
+watch(
+  () => route.fullPath,
+  () => {
+    tabStore.addTab(route)
+  },
+  { immediate: true }
+)
 
 const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
