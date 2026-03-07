@@ -42,7 +42,7 @@ export default defineConfig({
     UniHelperComponents({
       resolvers: [WotResolver(), UniEchartsResolver()],
       dts: 'src/components.d.ts',
-      dirs: ['src/components', 'src/business'],
+      dirs: ['src/components/', 'src/business'],
       directoryAsNamespace: true,
     }),
     // https://github.com/uni-ku/root

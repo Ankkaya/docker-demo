@@ -1,4 +1,7 @@
 <script lang="ts">
+import BaseFixed from '@/components/base/BaseFixed.vue'
+import BaseStatusbar from '@/components/base/BaseStatusbar.vue'
+
 export default {
   options: {
     addGlobalClass: true,
@@ -9,31 +12,19 @@ export default {
 </script>
 
 <script setup lang="ts">
-interface NavbarStyle {
-  type?: 'default' | 'inner'
-  titleBarStyle?: Record<string, any>
-  statusBarStyle?: Record<string, any>
-  backIconColor?: string
-  title?: string
-  showBackIcon?: boolean
-  baseFixedStyle?: {
-    fixedBg?: Record<string, any>
-  }
-}
-
-const props = withDefaults(defineProps<{
-  navbarStyle?: NavbarStyle
-}>(), {
-  navbarStyle: () => ({}),
-})
-
+const route = useRoute()
 const { navigationBarHeight } = usePlatform()
 
-const backIconColor = computed(() => props.navbarStyle?.backIconColor || '#000')
-const title = computed(() => props.navbarStyle?.title || '未设置标题')
-const showBackIcon = computed(() => props.navbarStyle?.showBackIcon || false)
-const baseFixedStyle = computed(() => props.navbarStyle?.baseFixedStyle || {})
-const titleBarStyle = computed(() => props.navbarStyle?.titleBarStyle || {})
+const iconColor = computed(() => route.baseNavbar?.iconColor || '#000')
+const title = computed(() => route.style?.navigationBarTitleText || '')
+const showBackIcon = computed(() => {
+  // 获取页面栈
+  const pages = getCurrentPages()
+  // 如果当前页面是第一个页面，不显示返回按钮
+  return pages.length > 1
+})
+const baseFixedStyle = computed(() => ({}))
+const titleBarStyle = computed(() => ({}))
 
 function clickBack() {
   const pages = getCurrentPages()
@@ -42,7 +33,7 @@ function clickBack() {
   }
   else {
     uni.reLaunch({
-      url: '/pages/index/index',
+      url: '/pages/home/index',
     })
   }
 }
@@ -54,7 +45,7 @@ function clickBack() {
       <base-statusbar />
       <view class="navbar-content" :style="[{ height: `${navigationBarHeight}px` }]">
         <view v-if="showBackIcon" class="page-navbar__content-left" @click="clickBack">
-          <uni-icons type="left" size="25" :color="backIconColor" />
+          <wd-icon name="left" size="25" :color="iconColor" />
         </view>
         <view class="page-navbar__content-center">
           <view class="page-navbar__content-center-title" :style="[titleBarStyle]">

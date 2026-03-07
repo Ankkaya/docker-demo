@@ -1,9 +1,10 @@
 <script setup lang="ts">
 definePage({
-  name: 'home',
-  layout: 'tabbar',
+  name: 'index',
+  layout: 'default',
   style: {
     navigationBarTitleText: '首页',
+    navigationStyle: 'custom',
   },
 })
 
@@ -72,10 +73,7 @@ function openUrl(url: string) {
         </wd-cell>
         <wd-cell title="选择主题色" is-link @click="openThemeColorPicker">
           <view class="flex items-center justify-end gap-2">
-            <view
-              class="h-4 w-4 rounded-full"
-              :style="{ backgroundColor: currentThemeColor.primary }"
-            />
+            <view class="h-4 w-4 rounded-full" :style="{ backgroundColor: currentThemeColor.primary }" />
             <text>{{ currentThemeColor.name }}</text>
           </view>
         </wd-cell>
@@ -93,7 +91,7 @@ function openUrl(url: string) {
         <wd-cell title="✨ Unocss 原子化" is-link @click="navigateTo('styles')" />
         <wd-cell title="🍍 Pinia 持久化" is-link @click="navigateTo('pinia')" />
         <wd-cell title="💬 Fedback 反馈组件" is-link @click="navigateTo('feedback')" />
-        <wd-cell title="🌱 CreateUni 脚手架" is-link @click="navigateTo('create-uni') " />
+        <wd-cell title="🌱 CreateUni 脚手架" is-link @click="navigateTo('create-uni')" />
         <wd-cell title="🔄 CI/CD 持续集成" is-link @click="navigateTo('ci')" />
         <wd-cell title="🦾  uni-ku/root" is-link @click="navigateTo('root')" />
         <wd-cell title="📊 uni-echarts" is-link @click="navigateTo('echarts')" />
@@ -102,15 +100,12 @@ function openUrl(url: string) {
 
     <!-- 主题色选择 ActionSheet -->
     <wd-action-sheet
-      v-model="showThemeColorSheet"
-      title="选择主题色"
-      :close-on-click-action="true"
+      v-model="showThemeColorSheet" title="选择主题色" :close-on-click-action="true"
       @cancel="closeThemeColorPicker"
     >
       <view class="px-4 pb-4">
         <view
-          v-for="option in themeColorOptions"
-          :key="option.value"
+          v-for="option in themeColorOptions" :key="option.value"
           class="flex items-center justify-between border-b border-gray-100 py-3 last:border-b-0 dark:border-gray-700"
           @click="handleThemeColorSelect(option)"
         >
@@ -123,12 +118,7 @@ function openUrl(url: string) {
               {{ option.name }}
             </text>
           </view>
-          <wd-icon
-            v-if="currentThemeColor.value === option.value"
-            name="check"
-            :color="option.primary"
-            size="20px"
-          />
+          <wd-icon v-if="currentThemeColor.value === option.value" name="check" :color="option.primary" size="20px" />
         </view>
       </view>
       <wd-gap :height="50" />

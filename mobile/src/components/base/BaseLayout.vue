@@ -1,4 +1,7 @@
 <script lang="ts">
+import InnerNavbar from '@/components/base/BaseInnerNavbar.vue'
+import BaseNavbar from '@/components/base/BaseNavbar.vue'
+
 export default {
   options: {
     addGlobalClass: true,
@@ -9,38 +12,24 @@ export default {
 </script>
 
 <script setup lang="ts">
-interface NavbarStyle {
-  type?: 'default' | 'inner'
-  titleBarStyle?: Record<string, any>
-  statusBarStyle?: Record<string, any>
-  backIconColor?: string
-  title?: string
-  showBackIcon?: boolean
-}
-
-const props = withDefaults(defineProps<{
-  navbarStyle?: NavbarStyle
-}>(), {
-  navbarStyle: () => ({}),
-})
-
+const route = useRoute()
 const { navigationBarHeight, statusBarHeight } = usePlatform()
-
-const navbarType = computed(() => props.navbarStyle?.type || 'default')
 
 const spacerStyle = computed(() => ({
   paddingTop: `${navigationBarHeight + statusBarHeight}px`,
   position: 'relative' as const,
   zIndex: -2,
 }))
+
+const navbarType = computed(() => route.baseNavbar?.type || 'default')
 </script>
 
 <template>
   <view class="page-layout">
     <view class="page-main">
-      <base-navbar v-if="navbarType === 'default'" :navbar-style="navbarStyle" />
+      <base-navbar v-if="navbarType === 'default'" />
       <view class="page-body">
-        <inner-navbar v-if="navbarType === 'inner'" :navbar-style="navbarStyle" />
+        <inner-navbar v-if="navbarType === 'inner'" />
         <view :style="spacerStyle" class="page-spacer" />
         <slot />
       </view>
@@ -51,7 +40,7 @@ const spacerStyle = computed(() => ({
 <style lang="scss" scoped>
 .page-layout {
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 84px);
 
   .page-main {
     display: flex;
