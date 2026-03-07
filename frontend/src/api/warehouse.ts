@@ -1,5 +1,5 @@
 import api from './request'
-import type { WarehouseApi } from '@/types/api'
+import type { WarehouseApi } from '@/types/api/index.ts'
 
 // 获取仓库列表
 export const getWarehouses = () => {

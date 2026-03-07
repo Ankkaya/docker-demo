@@ -1,5 +1,5 @@
 import api from './request'
-import type { UnitApi } from '@/types/api'
+import type { UnitApi } from '@/types/api/index.ts'
 
 // 获取计量单位列表
 export const getUnits = () => {

@@ -1,5 +1,5 @@
 import api from './request'
-import type { AuthApi, LoginParams, RegisterParams } from '@/types/api'
+import type { AuthApi, LoginParams, RegisterParams } from '@/types/api/index.ts'
 
 // 登录
 export const login = (data: LoginParams) => {

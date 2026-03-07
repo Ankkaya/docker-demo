@@ -1,5 +1,5 @@
 import api from './request'
-import type { BrandApi } from '@/types/api'
+import type { BrandApi } from '@/types/api/index.ts'
 
 // 获取品牌列表
 export const getBrands = () => {

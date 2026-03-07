@@ -1,5 +1,5 @@
 import api from './request'
-import type { MenuApi, CreateMenuParams, UpdateMenuParams, QueryMenuParams } from '@/types/api'
+import type { MenuApi, CreateMenuParams, UpdateMenuParams, QueryMenuParams } from '@/types/api/index.ts'
 
 // 获取菜单列表
 // format: 'tree' | 'flat' - tree: 树形结构(默认), flat: 扁平列表

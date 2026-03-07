@@ -1,5 +1,5 @@
 import api from './request'
-import type { CustomerApi } from '@/types/api'
+import type { CustomerApi } from '@/types/api/index.ts'
 
 // 获取客户列表
 export const getCustomers = () => {

@@ -4,7 +4,7 @@ import type {
   SkuApi,
   InventoryApi,
   MallApi,
-} from '@/types/api'
+} from '@/types/api/index.ts'
 
 // ==================== 商品管理 API ====================
 

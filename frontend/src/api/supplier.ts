@@ -1,5 +1,5 @@
 import api from './request'
-import type { SupplierApi } from '@/types'
+import type { SupplierApi } from '@/types/api/index.ts'
 
 // 获取供应商列表
 export const getSuppliers = () => {

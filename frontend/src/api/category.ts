@@ -1,5 +1,5 @@
 import api from './request'
-import type { CategoryApi } from '@/types/api'
+import type { CategoryApi } from '@/types/api/index.ts'
 
 // 获取分类列表（树形）
 export const getCategories = () => {

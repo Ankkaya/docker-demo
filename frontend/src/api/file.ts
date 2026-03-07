@@ -5,7 +5,7 @@ import type {
   UploadMultipleResponse,
   DeleteFileParams,
   DeleteFilesParams,
-} from '@/types/api'
+} from '@/types/api/index.ts'
 
 /**
  * 上传单个文件

@@ -1,5 +1,5 @@
 import api from './request'
-import type { UserApi, QueryUserParams, CreateUserParams, UpdateUserParams, AssignUserRolesParams } from '@/types/api'
+import type { UserApi, QueryUserParams, CreateUserParams, UpdateUserParams, AssignUserRolesParams } from '@/types/api/index.ts'
 
 // 获取用户列表
 export const getUsers = async (params?: QueryUserParams) => {

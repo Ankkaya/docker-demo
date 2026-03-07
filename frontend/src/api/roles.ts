@@ -1,5 +1,5 @@
 import api from './request'
-import type { RoleApi, CreateRoleParams, UpdateRoleParams, AssignRoleMenusParams } from '@/types/api'
+import type { RoleApi, CreateRoleParams, UpdateRoleParams, AssignRoleMenusParams } from '@/types/api/index.ts'
 
 // 获取角色列表
 export const getRoles = () => {

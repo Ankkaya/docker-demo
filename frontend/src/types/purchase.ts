@@ -302,6 +302,12 @@ export type OrderType = 'SALE' | 'MALL';
 // 订单状态
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDING' | 'REFUNDED';
 
+// 支付状态
+export type PayStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDING' | 'REFUNDED';
+
+// 发货状态
+export type ShipStatus = 'UNSHIPPED' | 'PARTIAL' | 'SHIPPED' | 'RECEIVED';
+
 // 订单明细
 export interface OrderItem {
   id: number;
@@ -346,7 +352,7 @@ export interface Order {
   shipments?: {
     id: number;
     shipmentNo: string;
-    status: string;
+    status: ShipmentStatus;
     logisticsCompany?: string;
     trackingNo?: string;
     createdAt: string;
