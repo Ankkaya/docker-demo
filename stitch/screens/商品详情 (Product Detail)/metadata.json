@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "dd7850e168314eacb8b641bde1c24529",
+    "title": "商品详情 (Product Detail)",
+    "width": "780",
+    "height": "3660",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/AOfcidXPcRJ5GGsiy4ePD3dWlci6Dum4farqrQb4mlRhMl-t_VvpU03Qz7WKeheB4CJmRteTdhXjBILQiUIaAJbGhYQysUcqHekYc_gAjJbIaqtubEforQa5yBDULrnqPYK9immcGMiHrgcpwzgL7sI4EZBW8MJJ08eWLVhMslr_yLRe-vPEHNi3dFrexaKJmEAIvqDUL5w9IPXzIIPhtBYy2yZbjAdqG85Q1GfmHUTTjU97zIpy3NPlyh2jRt0",
+      "contentType": "image/png",
+      "file": "stitch/screens/商品详情 (Product Detail)/商品详情 (Product Detail).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAzNzNkMWI0NWU3MzQzMTI5NjYyMGFkYWJhZmNmNzJiEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/商品详情 (Product Detail)/商品详情 (Product Detail).html"
+    }
+  }
+}

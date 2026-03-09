@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Children's Clothing - Product List</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex h-screen w-full flex-col overflow-hidden max-w-md mx-auto bg-background-light dark:bg-background-dark">
+<!-- Header -->
+<header class="sticky top-0 z-10 flex items-center justify-between bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 py-4">
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm">
+<span class="material-symbols-outlined text-slate-700 dark:text-slate-200">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Onesies &amp; Bodysuits</h1>
+<button class="flex h-10 w-10 items-center justify-center rounded-full bg-white dark:bg-slate-800 shadow-sm">
+<span class="material-symbols-outlined text-slate-700 dark:text-slate-200">search</span>
+</button>
+</header>
+<!-- Filter/Sort Bar -->
+<div class="flex gap-3 px-4 py-3 overflow-x-auto no-scrollbar">
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-primary px-4 text-white shadow-sm">
+<span class="text-sm font-semibold">Recommended</span>
+<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-white dark:bg-slate-800 px-4 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
+<span class="text-sm font-medium">Sales</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-white dark:bg-slate-800 px-4 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
+<span class="text-sm font-medium">Price</span>
+<span class="material-symbols-outlined text-[18px]">unfold_more</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1 rounded-full bg-white dark:bg-slate-800 px-4 text-slate-600 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
+<span class="text-sm font-medium">New</span>
+</button>
+</div>
+<!-- Scrollable Content Area -->
+<main class="flex-1 overflow-y-auto px-4 pb-24">
+<!-- Asymmetrical Grid Layout -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Product 1 (Taller) -->
+<div class="flex flex-col gap-2">
+<div class="relative w-full aspect-[3/4.5] bg-slate-200 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Baby in organic cotton beige onesie" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBl8d--agawjMT10fLz9P-MYMct9fh-tdwZJqASgjI7C5EonkcXkFchIfK6uur136QDkpWhCAtR5OaePOrktxvcLG7OWvsC7710vlEr0RTI7YXIhLETl9sYF6SvgfiraJ4FGiqWiXweDGHI9QwhFDVhjEYRWPG6s6OU8E29_8aQRzdQCakd3DVcEzFVsexHL7uEzE-zpp7rJjYyeHEX7wW7tZLEl2LAWa6PV6EysS_Y6VhemwfFEt25Yk74j4QgJXHl_MSFqJho8S_x')"></div>
+<button class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-90">
+<span class="material-symbols-outlined text-[20px] fill-current">add_shopping_cart</span>
+</button>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">Organic Cotton Onesie</h3>
+<p class="text-primary font-bold text-base">$24.00</p>
+</div>
+</div>
+<!-- Product 2 (Shorter) -->
+<div class="flex flex-col gap-2 pt-8">
+<div class="relative w-full aspect-[3/3.5] bg-slate-200 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Soft ribbed baby bodysuit in cream color" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDI9oLaAp9j4ZCr4y28nVdulMZhdzq6IZwU1VOfHljRaUDJoes34va-2HTbMGtbYusV1w5ghoYg3H2b7Yy4lq0mnS7zLO-z7kzq4UY5VM_BP3QwleyM3XIYlOIosfzMGTdi-HYDeIdiAarcXmleLnZkuu5gGnTtHD5qO4prfyGEGnow87zskQd612Y88iWmbeqLpM3lX9GHVoGsaSFPaUxG_EjZlq1g84XVbnAOP-zyAxwcK_QpZldk3cKQMXOhlZDAX8zrzqLy_D1T')"></div>
+<button class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-90">
+<span class="material-symbols-outlined text-[20px] fill-current">add_shopping_cart</span>
+</button>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">Ribbed Bodysuit</h3>
+<p class="text-primary font-bold text-base">$18.00</p>
+</div>
+</div>
+<!-- Product 3 (Shorter) -->
+<div class="flex flex-col gap-2 -mt-4">
+<div class="relative w-full aspect-[3/3.8] bg-slate-200 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Linen blend baby romper in sage green" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBLeTAH4g-5sjUNE4V0TzcjKjOyrjpxnLbvpxAwNsfd1Of85-0Uq9TbCrPYqc4O-B4R2wy33VmPABvpld9qsc6Q-DNG8YRgdhxAOafqdHW7sBBj5RmsYZAz-yzFBF6EZEtMBkCFi4ioSHA6icmptck9bpUhIV-Z8DSDlhmI6eAUUbdd3woAfr76vSlOEwRhI7VawqmszUo3wcfSOXA9R2EQKrdYd-o68xZsnbTcVC5xgirfrTJW3NS7NyEDg39AI55IJpseikU6EnZT')"></div>
+<button class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-90">
+<span class="material-symbols-outlined text-[20px] fill-current">add_shopping_cart</span>
+</button>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">Linen Blend Romper</h3>
+<p class="text-primary font-bold text-base">$32.00</p>
+</div>
+</div>
+<!-- Product 4 (Taller) -->
+<div class="flex flex-col gap-2">
+<div class="relative w-full aspect-[3/4.2] bg-slate-200 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Quilted baby sleep suit in warm yellow" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDeG1V5VAFIdNkM68-XowYvabFHjQG3XH27EqaJ4pdYg674mXxUdTm8xqaLLY_iNZFewa937hHjt_gTxgVCIkh_K4PnbHTdo--RKDEVTNCe2DDgZSYDnOkC9CSYUN0YwBIVTd8vGqbLLpwFCENnBKceLeX4fQvj5K6FLEZE-xg6f1IAhGamXsqcfyoccNSS4d5OPCTRHGPqIC1DIh6IhlONf6JqWw-Iuzco-PZZXtruzgscOcoYSuvPsb2LdpwGl-0IQHyEi2kBkfM4')"></div>
+<button class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-90">
+<span class="material-symbols-outlined text-[20px] fill-current">add_shopping_cart</span>
+</button>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">Quilted Sleep Suit</h3>
+<p class="text-primary font-bold text-base">$45.00</p>
+</div>
+</div>
+<!-- Product 5 (Extra) -->
+<div class="flex flex-col gap-2 -mt-6">
+<div class="relative w-full aspect-[1/1] bg-slate-200 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Knitted wool baby onesie" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuATLUeSEperzYujCBv50PBwKJmWHGOfV7jMUcymGqfvP6SQizLSheMMXXCg6SYUajxafpcv6G80R6Lk5jf-iUTckvBwEUDXMqjvMIEj1jyj75d767cNGivoF5EBJWa2kiMS5vTF06Jo-GN9vrylgmgasv4iaQQLHeUH9Tm0ljBrW5InsVHyoefCUPQX907pzJvdcwTVf4dUfXTEikeKvCqrPahZjLveCRPi_k7UZEaEJS892z3-DzRWPUIo4zkXpR1Yp6OQswCtL3ds')"></div>
+<button class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform active:scale-90">
+<span class="material-symbols-outlined text-[20px] fill-current">add_shopping_cart</span>
+</button>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">Knitted Wool Suit</h3>
+<p class="text-primary font-bold text-base">$52.00</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 z-20 max-w-md mx-auto border-t border-slate-100 dark:border-slate-800 bg-white/95 dark:bg-background-dark/95 backdrop-blur-lg px-6 pb-6 pt-3">
+<div class="flex justify-between items-center">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">home</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-primary fill-current transition-colors">grid_view</span>
+<span class="text-[10px] font-medium text-primary">Category</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="relative">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">shopping_bag</span>
+<span class="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-white">2</span>
+</div>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary">Cart</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">person</span>
+<span class="text-[10px] font-medium text-slate-400 group-hover:text-primary">Profile</span>
+</a>
+</div>
+</nav>
+</div>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

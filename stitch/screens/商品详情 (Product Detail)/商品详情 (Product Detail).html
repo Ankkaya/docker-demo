@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Children's Clothing Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<button class="flex items-center justify-center size-10 rounded-full bg-white dark:bg-slate-800 shadow-sm">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">arrow_back</span>
+</button>
+<div class="flex gap-2">
+<button class="flex items-center justify-center size-10 rounded-full bg-white dark:bg-slate-800 shadow-sm">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">share</span>
+</button>
+<button class="flex items-center justify-center size-10 rounded-full bg-white dark:bg-slate-800 shadow-sm relative">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">shopping_bag</span>
+<span class="absolute top-0 right-0 size-4 bg-primary text-[10px] font-bold text-white flex items-center justify-center rounded-full">2</span>
+</button>
+</div>
+</header>
+<main class="pb-24">
+<!-- Product Image Carousel -->
+<div class="relative w-full aspect-[4/5] bg-primary/10 overflow-hidden">
+<div class="h-full w-full bg-cover bg-center" data-alt="Cute toddler wearing organic cotton romper in sunlit room" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBAWaIaKjBwQgnbqplCXR4IQaNVbY0Vo3c9uUBVT5LuEItWSV28FTXuLsiVMUAXu4uWDGXv3F84NECLPsn39bFAXUvZ6jUyrUSdqJ5BtPa48qrrn7gXXImrZoCExrvk4xVDi8KwNVvsqPJbPXWOvEZ_mHxPN_PUG7mdRgJcVt_HJd3lDUveM9HUWBsRQY9UZbgBI6AAMQB4u8ahwd1Tegb07jThalGq4Em-KrAeilUgvtiW-1CwPsZsCcJ274YVJ0Y5CsRKXadyY_xA');">
+</div>
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+<div class="size-2 rounded-full bg-primary"></div>
+<div class="size-2 rounded-full bg-primary/30"></div>
+<div class="size-2 rounded-full bg-primary/30"></div>
+<div class="size-2 rounded-full bg-primary/30"></div>
+</div>
+<div class="absolute top-20 right-4">
+<button class="flex items-center justify-center size-10 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-md">
+<span class="material-symbols-outlined text-rose-500 fill-1">favorite</span>
+</button>
+</div>
+</div>
+<!-- Product Info Header -->
+<section class="px-5 pt-6">
+<div class="flex items-center gap-1 mb-2">
+<div class="flex text-primary">
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+<span class="material-symbols-outlined text-sm">star</span>
+</div>
+<span class="text-xs text-slate-500 dark:text-slate-400 font-medium">(128 Reviews)</span>
+</div>
+<h1 class="text-2xl font-bold leading-tight mb-2">Honey Bear Organic Cotton Romper</h1>
+<p class="text-3xl font-bold text-primary">$42.00</p>
+</section>
+<!-- Selection Options -->
+<section class="px-5 mt-8 space-y-6">
+<div>
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-bold text-sm tracking-wide uppercase opacity-70">Color: <span class="text-slate-900 dark:text-slate-100">Soft Ochre</span></h3>
+</div>
+<div class="flex gap-3">
+<button class="size-10 rounded-full ring-2 ring-primary ring-offset-2 bg-[#efb239]"></button>
+<button class="size-10 rounded-full bg-[#d9e5d6]"></button>
+<button class="size-10 rounded-full bg-[#e3dad5]"></button>
+<button class="size-10 rounded-full bg-[#b8c0cc]"></button>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-bold text-sm tracking-wide uppercase opacity-70">Size: <span class="text-slate-900 dark:text-slate-100">6-12 Months</span></h3>
+<button class="text-xs font-bold text-primary underline">Size Guide</button>
+</div>
+<div class="grid grid-cols-4 gap-2">
+<button class="py-3 rounded-lg border border-slate-200 dark:border-slate-700 font-medium hover:border-primary transition-colors">0-3m</button>
+<button class="py-3 rounded-lg border border-slate-200 dark:border-slate-700 font-medium hover:border-primary transition-colors">3-6m</button>
+<button class="py-3 rounded-lg border-2 border-primary bg-primary/10 font-bold">6-12m</button>
+<button class="py-3 rounded-lg border border-slate-200 dark:border-slate-700 font-medium hover:border-primary transition-colors">12-18m</button>
+</div>
+</div>
+</section>
+<!-- Product Description -->
+<section class="px-5 mt-10">
+<div class="bg-primary/5 dark:bg-primary/10 p-6 rounded-xl">
+<h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">description</span>
+                    The Details
+                </h3>
+<p class="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">
+                    Crafted from GOTS-certified 100% organic cotton, this breathable romper ensures your little one stays cozy all day. Featuring easy-snap buttons for quick changes and a dreamy hand-drawn honey bear print. Perfect for sensitive skin and active play.
+                </p>
+<div class="mt-4 grid grid-cols-2 gap-4">
+<div class="flex items-center gap-2 text-xs font-medium">
+<span class="material-symbols-outlined text-primary text-lg">spa</span>
+                        100% Organic
+                    </div>
+<div class="flex items-center gap-2 text-xs font-medium">
+<span class="material-symbols-outlined text-primary text-lg">dry_cleaning</span>
+                        Machine Washable
+                    </div>
+</div>
+</div>
+</section>
+<!-- Customer Reviews Snippet -->
+<section class="px-5 mt-10">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h3 class="text-xl font-bold">Parent Reviews</h3>
+<p class="text-sm text-slate-500">Based on 128 verified buyers</p>
+</div>
+<button class="text-sm font-bold text-primary">See All</button>
+</div>
+<div class="space-y-4">
+<div class="p-4 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+<div class="flex justify-between mb-2">
+<div class="flex items-center gap-2">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">EL</div>
+<span class="text-sm font-bold">Emma L.</span>
+</div>
+<div class="flex text-primary">
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+<span class="material-symbols-outlined text-[16px]">star</span>
+</div>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-400">"The softest fabric I've ever felt for my baby. It washes so well and didn't shrink at all! Definitely buying more."</p>
+</div>
+</div>
+</section>
+<!-- Recommendations -->
+<section class="mt-10 mb-8">
+<h3 class="px-5 text-xl font-bold mb-4">Complete the Look</h3>
+<div class="flex overflow-x-auto gap-4 px-5 pb-4 no-scrollbar">
+<div class="min-w-[140px] space-y-2">
+<div class="aspect-square bg-slate-200 dark:bg-slate-700 rounded-lg bg-cover bg-center" data-alt="Baby knit bonnet in matching ochre color" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCCqsSH1yxGDxm_7ntdANF_J8MqgdkM9OJ41mhSho-scPHH_X6oNPHkjzcPbLSwPiMcMI0g7AIA4qDtmlV5QCw01Iinfah-fmNaByoY_ckPPAirmHvWFc2uUG47FLr3XPXU2PaZY7C2gp09jp8CnGrLrOVw-Nr8wR-k0FSrMkugmhuUbSB1O2PCQ7DrWhyhbJZuSppth3ZaCskOXLT9FFIOYTx1fkAYJugA7HYPUSTNXDtbbsaNSxiJhK83OTpB86A45HeFCL2TN4zW');"></div>
+<p class="text-xs font-bold truncate">Cozy Knit Bonnet</p>
+<p class="text-sm font-bold text-primary">$18.00</p>
+</div>
+<div class="min-w-[140px] space-y-2">
+<div class="aspect-square bg-slate-200 dark:bg-slate-700 rounded-lg bg-cover bg-center" data-alt="Soft leather baby booties" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAnbUqWacZuzAdhQaTDNQIPFCOQmDmxvCasJ3WAf-T1GGe-4iap9zN9rNBwwANgtoPhxxVranbxfO823RVrsOeIYCkQgVUnhZGLtS-ebIb6Q6zcieXcuwOW8Yckn53iF5Tc2YeJ1UcHuzpmMl8yPnD8vmvIyouBYdnGojnC0KyLHAT1PRyzqUrR3CikjxeBy8Si4oCJ5pRDeZt92m0ij7VnzHMLxCp0905o42jTHBQDffQp2JtFIfSxtgpmiL4GCjNOdFoHOJbE-WIt');"></div>
+<p class="text-xs font-bold truncate">Soft Leather Booties</p>
+<p class="text-sm font-bold text-primary">$24.00</p>
+</div>
+<div class="min-w-[140px] space-y-2">
+<div class="aspect-square bg-slate-200 dark:bg-slate-700 rounded-lg bg-cover bg-center" data-alt="Cotton bib with bear embroidery" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD1ydsREgCbcVIB4u-A2UtFJNyTZknJmlBZfynjhbuSR0whp7yLu-xHa3xPJldrXgCafU4EtKtnCdrKN6uHOciQotpVRHXvk6VBbd2s6LqvKsuVETllub1LOxhUajfmtxu6R2lj4CzIlmiWXRkA2Fl8N8p86Kgwvth_OhDm3H3HkyOeOvBv5Cl1Rqd5By59un4wOIPFM0AUGN1QLyuGa_rg2xZk3aXb8VTKVZCa6jmjm5aP2jEX7WoGbPqGzvRuH1mwn7ozDEaS3k_K');"></div>
+<p class="text-xs font-bold truncate">Bear Face Bib</p>
+<p class="text-sm font-bold text-primary">$12.00</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action Bar -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-background-dark/95 border-t border-slate-100 dark:border-slate-800 p-4 pb-6 backdrop-blur-md flex items-center gap-4 z-50">
+<button class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="text-[10px] font-bold mt-0.5">Help</span>
+</button>
+<div class="h-10 w-px bg-slate-200 dark:bg-slate-700"></div>
+<div class="flex-1 flex gap-3">
+<button class="flex-1 py-3 px-4 rounded-xl border-2 border-primary text-primary font-bold text-sm tracking-wide">
+                Add to Cart
+            </button>
+<button class="flex-[1.5] py-3 px-4 rounded-xl bg-primary text-white font-bold text-sm tracking-wide shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+                Buy Now
+            </button>
+</div>
+</footer>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

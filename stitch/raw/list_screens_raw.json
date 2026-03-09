@@ -1,0 +1,221 @@
+{
+  "id": 2,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"screens\":[{\"name\":\"projects/11131971736005700711/screens/712144d28e0043a383a8c47c71283d6b\",\"title\":\"Set of 8 mobile app tab bar icons for a kids' clothing store, flat design style. Icons: Home, Category, Shopping Cart, Profile. Each icon has two versions: 1. Inactive: thin outline in a soft grey or light warm color. 2. Active: solid filled in a warm golden orange (#efb239). The icons should be cute, rounded, and minimalist, matching a children's brand aesthetic. High resolution, white background, arranged in a clean grid.\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/ea77792f9c1d4d288cea2869d18ef5d4\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVlTR57CBT_kqAbfnzAbfulkBNQ0i_iS3k_lRN5NBT8jKLctCk6Jk4360Il1wvY0SGiDXlRkUyvqzVgYJOpMSbtS6KxpPDGSInPSc3-KaU7FQcFB10SiN0bKOYOVX42OZBp-A0o7t6EKCGvNq0sM57iFfDj4cjQoRZTNUNkmzeHRwCnj3yWfjGt1BJaZkTi7IuEZERhcazymoEoS2ZM08JCBH4L8pa2K6QxalMW2PKMNBsGGWTsrONzvYsW\"},\"htmlCode\":{},\"width\":\"512\",\"height\":\"512\"},{\"name\":\"projects/11131971736005700711/screens/9104180720184294376\",\"title\":\"Weixin Image_20260305105257_8435_21.jpg\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/9104180720184293947\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidUUOhwYmA8hSozuVWeJM3ahrbS5zYHIn8DGxl9tH9gjn4u0uOtWBMlhZADCfuKFyWWiNS-W7X9HCAYlTEB2SN01rPecxi7t8XWR0yyPjAJZ0KwwIR4VJHyYkgrOlQDEfJcUtQsmml290dCrqI8SXy99jnrmu8X1_4L6GRGhVRVqFLewKrLF-FktTmBLUgRhRxlReMNAW6DNtwEndzT7xcj90NVtKgFigSc2wFWJKPU9jt5bVyReX9JrDTCdQT4GE10drbQ3JOD1Rw\"},\"htmlCode\":{},\"width\":\"1022\",\"height\":\"1428\"},{\"name\":\"projects/11131971736005700711/screens/1df0012a887d4d6d8f28efd6f7d86024\",\"title\":\"底部导航图标集 (Nav Icons)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/f072f77fd2d948ed8b78fe64b68b6e33\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidUvS0AOgo5ZIgK4VdymqhkoCZ4lxS90OE12P5xxzzeh2-lwuOa84Sp6gGCHXeH2hO6RZG-cbvu5s5uk-ehjevH2-F1OBntZslWxiuMgOQR7bbUlUvL0SzsnFs4C5en-SK54EOK2CEoyWj4XAaJwy1fqq9ozAo8GnzSnRhuHLOTsodMDDAlc-gIiTCKZZEYWBVLd3YzrIzEcT3A3EzZ06KOHnCmXClZvmzbjq0VRTnwwNAuPeLYewznuzvsW\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/ced76142d6754f81a64293ecc26b2b0f\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2Y5OGEwMzZkYjc5ZjQ5MDdhYmQ2NDJjNzc3ZDJjZTMzEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"5242\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/d900ce675e934d56995c3fda4a29f71f\",\"title\":\"购物车 (Shopping Cart)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/c58b35f478964f299b68ba917270fac9\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidXfF9GkeptzX28vNnCOcIp5oYExmzkI69jVE8eQqnVoPCgMIlcyKhtnBqM5sg1cLp8OPWMORPGyFVCuPpIuXbdBiaSahDwgrVbjj6PV8k1A7iEJKWt-HjsKrCCjp_Q2sdAb9yRUqJ2MX8yQL8Im39hs5eRtgXHjg2GnR_yxT1wf2M-QR-4wFsYQXK3XynWlhijtQ2Md3m89iHsB71qc4Xi0I_99365-R1cmRtm3vmxR0tEmqIC4dj-NcKb1\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/cbecb49afaa14990a2aa3c8fedf2d4af\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2U0MDFkYTcxYWExZTRmMDg4OTcwZDQ0Y2IwYjU2MDgyEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"1894\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/bd416e8e61e44eeca9090dfdac0e2812\",\"title\":\"个人中心 (Me)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/31a4c10a9ce14c64bdba16819f5b21a0\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVCUIEObJ6Ibls9E44ftUSeEvwRbKus6OQy-xKx9M_k4l5Us331GVz4VuDbMh7jQ1zQpkYVDv0S6pZ19wDyvVpcLlPCYI0dbQw41R2B95CUTw26SAdeHf_xGws-IfMLeUlrtUTlOD6a4XlYj668IaNlDkvZAYKtoZrUV-g24clWBD-RpLmN8x4OqF7FOlha05OnEJHxOGTexw2pYruV1H1GfVMNtEEvqmcpGjh4Xf68hFwNA6cSdp8-NlRM\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/c2b24af65adb4c9c8c81d9461dac4700\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzBhYTgyN2I5YmM2ZTRhNDdhOWYyOTYxZjNkYjM1OTZmEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"2054\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/dd4902990e634bc28f938d998e49d1d4\",\"title\":\"商品列表页 (Product List)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/ee93562b0c9248d9871c03490f72b660\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVspw44ke5MASRXQNtO5DpDnV2mdLdI1rr5vY9GkdXkgS_qwz30fFNCVWAU1KqZG62ximXRqxbAqBaHlnoPMZQTNbIJoB3awhj1PCa_gFiy92RTptGzrnkrFx-sg3ku1LpFwMfJKNCRCQzdqL6IbOjh6j1cPaDkoQSb5JWH8971BKD0mCvgIS8PB7gm8U7stWLuLTNvoSUkFnEyRrzjjXuwyNxid0UlILypph9JvbYdtIBNqRHLWY-a-uXX\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/47ba72a480ca4815b74c1592d07e0cf4\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzFkZTNlNWQ2ZTBlMzQ0ZWVhZDQ2N2QwZjAzMDI1M2EzEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"1768\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/dd7850e168314eacb8b641bde1c24529\",\"title\":\"商品详情 (Product Detail)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/652b9342d43d4cfdb617608a3f2335c3\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidXPcRJ5GGsiy4ePD3dWlci6Dum4farqrQb4mlRhMl-t_VvpU03Qz7WKeheB4CJmRteTdhXjBILQiUIaAJbGhYQysUcqHekYc_gAjJbIaqtubEforQa5yBDULrnqPYK9immcGMiHrgcpwzgL7sI4EZBW8MJJ08eWLVhMslr_yLRe-vPEHNi3dFrexaKJmEAIvqDUL5w9IPXzIIPhtBYy2yZbjAdqG85Q1GfmHUTTjU97zIpy3NPlyh2jRt0\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/6230da5a745142d1933d7aa53ede7915\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAzNzNkMWI0NWU3MzQzMTI5NjYyMGFkYWJhZmNmNzJiEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"3660\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/0a0d5694c4ef41568111d89983a3e548\",\"title\":\"分类页 (Category)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/4b5cdaabe3b842d4b61310a8181e782d\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidWhi6M76OHYDnRdkpjs5USO8XcNJZETzlwrQA9fmz4Hu2sMLrL9OiFwyR6dtAB6PR0OQDKmDMhcqSVaUyQacVsjsd_ClUH4ynfAeKwM7B8iib-rRdG5Z158L-XHe1IEhwZcVtj3by06WdEQIMY0q6jugwlwflS4BdAd8USYDLUYxO0MPbtsZmXTFWhS7o2LeAtKSwNhtIKcMdCPYcnIJiB25kMA0yhtIGXd7Ln-sPykiSzPxvmV_IqLC30\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/71c73f29493247dd856fcaac6bddc982\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2MzMWY3MGMyYmZiYjQzZjc4NzViZDI1MWZjMWY5ZjE2EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"1768\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/f95579f510674d2485d14f6332758e8b\",\"title\":\"首页 (Home)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/ce218f346a3e4630abfbe408be91aa40\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVD7hakY4E5abaetdkEq_i397gSKM0vWnv2uOe-RfxYy0qfTcU7-SBfJ8arMWIk183YMa86GiGqtIowpQg9ZS5c-uLQ_nhevU_2wi2smFkTZ8BW2FjiyJtWdgodZdrvGwt53FpLvc2F7k55KNTCmNqnznXfpFUGyXas5ZPmD31yi9TwxmbfL7ywtqoBJj6PjxZzdG_dKu8bO9hz2r6rRpcaH_o3LVe32SX4ASpN6LvrcAzDhJSb6CveiL7M\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/0e2cb1795df74673adb27113d8a9a85d\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2UxNTAwZTFlOTZhNzQyZDA4MzBjMWE1Zjg4OGIxODU5EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"2424\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/34f44dfb80fe4340bb8529bfde84c1f8\",\"title\":\"Heatmap of 个人中心 (Me)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/8d50171e7b9c4d65a19e23cbd637dda9\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidWhddG-b0EpCXrDPjx9XzbnOkrWxb3ky9oOXzwCDjifN9sjtGlooK7nI0IgDjeS64jT0cDUngRfuzkt5EKBELSAhHBmmUNckp4Gqjtv6brQaJZM4tocB0ycpKQoLd6zl3XeGofjaJQG8bktf2RPYtNj2sSeMxrh8K_-uYzZsTjKl14W3acSSrN-tSAuIAEknSmato87znJyyc7HEhDMqT-IIYsXtkDX3x5kSti5U-4sqFtZiea0TAzc6PeL\"},\"htmlCode\":{},\"width\":\"638\",\"height\":\"1680\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/b0006405d9d74ad895d4270ab8a6658f\",\"title\":\"搜索页 (Search)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/162a7bfe1369450a8b16e031cb2cecb1\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidXr6Es95_XG_wb0O5Xec2QEPizZcJWorVic8Bo4GcAonILJ8kKSHe6j76kejiVxkdr6PMGZQRp1Fy3ACf6QG8Ww31Ix6ysJytjbuEG_Sx55ZrIfHEIZVR3EGJHrtDYkym6fNlDmQwRff-Do5tKSjRzQGaG4o8qHAmm0bGR2fpxH8ye8QiC9GdGoFi8EJNVgqgILeOyrCyf5fJEuwZJpaTfGWUYOmcDEOhz8ftTq2HICViT6wE7C5o6qmLMF\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/88c31c80daba4ca0872883ed106c6d04\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzlkODE0YjVmMzkyNTRiZDVhMTM1YWJjYjIyZTYwY2MwEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"2472\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/45b040096bf24cdbbadcabd0dbe22174\",\"title\":\"首页 (Home)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/9ec1eabd5b864518b695f869f6d51aad\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVln1Gjl4JEWrAZg_00cOpPsonO58fFCsYVHK33zPS-fzZNWX3hr1MpHOG-dheY2z6vqwzR5vccK8KOSuD2CEzzBMSs15iqWc1LFfU1ofjEHsxyNu06KF5WSysThqMAqn7mbSOnSXwRz5MAOdcdkZb99yZn85ZJGbM0T4UC9EvSMslIzgF8aCsW-yPxnO1kuyeVmAN51psxkx-_mwAUgMj95JDOzl7M44jV9RQ8Fn7pXn4-nJt_QfgHj8w\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/a328536a1f784b6182c53eefc097f9cc\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2JhNTdiMjA0NjI3NjQwY2NhMDkwNGY1YzY4ODdhYzI3EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"2424\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/b8a66c8dbd394eeba5e40eb69ff204bf\",\"title\":\"创意首页 (Home)\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/555e1964b9004588a7556ea745c84fb7\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidX4k9wAf2MIdV15vFvGdjUyjaMjTzKch4xxNBCxLAPkFVoSzgmVck4dHQRISg3Xf_6cPKVag7bZ4y9bBxZRKZINqqtBWgLfXPQfTl2GzlEE5vIrjP12I9QXc4cTHROb7NteKfn985YvO7GWk_LgTgKkdm35wblnIh4_jVdIibrG22f8UGlmD80p5hj-cY-cQ78XWMsybx-2I_BB4Z23HGCx6F_Wy8ff7XmxSJJzSvSbHSyiWClKzRchm6x8\"},\"htmlCode\":{\"name\":\"projects/11131971736005700711/files/4bf414e9122741e2b0ae1b1c5a4f433b\",\"downloadUrl\":\"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2E2OTA1NWQ2MGM4YTQzYmZhYTZhYzgyNzQ5NWRhMzFlEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086\",\"mimeType\":\"text/html\"},\"width\":\"780\",\"height\":\"3312\",\"deviceType\":\"MOBILE\"},{\"name\":\"projects/11131971736005700711/screens/9104180720184293089\",\"title\":\"Weixin Image_20260305104326_8408_21.jpg\",\"screenshot\":{\"name\":\"projects/11131971736005700711/files/9104180720184292660\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVgr1MDjnzGIVrM-jHxH1yWmH-uEImeX5u69GSTcNnPPVOk5WPfAEGIhZiCQLI6ptx9FAVduspYKybhWkcuL3J-Wo-VpGWoMbDWtgn2aBdbggowpa5Mb0bYhbKK0sXcypMhQKf-S9d-kJn0bUj1Rxzlnj7L5f_AP3GnL3RcncRnRIH9npxYiz6v5nEF8p-r5Zc-HR5Tr_8Se-y5cLfQSXPActnqxmUU-g-mCaHgX24e1Gxh6lxCVl55TL8xJ1W3p-jsYGJTa7Y21A0\"},\"htmlCode\":{},\"width\":\"1242\",\"height\":\"1660\"}]}",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "screens": [
+        {
+          "height": "512",
+          "htmlCode": {},
+          "name": "projects/11131971736005700711/screens/712144d28e0043a383a8c47c71283d6b",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVlTR57CBT_kqAbfnzAbfulkBNQ0i_iS3k_lRN5NBT8jKLctCk6Jk4360Il1wvY0SGiDXlRkUyvqzVgYJOpMSbtS6KxpPDGSInPSc3-KaU7FQcFB10SiN0bKOYOVX42OZBp-A0o7t6EKCGvNq0sM57iFfDj4cjQoRZTNUNkmzeHRwCnj3yWfjGt1BJaZkTi7IuEZERhcazymoEoS2ZM08JCBH4L8pa2K6QxalMW2PKMNBsGGWTsrONzvYsW",
+            "name": "projects/11131971736005700711/files/ea77792f9c1d4d288cea2869d18ef5d4"
+          },
+          "title": "Set of 8 mobile app tab bar icons for a kids' clothing store, flat design style. Icons: Home, Category, Shopping Cart, Profile. Each icon has two versions: 1. Inactive: thin outline in a soft grey or light warm color. 2. Active: solid filled in a warm golden orange (#efb239). The icons should be cute, rounded, and minimalist, matching a children's brand aesthetic. High resolution, white background, arranged in a clean grid.",
+          "width": "512"
+        },
+        {
+          "height": "1428",
+          "htmlCode": {},
+          "name": "projects/11131971736005700711/screens/9104180720184294376",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidUUOhwYmA8hSozuVWeJM3ahrbS5zYHIn8DGxl9tH9gjn4u0uOtWBMlhZADCfuKFyWWiNS-W7X9HCAYlTEB2SN01rPecxi7t8XWR0yyPjAJZ0KwwIR4VJHyYkgrOlQDEfJcUtQsmml290dCrqI8SXy99jnrmu8X1_4L6GRGhVRVqFLewKrLF-FktTmBLUgRhRxlReMNAW6DNtwEndzT7xcj90NVtKgFigSc2wFWJKPU9jt5bVyReX9JrDTCdQT4GE10drbQ3JOD1Rw",
+            "name": "projects/11131971736005700711/files/9104180720184293947"
+          },
+          "title": "Weixin Image_20260305105257_8435_21.jpg",
+          "width": "1022"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "5242",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2Y5OGEwMzZkYjc5ZjQ5MDdhYmQ2NDJjNzc3ZDJjZTMzEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/ced76142d6754f81a64293ecc26b2b0f"
+          },
+          "name": "projects/11131971736005700711/screens/1df0012a887d4d6d8f28efd6f7d86024",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidUvS0AOgo5ZIgK4VdymqhkoCZ4lxS90OE12P5xxzzeh2-lwuOa84Sp6gGCHXeH2hO6RZG-cbvu5s5uk-ehjevH2-F1OBntZslWxiuMgOQR7bbUlUvL0SzsnFs4C5en-SK54EOK2CEoyWj4XAaJwy1fqq9ozAo8GnzSnRhuHLOTsodMDDAlc-gIiTCKZZEYWBVLd3YzrIzEcT3A3EzZ06KOHnCmXClZvmzbjq0VRTnwwNAuPeLYewznuzvsW",
+            "name": "projects/11131971736005700711/files/f072f77fd2d948ed8b78fe64b68b6e33"
+          },
+          "title": "底部导航图标集 (Nav Icons)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "1894",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2U0MDFkYTcxYWExZTRmMDg4OTcwZDQ0Y2IwYjU2MDgyEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/cbecb49afaa14990a2aa3c8fedf2d4af"
+          },
+          "name": "projects/11131971736005700711/screens/d900ce675e934d56995c3fda4a29f71f",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidXfF9GkeptzX28vNnCOcIp5oYExmzkI69jVE8eQqnVoPCgMIlcyKhtnBqM5sg1cLp8OPWMORPGyFVCuPpIuXbdBiaSahDwgrVbjj6PV8k1A7iEJKWt-HjsKrCCjp_Q2sdAb9yRUqJ2MX8yQL8Im39hs5eRtgXHjg2GnR_yxT1wf2M-QR-4wFsYQXK3XynWlhijtQ2Md3m89iHsB71qc4Xi0I_99365-R1cmRtm3vmxR0tEmqIC4dj-NcKb1",
+            "name": "projects/11131971736005700711/files/c58b35f478964f299b68ba917270fac9"
+          },
+          "title": "购物车 (Shopping Cart)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "2054",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzBhYTgyN2I5YmM2ZTRhNDdhOWYyOTYxZjNkYjM1OTZmEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/c2b24af65adb4c9c8c81d9461dac4700"
+          },
+          "name": "projects/11131971736005700711/screens/bd416e8e61e44eeca9090dfdac0e2812",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVCUIEObJ6Ibls9E44ftUSeEvwRbKus6OQy-xKx9M_k4l5Us331GVz4VuDbMh7jQ1zQpkYVDv0S6pZ19wDyvVpcLlPCYI0dbQw41R2B95CUTw26SAdeHf_xGws-IfMLeUlrtUTlOD6a4XlYj668IaNlDkvZAYKtoZrUV-g24clWBD-RpLmN8x4OqF7FOlha05OnEJHxOGTexw2pYruV1H1GfVMNtEEvqmcpGjh4Xf68hFwNA6cSdp8-NlRM",
+            "name": "projects/11131971736005700711/files/31a4c10a9ce14c64bdba16819f5b21a0"
+          },
+          "title": "个人中心 (Me)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "1768",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzFkZTNlNWQ2ZTBlMzQ0ZWVhZDQ2N2QwZjAzMDI1M2EzEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/47ba72a480ca4815b74c1592d07e0cf4"
+          },
+          "name": "projects/11131971736005700711/screens/dd4902990e634bc28f938d998e49d1d4",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVspw44ke5MASRXQNtO5DpDnV2mdLdI1rr5vY9GkdXkgS_qwz30fFNCVWAU1KqZG62ximXRqxbAqBaHlnoPMZQTNbIJoB3awhj1PCa_gFiy92RTptGzrnkrFx-sg3ku1LpFwMfJKNCRCQzdqL6IbOjh6j1cPaDkoQSb5JWH8971BKD0mCvgIS8PB7gm8U7stWLuLTNvoSUkFnEyRrzjjXuwyNxid0UlILypph9JvbYdtIBNqRHLWY-a-uXX",
+            "name": "projects/11131971736005700711/files/ee93562b0c9248d9871c03490f72b660"
+          },
+          "title": "商品列表页 (Product List)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "3660",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzAzNzNkMWI0NWU3MzQzMTI5NjYyMGFkYWJhZmNmNzJiEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/6230da5a745142d1933d7aa53ede7915"
+          },
+          "name": "projects/11131971736005700711/screens/dd7850e168314eacb8b641bde1c24529",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidXPcRJ5GGsiy4ePD3dWlci6Dum4farqrQb4mlRhMl-t_VvpU03Qz7WKeheB4CJmRteTdhXjBILQiUIaAJbGhYQysUcqHekYc_gAjJbIaqtubEforQa5yBDULrnqPYK9immcGMiHrgcpwzgL7sI4EZBW8MJJ08eWLVhMslr_yLRe-vPEHNi3dFrexaKJmEAIvqDUL5w9IPXzIIPhtBYy2yZbjAdqG85Q1GfmHUTTjU97zIpy3NPlyh2jRt0",
+            "name": "projects/11131971736005700711/files/652b9342d43d4cfdb617608a3f2335c3"
+          },
+          "title": "商品详情 (Product Detail)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "1768",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2MzMWY3MGMyYmZiYjQzZjc4NzViZDI1MWZjMWY5ZjE2EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/71c73f29493247dd856fcaac6bddc982"
+          },
+          "name": "projects/11131971736005700711/screens/0a0d5694c4ef41568111d89983a3e548",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidWhi6M76OHYDnRdkpjs5USO8XcNJZETzlwrQA9fmz4Hu2sMLrL9OiFwyR6dtAB6PR0OQDKmDMhcqSVaUyQacVsjsd_ClUH4ynfAeKwM7B8iib-rRdG5Z158L-XHe1IEhwZcVtj3by06WdEQIMY0q6jugwlwflS4BdAd8USYDLUYxO0MPbtsZmXTFWhS7o2LeAtKSwNhtIKcMdCPYcnIJiB25kMA0yhtIGXd7Ln-sPykiSzPxvmV_IqLC30",
+            "name": "projects/11131971736005700711/files/4b5cdaabe3b842d4b61310a8181e782d"
+          },
+          "title": "分类页 (Category)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "2424",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2UxNTAwZTFlOTZhNzQyZDA4MzBjMWE1Zjg4OGIxODU5EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/0e2cb1795df74673adb27113d8a9a85d"
+          },
+          "name": "projects/11131971736005700711/screens/f95579f510674d2485d14f6332758e8b",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVD7hakY4E5abaetdkEq_i397gSKM0vWnv2uOe-RfxYy0qfTcU7-SBfJ8arMWIk183YMa86GiGqtIowpQg9ZS5c-uLQ_nhevU_2wi2smFkTZ8BW2FjiyJtWdgodZdrvGwt53FpLvc2F7k55KNTCmNqnznXfpFUGyXas5ZPmD31yi9TwxmbfL7ywtqoBJj6PjxZzdG_dKu8bO9hz2r6rRpcaH_o3LVe32SX4ASpN6LvrcAzDhJSb6CveiL7M",
+            "name": "projects/11131971736005700711/files/ce218f346a3e4630abfbe408be91aa40"
+          },
+          "title": "首页 (Home)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "1680",
+          "htmlCode": {},
+          "name": "projects/11131971736005700711/screens/34f44dfb80fe4340bb8529bfde84c1f8",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidWhddG-b0EpCXrDPjx9XzbnOkrWxb3ky9oOXzwCDjifN9sjtGlooK7nI0IgDjeS64jT0cDUngRfuzkt5EKBELSAhHBmmUNckp4Gqjtv6brQaJZM4tocB0ycpKQoLd6zl3XeGofjaJQG8bktf2RPYtNj2sSeMxrh8K_-uYzZsTjKl14W3acSSrN-tSAuIAEknSmato87znJyyc7HEhDMqT-IIYsXtkDX3x5kSti5U-4sqFtZiea0TAzc6PeL",
+            "name": "projects/11131971736005700711/files/8d50171e7b9c4d65a19e23cbd637dda9"
+          },
+          "title": "Heatmap of 个人中心 (Me)",
+          "width": "638"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "2472",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzlkODE0YjVmMzkyNTRiZDVhMTM1YWJjYjIyZTYwY2MwEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/88c31c80daba4ca0872883ed106c6d04"
+          },
+          "name": "projects/11131971736005700711/screens/b0006405d9d74ad895d4270ab8a6658f",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidXr6Es95_XG_wb0O5Xec2QEPizZcJWorVic8Bo4GcAonILJ8kKSHe6j76kejiVxkdr6PMGZQRp1Fy3ACf6QG8Ww31Ix6ysJytjbuEG_Sx55ZrIfHEIZVR3EGJHrtDYkym6fNlDmQwRff-Do5tKSjRzQGaG4o8qHAmm0bGR2fpxH8ye8QiC9GdGoFi8EJNVgqgILeOyrCyf5fJEuwZJpaTfGWUYOmcDEOhz8ftTq2HICViT6wE7C5o6qmLMF",
+            "name": "projects/11131971736005700711/files/162a7bfe1369450a8b16e031cb2cecb1"
+          },
+          "title": "搜索页 (Search)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "2424",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2JhNTdiMjA0NjI3NjQwY2NhMDkwNGY1YzY4ODdhYzI3EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/a328536a1f784b6182c53eefc097f9cc"
+          },
+          "name": "projects/11131971736005700711/screens/45b040096bf24cdbbadcabd0dbe22174",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVln1Gjl4JEWrAZg_00cOpPsonO58fFCsYVHK33zPS-fzZNWX3hr1MpHOG-dheY2z6vqwzR5vccK8KOSuD2CEzzBMSs15iqWc1LFfU1ofjEHsxyNu06KF5WSysThqMAqn7mbSOnSXwRz5MAOdcdkZb99yZn85ZJGbM0T4UC9EvSMslIzgF8aCsW-yPxnO1kuyeVmAN51psxkx-_mwAUgMj95JDOzl7M44jV9RQ8Fn7pXn4-nJt_QfgHj8w",
+            "name": "projects/11131971736005700711/files/9ec1eabd5b864518b695f869f6d51aad"
+          },
+          "title": "首页 (Home)",
+          "width": "780"
+        },
+        {
+          "deviceType": "MOBILE",
+          "height": "3312",
+          "htmlCode": {
+            "downloadUrl": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2E2OTA1NWQ2MGM4YTQzYmZhYTZhYzgyNzQ5NWRhMzFlEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+            "mimeType": "text/html",
+            "name": "projects/11131971736005700711/files/4bf414e9122741e2b0ae1b1c5a4f433b"
+          },
+          "name": "projects/11131971736005700711/screens/b8a66c8dbd394eeba5e40eb69ff204bf",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidX4k9wAf2MIdV15vFvGdjUyjaMjTzKch4xxNBCxLAPkFVoSzgmVck4dHQRISg3Xf_6cPKVag7bZ4y9bBxZRKZINqqtBWgLfXPQfTl2GzlEE5vIrjP12I9QXc4cTHROb7NteKfn985YvO7GWk_LgTgKkdm35wblnIh4_jVdIibrG22f8UGlmD80p5hj-cY-cQ78XWMsybx-2I_BB4Z23HGCx6F_Wy8ff7XmxSJJzSvSbHSyiWClKzRchm6x8",
+            "name": "projects/11131971736005700711/files/555e1964b9004588a7556ea745c84fb7"
+          },
+          "title": "创意首页 (Home)",
+          "width": "780"
+        },
+        {
+          "height": "1660",
+          "htmlCode": {},
+          "name": "projects/11131971736005700711/screens/9104180720184293089",
+          "screenshot": {
+            "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVgr1MDjnzGIVrM-jHxH1yWmH-uEImeX5u69GSTcNnPPVOk5WPfAEGIhZiCQLI6ptx9FAVduspYKybhWkcuL3J-Wo-VpGWoMbDWtgn2aBdbggowpa5Mb0bYhbKK0sXcypMhQKf-S9d-kJn0bUj1Rxzlnj7L5f_AP3GnL3RcncRnRIH9npxYiz6v5nEF8p-r5Zc-HR5Tr_8Se-y5cLfQSXPActnqxmUU-g-mCaHgX24e1Gxh6lxCVl55TL8xJ1W3p-jsYGJTa7Y21A0",
+            "name": "projects/11131971736005700711/files/9104180720184292660"
+          },
+          "title": "Weixin Image_20260305104326_8408_21.jpg",
+          "width": "1242"
+        }
+      ]
+    }
+  }
+}

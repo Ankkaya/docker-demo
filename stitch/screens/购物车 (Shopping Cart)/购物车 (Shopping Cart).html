@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Header -->
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<div class="flex items-center p-4 justify-between max-w-lg mx-auto w-full">
+<button class="text-slate-900 dark:text-slate-100 flex size-10 items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">Shopping Bag</h1>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
+<!-- Cart Item 1 -->
+<div class="flex gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl shadow-sm border border-primary/5">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-24 shrink-0" data-alt="Linen Sun Suit Set in soft beige color" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCLQsZ4RmhxjAVeQCKGSDIVcQQrkMJYI66kJOUZmHOweXR5Wz-5ROcyJ-kZJa_T8rxkpVOx1DD_mPZu1PRvfR0e0-wEZLgmqgA_on3nv6pFajdjkK041rRuPzoCmXI0M972Ly9BRqJrTvfxxc4W_iJhkwdxsXtEXecZgG64XMWi6p2LzTU0xHnKZ412bUwUs6Cz2rIV1kZb4bkVTTtc8obLkdEhdg1fKuhruDPP2fut7HPogAgrCx_X4VQVyxahMmWigwflDSF7phLK");'></div>
+<div class="flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<p class="text-slate-900 dark:text-slate-100 text-base font-semibold">Linen Sun Suit Set</p>
+<button class="text-slate-400 hover:text-red-500">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<p class="text-primary text-sm font-medium mt-1">$48.00</p>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Size: 12-18 Months</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex items-center gap-3 bg-background-light dark:bg-slate-700 rounded-full px-2 py-1">
+<button class="flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-slate-100">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="text-sm font-bold w-4 text-center">1</span>
+<button class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Cart Item 2 -->
+<div class="flex gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl shadow-sm border border-primary/5">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-24 shrink-0" data-alt="Organic Cotton Romper in sage green" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAxihXOoPL73_oH7OcexZ9JD8BxJ7jBMjmfqsREV6tcwjshAyD7l8STDh4pKq-EhOhBrlOPV_eQ1sW7syNvBaihEQiacicu3t2AfTA7_QgVlnmKtKvi9smJcVwzLgXcFiC0kgogNgkM4CprFQdZpBBphVoIHH3qAyO3lxRXFF_Ml429IIKgEp_wMsjC0fKEar-hh-MYRF8RxXvRVKBr2ap0vR70RTomxkXt6J8S01t9LNllhGVQ3AV5dWWXN6L9XD1O8Km_YB50VQJ9");'></div>
+<div class="flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<p class="text-slate-900 dark:text-slate-100 text-base font-semibold">Organic Cotton Romper</p>
+<button class="text-slate-400 hover:text-red-500">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<p class="text-primary text-sm font-medium mt-1">$32.00</p>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Size: 6-12 Months</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex items-center gap-3 bg-background-light dark:bg-slate-700 rounded-full px-2 py-1">
+<button class="flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-slate-100">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="text-sm font-bold w-4 text-center">2</span>
+<button class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Cart Item 3 -->
+<div class="flex gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl shadow-sm border border-primary/5">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-24 shrink-0" data-alt="Hand-Knit Baby Bonnet ivory white" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCxWj16qwOvPgEUtu-v-DY19ynVfRGnMSczgj4VmF3AzgPsMp2P_5QIZFfBkeAlMJnC6KzYoZn8By6CIEJqIPJu9ya36Cu32cH-Loy8po_oTmOnjP_nPHfHWJXTQd7TPfqgWKkYhhqZtEX4OkXfUfw3zsih21lLX-8rH_CTjgD6fFDXwqW3_odsHTWtoO2zI1Vfc-IxFFvzJm4Z9JzcMU8quSF0n8ZVWgLAHpgpv3lmTkGArhSIcpPzzu_mkB0pDUrJpPPHTQ5Urq6-");'></div>
+<div class="flex flex-1 flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<p class="text-slate-900 dark:text-slate-100 text-base font-semibold">Hand-Knit Bonnet</p>
+<button class="text-slate-400 hover:text-red-500">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<p class="text-primary text-sm font-medium mt-1">$24.00</p>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Size: Small</p>
+</div>
+<div class="flex items-center justify-between mt-2">
+<div class="flex items-center gap-3 bg-background-light dark:bg-slate-700 rounded-full px-2 py-1">
+<button class="flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-slate-100">
+<span class="material-symbols-outlined text-sm">remove</span>
+</button>
+<span class="text-sm font-bold w-4 text-center">1</span>
+<button class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Promo Code Section -->
+<div class="mt-8">
+<div class="flex gap-2">
+<input class="flex-1 rounded-lg border-primary/20 bg-white dark:bg-slate-800 text-sm focus:border-primary focus:ring-primary dark:border-slate-700" placeholder="Promo code" type="text"/>
+<button class="px-4 py-2 bg-primary/20 text-primary font-bold rounded-lg text-sm">Apply</button>
+</div>
+</div>
+</main>
+<!-- Footer Summary & Nav -->
+<footer class="mt-auto bg-white dark:bg-slate-900 rounded-t-xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] max-w-lg mx-auto w-full">
+<!-- Totals Section -->
+<div class="px-6 py-6 border-b border-primary/5 space-y-3">
+<div class="flex justify-between text-slate-500 dark:text-slate-400">
+<span>Subtotal</span>
+<span>$136.00</span>
+</div>
+<div class="flex justify-between text-slate-500 dark:text-slate-400">
+<span>Shipping</span>
+<span>$0.00</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="text-lg font-bold">Total Amount</span>
+<span class="text-2xl font-bold text-primary">$136.00</span>
+</div>
+<button class="w-full bg-primary text-slate-900 font-bold py-4 rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all mt-4 flex items-center justify-center gap-2">
+                Checkout Now
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar -->
+<nav class="flex gap-2 bg-white dark:bg-slate-900 px-4 pb-6 pt-3">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">home</span>
+<p class="text-[10px] font-medium leading-normal">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<p class="text-[10px] font-medium leading-normal">Shop</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+<div class="relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">shopping_cart</span>
+<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-white ring-2 ring-white dark:ring-slate-900">4</span>
+</div>
+<p class="text-[10px] font-bold leading-normal">Cart</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">person</span>
+<p class="text-[10px] font-medium leading-normal">Profile</p>
+</a>
+</nav>
+</footer>
+</body></html>

@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "d900ce675e934d56995c3fda4a29f71f",
+    "title": "购物车 (Shopping Cart)",
+    "width": "780",
+    "height": "1894",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/AOfcidXfF9GkeptzX28vNnCOcIp5oYExmzkI69jVE8eQqnVoPCgMIlcyKhtnBqM5sg1cLp8OPWMORPGyFVCuPpIuXbdBiaSahDwgrVbjj6PV8k1A7iEJKWt-HjsKrCCjp_Q2sdAb9yRUqJ2MX8yQL8Im39hs5eRtgXHjg2GnR_yxT1wf2M-QR-4wFsYQXK3XynWlhijtQ2Md3m89iHsB71qc4Xi0I_99365-R1cmRtm3vmxR0tEmqIC4dj-NcKb1",
+      "contentType": "image/png",
+      "file": "stitch/screens/购物车 (Shopping Cart)/购物车 (Shopping Cart).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2U0MDFkYTcxYWExZTRmMDg4OTcwZDQ0Y2IwYjU2MDgyEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/购物车 (Shopping Cart)/购物车 (Shopping Cart).html"
+    }
+  }
+}

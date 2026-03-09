@@ -1,0 +1,150 @@
+{
+  "id": 1,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"name\":\"projects/11131971736005700711\",\"title\":\"首页 (Home)\",\"visibility\":\"PRIVATE\",\"createTime\":\"2026-03-05T02:19:43.849431Z\",\"updateTime\":\"2026-03-08T14:55:32.170142Z\",\"projectType\":\"TEXT_TO_UI_PRO\",\"thumbnailScreenshot\":{\"name\":\"projects/11131971736005700711/files/24c0f95a34cd499d839124a9d8231f57\",\"downloadUrl\":\"https://lh3.googleusercontent.com/aida/AOfcidVLGdZocYxCqK39-o02zEpJw1U1hyKeE57LkBidt3Na58emQZD7k-ugTzJjzMrkTbvO_vLbYOVE-QSy_1kaJJ6ZkPGo0lmFwHVKm8pwgJ0qrNgbpX0Yd0Z357yccPUGTGiK-8fAX8oRCFLkVQQwrM-3MbBR8HP8QyRxx8hNnDu8JRAO2tn2uXcsyyZ0zLhBFwB2jsIkNITWqSlvDfHba58HNbdqlyBi7hCPApl_JWJfNdJ9yswXpo3Chqy0\"},\"origin\":\"STITCH\",\"deviceType\":\"MOBILE\",\"designTheme\":{\"colorMode\":\"LIGHT\",\"font\":\"PLUS_JAKARTA_SANS\",\"roundness\":\"ROUND_EIGHT\",\"customColor\":\"#efb239\",\"saturation\":2},\"screenInstances\":[{\"id\":\"02627626-af5f-431b-901b-403788821596\",\"sourceScreen\":\"projects/11131971736005700711/screens/9104180720184294376\",\"y\":1385,\"width\":1022,\"height\":1428,\"type\":\"SCREEN_INSTANCE\"},{\"id\":\"0a0d5694c4ef41568111d89983a3e548\",\"sourceScreen\":\"projects/11131971736005700711/screens/0a0d5694c4ef41568111d89983a3e548\",\"x\":703,\"y\":-55,\"width\":390,\"height\":884},{\"id\":\"18da02f2-15b3-48db-b340-cabed717b5c4\",\"sourceScreen\":\"projects/11131971736005700711/screens/9104180720184293089\",\"x\":1076,\"y\":1487,\"width\":1242,\"height\":1660,\"type\":\"SCREEN_INSTANCE\"},{\"id\":\"1df0012a887d4d6d8f28efd6f7d86024\",\"sourceScreen\":\"projects/11131971736005700711/screens/1df0012a887d4d6d8f28efd6f7d86024\",\"x\":2519,\"y\":-55,\"width\":390,\"height\":2621},{\"id\":\"34f44dfb80fe4340bb8529bfde84c1f8\",\"sourceScreen\":\"projects/11131971736005700711/screens/34f44dfb80fe4340bb8529bfde84c1f8\",\"x\":4073,\"y\":-2,\"width\":390,\"height\":1026},{\"id\":\"45b040096bf24cdbbadcabd0dbe22174\",\"sourceScreen\":\"projects/11131971736005700711/screens/45b040096bf24cdbbadcabd0dbe22174\",\"x\":2065,\"y\":-55,\"width\":390,\"height\":1212},{\"id\":\"6742a3a1b2d14efeaa0c0e2b1b69bb58\",\"sourceScreen\":\"projects/11131971736005700711/screens/f95579f510674d2485d14f6332758e8b\",\"x\":-204,\"y\":-55,\"width\":390,\"height\":1212},{\"id\":\"712144d28e0043a383a8c47c71283d6b\",\"sourceScreen\":\"projects/11131971736005700711/screens/712144d28e0043a383a8c47c71283d6b\",\"x\":2973,\"y\":-55,\"width\":390,\"height\":390},{\"id\":\"b0006405d9d74ad895d4270ab8a6658f\",\"sourceScreen\":\"projects/11131971736005700711/screens/b0006405d9d74ad895d4270ab8a6658f\",\"x\":244,\"y\":-55,\"width\":390,\"height\":1236},{\"id\":\"b8a66c8dbd394eeba5e40eb69ff204bf\",\"sourceScreen\":\"projects/11131971736005700711/screens/b8a66c8dbd394eeba5e40eb69ff204bf\",\"x\":2392,\"y\":1385,\"width\":390,\"height\":1656},{\"id\":\"bd416e8e61e44eeca9090dfdac0e2812\",\"sourceScreen\":\"projects/11131971736005700711/screens/bd416e8e61e44eeca9090dfdac0e2812\",\"x\":3514,\"y\":13,\"width\":390,\"height\":884},{\"id\":\"d900ce675e934d56995c3fda4a29f71f\",\"sourceScreen\":\"projects/11131971736005700711/screens/d900ce675e934d56995c3fda4a29f71f\",\"x\":1611,\"y\":-55,\"width\":390,\"height\":947},{\"id\":\"dd4902990e634bc28f938d998e49d1d4\",\"sourceScreen\":\"projects/11131971736005700711/screens/dd4902990e634bc28f938d998e49d1d4\",\"x\":1157,\"y\":-55,\"width\":390,\"height\":884},{\"id\":\"dd7850e168314eacb8b641bde1c24529\",\"sourceScreen\":\"projects/11131971736005700711/screens/dd7850e168314eacb8b641bde1c24529\",\"y\":3403,\"width\":390,\"height\":1830}],\"metadata\":{\"userRole\":\"OWNER\"}}",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "createTime": "2026-03-05T02:19:43.849431Z",
+      "designTheme": {
+        "colorMode": "LIGHT",
+        "customColor": "#efb239",
+        "font": "PLUS_JAKARTA_SANS",
+        "roundness": "ROUND_EIGHT",
+        "saturation": 2
+      },
+      "deviceType": "MOBILE",
+      "metadata": {
+        "userRole": "OWNER"
+      },
+      "name": "projects/11131971736005700711",
+      "origin": "STITCH",
+      "projectType": "TEXT_TO_UI_PRO",
+      "screenInstances": [
+        {
+          "height": 1428,
+          "id": "02627626-af5f-431b-901b-403788821596",
+          "sourceScreen": "projects/11131971736005700711/screens/9104180720184294376",
+          "type": "SCREEN_INSTANCE",
+          "width": 1022,
+          "y": 1385
+        },
+        {
+          "height": 884,
+          "id": "0a0d5694c4ef41568111d89983a3e548",
+          "sourceScreen": "projects/11131971736005700711/screens/0a0d5694c4ef41568111d89983a3e548",
+          "width": 390,
+          "x": 703,
+          "y": -55
+        },
+        {
+          "height": 1660,
+          "id": "18da02f2-15b3-48db-b340-cabed717b5c4",
+          "sourceScreen": "projects/11131971736005700711/screens/9104180720184293089",
+          "type": "SCREEN_INSTANCE",
+          "width": 1242,
+          "x": 1076,
+          "y": 1487
+        },
+        {
+          "height": 2621,
+          "id": "1df0012a887d4d6d8f28efd6f7d86024",
+          "sourceScreen": "projects/11131971736005700711/screens/1df0012a887d4d6d8f28efd6f7d86024",
+          "width": 390,
+          "x": 2519,
+          "y": -55
+        },
+        {
+          "height": 1026,
+          "id": "34f44dfb80fe4340bb8529bfde84c1f8",
+          "sourceScreen": "projects/11131971736005700711/screens/34f44dfb80fe4340bb8529bfde84c1f8",
+          "width": 390,
+          "x": 4073,
+          "y": -2
+        },
+        {
+          "height": 1212,
+          "id": "45b040096bf24cdbbadcabd0dbe22174",
+          "sourceScreen": "projects/11131971736005700711/screens/45b040096bf24cdbbadcabd0dbe22174",
+          "width": 390,
+          "x": 2065,
+          "y": -55
+        },
+        {
+          "height": 1212,
+          "id": "6742a3a1b2d14efeaa0c0e2b1b69bb58",
+          "sourceScreen": "projects/11131971736005700711/screens/f95579f510674d2485d14f6332758e8b",
+          "width": 390,
+          "x": -204,
+          "y": -55
+        },
+        {
+          "height": 390,
+          "id": "712144d28e0043a383a8c47c71283d6b",
+          "sourceScreen": "projects/11131971736005700711/screens/712144d28e0043a383a8c47c71283d6b",
+          "width": 390,
+          "x": 2973,
+          "y": -55
+        },
+        {
+          "height": 1236,
+          "id": "b0006405d9d74ad895d4270ab8a6658f",
+          "sourceScreen": "projects/11131971736005700711/screens/b0006405d9d74ad895d4270ab8a6658f",
+          "width": 390,
+          "x": 244,
+          "y": -55
+        },
+        {
+          "height": 1656,
+          "id": "b8a66c8dbd394eeba5e40eb69ff204bf",
+          "sourceScreen": "projects/11131971736005700711/screens/b8a66c8dbd394eeba5e40eb69ff204bf",
+          "width": 390,
+          "x": 2392,
+          "y": 1385
+        },
+        {
+          "height": 884,
+          "id": "bd416e8e61e44eeca9090dfdac0e2812",
+          "sourceScreen": "projects/11131971736005700711/screens/bd416e8e61e44eeca9090dfdac0e2812",
+          "width": 390,
+          "x": 3514,
+          "y": 13
+        },
+        {
+          "height": 947,
+          "id": "d900ce675e934d56995c3fda4a29f71f",
+          "sourceScreen": "projects/11131971736005700711/screens/d900ce675e934d56995c3fda4a29f71f",
+          "width": 390,
+          "x": 1611,
+          "y": -55
+        },
+        {
+          "height": 884,
+          "id": "dd4902990e634bc28f938d998e49d1d4",
+          "sourceScreen": "projects/11131971736005700711/screens/dd4902990e634bc28f938d998e49d1d4",
+          "width": 390,
+          "x": 1157,
+          "y": -55
+        },
+        {
+          "height": 1830,
+          "id": "dd7850e168314eacb8b641bde1c24529",
+          "sourceScreen": "projects/11131971736005700711/screens/dd7850e168314eacb8b641bde1c24529",
+          "width": 390,
+          "y": 3403
+        }
+      ],
+      "thumbnailScreenshot": {
+        "downloadUrl": "https://lh3.googleusercontent.com/aida/AOfcidVLGdZocYxCqK39-o02zEpJw1U1hyKeE57LkBidt3Na58emQZD7k-ugTzJjzMrkTbvO_vLbYOVE-QSy_1kaJJ6ZkPGo0lmFwHVKm8pwgJ0qrNgbpX0Yd0Z357yccPUGTGiK-8fAX8oRCFLkVQQwrM-3MbBR8HP8QyRxx8hNnDu8JRAO2tn2uXcsyyZ0zLhBFwB2jsIkNITWqSlvDfHba58HNbdqlyBi7hCPApl_JWJfNdJ9yswXpo3Chqy0",
+        "name": "projects/11131971736005700711/files/24c0f95a34cd499d839124a9d8231f57"
+      },
+      "title": "首页 (Home)",
+      "updateTime": "2026-03-08T14:55:32.170142Z",
+      "visibility": "PRIVATE"
+    }
+  }
+}
