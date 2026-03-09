@@ -6,9 +6,13 @@
 type _LocationUrl =
   "/pages/home/index" |
   "/pages/about/index" |
+  "/pages/cart/index" |
   "/pages/category/index" |
   "/pages/index/index" |
+  "/pages/product-detail/index" |
+  "/pages/product-list/index" |
   "/pages/search/index" |
+  "/pages/user/index" |
   "/subPages/ci/index" |
   "/subPages/create-uni/index" |
   "/subPages/feedback/index" |
@@ -35,7 +39,7 @@ interface NavigateToOptions {
 interface RedirectToOptions extends NavigateToOptions {}
 
 interface SwitchTabOptions {
-  url: "/pages/home/index" | "/pages/index/index"
+  url: "/pages/home/index" | "/pages/category/index" | "/pages/cart/index" | "/pages/user/index"
 }
 
 type ReLaunchOptions = NavigateToOptions | SwitchTabOptions;

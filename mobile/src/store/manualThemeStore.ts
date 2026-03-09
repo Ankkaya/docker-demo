@@ -23,7 +23,7 @@ export const useManualThemeStore = defineStore('manualTheme', {
       darkColor: '#ffffff',
       darkColor2: '#e0e0e0',
       darkColor3: '#a0a0a0',
-      colorTheme: themeColorOptions[0].primary,
+      colorTheme: '#efb239',
     },
   }),
 

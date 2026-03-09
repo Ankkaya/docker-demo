@@ -98,6 +98,12 @@ function onSearchClick() {
   })
 }
 
+function onCartClick() {
+  router.push({
+    name: 'cart',
+  })
+}
+
 // 点击分类 - 跳转到分类页面并激活对应分类
 function onCategoryClick(category: typeof categories.value[0]) {
   const index = categories.value.findIndex(c => c.id === category.id)
@@ -124,8 +130,13 @@ function addToCart(product: typeof hotProducts.value[0]) {
 
 // 点击商品
 function onProductClick(product: typeof hotProducts.value[0]) {
-  uni.navigateTo({
-    url: `/subPages/pinia/index`,
+  router.push({
+    name: 'product-detail',
+    query: {
+      name: product.name,
+      price: product.price.toFixed(2),
+      image: encodeURIComponent(product.image),
+    },
   })
 }
 </script>
@@ -139,9 +150,9 @@ function onProductClick(product: typeof hotProducts.value[0]) {
     <!-- Header & Search -->
     <view class="bg-[#f8f7f6]/80 backdrop-blur-md">
       <!-- Search Bar -->
-      <view class="px-4 pb-4">
+      <view class="flex items-center gap-2 px-4 pb-4">
         <view
-          class="h-11 w-full flex items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
+          class="h-11 flex flex-1 items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
           @click="onSearchClick"
         >
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
@@ -150,6 +161,9 @@ function onProductClick(product: typeof hotProducts.value[0]) {
           <view class="h-full w-full flex items-center px-3 text-sm text-slate-400">
             Search for organic cotton onesies...
           </view>
+        </view>
+        <view class="size-11 flex items-center justify-center rounded-xl bg-white shadow-sm" @click="onCartClick">
+          <wd-icon name="shopping_cart" size="18" color="#efb239" />
         </view>
       </view>
     </view>

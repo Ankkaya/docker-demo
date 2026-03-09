@@ -48,7 +48,13 @@ export default defineUniPages({
         pagePath: 'pages/home/index',
       },
       {
-        pagePath: 'pages/index/index',
+        pagePath: 'pages/category/index',
+      },
+      {
+        pagePath: 'pages/cart/index',
+      },
+      {
+        pagePath: 'pages/user/index',
       },
     ],
   },

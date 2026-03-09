@@ -7,8 +7,10 @@ export interface TabbarItem {
 }
 
 const tabbarItems = ref<TabbarItem[]>([
-  { name: 'index', value: null, active: false, title: '首页', icon: 'home' },
-  { name: 'home', value: null, active: false, title: '关于', icon: 'user' },
+  { name: 'home', value: null, active: false, title: '首页', icon: 'i-material-symbols:house' },
+  { name: 'category', value: null, active: false, title: '分类', icon: 'i-material-symbols:category-rounded' },
+  { name: 'cart', value: null, active: false, title: '购物车', icon: 'i-material-symbols:shopping-cart' },
+  { name: 'user', value: null, active: false, title: '我的', icon: 'i-material-symbols:account-circle' },
 ])
 
 export function useTabbar() {

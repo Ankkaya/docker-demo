@@ -154,9 +154,11 @@ function onSearch() {
 
 // 点击子分类
 function onSubCategoryClick(subCategory: any) {
-  uni.showToast({
-    title: subCategory.name.replace('\n', ' '),
-    icon: 'none',
+  router.push({
+    name: 'product-list',
+    query: {
+      title: subCategory.name.replace('\n', ' '),
+    },
   })
 }
 
@@ -177,8 +179,10 @@ const currentSubCategories = computed(() => {
     <view class="z-50 bg-[#f8f7f6]/80 backdrop-blur-md">
       <!-- Search Bar -->
       <view class="px-4 pb-3">
-        <view class="h-11 w-full flex items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
-          @click="onSearch">
+        <view
+          class="h-11 w-full flex items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
+          @click="onSearch"
+        >
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
             <wd-icon name="search" size="18" />
           </view>
@@ -193,20 +197,28 @@ const currentSubCategories = computed(() => {
     <view class="flex flex-1 overflow-hidden">
       <!-- Left Sidebar -->
       <scroll-view scroll-y class="w-24 bg-white">
-        <view v-for="(category, index) in categories" :key="category.id"
+        <view
+          v-for="(category, index) in categories" :key="category.id"
           class="relative flex flex-col items-center justify-center px-2 py-4 transition-all duration-200"
-          :class="activeCategory === index ? 'bg-[#f8f7f6]' : 'bg-white'" @click="onCategoryChange(index)">
+          :class="activeCategory === index ? 'bg-[#f8f7f6]' : 'bg-white'" @click="onCategoryChange(index)"
+        >
           <!-- Active Indicator -->
-          <view v-if="activeCategory === index"
-            class="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-[#efb239] -translate-y-1/2" />
+          <view
+            v-if="activeCategory === index"
+            class="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-[#efb239] -translate-y-1/2"
+          />
           <!-- Icon -->
-          <view class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
-            :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'">
+          <view
+            class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
+            :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'"
+          >
             <wd-icon :name="category.icon" size="20" />
           </view>
           <!-- Name -->
-          <text class="text-center text-[11px] font-medium"
-            :class="activeCategory === index ? 'text-[#efb239]' : 'text-slate-600'">
+          <text
+            class="text-center text-[11px] font-medium"
+            :class="activeCategory === index ? 'text-[#efb239]' : 'text-slate-600'"
+          >
             {{ category.name }}
           </text>
         </view>
@@ -226,14 +238,16 @@ const currentSubCategories = computed(() => {
 
         <!-- Sub Categories Grid -->
         <view class="grid grid-cols-2 gap-3">
-          <view v-for="sub in currentSubCategories" :key="sub.id" class="relative overflow-hidden rounded-2xl"
+          <view
+            v-for="sub in currentSubCategories" :key="sub.id" class="relative overflow-hidden rounded-2xl"
             :class="sub.style === 'light' ? 'bg-[#f5e6c8]' : 'bg-slate-400'"
             :style="sub.style === 'dark' ? `background-image: url(${sub.image}); background-size: cover; background-position: center;` : ''"
-            @click="onSubCategoryClick(sub)">
+            @click="onSubCategoryClick(sub)"
+          >
             <!-- Dark Style Card -->
             <view v-if="sub.style === 'dark'" class="relative aspect-[4/5]">
               <!-- Gradient Overlay -->
-              <view class="absolute inset-0 from-black-30 via-black-20 to-transparent bg-gradient-to-br" />
+              <view class="from-black-30 via-black-20 absolute inset-0 to-transparent bg-gradient-to-br" />
               <!-- Content -->
               <view class="absolute inset-0 flex flex-col justify-between p-4">
                 <view>
