@@ -231,17 +231,15 @@ const columns: DataTableColumns<PurchaseReturn> = [
 const loadData = async () => {
   loading.value = true;
   try {
-    const res = await getPurchaseReturns({
+    const res: any = await getPurchaseReturns({
       keyword: searchForm.keyword || undefined,
       supplierId: searchForm.supplierId || undefined,
       status: searchForm.status || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    if (res.data.code === 200) {
-      returnList.value = res.data.data.data;
-      pagination.itemCount = res.data.data.meta.total;
-    }
+    returnList.value = res.data;
+    pagination.itemCount = res.meta.total;
   } finally {
     loading.value = false;
   }
@@ -250,16 +248,14 @@ const loadData = async () => {
 // 加载供应商选项
 const loadSuppliers = async () => {
   try {
-    const res = await getSuppliers();
-    if (res.data.code === 200) {
-      const list = (res.data.data as any).data || [];
-      supplierOptions.value = list
-        .filter((s: Supplier) => s.isEnabled)
-        .map((s: Supplier) => ({
-          label: s.name,
-          value: s.id,
-        }));
-    }
+    const res: any = await getSuppliers();
+    const list = res.data || [];
+    supplierOptions.value = list
+      .filter((s: Supplier) => s.isEnabled)
+      .map((s: Supplier) => ({
+        label: s.name,
+        value: s.id,
+      }));
   } catch (error) {
     console.error('加载供应商失败:', error);
   }
@@ -315,11 +311,9 @@ const handleDetail = (row: PurchaseReturn) => {
 // 审核
 const handleAudit = async (row: PurchaseReturn, action: 'APPROVE' | 'REJECT') => {
   try {
-    const res = await auditPurchaseReturn(row.id, { action });
-    if (res.data.code === 200) {
-      message.success(action === 'APPROVE' ? '审核通过' : '已拒绝');
-      loadData();
-    }
+    await auditPurchaseReturn(row.id, { action });
+    message.success(action === 'APPROVE' ? '审核通过' : '已拒绝');
+    loadData();
   } catch (error) {
     message.error('操作失败');
   }
@@ -328,11 +322,9 @@ const handleAudit = async (row: PurchaseReturn, action: 'APPROVE' | 'REJECT') =>
 // 完成
 const handleComplete = async (row: PurchaseReturn) => {
   try {
-    const res = await completePurchaseReturn(row.id);
-    if (res.data.code === 200) {
-      message.success('已完成');
-      loadData();
-    }
+    await completePurchaseReturn(row.id);
+    message.success('已完成');
+    loadData();
   } catch (error) {
     message.error('操作失败');
   }
@@ -341,11 +333,9 @@ const handleComplete = async (row: PurchaseReturn) => {
 // 取消
 const handleCancel = async (row: PurchaseReturn) => {
   try {
-    const res = await cancelPurchaseReturn(row.id);
-    if (res.data.code === 200) {
-      message.success('已取消');
-      loadData();
-    }
+    await cancelPurchaseReturn(row.id);
+    message.success('已取消');
+    loadData();
   } catch (error) {
     message.error('取消失败');
   }
@@ -354,11 +344,9 @@ const handleCancel = async (row: PurchaseReturn) => {
 // 删除
 const handleDelete = async (row: PurchaseReturn) => {
   try {
-    const res = await deletePurchaseReturn(row.id);
-    if (res.data.code === 200) {
-      message.success('删除成功');
-      loadData();
-    }
+    await deletePurchaseReturn(row.id);
+    message.success('删除成功');
+    loadData();
   } catch (error) {
     message.error('删除失败');
   }

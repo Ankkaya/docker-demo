@@ -148,26 +148,21 @@ const loadData = async () => {
       pageSize: pagination.pageSize,
     });
 
-    if (productRes.data.code === 200) {
-      const products = productRes.data.data.data;
-      pagination.itemCount = productRes.data.data.meta.total;
+    const products = productRes.data;
+    pagination.itemCount = productRes.meta.total;
 
       // 获取每个商品的SKU
       const skuPromises = products.map((p: any) =>
         getProductSkus(p.id).then((res) => {
-          if (res.data.code === 200) {
-            return res.data.data.map((sku: ProductSku) => ({
-              ...sku,
-              product: p,
-            }));
-          }
-          return [];
+          return res.map((sku: ProductSku) => ({
+            ...sku,
+            product: p,
+          }));
         })
       );
 
       const skuArrays = await Promise.all(skuPromises);
       skuList.value = skuArrays.flat();
-    }
   } catch (error) {
     console.error('加载SKU失败:', error);
   } finally {

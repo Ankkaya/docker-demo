@@ -37,7 +37,8 @@
 import { ref, reactive, h } from 'vue';
 import { NButton, NSpace, NTag, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
-import { getShipments, shipShipment, receiveShipment, deleteShipment } from '@/api/order';
+import { getShipments, shipShipment, receiveShipment } from '@/api/order';
+import { getPrintErrorMessage, printShipment } from '@/services/print/print-service';
 import ShipmentForm from './components/ShipmentForm.vue';
 import type { Shipment, ShipmentStatus } from '@/types/purchase';
 
@@ -52,6 +53,7 @@ const statusOptions = [
 
 const loading = ref(false);
 const shipmentList = ref<Shipment[]>([]);
+const printingIds = ref<number[]>([]);
 const pagination = reactive({ page: 1, pageSize: 10, itemCount: 0 });
 const modalVisible = ref(false);
 
@@ -79,9 +81,22 @@ const columns: DataTableColumns<Shipment> = [
   {
     title: '操作',
     key: 'actions',
-    width: 250,
+    width: 320,
     render(row) {
       const buttons: any[] = [];
+      buttons.push(
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'info',
+            loading: isPrinting(row.id),
+            disabled: isPrinting(row.id),
+            onClick: () => handlePrint(row),
+          },
+          { default: () => '打印' },
+        ),
+      );
       if (row.status === 'PENDING') {
         buttons.push(
           h(NButton, { size: 'small', type: 'primary', onClick: () => handleShip(row) }, { default: () => '发货' })
@@ -100,15 +115,15 @@ const columns: DataTableColumns<Shipment> = [
 const loadData = async () => {
   loading.value = true;
   try {
-    const res = await getShipments({
+    const res: any = await getShipments({
       keyword: searchForm.keyword || undefined,
       status: searchForm.status || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    if (res.data.code === 200) {
-      shipmentList.value = res.data.data.data;
-      pagination.itemCount = res.data.data.meta.total;
+    if (res) {
+      shipmentList.value = res.data;
+      pagination.itemCount = res.meta?.total || 0;
     }
   } finally {
     loading.value = false;
@@ -119,14 +134,13 @@ const handleSearch = () => { pagination.page = 1; loadData(); };
 const handleReset = () => { searchForm.keyword = ''; searchForm.status = null; loadData(); };
 const handleCreate = () => { modalVisible.value = true; };
 const handleFormSuccess = () => { modalVisible.value = false; loadData(); };
+const isPrinting = (id: number) => printingIds.value.includes(id);
 
 const handleShip = async (row: Shipment) => {
   try {
-    const res = await shipShipment(row.id);
-    if (res.data.code === 200) {
-      message.success('发货成功');
-      loadData();
-    }
+    await shipShipment(row.id);
+    message.success('发货成功');
+    loadData();
   } catch (error) {
     message.error('发货失败');
   }
@@ -134,13 +148,24 @@ const handleShip = async (row: Shipment) => {
 
 const handleReceive = async (row: Shipment) => {
   try {
-    const res = await receiveShipment(row.id);
-    if (res.data.code === 200) {
-      message.success('收货成功');
-      loadData();
-    }
+    await receiveShipment(row.id);
+    message.success('收货成功');
+    loadData();
   } catch (error) {
     message.error('收货失败');
+  }
+};
+
+const handlePrint = async (row: Shipment) => {
+  if (isPrinting(row.id)) return;
+  printingIds.value.push(row.id);
+  try {
+    await printShipment(row.id);
+    message.success('打印任务已发送');
+  } catch (error) {
+    message.error(getPrintErrorMessage(error));
+  } finally {
+    printingIds.value = printingIds.value.filter((itemId) => itemId !== row.id);
   }
 };
 

@@ -103,7 +103,7 @@
                         :min="0"
                         style="width: 100px"
                         size="small"
-                        @update:value="(val) => handleActualQtyChange(index, val)"
+                        @update:value="(val: number | null) => handleActualQtyChange(index, val)"
                       />
                     </td>
                     <td>
@@ -176,7 +176,7 @@
           :data="availableSkuList"
           :loading="skuLoading"
           :pagination="skuPagination"
-          :row-key="row => row.skuId"
+          :row-key="(row: any) => row.skuId"
           @update:checked-row-keys="handleSkuSelect"
           remote
           @update:page="handleSkuPageChange"
@@ -239,7 +239,7 @@
 <script setup lang="ts">
 import { ref, reactive, h, onMounted, computed } from 'vue';
 import { NButton, NSpace, NTag, useMessage, NText } from 'naive-ui';
-import type { DataTableColumns, DataTableRowKey } from 'naive-ui';
+import type { DataTableColumns, DataTableRowKey, DataTableRowData } from 'naive-ui';
 import { getAdjustments, createAdjustment, auditAdjustment, completeAdjustment, cancelAdjustment, type Adjustment } from '@/api/adjustment';
 import { getWarehouses } from '@/api/warehouse';
 import { getInventories } from '@/api/inventory';
@@ -329,9 +329,9 @@ const skuSelectorColumns: DataTableColumns<any> = [
     title: '当前库存', 
     key: 'quantity', 
     width: 100,
-    render(row) {
+    render(row: DataTableRowData) {
       return h(NTag, { type: 'info', size: 'small' }, {
-        default: () => row.quantity,
+        default: () => String(row.quantity),
       });
     },
   },
@@ -426,7 +426,7 @@ async function loadData() {
 
 // 加载仓库选项
 async function loadWarehouses() {
-  const res = await getWarehouses();
+  const res: any = await getWarehouses();
   warehouseOptions.value = res.data.data.map((w: Warehouse) => ({
     label: w.name,
     value: w.id,
@@ -513,19 +513,19 @@ async function loadAvailableSkus() {
     
     // 过滤掉已经选择的SKU
     const existingSkuIds = createForm.items.map(i => i.skuId);
-    availableSkuList.value = res.data.data
-      .filter((item: any) => !existingSkuIds.includes(item.skuId))
-      .map((item: any) => ({
-        skuId: item.skuId,
-        productName: item.productName,
-        skuCode: item.skuCode,
-        specs: formatSpecs(item.specs),
-        quantity: item.quantity,
+    availableSkuList.value = res.data
+      .filter((item: DataTableRowData) => !existingSkuIds.includes(item.skuId as number))
+      .map((item: DataTableRowData) => ({
+        skuId: item.skuId as number,
+        productName: item.productName as string,
+        skuCode: item.skuCode as string,
+        specs: formatSpecs(item.specs as Record<string, string>),
+        quantity: item.quantity as number,
       }));
     
-    skuPagination.itemCount = res.data.meta.total;
-    skuPagination.page = res.data.meta.page;
-    skuPagination.pageSize = res.data.meta.pageSize;
+    skuPagination.itemCount = res.meta?.total || 0;
+    skuPagination.page = res.meta?.page || 1;
+    skuPagination.pageSize = res.meta?.pageSize || 10;
   } finally {
     skuLoading.value = false;
   }

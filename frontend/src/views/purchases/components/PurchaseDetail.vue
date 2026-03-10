@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { getPurchase } from '@/api/purchase';
 import type { Purchase, PurchaseStatus } from '@/types/purchase';
 
@@ -166,10 +166,8 @@ const formatSpecs = (specs: Record<string, string>) => {
 const loadDetail = async () => {
   loading.value = true;
   try {
-    const res = await getPurchase(props.purchaseId);
-    if (res.data.code === 200) {
-      purchase.value = res.data.data;
-    }
+    const res: any = await getPurchase(props.purchaseId);
+    purchase.value = res;
   } catch (error) {
     console.error('加载详情失败:', error);
   } finally {

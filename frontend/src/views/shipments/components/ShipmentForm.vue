@@ -78,14 +78,16 @@ const handleCancel = () => emit('cancel');
 
 onMounted(async () => {
   const [ordersRes, warehousesRes] = await Promise.all([getOrders(), getWarehouses()]);
-  if (ordersRes.data.code === 200) {
-    orderOptions.value = ordersRes.data.data?.data?.map((o: any) => ({
+  const ordersData = (ordersRes as any)?.data;
+  const warehousesData = (warehousesRes as any)?.data;
+  if (ordersData) {
+    orderOptions.value = ordersData.map((o: any) => ({
       label: `${o.orderNo} - ${o.customerName}`,
       value: o.id,
     })) || [];
   }
-  if (warehousesRes.data.code === 200) {
-    warehouseOptions.value = (warehousesRes.data.data as any)?.data?.map((w: any) => ({
+  if (warehousesData) {
+    warehouseOptions.value = warehousesData.map((w: any) => ({
       label: w.name,
       value: w.id,
     })) || [];

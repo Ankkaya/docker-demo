@@ -200,25 +200,13 @@ const rules: FormRules = {
 // 加载可退货的发货单
 const loadReturnableShipments = async (customerId?: number) => {
   try {
-    const res = await getReturnableShipments(customerId);
-    if (res) {
-      // @ts-ignore
-      const data = res.data || res;
-      if (Array.isArray(data)) {
-        returnableShipments.value = data;
-        shipmentOptions.value = data.map((s) => ({
-          label: `${s.shipmentNo} - ${s.order.customer.name} - ${s.warehouse.name}`,
-          value: s.id,
-        }));
-      } else if (data && (data as any).code === 200) {
-        // Handle standard response if interceptor behavior changes
-        const list = (data as any).data;
-        returnableShipments.value = list;
-        shipmentOptions.value = list.map((s: any) => ({
-          label: `${s.shipmentNo} - ${s.order.customer.name} - ${s.warehouse.name}`,
-          value: s.id,
-        }));
-      }
+    const data = await getReturnableShipments(customerId);
+    if (Array.isArray(data)) {
+      returnableShipments.value = data;
+      shipmentOptions.value = data.map((s) => ({
+        label: `${s.shipmentNo} - ${s.order.customer.name} - ${s.warehouse.name}`,
+        value: s.id,
+      }));
     }
   } catch (error) {
     console.error('加载发货单失败:', error);
@@ -229,31 +217,14 @@ const loadReturnableShipments = async (customerId?: number) => {
 // 加载客户
 const loadCustomers = async () => {
   try {
-    const res = await getCustomers();
-    // @ts-ignore
-    const data = res.data || res;
-    let list = [];
-    if (Array.isArray(data)) {
-      list = data;
-    } else if (data && (data as any).code === 200) {
-      list = (data as any).data;
-      if (list && (list as any).data) {
-        // Handle pagination structure if present
-        list = (list as any).data;
-      }
-    } else if (data && (data as any).data && Array.isArray((data as any).data)) {
-       // Handle { data: [], total: ... } structure
-       list = (data as any).data;
-    }
-
-    if (Array.isArray(list)) {
-      customerOptions.value = list
-        .filter((c: Customer) => c.isEnabled)
-        .map((c: Customer) => ({
-          label: c.name,
-          value: c.id,
-        }));
-    }
+    const res: any = await getCustomers();
+    const list = res.data.data || [];
+    customerOptions.value = list
+      .filter((c: Customer) => c.isEnabled)
+      .map((c: Customer) => ({
+        label: c.name,
+        value: c.id,
+      }));
   } catch (error) {
     console.error('加载客户失败:', error);
   }
@@ -316,17 +287,13 @@ const handleSubmit = async () => {
     };
 
     if (isEdit.value && props.initialData) {
-      const res = await updateSaleReturn(props.initialData.id, data);
-      if (res.data.code === 200) {
-        message.success('更新成功');
-        emit('success');
-      }
+      await updateSaleReturn(props.initialData.id, data);
+      message.success('更新成功');
+      emit('success');
     } else {
-      const res = await createSaleReturn(data);
-      if (res.data.code === 200) {
-        message.success('创建成功');
-        emit('success');
-      }
+      await createSaleReturn(data);
+      message.success('创建成功');
+      emit('success');
     }
   } catch (error) {
     console.error('提交失败:', error);

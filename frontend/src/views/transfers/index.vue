@@ -159,7 +159,7 @@
           :data="availableSkuList"
           :loading="skuLoading"
           :pagination="skuPagination"
-          :row-key="row => row.skuId"
+          :row-key="(row: any) => row.skuId"
           @update:checked-row-keys="handleSkuSelect"
           remote
           @update:page="handleSkuPageChange"
@@ -213,7 +213,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted, computed } from 'vue';
+import { ref, reactive, h, onMounted } from 'vue';
 import { NButton, NSpace, NTag, useMessage, NText } from 'naive-ui';
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui';
 import { getTransfers, createTransfer, confirmOut, confirmIn, cancelTransfer, type Transfer } from '@/api/transfer';
@@ -382,11 +382,11 @@ function formatSpecs(specs: Record<string, string>) {
 async function loadData() {
   loading.value = true;
   try {
-    const res: any = await getTransfers(searchForm);
-    transferList.value = res.data.data;
-    pagination.itemCount = res.data.meta.total;
-    pagination.page = res.data.meta.page;
-    pagination.pageSize = res.data.meta.pageSize;
+    const res = await getTransfers(searchForm);
+    transferList.value = res.data;
+    pagination.itemCount = res.meta.total;
+    pagination.page = res.meta.page;
+    pagination.pageSize = res.meta.pageSize;
   } finally {
     loading.value = false;
   }
@@ -394,8 +394,8 @@ async function loadData() {
 
 // 加载仓库选项
 async function loadWarehouses() {
-  const res = await getWarehouses();
-  warehouseOptions.value = res.data.data.map((w: Warehouse) => ({
+  const res: any = await getWarehouses();
+  warehouseOptions.value = res.data.map((w: Warehouse) => ({
     label: w.name,
     value: w.id,
   }));

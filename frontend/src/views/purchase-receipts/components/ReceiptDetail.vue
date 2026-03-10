@@ -115,9 +115,7 @@ const loadDetail = async () => {
   loading.value = true;
   try {
     const res = await getPurchaseReceipt(props.receiptId);
-    if (res.data.code === 200) {
-      receipt.value = res.data.data;
-    }
+    receipt.value = res.data;
   } catch (error) {
     console.error('加载详情失败:', error);
   } finally {

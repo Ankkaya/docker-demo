@@ -193,22 +193,18 @@ const rules: FormRules = {
 // 加载选项
 const loadOptions = async () => {
   try {
-    const [suppliersRes, warehousesRes] = await Promise.all([
-      getSuppliers({ pageSize: 1000 }),
-      getWarehouses({ pageSize: 1000 }),
+    const [suppliersRes, warehousesRes]: [any, any] = await Promise.all([
+      getSuppliers(),
+      getWarehouses(),
     ]);
 
-    if (suppliersRes.data.code === 200) {
-      supplierOptions.value = suppliersRes.data.data.data
-        .filter((s: Supplier) => s.isEnabled)
-        .map((s: Supplier) => ({ label: s.name, value: s.id }));
-    }
+    supplierOptions.value = suppliersRes.data
+      .filter((s: Supplier) => s.isEnabled)
+      .map((s: Supplier) => ({ label: s.name, value: s.id }));
 
-    if (warehousesRes.data.code === 200) {
-      warehouseOptions.value = warehousesRes.data.data.data
-        .filter((w: Warehouse) => w.isEnabled)
-        .map((w: Warehouse) => ({ label: w.name, value: w.id }));
-    }
+    warehouseOptions.value = warehousesRes.data
+      .filter((w: Warehouse) => w.isEnabled)
+      .map((w: Warehouse) => ({ label: w.name, value: w.id }));
   } catch (error) {
     console.error('加载选项失败:', error);
   }
@@ -285,17 +281,14 @@ const handleSubmit = async () => {
         : undefined,
     };
 
-    let res;
     if (props.initialData) {
-      res = await updatePurchase(props.initialData.id, data);
+      await updatePurchase(props.initialData.id, data);
     } else {
-      res = await createPurchase(data);
+      await createPurchase(data);
     }
 
-    if (res.data.code === 200) {
-      message.success(props.initialData ? '更新成功' : '创建成功');
-      emit('success');
-    }
+    message.success(props.initialData ? '更新成功' : '创建成功');
+    emit('success');
   } catch (error) {
     console.error('提交失败:', error);
   } finally {

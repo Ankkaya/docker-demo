@@ -186,16 +186,14 @@ const columns: DataTableColumns<PurchaseReceipt> = [
 const loadData = async () => {
   loading.value = true;
   try {
-    const res = await getPurchaseReceipts({
+    const res: any = await getPurchaseReceipts({
       keyword: searchForm.keyword || undefined,
       status: searchForm.status || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    if (res.data.code === 200) {
-      receiptList.value = res.data.data.data;
-      pagination.itemCount = res.data.data.meta.total;
-    }
+    receiptList.value = res.data.data;
+    pagination.itemCount = res.meta.total;
   } finally {
     loading.value = false;
   }
@@ -227,11 +225,6 @@ const handlePageSizeChange = (pageSize: number) => {
   loadData();
 };
 
-// 创建
-const handleCreate = () => {
-  modalVisible.value = true;
-};
-
 // 详情
 const handleDetail = (row: PurchaseReceipt) => {
   currentReceiptId.value = row.id;
@@ -241,11 +234,9 @@ const handleDetail = (row: PurchaseReceipt) => {
 // 确认入库
 const handleConfirm = async (row: PurchaseReceipt) => {
   try {
-    const res = await confirmReceipt(row.id);
-    if (res.data.code === 200) {
-      message.success('入库成功');
-      loadData();
-    }
+    await confirmReceipt(row.id);
+    message.success('入库成功');
+    loadData();
   } catch (error) {
     message.error('入库失败');
   }
@@ -254,11 +245,9 @@ const handleConfirm = async (row: PurchaseReceipt) => {
 // 取消
 const handleCancel = async (row: PurchaseReceipt) => {
   try {
-    const res = await cancelReceipt(row.id);
-    if (res.data.code === 200) {
-      message.success('已取消');
-      loadData();
-    }
+    await cancelReceipt(row.id);
+    message.success('已取消');
+    loadData();
   } catch (error) {
     message.error('取消失败');
   }
@@ -267,11 +256,9 @@ const handleCancel = async (row: PurchaseReceipt) => {
 // 删除
 const handleDelete = async (row: PurchaseReceipt) => {
   try {
-    const res = await deleteReceipt(row.id);
-    if (res.data.code === 200) {
-      message.success('删除成功');
-      loadData();
-    }
+    await deleteReceipt(row.id);
+    message.success('删除成功');
+    loadData();
   } catch (error) {
     message.error('删除失败');
   }

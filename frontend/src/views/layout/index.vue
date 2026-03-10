@@ -84,7 +84,8 @@ import {
   // 库存管理模块图标
   RepeatOutline,        // 调拨
   OptionsOutline,       // 调整
-  TimeOutline           // 流水
+  TimeOutline,          // 流水
+  PrintOutline          // 打印
 } from '@vicons/ionicons5'
 import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
@@ -144,7 +145,10 @@ const iconMap: Record<string, any> = {
   // 库存管理模块图标
   'transfer': RepeatOutline,        // 循环 - 调拨
   'adjust': OptionsOutline,         // 选项 - 调整
-  'log': TimeOutline                // 时间 - 流水
+  'log': TimeOutline,               // 时间 - 流水
+  'print-template': PrintOutline,   // 打印模板
+  'printer': PrintOutline,          // 打印机
+  'printer-config': SettingsOutline // 打印机配置
 }
 
 // 图标渲染函数

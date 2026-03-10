@@ -46,6 +46,24 @@ const router = createRouter({
           name: 'system-users',
           component: () => import('@/views/users/index.vue'),
           meta: { title: '用户列表' }
+        },
+        {
+          path: 'print-templates',
+          name: 'system-print-templates',
+          component: () => import('@/views/print-templates/index.vue'),
+          meta: { title: '打印模板' }
+        },
+        {
+          path: 'printers',
+          name: 'system-printers',
+          component: () => import('@/views/printers/index.vue'),
+          meta: { title: '打印机管理' }
+        },
+        {
+          path: 'printer-configs',
+          name: 'system-printer-configs',
+          component: () => import('@/views/printer-configs/index.vue'),
+          meta: { title: '打印机配置' }
         }
       ]
     },
@@ -286,7 +304,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
   if (to.meta.public) {

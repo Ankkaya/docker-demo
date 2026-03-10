@@ -84,6 +84,7 @@ import { NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { getOrders, deleteOrder, confirmOrder, cancelOrder } from '@/api/order';
 import { getCustomers } from '@/api/customer';
+import { getPrintErrorMessage, printOrder } from '@/services/print/print-service';
 import OrderForm from './components/OrderForm.vue';
 import OrderDetail from './components/OrderDetail.vue';
 import type { Order, OrderStatus } from '@/types/purchase';
@@ -113,6 +114,7 @@ const statusOptions = [
 // 列表数据
 const loading = ref(false);
 const orderList = ref<Order[]>([]);
+const printingIds = ref<number[]>([]);
 const pagination = reactive({
   page: 1,
   pageSize: 10,
@@ -194,7 +196,7 @@ const columns: DataTableColumns<Order> = [
   {
     title: '操作',
     key: 'actions',
-    width: 320,
+    width: 380,
     fixed: 'right',
     render(row) {
       const buttons: any[] = [];
@@ -202,6 +204,19 @@ const columns: DataTableColumns<Order> = [
       // 详情按钮
       buttons.push(
         h(NButton, { size: 'small', onClick: () => handleDetail(row) }, { default: () => '详情' })
+      );
+      buttons.push(
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'info',
+            loading: isPrinting(row.id),
+            disabled: isPrinting(row.id),
+            onClick: () => handlePrint(row),
+          },
+          { default: () => '打印' },
+        ),
       );
       
       // 待处理状态的操作
@@ -236,17 +251,15 @@ const columns: DataTableColumns<Order> = [
 const loadData = async () => {
   loading.value = true;
   try {
-    const res = await getOrders({
+    const res: any = await getOrders({
       keyword: searchForm.keyword || undefined,
       customerId: searchForm.customerId || undefined,
       status: searchForm.status || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    if (res.data.code === 200) {
-      orderList.value = res.data.data.data;
-      pagination.itemCount = res.data.data.meta.total;
-    }
+    orderList.value = res.data;
+    pagination.itemCount = res.meta.total;
   } finally {
     loading.value = false;
   }
@@ -256,15 +269,13 @@ const loadData = async () => {
 const loadCustomers = async () => {
   try {
     const res = await getCustomers();
-    if (res.data.code === 200) {
-      const list = (res.data.data as any).data || [];
-      customerOptions.value = list
-        .filter((c: Customer) => c.isEnabled)
-        .map((c: Customer) => ({
-          label: c.name,
-          value: c.id,
-        }));
-    }
+    const list = (res as any).data || [];
+    customerOptions.value = list
+      .filter((c: Customer) => c.isEnabled)
+      .map((c: Customer) => ({
+        label: c.name,
+        value: c.id,
+      }));
   } catch (error) {
     console.error('加载客户失败:', error);
   }
@@ -320,11 +331,9 @@ const handleDetail = (row: Order) => {
 // 确认
 const handleConfirm = async (row: Order) => {
   try {
-    const res = await confirmOrder(row.id);
-    if (res.data.code === 200) {
-      message.success('确认成功');
-      loadData();
-    }
+    await confirmOrder(row.id);
+    message.success('确认成功');
+    loadData();
   } catch (error) {
     message.error('确认失败');
   }
@@ -333,11 +342,9 @@ const handleConfirm = async (row: Order) => {
 // 取消
 const handleCancel = async (row: Order) => {
   try {
-    const res = await cancelOrder(row.id);
-    if (res.data.code === 200) {
-      message.success('已取消');
-      loadData();
-    }
+    await cancelOrder(row.id);
+    message.success('已取消');
+    loadData();
   } catch (error) {
     message.error('取消失败');
   }
@@ -346,11 +353,9 @@ const handleCancel = async (row: Order) => {
 // 删除
 const handleDelete = async (row: Order) => {
   try {
-    const res = await deleteOrder(row.id);
-    if (res.data.code === 200) {
-      message.success('删除成功');
-      loadData();
-    }
+    await deleteOrder(row.id);
+    message.success('删除成功');
+    loadData();
   } catch (error) {
     message.error('删除失败');
   }
@@ -360,6 +365,21 @@ const handleDelete = async (row: Order) => {
 const handleFormSuccess = () => {
   modalVisible.value = false;
   loadData();
+};
+
+const isPrinting = (id: number) => printingIds.value.includes(id);
+
+const handlePrint = async (row: Order) => {
+  if (isPrinting(row.id)) return;
+  printingIds.value.push(row.id);
+  try {
+    await printOrder(row.id);
+    message.success('打印任务已发送');
+  } catch (error) {
+    message.error(getPrintErrorMessage(error));
+  } finally {
+    printingIds.value = printingIds.value.filter((itemId) => itemId !== row.id);
+  }
 };
 
 onMounted(() => {

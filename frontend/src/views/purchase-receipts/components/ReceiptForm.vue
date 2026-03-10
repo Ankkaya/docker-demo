@@ -178,14 +178,12 @@ const loadPurchases = async () => {
       status: 'APPROVED',
       pageSize: 1000,
     });
-    if (res.data.code === 200) {
-      const purchases = res.data.data.data;
-      purchaseOptions.value = purchases.map((p: Purchase) => ({
-        label: `${p.orderNo} - ${p.supplierName} (应付:¥${p.payable})`,
-        value: p.id,
-      }));
-      purchaseMap.value = new Map(purchases.map((p: Purchase) => [p.id, p]));
-    }
+    const purchases = res.data.data;
+    purchaseOptions.value = purchases.map((p: Purchase) => ({
+      label: `${p.orderNo} - ${p.supplierName} (应付:¥${p.payable})`,
+      value: p.id,
+    }));
+    purchaseMap.value = new Map(purchases.map((p: Purchase) => [p.id, p]));
   } catch (error) {
     console.error('加载采购订单失败:', error);
   }
@@ -252,11 +250,9 @@ const handleSubmit = async () => {
       remark: formData.remark,
     };
 
-    const res = await createPurchaseReceipt(data);
-    if (res.data.code === 200) {
-      message.success('创建入库单成功');
-      emit('success');
-    }
+    await createPurchaseReceipt(data);
+    message.success('创建入库单成功');
+    emit('success');
   } catch (error) {
     console.error('提交失败:', error);
   } finally {

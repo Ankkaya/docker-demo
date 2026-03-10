@@ -49,7 +49,7 @@
         :data="tableData"
         :loading="loading"
         :pagination="pagination"
-        :row-key="row => row.id"
+        :row-key="(row: any) => row.id"
         v-model:checked-row-keys="checkedRowKeys"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
@@ -96,7 +96,7 @@ import { ref, reactive, onMounted, h } from 'vue';
 import { useMessage, useDialog, NButton, NSpace, NTag, NImage, NPopconfirm } from 'naive-ui';
 import { SearchOutline, EyeOutline, TrashOutline } from '@vicons/ionicons5';
 import { getCartList, deleteCart, deleteCartBatch } from '@/api/cart';
-import type { DataTableColumns } from 'naive-ui';
+import type { DataTableColumns, DataTableRowData } from 'naive-ui';
 
 const message = useMessage();
 const dialog = useDialog();
@@ -135,9 +135,9 @@ const columns: DataTableColumns<any> = [
     title: '用户信息',
     key: 'user',
     width: 120,
-    render(row) {
+    render(row: DataTableRowData) {
       return h('div', [
-        h('div', row.username),
+        h('div', row.username as string),
         h('div', { style: 'color: #999; font-size: 12px' }, `ID: ${row.userId}`),
       ]);
     },
@@ -146,20 +146,20 @@ const columns: DataTableColumns<any> = [
     title: '商品信息',
     key: 'product',
     minWidth: 250,
-    render(row) {
+    render(row: DataTableRowData) {
       return h('div', { style: 'display: flex; align-items: center; gap: 8px' }, [
         h(NImage, {
-          src: row.mainImage || row.skuImage || '/placeholder.png',
+          src: (row.mainImage || row.skuImage || '/placeholder.png') as string,
           width: 50,
           height: 50,
           style: 'border-radius: 4px; object-fit: cover;',
           fallbackSrc: '/placeholder.png',
         }),
         h('div', [
-          h('div', { style: 'font-weight: 500' }, row.productName),
-          h('div', { style: 'color: #999; font-size: 12px; margin-top: 4px' }, row.skuCode),
+          h('div', { style: 'font-weight: 500' }, row.productName as string),
+          h('div', { style: 'color: #999; font-size: 12px; margin-top: 4px' }, row.skuCode as string),
           h('div', { style: 'margin-top: 4px' },
-            Object.entries(row.specs || {}).map(([key, value]: [string, any]) =>
+            Object.entries((row.specs || {}) as Record<string, unknown>).map(([key, value]: [string, unknown]) =>
               h(NTag, { size: 'small', style: 'margin-right: 4px' }, { default: () => `${key}: ${value}` })
             )
           ),
@@ -171,8 +171,8 @@ const columns: DataTableColumns<any> = [
     title: '单价',
     key: 'salePrice',
     width: 100,
-    render(row) {
-      return h('span', `¥${formatPrice(row.salePrice)}`);
+    render(row: DataTableRowData) {
+      return h('span', `¥${formatPrice(row.salePrice as number)}`);
     },
   },
   {
@@ -192,18 +192,18 @@ const columns: DataTableColumns<any> = [
     title: '库存',
     key: 'stock',
     width: 80,
-    render(row) {
-      const isLow = row.stock < row.quantity;
-      return h(NTag, { type: isLow ? 'error' : 'success', size: 'small' }, { default: () => row.stock });
+    render(row: DataTableRowData) {
+      const isLow = (row.stock as number) < (row.quantity as number);
+      return h(NTag, { type: isLow ? 'error' : 'success', size: 'small' }, { default: () => String(row.stock) });
     },
   },
   {
     title: '状态',
     key: 'selected',
     width: 80,
-    render(row) {
+    render(row: DataTableRowData) {
       return h(NTag, { type: row.selected ? 'success' : 'default', size: 'small' }, {
-        default: () => row.selected ? '已选中' : '未选中',
+        default: () => (row.selected ? '已选中' : '未选中') as string,
       });
     },
   },
@@ -211,8 +211,8 @@ const columns: DataTableColumns<any> = [
     title: '添加时间',
     key: 'createdAt',
     width: 160,
-    render(row) {
-      return h('span', formatDateTime(row.createdAt));
+    render(row: DataTableRowData) {
+      return h('span', formatDateTime(row.createdAt as string));
     },
   },
   {
@@ -220,7 +220,7 @@ const columns: DataTableColumns<any> = [
     key: 'actions',
     width: 120,
     fixed: 'right',
-    render(row) {
+    render(row: DataTableRowData) {
       return h(NSpace, {}, {
         default: () => [
           h(NButton, {
@@ -228,7 +228,7 @@ const columns: DataTableColumns<any> = [
             onClick: () => handleViewDetail(row),
           }, { icon: () => h(EyeOutline), default: () => '详情' }),
           h(NPopconfirm, {
-            onPositiveClick: () => handleDelete(row.id),
+            onPositiveClick: () => handleDelete(row.id as number),
           }, {
             trigger: () => h(NButton, { size: 'small', type: 'error' }, { icon: () => h(TrashOutline) }),
             default: () => '确定删除该购物车项吗？',

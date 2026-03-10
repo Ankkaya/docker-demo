@@ -47,12 +47,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useMessage } from 'naive-ui';
 import { getOrder } from '@/api/order';
 import type { Order, OrderStatus } from '@/types/purchase';
 
 const props = defineProps<{ orderId: number }>();
-const message = useMessage();
 
 const loading = ref(false);
 const orderData = ref<Order | null>(null);
@@ -74,10 +72,8 @@ const statusText = (s: OrderStatus) => statusMap[s].label;
 onMounted(async () => {
   loading.value = true;
   try {
-    const res = await getOrder(props.orderId);
-    if (res.data.code === 200) {
-      orderData.value = res.data.data;
-    }
+    const res: any = await getOrder(props.orderId);
+    orderData.value = res.data;
   } finally {
     loading.value = false;
   }

@@ -37,7 +37,7 @@
                     :options="skuOptions"
                     placeholder="选择SKU"
                     filterable
-                    @update:value="(val) => handleSkuChange(index, val)"
+                    @update:value="(val: number) => handleSkuChange(index, val)"
                   />
                 </td>
                 <td>
@@ -127,7 +127,7 @@ const removeItem = (index: number) => {
 };
 
 const handleSkuChange = (index: number, skuId: number) => {
-  const sku = skuOptions.value.find((s: any) => s.value === skuId);
+  const sku = (skuOptions.value as any[]).find((s: any) => s.value === skuId);
   if (sku) {
     formData.items[index].price = sku.price;
     calcAmount(index);
@@ -180,22 +180,19 @@ const handleCancel = () => emit('cancel');
 
 onMounted(async () => {
   const [customersRes, productsRes] = await Promise.all([getCustomers(), getProducts()]);
-  if (customersRes.data.code === 200) {
-    customerOptions.value = (customersRes.data.data as any).data?.map((c: any) => ({
-      label: c.name,
-      value: c.id,
-    })) || [];
-  }
-  if (productsRes.data.code === 200) {
-    const products = productsRes.data.data?.data || [];
-    skuOptions.value = products.flatMap((p: any) => 
-      (p.skus || []).map((s: any) => ({
-        label: `${p.name} - ${Object.entries(s.specs || {}).map(([k, v]) => `${k}:${v}`).join(',')}`,
-        value: s.id,
-        price: Number(s.salePrice),
-      }))
-    );
-  }
+  const customers = (customersRes as any).data || [];
+  customerOptions.value = customers.map((c: any) => ({
+    label: c.name,
+    value: c.id,
+  })) || [];
+  const products = (productsRes as any).data || [];
+  skuOptions.value = products.flatMap((p: any) => 
+    (p.skus || []).map((s: any) => ({
+      label: `${p.name} - ${Object.entries(s.specs || {}).map(([k, v]) => `${k}:${v}`).join(',')}`,
+      value: s.id,
+      price: Number(s.salePrice),
+    }))
+  );
   if (props.initialData) {
     formData.customerId = props.initialData.customerId;
     formData.freight = props.initialData.freight;

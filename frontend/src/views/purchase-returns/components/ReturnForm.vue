@@ -200,19 +200,10 @@ const rules: FormRules = {
 // 加载可退货的入库单
 const loadReturnableReceipts = async (supplierId?: number) => {
   try {
-    const res = await getReturnableReceipts(supplierId);
-    // @ts-ignore
-    const data = res.data || res;
+    const data = await getReturnableReceipts(supplierId);
     if (Array.isArray(data)) {
       returnableReceipts.value = data;
       receiptOptions.value = data.map((r) => ({
-        label: `${r.receiptNo} - ${r.purchase.supplier.name} - ${r.warehouse.name}`,
-        value: r.id,
-      }));
-    } else if (data && (data as any).code === 200) {
-      const list = (data as any).data;
-      returnableReceipts.value = list;
-      receiptOptions.value = list.map((r: any) => ({
         label: `${r.receiptNo} - ${r.purchase.supplier.name} - ${r.warehouse.name}`,
         value: r.id,
       }));
@@ -226,29 +217,14 @@ const loadReturnableReceipts = async (supplierId?: number) => {
 // 加载供应商
 const loadSuppliers = async () => {
   try {
-    const res = await getSuppliers();
-    // @ts-ignore
-    const data = res.data || res;
-    let list = [];
-    if (Array.isArray(data)) {
-      list = data;
-    } else if (data && (data as any).code === 200) {
-      list = (data as any).data;
-      if (list && (list as any).data) {
-        list = (list as any).data;
-      }
-    } else if (data && (data as any).data && Array.isArray((data as any).data)) {
-      list = (data as any).data;
-    }
-
-    if (Array.isArray(list)) {
-      supplierOptions.value = list
-        .filter((s: Supplier) => s.isEnabled)
-        .map((s: Supplier) => ({
-          label: s.name,
-          value: s.id,
-        }));
-    }
+    const res: any = await getSuppliers();
+    const list = res.data || [];
+    supplierOptions.value = list
+      .filter((s: Supplier) => s.isEnabled)
+      .map((s: Supplier) => ({
+        label: s.name,
+        value: s.id,
+      }));
   } catch (error) {
     console.error('加载供应商失败:', error);
   }
@@ -311,17 +287,13 @@ const handleSubmit = async () => {
     };
 
     if (isEdit.value && props.initialData) {
-      const res = await updatePurchaseReturn(props.initialData.id, data);
-      if (res.data.code === 200) {
-        message.success('更新成功');
-        emit('success');
-      }
+      await updatePurchaseReturn(props.initialData.id, data);
+      message.success('更新成功');
+      emit('success');
     } else {
-      const res = await createPurchaseReturn(data);
-      if (res.data.code === 200) {
-        message.success('创建成功');
-        emit('success');
-      }
+      await createPurchaseReturn(data);
+      message.success('创建成功');
+      emit('success');
     }
   } catch (error) {
     console.error('提交失败:', error);

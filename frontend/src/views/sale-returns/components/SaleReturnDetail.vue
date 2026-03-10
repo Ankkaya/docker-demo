@@ -130,11 +130,7 @@ const loadData = async () => {
   loading.value = true;
   try {
     const res = await getSaleReturn(props.returnId);
-    if (res.data.code === 200) {
-      returnData.value = res.data.data;
-    } else {
-      message.error(res.data.message || '加载失败');
-    }
+    returnData.value = res.data;
   } catch (error) {
     console.error('加载退货单详情失败:', error);
     message.error('加载失败');

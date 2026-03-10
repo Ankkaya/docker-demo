@@ -43,7 +43,7 @@
 import { ref, h, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTabStore } from '@/store/modules/tab'
-import { CloseOutline, RefreshOutline, CloseCircleOutline, CloseAllOutline, ArrowForwardOutline } from '@vicons/ionicons5'
+import { CloseOutline, RefreshOutline, CloseCircleOutline, ArrowForwardOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import type { DropdownOption } from 'naive-ui'
 import type { Tab } from '@/store/modules/tab'
@@ -94,8 +94,7 @@ const handleClick = (tab: Tab) => {
     tabStore.activateTab(tab.key)
     router.push({
       path: tab.key,
-      query: tab.query,
-      params: tab.params
+      query: { ...tab.query, ...tab.params }
     })
   }
 }
@@ -110,8 +109,7 @@ const handleClose = (tab: Tab) => {
     if (active) {
       router.push({
         path: active.key,
-        query: active.query,
-        params: active.params
+        query: { ...active.query, ...active.params }
       })
     }
   }
@@ -188,8 +186,7 @@ const handleContextMenuSelect = (key: string) => {
       if (contextTab.value.key !== tabStore.activeTab) {
         router.push({
           path: contextTab.value.key,
-          query: contextTab.value.query,
-          params: contextTab.value.params
+          query: { ...contextTab.value.query, ...contextTab.value.params }
         })
       }
       break
@@ -199,8 +196,7 @@ const handleContextMenuSelect = (key: string) => {
       if (!tabStore.tabs.find(t => t.key === tabStore.activeTab)) {
         router.push({
           path: contextTab.value.key,
-          query: contextTab.value.query,
-          params: contextTab.value.params
+          query: { ...contextTab.value.query, ...contextTab.value.params }
         })
       }
       break

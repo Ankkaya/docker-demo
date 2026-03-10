@@ -50,13 +50,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue';
-import { NTag, useMessage } from 'naive-ui';
-import type { DataTableColumns } from 'naive-ui';
+import { NTag } from 'naive-ui';
+import type { DataTableColumns, DataTableRowData } from 'naive-ui';
 import { getInventoryLogs, type InventoryLog } from '@/api/inventory';
 import { getWarehouses } from '@/api/warehouse';
 import type { Warehouse } from '@/types/basic-data';
 
-// const message = useMessage();
+
 
 // 类型选项
 const typeOptions = [
@@ -99,10 +99,10 @@ const columns: DataTableColumns<InventoryLog> = [
     title: '流水类型',
     key: 'typeName',
     width: 120,
-    render(row) {
-      const isIn = row.type.startsWith('IN_');
+    render(row: DataTableRowData) {
+      const isIn = (row.type as string).startsWith('IN_');
       return h(NTag, { type: isIn ? 'success' : 'error', size: 'small' }, {
-        default: () => row.typeName,
+        default: () => row.typeName as string,
       });
     },
   },
@@ -111,8 +111,8 @@ const columns: DataTableColumns<InventoryLog> = [
   {
     title: '规格',
     key: 'specs',
-    render(row) {
-      return Object.entries(row.specs || {}).map(([k, v]) => `${k}:${v}`).join(', ') || '-';
+    render(row: DataTableRowData) {
+      return Object.entries((row.specs || {}) as Record<string, unknown>).map(([k, v]) => `${k}:${v}`).join(', ') || '-';
     },
   },
   { title: '仓库', key: 'warehouseName', width: 120 },
@@ -120,9 +120,9 @@ const columns: DataTableColumns<InventoryLog> = [
     title: '变动数量',
     key: 'quantity',
     width: 100,
-    render(row) {
-      return h('span', { style: { color: row.quantity > 0 ? '#18a058' : '#d03050' } }, 
-        (row.quantity > 0 ? '+' : '') + row.quantity
+    render(row: DataTableRowData) {
+      return h('span', { style: { color: (row.quantity as number) > 0 ? '#18a058' : '#d03050' } }, 
+        ((row.quantity as number) > 0 ? '+' : '') + row.quantity
       );
     },
   },
@@ -138,10 +138,10 @@ async function loadData() {
   loading.value = true;
   try {
     const res: any = await getInventoryLogs(searchForm);
-    logList.value = res.data.data;
-    pagination.itemCount = res.data.meta.total;
-    pagination.page = res.data.meta.page;
-    pagination.pageSize = res.data.meta.pageSize;
+    logList.value = res.data;
+    pagination.itemCount = res.meta?.total || 0;
+    pagination.page = res.meta?.page || 1;
+    pagination.pageSize = res.meta?.pageSize || 10;
   } finally {
     loading.value = false;
   }
@@ -149,7 +149,7 @@ async function loadData() {
 
 // 加载仓库选项
 async function loadWarehouses() {
-  const res = await getWarehouses();
+  const res: any = await getWarehouses();
   warehouseOptions.value = res.data.data.map((w: Warehouse) => ({
     label: w.name,
     value: w.id,
