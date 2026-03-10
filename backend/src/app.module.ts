@@ -24,6 +24,9 @@ import { SaleReturnsModule } from './sale-returns/sale-returns.module';
 import { TransfersModule } from './transfers/transfers.module';
 import { AdjustmentsModule } from './adjustments/adjustments.module';
 import { CartsModule } from './carts/carts.module';
+import { PrintTemplatesModule } from './print-templates/print-templates.module';
+import { PrintersModule } from './printers/printers.module';
+import { PrinterConfigsModule } from './printer-configs/printer-configs.module';
 
 @Module({
   imports: [
@@ -52,6 +55,9 @@ import { CartsModule } from './carts/carts.module';
     TransfersModule,
     AdjustmentsModule,
     CartsModule,
+    PrintTemplatesModule,
+    PrintersModule,
+    PrinterConfigsModule,
   ],
 })
 export class AppModule {}

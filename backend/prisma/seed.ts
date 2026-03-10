@@ -13,83 +13,130 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
   // ==================== 1. 创建角色 ====================
+  const adminRoleData = {
+    name: '超级管理员',
+    code: 'admin',
+    description: '拥有所有权限的超级管理员角色',
+  };
   const adminRole = await prisma.role.upsert({
     where: { code: 'admin' },
-    update: {},
-    create: {
-      name: '超级管理员',
-      code: 'admin',
-      description: '拥有所有权限的超级管理员角色',
-    },
+    update: adminRoleData,
+    create: adminRoleData,
   });
 
+  const userRoleData = {
+    name: '普通用户',
+    code: 'user',
+    description: '普通用户角色',
+  };
   const userRole = await prisma.role.upsert({
     where: { code: 'user' },
-    update: {},
-    create: {
-      name: '普通用户',
-      code: 'user',
-      description: '普通用户角色',
-    },
+    update: userRoleData,
+    create: userRoleData,
   });
 
   // ==================== 2. 创建菜单 ====================
   // 系统管理菜单组
+  const systemMenuData = {
+    name: '系统管理',
+    path: '/system',
+    icon: 'setting',
+    component: 'Layout',
+    order: 1,
+    type: 'menu',
+  };
   const systemMenu = await prisma.menu.upsert({
     where: { id: 1 },
-    update: {},
-    create: {
-      id: 1,
-      name: '系统管理',
-      path: '/system',
-      icon: 'setting',
-      component: 'Layout',
-      order: 1,
-      type: 'menu',
-    },
+    update: systemMenuData,
+    create: { id: 1, ...systemMenuData },
   });
 
+  const userManagementMenuData = {
+    name: '用户管理',
+    path: '/system/users',
+    icon: 'user',
+    component: 'system/user/index',
+    parentId: 1,
+    order: 1,
+    type: 'menu',
+  };
   const userManagementMenu = await prisma.menu.upsert({
     where: { id: 2 },
-    update: {},
-    create: {
-      id: 2,
-      name: '用户管理',
-      path: '/system/users',
-      icon: 'user',
-      component: 'system/user/index',
-      parentId: 1,
-      order: 1,
-      type: 'menu',
-    },
+    update: userManagementMenuData,
+    create: { id: 2, ...userManagementMenuData },
   });
 
+  const roleManagementMenuData = {
+    name: '角色管理',
+    path: '/system/roles',
+    icon: 'peoples',
+    component: 'system/role/index',
+    parentId: 1,
+    order: 2,
+    type: 'menu',
+  };
   const roleManagementMenu = await prisma.menu.upsert({
     where: { id: 3 },
+    update: roleManagementMenuData,
+    create: { id: 3, ...roleManagementMenuData },
+  });
+
+  const menuManagementMenuData = {
+    name: '菜单管理',
+    path: '/system/menus',
+    icon: 'menu',
+    component: 'system/menu/index',
+    parentId: 1,
+    order: 3,
+    type: 'menu',
+  };
+  const menuManagementMenu = await prisma.menu.upsert({
+    where: { id: 4 },
+    update: menuManagementMenuData,
+    create: { id: 4, ...menuManagementMenuData },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 5 },
     update: {},
     create: {
-      id: 3,
-      name: '角色管理',
-      path: '/system/roles',
-      icon: 'peoples',
-      component: 'system/role/index',
+      id: 5,
+      name: '打印模板',
+      path: '/system/print-templates',
+      icon: 'print-template',
+      component: 'print-templates/index',
       parentId: 1,
-      order: 2,
+      order: 4,
       type: 'menu',
     },
   });
 
-  const menuManagementMenu = await prisma.menu.upsert({
-    where: { id: 4 },
+  await prisma.menu.upsert({
+    where: { id: 6 },
     update: {},
     create: {
-      id: 4,
-      name: '菜单管理',
-      path: '/system/menus',
-      icon: 'menu',
-      component: 'system/menu/index',
+      id: 6,
+      name: '打印机管理',
+      path: '/system/printers',
+      icon: 'printer',
+      component: 'printers/index',
       parentId: 1,
-      order: 3,
+      order: 5,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 7 },
+    update: {},
+    create: {
+      id: 7,
+      name: '打印机配置',
+      path: '/system/printer-configs',
+      icon: 'printer-config',
+      component: 'printer-configs/index',
+      parentId: 1,
+      order: 6,
       type: 'menu',
     },
   });
@@ -439,7 +486,7 @@ async function main() {
     data: {
       menus: {
         set: [
-          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 },           // 系统管理
+          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }, // 系统管理
           { id: 10 }, { id: 11 }, { id: 12 }, { id: 13 },       // 基础数据
           { id: 14 }, { id: 15 }, { id: 16 },
           { id: 20 }, { id: 21 }, { id: 22 },                   // 商品管理

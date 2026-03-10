@@ -72,6 +72,70 @@ model Menu {
   @@index([deletedAt])
 }
 
+// ==================== 打印管理模块 ====================
+
+// 打印模板
+model PrintTemplate {
+  id          Int       @id @default(autoincrement())
+  name        String    // 模板名称
+  bizType     String    // 业务类型：ORDER(销售订单)/SHIPMENT(发货单)/PURCHASE(采购单)/PRODUCT_LABEL(商品标签)
+  paperWidth  Float     @default(50)   // 纸张宽度(mm)，最大50
+  paperHeight Float     @default(50)   // 纸张高度(mm)，最大300
+  content     Json?     // 模板内容（JSON）
+  description String?
+  sort        Int       @default(0)
+  isEnabled   Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  configs     PrinterConfig[]
+
+  @@index([deletedAt])
+}
+
+// 打印机
+model Printer {
+  id        Int       @id @default(autoincrement())
+  name      String    // 打印机名称
+  device    String    @unique // 打印机终端（设备标识）
+  remark    String?   // 备注
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  configs PrinterConfig[]
+
+  @@index([deletedAt])
+}
+
+// 打印配置（模板 + 打印机 + 参数）
+model PrinterConfig {
+  id            Int       @id @default(autoincrement())
+  name          String    // 配置名称
+  templateId    Int?      // 模板ID
+  template      PrintTemplate? @relation(fields: [templateId], references: [id])
+  printerId     Int?      // 打印机ID
+  printer       Printer?  @relation(fields: [printerId], references: [id])
+  copies        Int       @default(1) // 打印份数
+  orientation   Int       @default(0) // 打印方向 0/90/180/270
+  gapType       Int       @default(255) // 纸张间隙类型
+  paperType     String    @default("LABEL") // 纸张类型: CONTINUOUS(连续纸)/LABEL(标签纸)/MARK(黑标纸)/PERFORATED(穿孔纸)
+  printSpeed    Int       @default(255) // 打印速度
+  printDarkness Int       @default(255) // 打印浓度/深度
+  printMode     String    @default("PRINT") // 打印模式: PRINT/PREV_BASE64/TRANS_BASE64/PRINT_DATA
+  isDefault     Boolean   @default(false) // 是否默认配置
+  isEnabled     Boolean   @default(true) // 是否启用
+  remark        String?   // 备注
+  deletedAt     DateTime? // 软删除标记
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([deletedAt])
+  @@index([templateId])
+  @@index([printerId])
+}
+
 // ==================== 基础数据模块 ====================
 
 // 计量单位

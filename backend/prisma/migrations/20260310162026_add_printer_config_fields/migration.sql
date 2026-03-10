@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "PrinterConfig" ADD COLUMN     "paperType" TEXT NOT NULL DEFAULT 'LABEL',
+ADD COLUMN     "printMode" TEXT NOT NULL DEFAULT 'PRINT';
