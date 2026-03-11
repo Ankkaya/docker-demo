@@ -44,14 +44,33 @@ function checkIn() {
 }
 
 function viewAllOrders() {
-  uni.showToast({ title: '订单列表开发中', icon: 'none' })
+  router.push({ name: 'order-list', query: { status: 'all' } })
 }
 
 function onOrderMenuClick(item: typeof orderMenus.value[number]) {
-  uni.showToast({ title: `${item.label}开发中`, icon: 'none' })
+  const statusMap: Record<string, string> = {
+    pay: 'pending',
+    ship: 'shipping',
+    receive: 'receiving',
+    afterSale: 'all',
+  }
+  router.push({
+    name: 'order-list',
+    query: { status: statusMap[item.key] || 'all' },
+  })
 }
 
 function onServiceMenuClick(item: typeof serviceMenus.value[number]) {
+  const routeMap: Record<string, string> = {
+    favorites: 'favorites',
+    history: 'history',
+    address: 'address',
+  }
+  const routeName = routeMap[item.key]
+  if (routeName) {
+    router.push({ name: routeName })
+    return
+  }
   uni.showToast({ title: `${item.label}开发中`, icon: 'none' })
 }
 

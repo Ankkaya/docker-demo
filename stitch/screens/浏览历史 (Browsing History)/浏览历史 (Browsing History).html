@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Browsing History - Little Wonders Baby Store</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased">
+<div class="max-w-md mx-auto min-h-screen flex flex-col bg-white dark:bg-background-dark shadow-xl">
+<!-- Header -->
+<header class="sticky top-0 z-10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<div class="flex items-center p-4 justify-between">
+<button class="text-slate-900 dark:text-slate-100 flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight flex-1 text-center">Browsing History</h1>
+<div class="flex w-10 items-center justify-end">
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-outlined">delete_sweep</span>
+</button>
+</div>
+</div>
+<!-- Categories / Filter Tabs -->
+<div class="px-4 overflow-x-auto no-scrollbar">
+<div class="flex gap-6 border-b border-primary/10">
+<a class="flex flex-col items-center justify-center border-b-2 border-primary text-primary pb-3 pt-2" href="#">
+<p class="text-sm font-bold">All Items</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-2 hover:text-primary transition-colors" href="#">
+<p class="text-sm font-medium">Clothing</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-2 hover:text-primary transition-colors" href="#">
+<p class="text-sm font-medium">Accessories</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-2 hover:text-primary transition-colors" href="#">
+<p class="text-sm font-medium">Toys</p>
+</a>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 p-4">
+<!-- Section: Today -->
+<div class="mb-8">
+<div class="flex items-center gap-2 mb-4">
+<span class="size-2 rounded-full bg-primary"></span>
+<h2 class="text-slate-900 dark:text-slate-100 text-base font-bold">Today</h2>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Product Card 1 -->
+<a class="group flex flex-col gap-2" href="#">
+<div class="relative w-full aspect-[4/5] bg-background-light dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Soft organic cotton baby onesie in cream" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1gnbEXo137Xy_Zw2_4szyw2RYSXD3b70QCjjryCfNuU1Br9J6D5pzUhTkR13vJS7GwgiYSnQ1IFK_d2mJJMyyuHvSMTWla_cbrr_vPAdklXsJoWQ8870LqJXLnggeZKL9BBTvlLeOQ0_nUQindZ1MNBQ0SPT23JuSP8AO7P6_7x59HAHBCwu5o9mlCzgFITCDmt4jHNBqu3H4gGHBDytdLtxUARB4GSBIIAVkTiTeQUsEjc95MA2KirEU2EAUF3yXKC3H4YQS7jJu"/>
+<button class="absolute top-2 right-2 size-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-slate-100 text-sm font-semibold line-clamp-1">Organic Cotton Romper</p>
+<p class="text-primary text-sm font-bold">$32.00</p>
+<p class="text-slate-400 text-xs mt-0.5">Viewed 2h ago</p>
+</div>
+</a>
+<!-- Product Card 2 -->
+<a class="group flex flex-col gap-2" href="#">
+<div class="relative w-full aspect-[4/5] bg-background-light dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Handmade wooden developmental toy for babies" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChLI7VMXi6pSQ-Pjd9VUN2ui4PU1KNnNekwgUx3Ll5H7zwNYjG6t3ifDyhfic1pJfLHjXsk0qAhypZYt71hmCtEWKJYhk3TLZFs9T2mBZeGAyNJdPXStzraUv6xgK27BQGeY5ZCVGgBqQt1fMBTV7KdSs3iAAHu9Pu5FfcaS2dxr3Q0HcHQJGEPT62sQ5gf8w7EwnSbktK7c1p7zI7Vv1nqUPF8Z-0GI7VYd-xbjJenT1wJd0iF82URkkCkITKMmd5a2ueTbPKokgQ"/>
+<button class="absolute top-2 right-2 size-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-slate-100 text-sm font-semibold line-clamp-1">Wooden Teether Set</p>
+<p class="text-primary text-sm font-bold">$18.50</p>
+<p class="text-slate-400 text-xs mt-0.5">Viewed 5h ago</p>
+</div>
+</a>
+</div>
+</div>
+<!-- Section: Yesterday -->
+<div class="mb-8">
+<div class="flex items-center gap-2 mb-4">
+<span class="size-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+<h2 class="text-slate-900 dark:text-slate-100 text-base font-bold">Yesterday</h2>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Product Card 3 -->
+<a class="group flex flex-col gap-2 opacity-90 hover:opacity-100" href="#">
+<div class="relative w-full aspect-[4/5] bg-background-light dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Pastel blue knitted baby cardigan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdCX7CrA-rlAtDGEON7HS_ByxbPi-ylH_12OnwRcitdvSUiu5nwfLoDOnaSLooTBTiqsVGoyuOolBPKIgGXPIZJY62RmgENqRLjPdoWEsa9xryoMyLc5d6Aej9vlkwaE_P6oDlHZBlk9V6cXjVD_aSWH1S3fxEMMh-g_doTODRxGLJkvlhYaKtJH7b27bKYxS6fQwVWzWUkj88hG_Z4ubx_Glt02FRvRRtR7WMdcB0Elmv5omSENoqnM-dAp-DL4wO-S__VxSUpt0v"/>
+<button class="absolute top-2 right-2 size-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-slate-100 text-sm font-semibold line-clamp-1">Knitted Wool Cardigan</p>
+<p class="text-primary text-sm font-bold">$45.00</p>
+<p class="text-slate-400 text-xs mt-0.5">Morning, 10:15 AM</p>
+</div>
+</a>
+<!-- Product Card 4 -->
+<a class="group flex flex-col gap-2 opacity-90 hover:opacity-100" href="#">
+<div class="relative w-full aspect-[4/5] bg-background-light dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Set of colorful baby socks" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9lusLQpx9-yRQO7vub_H4Q7zclsXLArfSz6SsThBKyDGbBmwfF_NqCJT3Y4VTN2q3iHk0kn3aiOLiE3FfAXFov7VaToz3Ptu_zyAoFLvIpz4Ixn_x8wkFq8L6qfj2NUxeKi29HoQPOjSnlQ20_QKyQxGGgfpBtmdzT4rGNdWvALRG2KJN8GqglhcCUFdCP78GTCXkMoSodhMOfFc6QYBNFxp4mPKJY3ikq-5BGGcOquSmxgOAy09mdH1V-T_k0QB4flw_dSGsS8Lb"/>
+<button class="absolute top-2 right-2 size-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-slate-100 text-sm font-semibold line-clamp-1">Gift Sock Bundle (5-pack)</p>
+<p class="text-primary text-sm font-bold">$12.00</p>
+<p class="text-slate-400 text-xs mt-0.5">Evening, 8:40 PM</p>
+</div>
+</a>
+<!-- Product Card 5 -->
+<a class="group flex flex-col gap-2 opacity-90 hover:opacity-100" href="#">
+<div class="relative w-full aspect-[4/5] bg-background-light dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm group-hover:shadow-md transition-all">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Baby winter hat with cute ears" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIsulMtZvJHRMVpSZiFP3SMHHz9_1rd04CkALH4CKUFs6leXwWpVPNu1jTuT1ZzqrXeYYwvYF2kHJ8WjHc1wM1JXkeE0mE6rLSTe9N6UxgdPlpxPr9_Ieo39Son4QFs5setLz0dUW-K02OT5Np2g0QNsA2aXsW0-4qFwWqcSqm7m2YPR3uI8wHPs6VxCXpR3jbtbWFq3EJapv-L0IJdcLnlWyIAAIjmV1cIKfst5sEc_W55EF-McLV-Vxtv_vWSRjtFIhxRv2BQ2Jf"/>
+<button class="absolute top-2 right-2 size-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<div class="px-1">
+<p class="text-slate-900 dark:text-slate-100 text-sm font-semibold line-clamp-1">Teddy Bear Beanie</p>
+<p class="text-primary text-sm font-bold">$14.00</p>
+<p class="text-slate-400 text-xs mt-0.5">Afternoon, 2:15 PM</p>
+</div>
+</a>
+</div>
+</div>
+<!-- Empty State Suggestion -->
+<div class="mt-8 p-6 bg-primary/5 rounded-2xl border border-primary/10 text-center">
+<p class="text-slate-600 dark:text-slate-400 text-sm mb-3 font-medium italic">"Keep track of the styles you love for your little one."</p>
+<button class="text-primary font-bold text-sm flex items-center justify-center gap-1 mx-auto">
+                    Manage History Settings <span class="material-symbols-outlined text-sm">settings</span>
+</button>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="sticky bottom-0 z-10 border-t border-primary/10 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md px-4 pb-6 pt-2">
+<div class="flex gap-2">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<p class="text-[10px] font-bold tracking-tight">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<p class="text-[10px] font-bold tracking-tight">Shop</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">favorite</span>
+<p class="text-[10px] font-bold tracking-tight">Wishlist</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">history</span>
+<p class="text-[10px] font-bold tracking-tight">History</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<p class="text-[10px] font-bold tracking-tight">Profile</p>
+</a>
+</div>
+</nav>
+</div>
+<!-- Scroll to top button (mobile style) -->
+<div class="fixed bottom-24 right-6 pointer-events-none">
+<button class="pointer-events-auto size-12 rounded-full bg-primary text-white shadow-lg flex items-center justify-center transform active:scale-95 transition-transform">
+<span class="material-symbols-outlined">vertical_align_top</span>
+</button>
+</div>
+</body></html>

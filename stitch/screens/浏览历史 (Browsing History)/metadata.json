@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "a226cc0da5384457b71e809aa9f7cce3",
+    "title": "浏览历史",
+    "width": "780",
+    "height": "2690",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/AOfcidUQzBK3HuSTfoMXm0ZEO3ueYdY_T-MbqHLMA-z9VsGaDZ1EqFTp0iz-uY4NxnXA1Q2KSW-c7LpMVD88M6QE4kJL6czWBUbundjLMyPcQNNzFxN278VNHKkgEILtTwxyQ9EfwxAJA-QREuubmlLfQYa8OuLc_PCImqHehuDDsg9toaGQGsfWSFMJ2tmqdJQFG4jLQq9IpktO2jqiubR9qJSEEJg4Koml9_JE9WXZbK8HAEQCS40YXuk8JDo8",
+      "contentType": "image/png",
+      "file": "stitch/screens/浏览历史 (Browsing History)/浏览历史 (Browsing History).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzkwZjVjNzNkZTUxYzQ5Y2U5NWMzZjA0OTZmZGQ5YmY5EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/浏览历史 (Browsing History)/浏览历史 (Browsing History).html"
+    }
+  }
+}

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Favorites - Petit Blossom</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#efb239",
+                "background-light": "#f8f7f6",
+                "background-dark": "#221c10",
+              },
+              fontFamily: {
+                "display": ["Plus Jakarta Sans", "sans-serif"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen font-display">
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<div class="flex items-center p-4 justify-between max-w-2xl mx-auto">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-primary/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">arrow_back</span>
+</div>
+<h1 class="text-lg font-bold leading-tight tracking-tight flex-1 text-center">My Favorites</h1>
+<div class="flex size-10 items-center justify-end">
+<div class="relative cursor-pointer">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">shopping_bag</span>
+<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">2</span>
+</div>
+</div>
+</div>
+<!-- Categories / Tabs -->
+<div class="max-w-2xl mx-auto overflow-x-auto">
+<div class="flex border-b border-primary/5 px-4 gap-6">
+<a class="flex flex-col items-center justify-center border-b-2 border-primary text-slate-900 dark:text-slate-100 pb-3 pt-4 whitespace-nowrap" href="#">
+<span class="text-sm font-bold">All Items (12)</span>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 whitespace-nowrap" href="#">
+<span class="text-sm font-medium">Clothing</span>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 whitespace-nowrap" href="#">
+<span class="text-sm font-medium">Accessories</span>
+</a>
+<a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 whitespace-nowrap" href="#">
+<span class="text-sm font-medium">Sale</span>
+</a>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="max-w-2xl mx-auto p-4 space-y-4 pb-32">
+<!-- Item Card 1 -->
+<div class="bg-white dark:bg-slate-800/40 p-3 rounded-xl shadow-sm border border-primary/5 flex gap-4 relative">
+<div class="w-28 h-28 bg-primary/5 rounded-lg overflow-hidden shrink-0">
+<div class="w-full h-full bg-center bg-cover" data-alt="Soft organic cotton yellow baby onesie" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAPKyLDDyMv-_XAlJQMtJmMIEQqK4NnAMZdvtcLem0lglx4Q8ZbQq-dBAGhF2Mkrb8T4NWMyMLMC0tZfYTHiEVbgPtw7ZfsYGME3iMXAG2Y3vpVZVTcHJ5UF1pWBEMI-j6Ntgn17ibyl8Ml3ajmjU1RvldxyCnGg0Wr2HRFQalNQkW0MG-KaWwBfV3fkyhVQNBoPFoPS9Hc7608tFhfPZyy4ksUWvXFY3nKQ-qY3OQrbkpgCdWE2onOzIMQt18dGyZ7F0ArC6-N9Iel')">
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div class="space-y-1">
+<div class="flex justify-between items-start">
+<p class="text-slate-900 dark:text-slate-100 text-base font-bold leading-tight">Organic Cotton Onesie</p>
+<button class="text-slate-400 hover:text-red-400 transition-colors">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-xs">Soft Yellow • 0-3 Months</p>
+<p class="text-primary text-base font-bold leading-normal">$24.00</p>
+</div>
+<div class="flex gap-2 mt-2">
+<button class="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 px-3 text-white text-xs font-bold transition-transform active:scale-95">
+<span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+</div>
+</div>
+<!-- Item Card 2 -->
+<div class="bg-white dark:bg-slate-800/40 p-3 rounded-xl shadow-sm border border-primary/5 flex gap-4 relative">
+<div class="w-28 h-28 bg-primary/5 rounded-lg overflow-hidden shrink-0">
+<div class="w-full h-full bg-center bg-cover" data-alt="Handcrafted knitted bear hat for babies" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBiogWaAnZ11OhUfQ8q0y079e2PgNokV0l6k07amqb8zyz-ObAfhRbJofZK0zKaKC-O47FszaUi56emWuRk3rhdgE6wE5is3jU8RGoDIKxpL00tPGkPw_ZTE5yLwIq1lFppDvV0MBU8E4VOkJRSE8e2v1u3cb6ZaARaWp_1kenT_JfBMIt0q6gDKT_XBj99qz5WtNfNd427FR3ugOhmp3SThs602c_6ifv-Rqx54kDzTXY7NB7F1MY9J6iHJtgBX4uxm09N9_RuOTYa')">
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div class="space-y-1">
+<div class="flex justify-between items-start">
+<p class="text-slate-900 dark:text-slate-100 text-base font-bold leading-tight">Knitted Bear Hat</p>
+<button class="text-slate-400 hover:text-red-400 transition-colors">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-xs">Honey Beige • One Size</p>
+<p class="text-primary text-base font-bold leading-normal">$18.00</p>
+</div>
+<div class="flex gap-2 mt-2">
+<button class="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 px-3 text-white text-xs font-bold transition-transform active:scale-95">
+<span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+</div>
+</div>
+<!-- Item Card 3 -->
+<div class="bg-white dark:bg-slate-800/40 p-3 rounded-xl shadow-sm border border-primary/5 flex gap-4 relative">
+<div class="w-28 h-28 bg-primary/5 rounded-lg overflow-hidden shrink-0">
+<div class="w-full h-full bg-center bg-cover" data-alt="Muslin swaddle blanket with subtle patterns" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCu2E4Oi-icb7CVbzic3ktpLuCCoQuYLUcnawQZb7iAEH2ykW32PNmK5LDxcEsgZQe2djHNR-5wvcoYc5fz_phwU94NYhQxn1PnPZhCr-prF-grZTqNAeWAZWGvQJehfd8cCn6FphT-4Zo4TWRdmkaXqoXz9Gn3xLL899nz3GmzfRKheDJGAU_m8l0PZpY9EexhlcJH_3qezVgWepWUZonqTuVYmzDgeuQGJCHznldoztRKnu5Ov751hhy0SHejZenM26y60bnbO7Fm')">
+</div>
+</div>
+<div class="flex flex-col justify-between flex-1 py-1">
+<div class="space-y-1">
+<div class="flex justify-between items-start">
+<p class="text-slate-900 dark:text-slate-100 text-base font-bold leading-tight">Muslin Swaddle Set</p>
+<button class="text-slate-400 hover:text-red-400 transition-colors">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-xs">Creamy White • 2 Pack</p>
+<div class="flex items-center gap-2">
+<p class="text-primary text-base font-bold leading-normal">$32.00</p>
+<span class="text-slate-400 text-xs line-through">$40.00</span>
+</div>
+</div>
+<div class="flex gap-2 mt-2">
+<button class="flex-1 flex items-center justify-center gap-2 rounded-lg bg-primary py-2 px-3 text-white text-xs font-bold transition-transform active:scale-95">
+<span class="material-symbols-outlined text-sm">add_shopping_cart</span>
+                        Add to Cart
+                    </button>
+</div>
+</div>
+</div>
+<!-- Empty State Hint (Optional) -->
+<div class="pt-8 text-center">
+<p class="text-slate-400 dark:text-slate-500 text-sm">You have 9 more items in your list</p>
+<button class="mt-4 text-primary font-bold text-sm underline underline-offset-4">Move all to cart</button>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-primary/10 pb-6 pt-2 z-50">
+<div class="max-w-2xl mx-auto flex justify-around items-center px-4">
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="text-[10px] font-medium">Shop</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="text-[10px] font-medium">Search</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined material-symbols-fill">favorite</span>
+<span class="text-[10px] font-bold">Favorites</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>

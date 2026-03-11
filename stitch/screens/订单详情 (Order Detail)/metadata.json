@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "f12eeb4558f142b19c5eaed07e4ce76f",
+    "title": "订单详情",
+    "width": "780",
+    "height": "2026",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/AOfcidXcGuWISqRt6rvHDDgLF0m8JKawJ-Zc9nNIl8W7CK2Z21tQftIzyOXnHJursb8Bkn6kkjR5W5pttR_1R_H-x1VLP-1vThwKzkVA6YBb3QdKcrL40eV4evUQMeln2Qa6kHbBWym2S6V50ZJt555h7MyI9i-Y2zjlO9VyG0pttxSNR04UwtLb5MuWJqc26AVAEIWBDguaTjLdY4BrNyzE_TBLr8q6c_WR3wdo8N5tKe_WAjl00B6MC2vo8Eg",
+      "contentType": "image/png",
+      "file": "stitch/screens/订单详情 (Order Detail)/订单详情 (Order Detail).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2E2NjgzNmYyYWJkZjRlODJiZTBlNzczOGIxNzk2MmEzEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/订单详情 (Order Detail)/订单详情 (Order Detail).html"
+    }
+  }
+}

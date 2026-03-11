@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Orders - Baby Haven</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<!-- Header -->
+<header class="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-primary/10">
+<div class="flex items-center p-4 justify-between max-w-2xl mx-auto">
+<div class="text-slate-900 dark:text-slate-100 flex size-10 shrink-0 items-center cursor-pointer">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight flex-1 text-center">My Orders</h2>
+<div class="flex w-10 items-center justify-end">
+<button class="flex items-center justify-center text-slate-900 dark:text-slate-100">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</div>
+<!-- Tabs -->
+<div class="max-w-2xl mx-auto">
+<nav class="flex border-b border-primary/5 px-4 justify-between overflow-x-auto no-scrollbar">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-primary text-primary pb-3 pt-4 flex-1 min-w-[80px]" href="#">
+<p class="text-sm font-bold tracking-tight">All</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 flex-1 min-w-[120px]" href="#">
+<p class="text-sm font-medium">Pending Payment</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 flex-1 min-w-[110px]" href="#">
+<p class="text-sm font-medium">To be Shipped</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-transparent text-slate-500 dark:text-slate-400 pb-3 pt-4 flex-1 min-w-[120px]" href="#">
+<p class="text-sm font-medium">To be Received</p>
+</a>
+</nav>
+</div>
+</header>
+<main class="max-w-2xl mx-auto p-4 space-y-4 pb-24">
+<!-- Order Card 1: To be Received -->
+<div class="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-primary/5">
+<div class="p-4 border-b border-primary/5 flex justify-between items-center bg-primary/5">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Order No: BH-20231024001</span>
+<span class="text-sm font-bold text-primary">To be Received</span>
+</div>
+<div class="p-4 flex gap-4">
+<div class="size-20 bg-primary/10 rounded-lg shrink-0 bg-center bg-cover" data-alt="Blue organic cotton baby onesie hanging on a rack" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHFrYykmoZgBaX-mm_zYDJ9vGX3gNcMAtbZIyVQsD3V1_ecFntt9voVNfdqh3HByQLlKemmgQN_q1096e3hkmzDETqH0FwYHahVKGZThy8L6auzsN94uyf0mnUiBAUtKbqTb6wAma7efndX6jKUPpHVDwDw9PuFWTLowQa785Gv0HkaNiTwrSFvpZ4wekSFzQ_xP1k0hOy-c5_-2avmWR-1mgUAG69KTIz_iOysHA3HV3hFQhTNnzQyDr2pVWlDnONAeZP5ox_4zqq')"></div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-slate-900 dark:text-slate-100 font-semibold text-sm line-clamp-1">Organic Cotton Baby Onesie</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Color: Cloud Blue | Size: 6-9 Months</p>
+</div>
+<div class="flex justify-between items-end">
+<p class="text-xs text-slate-400">Qty: 1</p>
+<p class="text-slate-900 dark:text-slate-100 font-bold">$45.00</p>
+</div>
+</div>
+</div>
+<div class="px-4 py-3 bg-slate-50 dark:bg-slate-800/50 flex flex-wrap gap-2 justify-end border-t border-primary/5">
+<button class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                    View Details
+                </button>
+<button class="px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/20 text-xs font-bold">
+                    Track Logistics
+                </button>
+<button class="px-4 py-2 rounded-lg bg-primary text-slate-900 text-xs font-bold">
+                    Confirm Receipt
+                </button>
+</div>
+</div>
+<!-- Order Card 2: Pending Payment -->
+<div class="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-primary/5">
+<div class="p-4 border-b border-primary/5 flex justify-between items-center bg-primary/5">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Order No: BH-20231024002</span>
+<span class="text-sm font-bold text-orange-500">Pending Payment</span>
+</div>
+<div class="p-4 space-y-4">
+<div class="flex gap-4">
+<div class="size-20 bg-primary/10 rounded-lg shrink-0 bg-center bg-cover" data-alt="Soft wool baby knitted sweater in cream" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDlNomfWDTQQ-t8PIsh7pl1t-WLcV3WKFCP305aXo7FYZkl0zD__G4eZAJHUd22-7sV7V0KJCsqJ8YkGHMy5CHP3HXUxT3wisagOz3heC7fXmK02GIlVkxktXk0DGqQXvZCwFsvZ6BVrAYx6hoCbFW7i3UdbRisPkFjr4qpk486pL-IamJ3wWVP-NxQNLld2wQsLIazsgg624KPJ5LytTLyxbU3GkOzU4zVD9MC8LjQRauzmFwJU-6wiUv-fVD5SvhHJlXMAuGqtWR0')"></div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-slate-900 dark:text-slate-100 font-semibold text-sm line-clamp-1">Hand-Knitted Wool Sweater</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Color: Cream | Size: 12-18 Months</p>
+</div>
+<div class="flex justify-between items-end">
+<p class="text-xs text-slate-400">Qty: 1</p>
+<p class="text-slate-900 dark:text-slate-100 font-bold">$68.00</p>
+</div>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="size-20 bg-primary/10 rounded-lg shrink-0 bg-center bg-cover" data-alt="Set of three organic baby socks in pastel colors" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCTyqTYVlAe8pZp3gMRrWQbPZZgfbCnILZ_92Xoqr62VRFxnoMoQyQWtfpxidXmtElnzMdx1D-jaFUKGu1MZzSZuvndStj16XiID8Yb4pwTqPv4Te-8y9WHrRMSy6cvL1T0breh2FEXMhnVr220_Xx1o309Esio1cTm5Ea18Ia90MhTRMThfTRIuzf2IZwXMebcg0-NVsmPhDnqdNztp6jJ4PtYRiI7VGfqkVlut_q11hCdmICfhn1d7kC6-1OhwLd66Nn4TGsaPoWF')"></div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-slate-900 dark:text-slate-100 font-semibold text-sm line-clamp-1">Pastel Comfort Sock Set</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Style: Neutral Pack</p>
+</div>
+<div class="flex justify-between items-end">
+<p class="text-xs text-slate-400">Qty: 1</p>
+<p class="text-slate-900 dark:text-slate-100 font-bold">$12.00</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-primary/5 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+<div class="text-xs text-slate-500 dark:text-slate-400">Total: <span class="text-base font-bold text-slate-900 dark:text-slate-100">$80.00</span></div>
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                        Cancel Order
+                    </button>
+<button class="px-6 py-2 rounded-lg bg-primary text-slate-900 text-xs font-bold">
+                        Pay Now
+                    </button>
+</div>
+</div>
+</div>
+<!-- Order Card 3: Shipped -->
+<div class="rounded-xl shadow-sm bg-white dark:bg-slate-900 overflow-hidden border border-primary/5 opacity-80">
+<div class="p-4 border-b border-primary/5 flex justify-between items-center bg-slate-100 dark:bg-slate-800">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Order No: BH-20231020054</span>
+<span class="text-sm font-bold text-slate-500 dark:text-slate-400">Completed</span>
+</div>
+<div class="p-4 flex gap-4">
+<div class="size-20 bg-primary/10 rounded-lg shrink-0 bg-center bg-cover" data-alt="Baby winter hooded jumpsuit in forest green" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCj6ZrQaLUgCN7kgNLi7K3FHhnBnXFdAYJKWj3ap49VS2lN0Wy5NgS-nLkCOGzERheQTi1BgbHOJTFsNrW9zKk8HPxL2BR9TZhvvLiHKVd4Qmxy_0M85bmdx8UtU8Wqt6AaRnewuxqZLVVzwfWDQglu7NcWGMccLQHCJqSxFC_4KIQmgxS-E7XxNgDYg29dSlSedV83KkTvNiAzt795W5zZntR7YxdnWC71nSjwAVCT2RcH2RPpbSyf2_twaOHkRiHe_Z-Ql0C0S42g')"></div>
+<div class="flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-slate-900 dark:text-slate-100 font-semibold text-sm line-clamp-1">Cozy Winter Hooded Jumpsuit</h3>
+<p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Color: Forest | Size: 3-6 Months</p>
+</div>
+<div class="flex justify-between items-end">
+<p class="text-xs text-slate-400">Qty: 1</p>
+<p class="text-slate-900 dark:text-slate-100 font-bold">$55.00</p>
+</div>
+</div>
+</div>
+<div class="px-4 py-3 flex gap-2 justify-end border-t border-primary/5">
+<button class="px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-bold">
+                    Buy Again
+                </button>
+<button class="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                    Rate Product
+                </button>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-primary/10 z-50">
+<div class="flex max-w-2xl mx-auto gap-2 px-4 pb-4 pt-2">
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">home</span>
+<p class="text-xs font-medium">Shop</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">category</span>
+<p class="text-xs font-medium">Categories</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill-[1]">receipt_long</span>
+<p class="text-xs font-bold">Orders</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 dark:text-slate-500" href="#">
+<span class="material-symbols-outlined">person</span>
+<p class="text-xs font-medium">Profile</p>
+</a>
+</div>
+</nav>
+</body></html>

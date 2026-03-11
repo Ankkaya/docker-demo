@@ -11,7 +11,8 @@
       <n-data-table :columns="columns" :data="list" :loading="loading" striped />
     </n-card>
 
-    <n-modal v-model:show="dialogVisible" :title="isEdit ? '编辑打印模板' : '新增打印模板'" preset="card" style="width: 1200px; max-width: 96vw">
+    <n-modal v-model:show="dialogVisible" :title="isEdit ? '编辑打印模板' : '新增打印模板'" preset="card"
+      style="width: 1200px; max-width: 96vw">
       <div class="grid grid-cols-2 gap-4">
         <div>
           <n-form ref="formRef" :model="form" :rules="rules" label-width="100">
@@ -20,12 +21,17 @@
               <n-form-item-gi label="业务类型" path="bizType">
                 <n-select v-model:value="form.bizType" :options="bizTypeOptions" />
               </n-form-item-gi>
-              <n-form-item-gi label="排序" path="sort"><n-input-number v-model:value="form.sort" :min="0" style="width: 100%" /></n-form-item-gi>
-              <n-form-item-gi label="纸张宽度(mm)" path="paperWidth">
-                <n-input-number v-model:value="form.paperWidth" :min="1" :max="50" style="width: 100%" />
+              <n-form-item-gi label="排序" path="sort"><n-input-number v-model:value="form.sort" :min="0"
+                  style="width: 100%" /></n-form-item-gi>
+              <n-form-item-gi label="纸张宽度" path="paperWidth">
+                <n-input-number v-model:value="form.paperWidth" :min="1" :max="50" style="width: 100%">
+                  <template #suffix>mm</template>
+                </n-input-number>
               </n-form-item-gi>
-              <n-form-item-gi label="纸张高度(mm)" path="paperHeight">
-                <n-input-number v-model:value="form.paperHeight" :min="1" :max="300" style="width: 100%" />
+              <n-form-item-gi label="纸张高度" path="paperHeight">
+                <n-input-number v-model:value="form.paperHeight" :min="1" :max="300" style="width: 100%">
+                  <template #suffix>mm</template>
+                </n-input-number>
               </n-form-item-gi>
             </n-grid>
             <n-form-item label="描述" path="description"><n-input v-model:value="form.description" /></n-form-item>
@@ -40,7 +46,8 @@
               <n-button size="small" @click="addBlock('barcode')">添加条码</n-button>
               <n-button size="small" @click="addBlock('line')">添加直线</n-button>
               <n-button size="small" :disabled="!selectedBlockId" @click="duplicateSelectedBlock">复制选中</n-button>
-              <n-button size="small" type="error" ghost :disabled="!selectedBlockId" @click="removeSelectedBlock">删除选中</n-button>
+              <n-button size="small" type="error" ghost :disabled="!selectedBlockId"
+                @click="removeSelectedBlock">删除选中</n-button>
             </n-space>
             <n-space size="small" align="center">
               <n-text depth="3">共 {{ blocks.length }} 个块</n-text>
@@ -50,14 +57,8 @@
 
           <div class="max-h-[420px] overflow-auto pr-2">
             <n-empty v-if="!blocks.length" description="暂无块，点击上方按钮添加" />
-            <n-card
-              v-for="(block, idx) in blocks"
-              :key="block.id"
-              size="small"
-              class="mb-2 cursor-pointer"
-              :class="selectedBlockId === block.id ? 'ring-2 ring-blue-500' : ''"
-              @click="selectBlock(block.id)"
-            >
+            <n-card v-for="(block, idx) in blocks" :key="block.id" size="small" class="mb-2 cursor-pointer"
+              :class="selectedBlockId === block.id ? 'ring-2 ring-blue-500' : ''" @click="selectBlock(block.id)">
               <template #header>
                 <div class="flex justify-between items-center">
                   <n-space size="small" align="center">
@@ -66,23 +67,47 @@
                   </n-space>
                   <n-space size="small">
                     <n-button text size="tiny" @click="moveBlockUp(idx)" :disabled="idx === 0">上移</n-button>
-                    <n-button text size="tiny" @click="moveBlockDown(idx)" :disabled="idx === blocks.length - 1">下移</n-button>
+                    <n-button text size="tiny" @click="moveBlockDown(idx)"
+                      :disabled="idx === blocks.length - 1">下移</n-button>
                     <n-button text size="tiny" type="error" @click="removeBlock(idx)">删除</n-button>
                   </n-space>
                 </div>
               </template>
 
               <n-grid :cols="2" :x-gap="10">
-                <n-form-item-gi label="X"><n-input-number v-model:value="block.x" :min="0" :max="form.paperWidth" style="width: 100%" /></n-form-item-gi>
-                <n-form-item-gi label="Y"><n-input-number v-model:value="block.y" :min="0" :max="form.paperHeight" style="width: 100%" /></n-form-item-gi>
+                <n-form-item-gi label="X (mm)">
+                  <n-input-number v-model:value="block.x" :min="0" :max="form.paperWidth" :precision="2"
+                    style="width: 100%">
+                    <template #suffix>mm</template>
+                  </n-input-number>
+                </n-form-item-gi>
+                <n-form-item-gi label="Y (mm)">
+                  <n-input-number v-model:value="block.y" :min="0" :max="form.paperHeight" :precision="2"
+                    style="width: 100%">
+                    <template #suffix>mm</template>
+                  </n-input-number>
+                </n-form-item-gi>
               </n-grid>
 
               <template v-if="block.type === 'text'">
                 <n-form-item label="文本"><n-input v-model:value="block.text" /></n-form-item>
                 <n-grid :cols="3" :x-gap="10">
-                  <n-form-item-gi label="宽"><n-input-number v-model:value="block.width" :min="1" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="高"><n-input-number v-model:value="block.height" :min="1" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="字号"><n-input-number v-model:value="block.fontSize" :min="1" style="width: 100%" /></n-form-item-gi>
+                  <n-form-item-gi label="宽 (mm)">
+                    <n-input-number v-model:value="block.width" :min="1" :precision="2" style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="高 (mm)">
+                    <n-input-number v-model:value="block.height" :min="1" :precision="2" style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="字号 (mm)">
+                    <n-input-number v-model:value="block.fontSize" :min="0.5" :step="0.5" :precision="1"
+                      style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
                 </n-grid>
                 <n-form-item label="粗体"><n-switch v-model:value="block.bold" /></n-form-item>
               </template>
@@ -90,15 +115,31 @@
               <template v-else-if="block.type === 'qrcode'">
                 <n-form-item label="值"><n-input v-model:value="block.value" /></n-form-item>
                 <n-grid :cols="2" :x-gap="10">
-                  <n-form-item-gi label="宽"><n-input-number v-model:value="block.width" :min="1" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="高"><n-input-number v-model:value="block.height" :min="1" style="width: 100%" /></n-form-item-gi>
+                  <n-form-item-gi label="宽 (mm)">
+                    <n-input-number v-model:value="block.width" :min="1" :precision="2" style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="高 (mm)">
+                    <n-input-number v-model:value="block.height" :min="1" :precision="2" style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
                 </n-grid>
               </template>
               <template v-else-if="block.type === 'barcode'">
                 <n-form-item label="值"><n-input v-model:value="block.value" /></n-form-item>
                 <n-grid :cols="2" :x-gap="10">
-                  <n-form-item-gi label="宽"><n-input-number v-model:value="block.width" :min="1" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="高"><n-input-number v-model:value="block.height" :min="1" style="width: 100%" /></n-form-item-gi>
+                  <n-form-item-gi label="宽 (mm)">
+                    <n-input-number v-model:value="block.width" :min="1" :precision="2" style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="高 (mm)">
+                    <n-input-number v-model:value="block.height" :min="1" :precision="2" style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
                 </n-grid>
                 <n-grid :cols="2" :x-gap="10">
                   <n-form-item-gi label="条码类型">
@@ -110,10 +151,30 @@
 
               <template v-else>
                 <n-grid :cols="2" :x-gap="10">
-                  <n-form-item-gi label="X1"><n-input-number v-model:value="block.x1" :min="0" :max="form.paperWidth" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="Y1"><n-input-number v-model:value="block.y1" :min="0" :max="form.paperHeight" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="X2"><n-input-number v-model:value="block.x2" :min="0" :max="form.paperWidth" style="width: 100%" /></n-form-item-gi>
-                  <n-form-item-gi label="Y2"><n-input-number v-model:value="block.y2" :min="0" :max="form.paperHeight" style="width: 100%" /></n-form-item-gi>
+                  <n-form-item-gi label="X1 (mm)">
+                    <n-input-number v-model:value="block.x1" :min="0" :max="form.paperWidth" :precision="2"
+                      style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="Y1 (mm)">
+                    <n-input-number v-model:value="block.y1" :min="0" :max="form.paperHeight" :precision="2"
+                      style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="X2 (mm)">
+                    <n-input-number v-model:value="block.x2" :min="0" :max="form.paperWidth" :precision="2"
+                      style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi label="Y2 (mm)">
+                    <n-input-number v-model:value="block.y2" :min="0" :max="form.paperHeight" :precision="2"
+                      style="width: 100%">
+                      <template #suffix>mm</template>
+                    </n-input-number>
+                  </n-form-item-gi>
                 </n-grid>
               </template>
             </n-card>
@@ -128,13 +189,16 @@
               <n-text depth="3">网格</n-text>
               <n-switch v-model:value="snapToGrid" />
               <n-text depth="3">吸附</n-text>
-              <n-text depth="3">间距(mm)</n-text>
-              <n-input-number v-model:value="gridSizeMm" :min="1" :step="1" :precision="0" style="width: 88px" />
+              <n-text depth="3">间距</n-text>
+              <n-input-number v-model:value="gridSizeMm" :min="1" :max="20" :step="1" :precision="0"
+                style="width: 110px">
+                <template #suffix>mm</template>
+              </n-input-number>
             </n-space>
             <n-space size="small" align="center">
               <n-text depth="3">缩放</n-text>
-              <n-slider v-model:value="zoomPercent" :min="60" :max="180" :step="10" style="width: 140px" />
-              <n-text depth="3">{{ zoomPercent }}%</n-text>
+              <n-slider v-model:value="zoomPercent" :min="60" :max="180" :step="10" style="width: 120px" />
+              <n-text depth="3" style="min-width: 45px">{{ zoomPercent }}%</n-text>
             </n-space>
           </n-space>
           <div class="border rounded bg-gray-100 p-3 overflow-auto">
@@ -142,105 +206,43 @@
               <!-- 左上角零点标记 -->
               <div class="ruler-zero">0</div>
               <!-- 水平刻度尺 -->
-              <div class="ruler ruler-horizontal" :style="{ width: `${(form.paperWidth || 50) * scale.value + 24}px` }">
-                <!-- 主刻度 (每10mm) -->
-                <div 
-                  v-for="i in Math.max(1, Math.floor((form.paperWidth || 50) / 10) + 1)" 
-                  :key="`h-major-${i}`" 
-                  class="ruler-tick ruler-tick-major"
-                  :style="{ left: `${24 + (i - 1) * 10 * scale.value}px` }"
-                >
-                  <span class="ruler-label">{{ (i - 1) * 10 }}</span>
+              <div class="ruler ruler-horizontal" :style="{ width: `${paperWidthPx}px` }">
+                <div v-for="tick in horizontalTicks" :key="tick.key" class="ruler-tick" :class="tick.class"
+                  :style="{ left: `${tick.pos}px` }">
+                  <span v-if="tick.showLabel" class="ruler-label ruler-label-horizontal">{{ tick.label }}</span>
                 </div>
-                <!-- 次刻度 (每5mm，排除10mm的倍数) -->
-                <template v-for="i in Math.max(1, Math.floor((form.paperWidth || 50) / 5) + 1)" :key="`h-medium-${i}`">
-                  <div 
-                    v-if="(i - 1) * 5 % 10 !== 0"
-                    class="ruler-tick ruler-tick-medium"
-                    :style="{ left: `${24 + (i - 1) * 5 * scale.value}px` }"
-                  />
-                </template>
-                <!-- 小刻度 (每1mm，排除5mm的倍数) -->
-                <template v-for="i in Math.max(1, Math.floor((form.paperWidth || 50)) + 1)" :key="`h-minor-${i}`">
-                  <div 
-                    v-if="(i - 1) % 5 !== 0"
-                    class="ruler-tick ruler-tick-minor"
-                    :style="{ left: `${24 + (i - 1) * scale.value}px` }"
-                  />
-                </template>
               </div>
               <!-- 垂直刻度尺 -->
-              <div class="ruler ruler-vertical" :style="{ height: `${(form.paperHeight || 50) * scale.value + 24}px` }">
-                <!-- 主刻度 (每10mm) -->
-                <div 
-                  v-for="i in Math.max(1, Math.floor((form.paperHeight || 50) / 10) + 1)" 
-                  :key="`v-major-${i}`" 
-                  class="ruler-tick ruler-tick-major"
-                  :style="{ top: `${24 + (i - 1) * 10 * scale.value}px` }"
-                >
-                  <span class="ruler-label">{{ (i - 1) * 10 }}</span>
+              <div class="ruler ruler-vertical" :style="{ height: `${paperHeightPx}px` }">
+                <div v-for="tick in verticalTicks" :key="tick.key" class="ruler-tick" :class="tick.class"
+                  :style="{ top: `${tick.pos}px` }">
+                  <span v-if="tick.showLabel" class="ruler-label ruler-label-vertical">{{ tick.label }}</span>
                 </div>
-                <!-- 次刻度 (每5mm，排除10mm的倍数) -->
-                <template v-for="i in Math.max(1, Math.floor((form.paperHeight || 50) / 5) + 1)" :key="`v-medium-${i}`">
-                  <div 
-                    v-if="(i - 1) * 5 % 10 !== 0"
-                    class="ruler-tick ruler-tick-medium"
-                    :style="{ top: `${24 + (i - 1) * 5 * scale.value}px` }"
-                  />
-                </template>
-                <!-- 小刻度 (每1mm，排除5mm的倍数) -->
-                <template v-for="i in Math.max(1, Math.floor((form.paperHeight || 50)) + 1)" :key="`v-minor-${i}`">
-                  <div 
-                    v-if="(i - 1) % 5 !== 0"
-                    class="ruler-tick ruler-tick-minor"
-                    :style="{ top: `${24 + (i - 1) * scale.value}px` }"
-                  />
-                </template>
               </div>
               <!-- 画布 -->
-              <div
-                ref="canvasRef"
-                class="canvas-area relative bg-white shadow"
-                :style="paperStyle"
-                @mousedown.self="clearSelection"
-              >
+              <div ref="canvasRef" class="canvas-area relative bg-white shadow" :style="paperStyle"
+                @mousedown.self="clearSelection">
                 <template v-for="block in blocks" :key="block.id">
-                  <div
-                    v-if="block.type === 'text'"
-                    :style="textBlockStyle(block, selectedBlockId === block.id)"
-                    class="cursor-move block-item"
-                    @mousedown="startDrag($event, block)"
-                    @click.stop="selectBlock(block.id)"
-                  >
+                  <div v-if="block.type === 'text'" :style="textBlockStyle(block, selectedBlockId === block.id)"
+                    class="cursor-move block-item" @mousedown="startDrag($event, block)"
+                    @click.stop="selectBlock(block.id)">
                     {{ block.text || '文本' }}
                   </div>
 
-                  <div
-                    v-else-if="block.type === 'qrcode'"
-                    :style="qrcodeBlockStyle(block, selectedBlockId === block.id)"
-                    class="cursor-move block-item"
-                    @mousedown="startDrag($event, block)"
-                    @click.stop="selectBlock(block.id)"
-                  >
+                  <div v-else-if="block.type === 'qrcode'"
+                    :style="qrcodeBlockStyle(block, selectedBlockId === block.id)" class="cursor-move block-item"
+                    @mousedown="startDrag($event, block)" @click.stop="selectBlock(block.id)">
                     QR
                   </div>
-                  <div
-                    v-else-if="block.type === 'barcode'"
-                    :style="barcodeBlockStyle(block, selectedBlockId === block.id)"
-                    class="cursor-move block-item"
-                    @mousedown="startDrag($event, block)"
-                    @click.stop="selectBlock(block.id)"
-                  >
+                  <div v-else-if="block.type === 'barcode'"
+                    :style="barcodeBlockStyle(block, selectedBlockId === block.id)" class="cursor-move block-item"
+                    @mousedown="startDrag($event, block)" @click.stop="selectBlock(block.id)">
                     BAR
                   </div>
 
-                  <div
-                    v-else
-                    :style="lineBlockStyle(block, selectedBlockId === block.id)"
-                    class="cursor-move block-item"
-                    @mousedown="startDrag($event, block)"
-                    @click.stop="selectBlock(block.id)"
-                  ></div>
+                  <div v-else :style="lineBlockStyle(block, selectedBlockId === block.id)"
+                    class="cursor-move block-item" @mousedown="startDrag($event, block)"
+                    @click.stop="selectBlock(block.id)"></div>
                 </template>
               </div>
             </div>
@@ -262,7 +264,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui';
 import { NButton, NSpace, NSwitch, useDialog, useMessage } from 'naive-ui';
@@ -321,11 +323,13 @@ const barcodeTypeOptions = [
 const columns: DataTableColumns<PrintTemplate> = [
   { title: 'ID', key: 'id', width: 80 },
   { title: '模板名称', key: 'name', minWidth: 180 },
-  { title: '业务类型', key: 'bizType', width: 130, render: (row) => {
-    const option = bizTypeOptions.find(o => o.value === row.bizType);
-    return option?.label || row.bizType;
-  }},
-  { title: '纸张', key: 'paperSize', width: 130, render: (row) => `${row.paperWidth} x ${row.paperHeight}` },
+  {
+    title: '业务类型', key: 'bizType', width: 130, render: (row) => {
+      const option = bizTypeOptions.find(o => o.value === row.bizType);
+      return option?.label || row.bizType;
+    }
+  },
+  { title: '纸张', key: 'paperSize', width: 130, render: (row) => `${row.paperWidth} x ${row.paperHeight} mm` },
   { title: '启用', key: 'isEnabled', width: 90, render: (row) => h(NSwitch, { value: row.isEnabled, disabled: true }) },
   {
     title: '操作',
@@ -349,15 +353,66 @@ const scale = computed(() => {
   return Math.min(sx, sy) * (zoomPercent.value / 100);
 });
 
+// 纸张像素尺寸
+const paperWidthPx = computed(() => (form.paperWidth || 50) * scale.value);
+const paperHeightPx = computed(() => (form.paperHeight || 50) * scale.value);
+
+// 生成刻度线数据
+interface TickData {
+  key: string;
+  pos: number;
+  class: string;
+  showLabel: boolean;
+  label: string;
+}
+
+const generateTicks = (size: number, isHorizontal: boolean): TickData[] => {
+  const ticks: TickData[] = [];
+  const gridSize = Math.max(1, gridSizeMm.value);
+  const maxMm = Math.ceil(size);
+
+  // 主刻度间隔（根据网格间距决定）
+  const majorInterval = gridSize;
+
+  for (let mm = 0; mm <= maxMm; mm++) {
+    const pos = mm * scale.value;
+    if (pos > size * scale.value) break;
+
+    const isMajor = mm % majorInterval === 0;
+    const isMedium = mm % (majorInterval / 2 === 0 ? 1 : majorInterval / 2) === 0 && !isMajor;
+
+    let tickClass = 'ruler-tick-minor';
+    if (isMajor) tickClass = 'ruler-tick-major';
+    else if (isMedium) tickClass = 'ruler-tick-medium';
+
+    // 只在主刻度显示标签
+    const showLabel = isMajor && mm > 0;
+
+    ticks.push({
+      key: `${isHorizontal ? 'h' : 'v'}-${mm}`,
+      pos,
+      class: tickClass,
+      showLabel,
+      label: String(mm),
+    });
+  }
+
+  return ticks;
+};
+
+const horizontalTicks = computed(() => generateTicks(form.paperWidth || 50, true));
+const verticalTicks = computed(() => generateTicks(form.paperHeight || 50, false));
+
 const paperStyle = computed<CSSProperties>(() => {
   const gridPx = Math.max(1, gridSizeMm.value * scale.value);
   return {
-    width: `${(form.paperWidth || 50) * scale.value}px`,
-    height: `${(form.paperHeight || 50) * scale.value}px`,
+    width: `${paperWidthPx.value}px`,
+    height: `${paperHeightPx.value}px`,
     backgroundImage: showGrid.value
       ? `linear-gradient(to right, rgba(148,163,184,0.25) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.25) 1px, transparent 1px)`
       : undefined,
     backgroundSize: showGrid.value ? `${gridPx}px ${gridPx}px` : undefined,
+    backgroundPosition: showGrid.value ? `${gridPx}px ${gridPx}px` : undefined,
     position: 'relative' as const,
     overflow: 'hidden' as const,
   };
@@ -369,30 +424,13 @@ const selectedBlockIndex = computed(() => (selectedBlockId.value ? findBlockInde
 const selectedOutline = (selected: boolean) =>
   selected
     ? {
-        outline: '2px solid #2563eb',
-        outlineOffset: '1px',
-      }
-    : {};
-
-// 限制元素在纸张范围内
-const clampBlockPosition = (block: TemplateBlock) => {
-  const pw = form.paperWidth || 50;
-  const ph = form.paperHeight || 50;
-  
-  if (block.type === 'line') {
-    block.x1 = Math.max(0, Math.min(pw, block.x1 || 0));
-    block.y1 = Math.max(0, Math.min(ph, block.y1 || 0));
-    block.x2 = Math.max(0, Math.min(pw, block.x2 || 0));
-    block.y2 = Math.max(0, Math.min(ph, block.y2 || 0));
-    block.x = block.x1;
-    block.y = block.y1;
-  } else {
-    const w = block.width || 30;
-    const h = block.height || 6;
-    block.x = Math.max(0, Math.min(pw - w, block.x || 0));
-    block.y = Math.max(0, Math.min(ph - h, block.y || 0));
-  }
-};
+      outline: '2px solid #2563eb',
+      outlineOffset: '1px',
+    }
+    : {
+      outline: '1px dashed #9ca3af',
+      outlineOffset: '0px',
+    };
 
 const textBlockStyle = (block: TemplateBlock, selected = false): CSSProperties => {
   const width = block.width || 30;
@@ -405,6 +443,7 @@ const textBlockStyle = (block: TemplateBlock, selected = false): CSSProperties =
     minHeight: px(height),
     fontSize: `${Math.max(10, (block.fontSize || 3) * scale.value * 2)}px`,
     fontWeight: block.bold ? '700' : '400',
+    color: '#000000',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     boxSizing: 'border-box',
@@ -548,13 +587,13 @@ const moveSelectedBlock = (stepX: number, stepY: number) => {
   const idx = findBlockIndex(selectedBlockId.value);
   if (idx < 0) return;
   const target = blocks.value[idx];
-  
+
   if (target.type === 'line') {
     const newX1 = Number(target.x1 || 0) + stepX;
     const newY1 = Number(target.y1 || 0) + stepY;
     const newX2 = Number(target.x2 || 0) + stepX;
     const newY2 = Number(target.y2 || 0) + stepY;
-    
+
     target.x1 = snapMm(Math.max(0, Math.min(form.paperWidth, newX1)));
     target.y1 = snapMm(Math.max(0, Math.min(form.paperHeight, newY1)));
     target.x2 = snapMm(Math.max(0, Math.min(form.paperWidth, newX2)));
@@ -566,7 +605,7 @@ const moveSelectedBlock = (stepX: number, stepY: number) => {
     const h = target.height || 6;
     const newX = Number(target.x || 0) + stepX;
     const newY = Number(target.y || 0) + stepY;
-    
+
     target.x = snapMm(Math.max(0, Math.min(form.paperWidth - w, newX)));
     target.y = snapMm(Math.max(0, Math.min(form.paperHeight - h, newY)));
   }
@@ -586,19 +625,19 @@ const onGlobalKeydown = (event: KeyboardEvent) => {
     removeSelectedBlock();
     return;
   }
-  
+
   // 处理复制
   if (selectedBlockId.value && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'd') {
     event.preventDefault();
     duplicateSelectedBlock();
     return;
   }
-  
+
   if (!selectedBlockId.value) return;
 
   // 处理方向键 - 使用 key 而不是 code
   const unit = event.shiftKey ? 1 : event.altKey ? 0.1 : 0.5;
-  
+
   switch (event.key) {
     case 'ArrowUp':
       event.preventDefault();
@@ -649,7 +688,7 @@ const onDragging = (event: MouseEvent) => {
     const newY1 = Number(dragState.value.origin.y1 || 0) + dyMm;
     const newX2 = Number(dragState.value.origin.x2 || 0) + dxMm;
     const newY2 = Number(dragState.value.origin.y2 || 0) + dyMm;
-    
+
     target.x1 = snapMm(Math.max(0, Math.min(form.paperWidth, newX1)));
     target.y1 = snapMm(Math.max(0, Math.min(form.paperHeight, newY1)));
     target.x2 = snapMm(Math.max(0, Math.min(form.paperWidth, newX2)));
@@ -663,7 +702,7 @@ const onDragging = (event: MouseEvent) => {
   const h = target.height || 6;
   const nextX = Number(dragState.value.origin.x || 0) + dxMm;
   const nextY = Number(dragState.value.origin.y || 0) + dyMm;
-  
+
   target.x = snapMm(Math.max(0, Math.min(form.paperWidth - w, nextX)));
   target.y = snapMm(Math.max(0, Math.min(form.paperHeight - h, nextY)));
 };
@@ -860,6 +899,13 @@ const handleSubmit = async () => {
   });
 };
 
+// 监听间距变化，同步调整网格大小（但不改变已有模板块尺寸）
+watch(gridSizeMm, (newVal, oldVal) => {
+  if (!newVal || !oldVal || newVal === oldVal) return;
+  // 只调整网格显示，不自动调整模板块尺寸
+  // 模板块尺寸由用户手动调整
+});
+
 onMounted(() => {
   fetchList();
   window.addEventListener('keydown', onGlobalKeydown);
@@ -873,124 +919,130 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .canvas-wrapper {
-  position: relative;
-  padding-left: 24px;
-  padding-top: 24px;
+  --ruler-size: 28px;
+  display: grid;
+  grid-template-columns: var(--ruler-size) max-content;
+  grid-template-rows: var(--ruler-size) max-content;
+  width: max-content;
 }
 
 /* 零点标记 */
 .ruler-zero {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 24px;
-  height: 24px;
+  grid-column: 1;
+  grid-row: 1;
+  width: var(--ruler-size);
+  height: var(--ruler-size);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 600;
   color: #666;
-  background: #f0f0f0;
-  border-right: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  z-index: 10;
-}
-
-.ruler {
-  position: absolute;
   background: #f8f9fa;
-  border: 1px solid #d0d0d0;
-  overflow: hidden;
+  z-index: 20;
 }
 
+/* 标尺基础样式 */
+.ruler {
+  position: relative;
+  background: #f8f9fa;
+}
+
+/* 水平标尺 */
 .ruler-horizontal {
-  top: 0;
-  left: 24px;
-  height: 24px;
-  border-left: none;
-  border-top-right-radius: 4px;
+  grid-column: 2;
+  grid-row: 1;
+  height: var(--ruler-size);
+  border-bottom: 1px solid #d0d0d0;
 }
 
+/* 垂直标尺 */
 .ruler-vertical {
-  left: 0;
-  top: 24px;
-  width: 24px;
-  border-top: none;
-  border-bottom-left-radius: 4px;
+  grid-column: 1;
+  grid-row: 2;
+  width: var(--ruler-size);
+  border-right: 1px solid #d0d0d0;
 }
 
+/* 刻度线基础 */
 .ruler-tick {
   position: absolute;
   pointer-events: none;
 }
 
-/* 水平刻度 */
+/* 水平刻度线贴着 X 轴显示 */
 .ruler-horizontal .ruler-tick {
   bottom: 0;
   border-left: 1px solid;
 }
 
 .ruler-horizontal .ruler-tick-major {
-  height: 12px;
+  height: 10px;
   border-color: #555;
 }
 
 .ruler-horizontal .ruler-tick-medium {
-  height: 8px;
+  height: 6px;
   border-color: #888;
 }
 
 .ruler-horizontal .ruler-tick-minor {
-  height: 5px;
+  height: 4px;
   border-color: #bbb;
 }
 
-/* 垂直刻度 */
+/* 垂直刻度线 */
 .ruler-vertical .ruler-tick {
   right: 0;
   border-top: 1px solid;
 }
 
 .ruler-vertical .ruler-tick-major {
-  width: 12px;
+  width: 10px;
   border-color: #555;
 }
 
 .ruler-vertical .ruler-tick-medium {
-  width: 8px;
+  width: 6px;
   border-color: #888;
 }
 
 .ruler-vertical .ruler-tick-minor {
-  width: 5px;
+  width: 4px;
   border-color: #bbb;
 }
 
-/* 刻度标签 */
+/* 刻度标签基础 */
 .ruler-label {
   position: absolute;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
-  color: #444;
+  color: #555;
   line-height: 1;
   user-select: none;
+  white-space: nowrap;
 }
 
-.ruler-horizontal .ruler-label {
-  top: 2px;
-  left: 2px;
+/* 水平标签：显示在刻度线上方（数字在上，刻度在下） */
+.ruler-label-horizontal {
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
 }
 
-.ruler-vertical .ruler-label {
-  left: 2px;
-  top: -8px;
+/* 垂直标签：显示在刻度线左侧，垂直居中 */
+.ruler-label-vertical {
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
+/* 画布 */
 .canvas-area {
-  margin-left: 0;
-  margin-top: 0;
-  border: 1px solid #d0d0d0;
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  box-shadow: inset -1px -1px 0 0 #d0d0d0;
 }
 
 .block-item {

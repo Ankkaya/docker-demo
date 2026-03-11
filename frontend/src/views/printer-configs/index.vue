@@ -58,7 +58,7 @@
         <n-space vertical :size="12">
           <n-descriptions bordered :column="2" size="small">
             <n-descriptions-item label="模板名称">{{ previewTemplate?.name || '-' }}</n-descriptions-item>
-            <n-descriptions-item label="模板编码">{{ previewTemplate?.code || '-' }}</n-descriptions-item>
+            
             <n-descriptions-item label="业务类型">{{ previewTemplate?.bizType || '-' }}</n-descriptions-item>
             <n-descriptions-item label="纸张">{{ previewTemplate ? `${previewTemplate.paperWidth} x ${previewTemplate.paperHeight} mm` : '-' }}</n-descriptions-item>
           </n-descriptions>
@@ -272,7 +272,7 @@ const fetchList = async () => {
 const fetchOptions = async () => {
   try {
     const [templates, printers] = await Promise.all([getPrintTemplates(), getPrinters()]);
-    templateOptions.value = templates.map((item) => ({ label: `${item.name} (${item.code})`, value: item.id }));
+    templateOptions.value = templates.map((item) => ({ label: item.name, value: item.id }));
     printerOptions.value = printers.map((item) => ({ label: `${item.name} (${item.device})`, value: item.id }));
   } catch (error) {
     // 忽略，下方会在页面操作时提示

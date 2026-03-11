@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "73d82e457a934f2b98c2f0dbab61d11b",
+    "title": "地址管理",
+    "width": "780",
+    "height": "1968",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/AOfcidWMDXnIVXLxFhlqDqY_eBsYPHj8fx9JPgP2ryttChYiqg7K4-dsj-3LzmGjBrohZHwYiP6K2tWXqZwcsxaWssLkT2cdWcEZB5HVhUFHs00vqMEUdFyIzmn6vmh2etPOQZFSYN24LQ7exQRs9drXsjjEfDaNKzN9uV_hMBvFAWnS5Xgcu0ixzqxDTnadkXBHKZkDCdm8t3fUcTl_hHwx7YU4BJQXfm06OetlZFXaExk2NP5eHJvfWeC8fmvt",
+      "contentType": "image/png",
+      "file": "stitch/screens/地址管理 (Address Management)/地址管理 (Address Management).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzdmMGNhOGFiNWU5NzQwM2M4OTQ5NzQ4NDQ1ZmFhNDJjEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/地址管理 (Address Management)/地址管理 (Address Management).html"
+    }
+  }
+}

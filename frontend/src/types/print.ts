@@ -1,6 +1,7 @@
 export interface PrintTemplate {
   id: number;
   name: string;
+  code?: string;
   bizType: string;
   paperWidth: number;
   paperHeight: number;
