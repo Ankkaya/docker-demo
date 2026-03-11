@@ -63,11 +63,13 @@ export interface ReceiptItem {
   id: number;
   skuId: number;
   skuCode: string;
+  barcode?: string;
   skuName: string;
   productName: string;
   specs: Record<string, string>;
   quantity: number;
   price: number;
+  salePrice: number;
 }
 
 // 入库单

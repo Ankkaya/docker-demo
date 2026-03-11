@@ -109,7 +109,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useMessage } from 'naive-ui';
-import { getPurchases } from '@/api/purchase';
+import { getAvailableReceiptPurchases, getPurchase } from '@/api/purchase';
 import { createPurchaseReceipt } from '@/api/purchase';
 import type { FormInst, FormRules } from 'naive-ui';
 import type { Purchase, CreateReceiptDto } from '@/types/purchase';
@@ -171,14 +171,66 @@ const rules: FormRules = {
   purchaseId: [{ required: true, message: '请选择采购订单', type: 'number' }],
 };
 
+const unwrapPurchaseList = (payload: unknown): Purchase[] => {
+  if (Array.isArray(payload)) {
+    return payload as Purchase[];
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+
+  const raw = payload as {
+    data?: Purchase[] | { data?: Purchase[]; items?: Purchase[] };
+    items?: Purchase[];
+  };
+
+  if (Array.isArray(raw.data)) {
+    return raw.data;
+  }
+
+  if (Array.isArray(raw.items)) {
+    return raw.items;
+  }
+
+  if (raw.data && typeof raw.data === 'object') {
+    const nested = raw.data as { data?: Purchase[]; items?: Purchase[] };
+    if (Array.isArray(nested.data)) {
+      return nested.data;
+    }
+    if (Array.isArray(nested.items)) {
+      return nested.items;
+    }
+  }
+
+  return [];
+};
+
+const unwrapPurchaseDetail = (payload: unknown): Purchase | null => {
+  if (!payload || typeof payload !== 'object') return null;
+
+  const direct = payload as Purchase;
+  if (typeof direct.id === 'number' && typeof direct.orderNo === 'string') {
+    return direct;
+  }
+
+  const wrapped = payload as { data?: unknown };
+  if (!wrapped.data || typeof wrapped.data !== 'object') return null;
+
+  const nested = wrapped.data as Purchase;
+  if (typeof nested.id === 'number' && typeof nested.orderNo === 'string') {
+    return nested;
+  }
+
+  return null;
+};
+
 // 加载采购订单选项
 const loadPurchases = async () => {
   try {
-    const res = await getPurchases({
-      status: 'APPROVED',
-      pageSize: 1000,
-    });
-    const purchases = res.data.data;
+    const res = await getAvailableReceiptPurchases();
+    const purchases = unwrapPurchaseList(res);
+
     purchaseOptions.value = purchases.map((p: Purchase) => ({
       label: `${p.orderNo} - ${p.supplierName} (应付:¥${p.payable})`,
       value: p.id,
@@ -186,15 +238,28 @@ const loadPurchases = async () => {
     purchaseMap.value = new Map(purchases.map((p: Purchase) => [p.id, p]));
   } catch (error) {
     console.error('加载采购订单失败:', error);
+    message.error('加载采购订单失败');
   }
 };
 
 // 选择采购订单变化
-const handlePurchaseChange = (purchaseId: number) => {
-  selectedPurchase.value = purchaseMap.value.get(purchaseId) || null;
-  
-  if (selectedPurchase.value && selectedPurchase.value.items) {
-    formData.items = selectedPurchase.value.items.map((item) => ({
+const handlePurchaseChange = async (purchaseId: number | null) => {
+  if (!purchaseId) {
+    selectedPurchase.value = null;
+    formData.items = [];
+    return;
+  }
+
+  try {
+    const detail = await getPurchase(purchaseId);
+    const purchase = unwrapPurchaseDetail(detail);
+
+    if (!purchase) {
+      throw new Error('采购订单详情为空');
+    }
+
+    selectedPurchase.value = purchase;
+    formData.items = (purchase.items || []).map((item) => ({
       skuId: item.skuId,
       skuCode: item.skuCode,
       productName: item.productName,
@@ -207,8 +272,10 @@ const handlePurchaseChange = (purchaseId: number) => {
       amount: 0,
       selected: false,
     }));
-  } else {
+  } catch (error) {
+    selectedPurchase.value = purchaseMap.value.get(purchaseId) || null;
     formData.items = [];
+    message.error('加载采购订单明细失败');
   }
 };
 

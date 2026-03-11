@@ -300,6 +300,7 @@ model Product {
   
   // 状态
   isEnabled    Boolean       @default(true)
+  mallEnabled  Boolean       @default(false) // 是否在商城上架
   deletedAt    DateTime?     // 软删除标记
   
   // 关联

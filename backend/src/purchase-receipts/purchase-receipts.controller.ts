@@ -24,6 +24,12 @@ import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 export class PurchaseReceiptsController {
   constructor(private readonly receiptsService: PurchaseReceiptsService) {}
 
+  @Get('available-purchases')
+  @ApiOperation({ summary: '查询可入库采购订单' })
+  getAvailablePurchases(@Query('keyword') keyword?: string) {
+    return this.receiptsService.getAvailablePurchases(keyword);
+  }
+
   @Post()
   @ApiOperation({ summary: '创建入库单' })
   create(@Body() createDto: CreateReceiptDto, @Req() req: any) {

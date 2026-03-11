@@ -17,6 +17,7 @@
         </n-form-item>
         <n-form-item>
           <n-space>
+            <n-button type="primary" @click="handleCreate">创建入库单</n-button>
             <n-button type="primary" @click="handleSearch">搜索</n-button>
             <n-button @click="handleReset">重置</n-button>
           </n-space>
@@ -54,16 +55,51 @@
         <ReceiptDetail v-if="detailVisible" :receipt-id="currentReceiptId" />
       </n-drawer-content>
     </n-drawer>
+
+    <n-modal
+      v-model:show="printConfigVisible"
+      title="选择标签打印配置"
+      preset="card"
+      style="width: 520px"
+      :mask-closable="false"
+    >
+      <n-space vertical :size="16">
+        <n-alert type="info" :show-icon="false">
+          当前存在多个商品标签打印配置，请选择一个配置后继续打印。
+        </n-alert>
+        <n-select
+          v-model:value="selectedPrintConfigId"
+          :options="printConfigOptions"
+          placeholder="请选择打印配置"
+        />
+      </n-space>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="handleCancelPrintConfig">跳过打印</n-button>
+          <n-button
+            type="primary"
+            :disabled="!selectedPrintConfigId"
+            :loading="printingLabel"
+            @click="handleConfirmPrintConfig"
+          >
+            打印标签
+          </n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue';
-import { NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui';
+import { NAlert, NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { getPurchaseReceipts, confirmReceipt, cancelReceipt, deleteReceipt } from '@/api/purchase';
+import { getPrinterConfigs } from '@/api/printer-config';
 import ReceiptForm from './components/ReceiptForm.vue';
 import ReceiptDetail from './components/ReceiptDetail.vue';
+import { getPrintErrorMessage, printProductLabels } from '@/services/print/product-label-service';
+import { BizType, type PrinterConfig } from '@/types/print';
 import type { PurchaseReceipt, ReceiptStatus } from '@/types/purchase';
 
 const message = useMessage();
@@ -95,6 +131,35 @@ const pagination = reactive({
 const modalVisible = ref(false);
 const detailVisible = ref(false);
 const currentReceiptId = ref<number>(0);
+const printConfigVisible = ref(false);
+const selectedPrintConfigId = ref<number | null>(null);
+const pendingPrintReceipt = ref<PurchaseReceipt | null>(null);
+const printingLabel = ref(false);
+const labelConfigs = ref<PrinterConfig[]>([]);
+const printConfigOptions = ref<{ label: string; value: number }[]>([]);
+
+const unwrapPaginatedReceiptList = (payload: unknown): { data: PurchaseReceipt[]; meta: { total: number } } => {
+  const raw = payload as any;
+  if (Array.isArray(raw?.data)) {
+    return {
+      data: raw.data,
+      meta: raw.meta || { total: raw.data.length },
+    };
+  }
+
+  const nested = raw?.data as { data?: PurchaseReceipt[]; meta?: { total: number } } | undefined;
+  if (Array.isArray(nested?.data)) {
+    return {
+      data: nested.data,
+      meta: nested.meta || { total: nested.data.length },
+    };
+  }
+
+  return {
+    data: [],
+    meta: { total: 0 },
+  };
+};
 
 // 表格列定义
 const columns: DataTableColumns<PurchaseReceipt> = [
@@ -186,14 +251,15 @@ const columns: DataTableColumns<PurchaseReceipt> = [
 const loadData = async () => {
   loading.value = true;
   try {
-    const res: any = await getPurchaseReceipts({
+    const res = await getPurchaseReceipts({
       keyword: searchForm.keyword || undefined,
       status: searchForm.status || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    receiptList.value = res.data.data;
-    pagination.itemCount = res.meta.total;
+    const result = unwrapPaginatedReceiptList(res);
+    receiptList.value = result.data;
+    pagination.itemCount = result.meta.total;
   } finally {
     loading.value = false;
   }
@@ -225,20 +291,109 @@ const handlePageSizeChange = (pageSize: number) => {
   loadData();
 };
 
+const handleCreate = () => {
+  modalVisible.value = true;
+};
+
 // 详情
 const handleDetail = (row: PurchaseReceipt) => {
   currentReceiptId.value = row.id;
   detailVisible.value = true;
 };
 
+const unwrapReceiptResponse = (payload: unknown): PurchaseReceipt => {
+  const data = payload as { data?: PurchaseReceipt } & PurchaseReceipt;
+  return data?.data && typeof data.data === 'object' ? data.data : (data as PurchaseReceipt);
+};
+
+const resolveLabelConfigs = async () => {
+  const configs = await getPrinterConfigs();
+  return configs.filter(
+    (config) =>
+      config.isEnabled &&
+      config.templateId &&
+      config.template?.bizType === BizType.PRODUCT_LABEL &&
+      config.printerId &&
+      config.printer?.device,
+  );
+};
+
+const resetPrintConfigState = () => {
+  printConfigVisible.value = false;
+  selectedPrintConfigId.value = null;
+  pendingPrintReceipt.value = null;
+  labelConfigs.value = [];
+  printConfigOptions.value = [];
+};
+
+const executeLabelPrint = async (receipt: PurchaseReceipt, config: PrinterConfig) => {
+  printingLabel.value = true;
+  try {
+    await printProductLabels(receipt, config);
+    message.success(`标签打印任务已发送：${config.name}`);
+  } finally {
+    printingLabel.value = false;
+  }
+};
+
+const handleLabelPrintAfterConfirm = async (receipt: PurchaseReceipt) => {
+  const configs = await resolveLabelConfigs();
+  if (!configs.length) {
+    message.info('未找到启用中的商品标签打印配置，已跳过标签打印');
+    return;
+  }
+
+  const defaultConfig = configs.find((config) => config.isDefault);
+  if (defaultConfig) {
+    await executeLabelPrint(receipt, defaultConfig);
+    return;
+  }
+
+  if (configs.length === 1) {
+    await executeLabelPrint(receipt, configs[0]);
+    return;
+  }
+
+  pendingPrintReceipt.value = receipt;
+  labelConfigs.value = configs;
+  printConfigOptions.value = configs.map((config) => ({
+    label: `${config.name} / ${config.printer?.name || '-'} / ${config.template?.name || '-'}`,
+    value: config.id,
+  }));
+  selectedPrintConfigId.value = configs[0].id;
+  printConfigVisible.value = true;
+};
+
 // 确认入库
 const handleConfirm = async (row: PurchaseReceipt) => {
   try {
-    await confirmReceipt(row.id);
+    const receipt = unwrapReceiptResponse(await confirmReceipt(row.id));
     message.success('入库成功');
+    await handleLabelPrintAfterConfirm(receipt);
     loadData();
   } catch (error) {
-    message.error('入库失败');
+    message.error((error as { message?: string })?.message || '入库失败');
+  }
+};
+
+const handleCancelPrintConfig = () => {
+  resetPrintConfigState();
+  message.info('已跳过标签打印');
+};
+
+const handleConfirmPrintConfig = async () => {
+  if (!pendingPrintReceipt.value || !selectedPrintConfigId.value) return;
+  const config = labelConfigs.value.find((item) => item.id === selectedPrintConfigId.value);
+  if (!config) {
+    message.error('所选打印配置不存在');
+    return;
+  }
+
+  try {
+    await executeLabelPrint(pendingPrintReceipt.value, config);
+    resetPrintConfigState();
+  } catch (error) {
+    message.error(getPrintErrorMessage(error));
   }
 };
 

@@ -21,6 +21,7 @@ export class MallService {
     // 构建where条件
     const where: Prisma.ProductWhereInput = {
       isEnabled: true,
+      mallEnabled: true,
       deletedAt: null, // 过滤已删除的商品
       skus: {
         some: {
@@ -123,6 +124,7 @@ export class MallService {
       where: {
         id,
         isEnabled: true,
+        mallEnabled: true,
         deletedAt: null,
       },
       include: {

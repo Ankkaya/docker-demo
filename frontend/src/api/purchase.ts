@@ -1,5 +1,6 @@
 import api from './request'
 import type {
+  Purchase,
   PurchaseApi,
   PurchaseReceiptApi,
   PaymentApi,
@@ -48,6 +49,11 @@ export const cancelPurchase = (id: number) => {
 // 获取入库单列表
 export const getPurchaseReceipts = (params?: PurchaseReceiptApi.QueryParams) => {
   return api.get<PurchaseReceiptApi.List>('/purchase-receipts', { params })
+}
+
+// 获取可入库采购订单
+export const getAvailableReceiptPurchases = (params?: { keyword?: string }) => {
+  return api.get<Purchase[]>('/purchase-receipts/available-purchases', { params })
 }
 
 // 获取入库单详情

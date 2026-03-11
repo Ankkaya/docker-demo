@@ -25,6 +25,11 @@ export class QueryProductDto {
   @Type(() => Boolean)
   isEnabled?: boolean;
 
+  @ApiPropertyOptional({ example: true, description: '是否在商城上架' })
+  @IsOptional()
+  @Type(() => Boolean)
+  mallEnabled?: boolean;
+
   @ApiPropertyOptional({ example: 1, description: '页码' })
   @IsNumber()
   @IsOptional()

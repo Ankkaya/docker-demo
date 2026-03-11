@@ -38,6 +38,13 @@
             <n-form-item label="启用"><n-switch v-model:value="form.isEnabled" /></n-form-item>
           </n-form>
 
+          <n-alert v-if="form.bizType === BizType.PRODUCT_LABEL" type="info" class="mb-3" :show-icon="false">
+            <span v-pre>
+              商品标签模板支持占位符：{{ productName }}、{{ price }}、{{ salePrice }}、{{ size }}、{{ barcode }}、{{ skuCode }}、{{ specs }}。
+              文本块填写到“文本”，条码/二维码填写到“值”。
+            </span>
+          </n-alert>
+
           <n-divider>可视化模板块</n-divider>
           <n-space class="mb-3" align="center" justify="space-between">
             <n-space>
@@ -267,7 +274,7 @@
 import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import type { CSSProperties } from 'vue';
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui';
-import { NButton, NSpace, NSwitch, useDialog, useMessage } from 'naive-ui';
+import { NAlert, NButton, NSpace, NSwitch, useDialog, useMessage } from 'naive-ui';
 import { createPrintTemplate, deletePrintTemplate, getPrintTemplates, updatePrintTemplate } from '@/api/print-template';
 import type { CreatePrintTemplateDto, PrintTemplate, TemplateBlock, TemplateBlockType } from '@/types/print';
 import { bizTypeOptions, BizType } from '@/types/print';
@@ -441,7 +448,8 @@ const textBlockStyle = (block: TemplateBlock, selected = false): CSSProperties =
     top: px(block.y),
     width: px(width),
     minHeight: px(height),
-    fontSize: `${Math.max(10, (block.fontSize || 3) * scale.value * 2)}px`,
+    fontSize: px(block.fontSize || 3),
+    lineHeight: px(block.fontSize || 3),
     fontWeight: block.bold ? '700' : '400',
     color: '#000000',
     whiteSpace: 'nowrap',

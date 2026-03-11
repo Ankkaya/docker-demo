@@ -70,6 +70,16 @@
               />
             </n-form-item>
           </n-grid-item>
+          <n-grid-item>
+            <n-form-item label="商品启用" path="isEnabled">
+              <n-switch v-model:value="formData.isEnabled" />
+            </n-form-item>
+          </n-grid-item>
+          <n-grid-item>
+            <n-form-item label="商城上架" path="mallEnabled">
+              <n-switch v-model:value="formData.mallEnabled" />
+            </n-form-item>
+          </n-grid-item>
         </n-grid>
         <n-grid :cols="3" :x-gap="24">
           <n-grid-item>
@@ -122,6 +132,9 @@
         <n-alert type="info" class="mb-4">
           添加商品规格（如颜色、尺码），系统将自动生成SKU组合。无规格商品请直接添加一个SKU。
         </n-alert>
+        <n-alert type="warning" class="mb-4" :show-icon="false">
+          商品档案页只维护 SKU 基础属性。库存数量、安全库存、入库仓库等库存数据请在采购入库或库存管理中维护。
+        </n-alert>
 
         <!-- 规格模板设置 -->
         <n-card title="规格设置" class="mb-4">
@@ -167,16 +180,15 @@
 <script setup lang="ts">
 import { ref, reactive, h, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { NInput, NInputNumber, NSpace, NButton, NSelect, useMessage, FormInst } from 'naive-ui';
+import { NInput, NInputNumber, NSpace, NButton, NSelect, NSwitch, useMessage, FormInst } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { getProduct, createProduct, updateProduct } from '@/api/product';
 import { getCategoriesFlat } from '@/api/category';
 import { getBrands } from '@/api/brand';
 import { getUnits } from '@/api/unit';
-import { getWarehouses } from '@/api/warehouse';
 import { uploadFile } from '@/api/file';
 import type { ProductSku, SkuSpec, SpecTemplateItem } from '@/types/product';
-import type { Category, Brand, Unit, Warehouse } from '@/types/basic-data';
+import type { Category, Brand, Unit } from '@/types/basic-data';
 
 const route = useRoute();
 const router = useRouter();
@@ -201,24 +213,20 @@ const formData = reactive({
   detail: '',
   mainImage: '',
   images: [] as string[],
+  isEnabled: true,
+  mallEnabled: false,
 });
 
 // 选项数据
 const categoryOptions = ref<{ label: string; value: number; children?: any[] }[]>([]);
 const brandOptions = ref<{ label: string; value: number }[]>([]);
 const unitOptions = ref<{ label: string; value: number }[]>([]);
-const warehouseOptions = ref<{ label: string; value: number }[]>([]);
-
 // 规格模板
 const specTemplates = reactive<SpecTemplateItem[]>([]);
 
 // SKU列表（临时ID用于前端管理）
 interface EditableSku extends Omit<ProductSku, 'inventories'> {
   tempId: string;
-  warehouseId: number | null;
-  quantity: number;
-  minStock: number;
-  inventories: { warehouseId: number | null; quantity: number; minStock: number }[];
 }
 
 const skuList = reactive<EditableSku[]>([]);
@@ -279,11 +287,6 @@ const skuColumns = computed<DataTableColumns<any>>(() => [
   { title: '成本价', key: 'costPrice', width: 110, render: (row) => h(NInputNumber, { value: row.costPrice, onUpdateValue: (v: number | null) => row.costPrice = v || 0, min: 0, precision: 2, placeholder: '成本价', size: 'small' }) },
   { title: '销售价', key: 'salePrice', width: 110, render: (row) => h(NInputNumber, { value: row.salePrice, onUpdateValue: (v: number | null) => row.salePrice = v || 0, min: 0, precision: 2, placeholder: '销售价', size: 'small' }) },
   { title: '市场价', key: 'marketPrice', width: 110, render: (row) => h(NInputNumber, { value: row.marketPrice, onUpdateValue: (v: number | null) => row.marketPrice = v || undefined, min: 0, precision: 2, placeholder: '市场价', size: 'small' }) },
-  { title: '默认仓库', key: 'warehouseId', width: 140, render: (row) => h(NSpace, { align: 'center', size: 4 }, { default: () => [
-    h(NSelect, { value: row.warehouseId, onUpdateValue: (v: number | null) => row.warehouseId = v, options: warehouseOptions.value, placeholder: '仓库', size: 'small', style: 'width: 120px', clearable: true }),
-  ]}) },
-  { title: '库存数量', key: 'quantity', width: 100, render: (row) => h(NInputNumber, { value: row.quantity, onUpdateValue: (v: number | null) => row.quantity = v || 0, min: 0, placeholder: '数量', size: 'small', style: 'width: 80px' }) },
-  { title: '安全库存', key: 'minStock', width: 100, render: (row) => h(NInputNumber, { value: row.minStock, onUpdateValue: (v: number | null) => row.minStock = v || 0, min: 0, placeholder: '安全库存', size: 'small', style: 'width: 80px' }) },
   { title: '条形码', key: 'barcode', width: 120, render: (row) => h(NInput, { value: row.barcode, onUpdateValue: (v: string) => row.barcode = v, placeholder: '条形码', size: 'small' }) },
   { title: '操作', key: 'actions', width: 60, render: (row) => h(NButton, { type: 'error', text: true, size: 'small', onClick: () => removeSku(row.tempId) }, { default: () => '删除' }) },
 ]);
@@ -350,11 +353,6 @@ const generateSkus = () => {
       status: 'ACTIVE',
       createdAt: '',
       updatedAt: '',
-      // 库存相关字段
-      warehouseId: null as number | null,
-      quantity: 0,
-      minStock: 0,
-      inventories: [] as { warehouseId: number | null; quantity: number; minStock: number }[],
     });
   });
 
@@ -433,38 +431,22 @@ const handleSubmit = async () => {
       categoryId: formData.categoryId!,
       unitId: formData.unitId!,
       brandId: formData.brandId || undefined,
+      isEnabled: formData.isEnabled,
+      mallEnabled: formData.mallEnabled,
       specTemplate: specTemplates.length > 0 ? [...specTemplates] : undefined,
-      skus: skuList.map(s => {
-        // 同步表格中的库存数据到 inventories
-        const inventories = [...s.inventories];
-        if (s.warehouseId && s.quantity > 0) {
-          const existingIndex = inventories.findIndex(inv => inv.warehouseId === s.warehouseId);
-          if (existingIndex > -1) {
-            inventories[existingIndex].quantity = s.quantity;
-            inventories[existingIndex].minStock = s.minStock;
-          } else {
-            inventories.push({
-              warehouseId: s.warehouseId,
-              quantity: s.quantity,
-              minStock: s.minStock,
-            });
-          }
-        }
-        return {
-          skuCode: s.skuCode,
-          specs: s.specs,
-          costPrice: s.costPrice,
-          salePrice: s.salePrice,
-          marketPrice: s.marketPrice,
-          barcode: s.barcode,
-          image: s.image,
-          weight: s.weight,
-          volume: s.volume,
-          isDefault: s.isDefault,
-          sort: s.sort,
-          inventories,
-        };
-      }),
+      skus: skuList.map(s => ({
+        skuCode: s.skuCode,
+        specs: s.specs,
+        costPrice: s.costPrice,
+        salePrice: s.salePrice,
+        marketPrice: s.marketPrice,
+        barcode: s.barcode,
+        image: s.image,
+        weight: s.weight,
+        volume: s.volume,
+        isDefault: s.isDefault,
+        sort: s.sort,
+      })),
     };
 
     if (isEdit.value) {
@@ -489,11 +471,10 @@ const handleCancel = () => {
 // 加载选项数据
 const loadOptions = async () => {
   try {
-    const [categories, brands, units, warehouses] = await Promise.all([
+    const [categories, brands, units] = await Promise.all([
       getCategoriesFlat(),
       getBrands(),
       getUnits(),
-      getWarehouses(),
     ]);
 
     // 处理分类树
@@ -516,7 +497,6 @@ const loadOptions = async () => {
 
     brandOptions.value = brands.map((b: Brand) => ({ label: b.name, value: b.id }));
     unitOptions.value = units.map((u: Unit) => ({ label: u.name, value: u.id }));
-    warehouseOptions.value = warehouses.map((w: Warehouse) => ({ label: w.name, value: w.id }));
   } catch (error) {
     console.error('加载选项失败:', error);
   }
@@ -536,6 +516,8 @@ const loadProduct = async () => {
     formData.detail = product.detail || '';
     formData.mainImage = product.mainImage || '';
     formData.images = product.images || [];
+    formData.isEnabled = product.isEnabled;
+    formData.mallEnabled = product.mallEnabled;
 
     // 加载主图到文件列表（用于回显）
     if (product.mainImage) {
@@ -566,19 +548,9 @@ const loadProduct = async () => {
     // 加载SKU
     skuList.length = 0;
     product.skus.forEach(s => {
-      const firstInv = s.inventories?.[0];
       skuList.push({
         ...s,
         tempId: `sku_${s.id}`,
-        // 从第一个库存记录填充表格字段
-        warehouseId: firstInv?.warehouseId || null,
-        quantity: firstInv?.quantity || 0,
-        minStock: firstInv?.minStock || 0,
-        inventories: s.inventories?.map(inv => ({
-          warehouseId: inv.warehouseId,
-          quantity: inv.quantity,
-          minStock: inv.minStock,
-        })) || [],
       } as any);
     });
   } catch (error) {

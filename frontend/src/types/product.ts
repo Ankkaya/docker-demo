@@ -83,6 +83,7 @@ export interface Product {
   };
   specTemplate?: SpecTemplateItem[];
   isEnabled: boolean;
+  mallEnabled: boolean;
   skus: ProductSku[];
   createdAt: string;
   updatedAt: string;
@@ -124,6 +125,7 @@ export interface CreateProductDto {
   unitId: number;
   specTemplate?: SpecTemplateItem[];
   isEnabled?: boolean;
+  mallEnabled?: boolean;
   skus: CreateSkuDto[];
   initialInventories?: InitialInventoryDto[];
 }
@@ -164,6 +166,7 @@ export interface QueryProductParams {
   categoryId?: number;
   brandId?: number;
   isEnabled?: boolean;
+  mallEnabled?: boolean;
   page?: number;
   pageSize?: number;
 }

@@ -190,6 +190,11 @@ export class CreateProductDto {
   @IsOptional()
   isEnabled?: boolean;
 
+  @ApiPropertyOptional({ example: false, description: '是否在商城上架' })
+  @IsBoolean()
+  @IsOptional()
+  mallEnabled?: boolean;
+
   @ApiProperty({
     example: [{ skuCode: 'SKU001', specs: [{ name: '颜色', value: '红色' }], costPrice: 100, salePrice: 199.99 }],
     description: 'SKU列表',

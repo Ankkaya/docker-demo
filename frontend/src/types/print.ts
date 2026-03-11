@@ -165,7 +165,7 @@ export interface PrinterConfig {
   id: number;
   name: string;
   templateId?: number;
-  template?: { id: number; name: string; code: string };
+  template?: { id: number; name: string; bizType: string };
   printerId?: number;
   printer?: { id: number; name: string; device: string };
   copies: number;

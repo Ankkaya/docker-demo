@@ -40,6 +40,9 @@ export class ProductVo {
   @ApiProperty({ description: '是否启用' })
   isEnabled: boolean;
 
+  @ApiProperty({ description: '是否在商城上架' })
+  mallEnabled: boolean;
+
   @ApiProperty({ description: '创建时间' })
   createdAt: Date;
 
@@ -60,6 +63,7 @@ export class ProductVo {
       images: entity.images,
       specTemplate: entity.specTemplate,
       isEnabled: entity.isEnabled,
+      mallEnabled: entity.mallEnabled,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

@@ -195,7 +195,7 @@ export class ProductsService {
 
   // 查询商品列表
   async findAll(query: QueryProductDto) {
-    const { keyword, categoryId, brandId, isEnabled, page = 1, pageSize = 10 } = query;
+    const { keyword, categoryId, brandId, isEnabled, mallEnabled, page = 1, pageSize = 10 } = query;
 
     const where: Prisma.ProductWhereInput = {
       // 默认过滤已删除的商品
@@ -216,6 +216,10 @@ export class ProductsService {
 
     if (isEnabled !== undefined) {
       where.isEnabled = isEnabled;
+    }
+
+    if (mallEnabled !== undefined) {
+      where.mallEnabled = mallEnabled;
     }
 
     const [data, total] = await Promise.all([

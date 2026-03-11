@@ -190,6 +190,13 @@ const rules: FormRules = {
   warehouseId: [{ required: true, message: '请选择仓库', type: 'number' }],
 };
 
+const unwrapList = <T>(payload: unknown): T[] => {
+  const data = payload as { data?: T[] } | T[];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+};
+
 // 加载选项
 const loadOptions = async () => {
   try {
@@ -198,11 +205,11 @@ const loadOptions = async () => {
       getWarehouses(),
     ]);
 
-    supplierOptions.value = suppliersRes.data
+    supplierOptions.value = unwrapList<Supplier>(suppliersRes)
       .filter((s: Supplier) => s.isEnabled)
       .map((s: Supplier) => ({ label: s.name, value: s.id }));
 
-    warehouseOptions.value = warehousesRes.data
+    warehouseOptions.value = unwrapList<Warehouse>(warehousesRes)
       .filter((w: Warehouse) => w.isEnabled)
       .map((w: Warehouse) => ({ label: w.name, value: w.id }));
   } catch (error) {

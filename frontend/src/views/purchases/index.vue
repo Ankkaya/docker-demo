@@ -127,6 +127,36 @@ const currentPurchase = ref<Purchase | undefined>(undefined);
 const detailVisible = ref(false);
 const currentPurchaseId = ref<number>(0);
 
+const unwrapPaginatedList = <T>(payload: unknown): { data: T[]; meta: { total: number } } => {
+  const raw = payload as any;
+  if (Array.isArray(raw?.data)) {
+    return {
+      data: raw.data,
+      meta: raw.meta || { total: raw.data.length },
+    };
+  }
+
+  const nested = raw?.data as { data?: T[]; meta?: { total: number } } | undefined;
+  if (Array.isArray(nested?.data)) {
+    return {
+      data: nested.data,
+      meta: nested.meta || { total: nested.data.length },
+    };
+  }
+
+  return {
+    data: [],
+    meta: { total: 0 },
+  };
+};
+
+const unwrapList = <T>(payload: unknown): T[] => {
+  const raw = payload as { data?: T[] } | T[];
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.data)) return raw.data;
+  return [];
+};
+
 // 表格列定义
 const columns: DataTableColumns<Purchase> = [
   {
@@ -237,15 +267,16 @@ const columns: DataTableColumns<Purchase> = [
 const loadData = async () => {
   loading.value = true;
   try {
-    const res: any = await getPurchases({
+    const res = await getPurchases({
       keyword: searchForm.keyword || undefined,
       supplierId: searchForm.supplierId || undefined,
       status: searchForm.status || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    purchaseList.value = res.data;
-    pagination.itemCount = res.meta.total;
+    const result = unwrapPaginatedList<Purchase>(res);
+    purchaseList.value = result.data;
+    pagination.itemCount = result.meta.total;
   } finally {
     loading.value = false;
   }
@@ -254,8 +285,8 @@ const loadData = async () => {
 // 加载供应商选项
 const loadSuppliers = async () => {
   try {
-    const res: any = await getSuppliers();
-    supplierOptions.value = res.data
+    const res = await getSuppliers();
+    supplierOptions.value = unwrapList<Supplier>(res)
       .filter((s: Supplier) => s.isEnabled)
       .map((s: Supplier) => ({
         label: s.name,

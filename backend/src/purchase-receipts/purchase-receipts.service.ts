@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateReceiptDto } from './dto/create-receipt.dto';
 import { QueryReceiptDto } from './dto/query-receipt.dto';
+import { PurchaseDetailVo } from '@/purchases/vo/purchase.vo';
 import { PurchaseStatus, ReceiptStatus, Prisma } from '@prisma/client';
 import { ReceiptVo, ReceiptDetailVo } from './vo/receipt.vo';
 
@@ -25,6 +26,61 @@ function generateReceiptNo(): string {
 @Injectable()
 export class PurchaseReceiptsService {
   constructor(private prisma: PrismaService) {}
+
+  // 查询可入库采购订单
+  async getAvailablePurchases(keyword?: string) {
+    const purchases = await this.prisma.purchase.findMany({
+      where: {
+        deletedAt: null,
+        status: { in: [PurchaseStatus.APPROVED, PurchaseStatus.PARTIAL] },
+        ...(keyword
+          ? {
+              orderNo: {
+                contains: keyword,
+              },
+            }
+          : {}),
+      },
+      include: {
+        supplier: { select: { id: true, name: true } },
+        items: {
+          include: {
+            sku: {
+              include: {
+                product: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const warehouseIds = [...new Set(purchases.map((purchase) => purchase.warehouseId))];
+    const warehouses = warehouseIds.length
+      ? await this.prisma.warehouse.findMany({
+          where: { id: { in: warehouseIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const warehouseMap = new Map(warehouses.map((warehouse) => [warehouse.id, warehouse]));
+
+    return purchases
+      .filter((purchase) =>
+        purchase.items.some((item) => item.quantity > item.received),
+      )
+      .map((purchase) =>
+        PurchaseDetailVo.fromEntity({
+          ...purchase,
+          warehouse:
+            warehouseMap.get(purchase.warehouseId) || {
+              id: purchase.warehouseId,
+              name: '',
+            },
+          items: purchase.items.filter((item) => item.quantity > item.received),
+        }),
+      );
+  }
 
   // 创建入库单
   async create(createDto: CreateReceiptDto, userId: number) {
