@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { SkuStatus } from '@prisma/client';
-import { ProductVo } from './product.vo';
+import { ProductVo, ProductWithRelationsVo } from './product.vo';
 import { InventoryVo } from '@/inventories/vo';
 
 export class ProductSkuVo {
@@ -98,13 +98,13 @@ export class ProductSkuVo {
 }
 
 export class ProductSkuWithProductVo extends ProductSkuVo {
-  @ApiProperty({ description: '商品信息', type: ProductVo, nullable: true })
-  product?: ProductVo | null;
+  @ApiProperty({ description: '商品信息', type: ProductWithRelationsVo, nullable: true })
+  product?: ProductWithRelationsVo | null;
 
   static fromEntity(entity: any): ProductSkuWithProductVo {
     return {
       ...ProductSkuVo.fromEntity(entity),
-      product: entity.product ? ProductVo.fromEntity(entity.product) : null,
+      product: entity.product ? ProductWithRelationsVo.fromEntity(entity.product) : null,
     };
   }
 

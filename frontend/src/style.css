@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 /* 全局基础样式 */
+html,
+body,
+#app {
+  height: 100%;
+}
+
 html {
   overflow-x: hidden;
   /* 基础文字颜色，所有未指定颜色的文本继承此值 */
@@ -12,6 +18,7 @@ html {
 /* 页面背景 */
 body {
   background-color: rgb(var(--layout-bg-color));
+  overflow: hidden;
 }
 
 /* 过渡动画 */
@@ -26,4 +33,70 @@ body {
 
 .dark .border-gray-300 {
   border-color: rgb(75, 85, 99);
+}
+
+.layout-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+  scrollbar-gutter: stable;
+}
+
+.layout-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.layout-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.layout-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(148, 163, 184, 0.72),
+    rgba(148, 163, 184, 0.42)
+  );
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+
+.layout-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(100, 116, 139, 0.78),
+    rgba(100, 116, 139, 0.52)
+  );
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.layout-scrollbar::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.dark .layout-scrollbar {
+  scrollbar-color: rgba(100, 116, 139, 0.8) transparent;
+}
+
+.dark .layout-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(100, 116, 139, 0.82),
+    rgba(71, 85, 105, 0.56)
+  );
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark .layout-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(148, 163, 184, 0.88),
+    rgba(100, 116, 139, 0.66)
+  );
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }

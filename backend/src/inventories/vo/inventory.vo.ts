@@ -73,6 +73,10 @@ export class InventoryWithSkuVo extends InventoryVo {
       sku: entity.sku ? ProductSkuWithProductVo.fromEntity(entity.sku) : null,
     };
   }
+
+  static fromEntities(entities: any[]): InventoryWithSkuVo[] {
+    return entities.map(e => InventoryWithSkuVo.fromEntity(e));
+  }
 }
 
 /**
@@ -87,6 +91,10 @@ export class InventoryWithWarehouseVo extends InventoryVo {
       ...InventoryVo.fromEntity(entity),
       warehouse: entity.warehouse ? WarehouseVo.fromEntity(entity.warehouse) : null,
     };
+  }
+
+  static fromEntities(entities: any[]): InventoryWithWarehouseVo[] {
+    return entities.map(e => InventoryWithWarehouseVo.fromEntity(e));
   }
 }
 
@@ -106,5 +114,9 @@ export class InventoryFullVo extends InventoryVo {
       sku: entity.sku ? ProductSkuWithProductVo.fromEntity(entity.sku) : null,
       warehouse: entity.warehouse ? WarehouseVo.fromEntity(entity.warehouse) : null,
     };
+  }
+
+  static fromEntities(entities: any[]): InventoryFullVo[] {
+    return entities.map(e => InventoryFullVo.fromEntity(e));
   }
 }

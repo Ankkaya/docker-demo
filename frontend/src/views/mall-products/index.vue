@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NButton, NImage, NPopconfirm, NSpace, NTag, useMessage } from 'naive-ui'
+import { NButton, NImage, NSpace, NSwitch, NTag, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { getProducts, updateProductMallInfo } from '@/api/product'
 import { getBrands } from '@/api/brand'
@@ -81,6 +81,7 @@ const mallStatusOptions = [
 
 const loading = ref(false)
 const productList = ref<Product[]>([])
+const togglingIds = ref<number[]>([])
 const pagination = reactive({
   page: 1,
   pageSize: 10,
@@ -180,9 +181,18 @@ const columns: DataTableColumns<Product> = [
   {
     title: '商城上架',
     key: 'mallEnabled',
-    width: 100,
-    render: (row) => h(NTag, { type: row.mallEnabled ? 'success' : 'default', size: 'small' }, {
-      default: () => row.mallEnabled ? '已上架' : '未上架',
+    width: 150,
+    render: (row) => h(NSpace, { align: 'center', size: 8 }, {
+      default: () => [
+        h(NSwitch, {
+          value: row.mallEnabled,
+          loading: togglingIds.value.includes(row.id),
+          onUpdateValue: (value: boolean) => handleToggleMall(row, value),
+        }),
+        h(NTag, { type: row.mallEnabled ? 'success' : 'default', size: 'small' }, {
+          default: () => row.mallEnabled ? '已上架' : '未上架',
+        }),
+      ],
     }),
   },
   {
@@ -204,27 +214,11 @@ const columns: DataTableColumns<Product> = [
   {
     title: '操作',
     key: 'actions',
-    width: 220,
+    width: 150,
     fixed: 'right',
     render: (row) => h(NSpace, null, {
       default: () => [
         h(NButton, { size: 'small', type: 'primary', ghost: true, onClick: () => handleEdit(row) }, { default: () => '商城信息' }),
-        h(
-          NPopconfirm,
-          { onPositiveClick: () => handleToggleMall(row) },
-          {
-            trigger: () => h(
-              NButton,
-              {
-                size: 'small',
-                type: row.mallEnabled ? 'warning' : 'primary',
-                disabled: !row.isEnabled || (row.totalAvailable || 0) <= 0 || !isMallInfoComplete(row),
-              },
-              { default: () => row.mallEnabled ? '下架' : '上架' },
-            ),
-            default: () => row.mallEnabled ? '确定下架该商城商品吗？' : '确定上架该商城商品吗？',
-          },
-        ),
         h(NButton, { size: 'small', onClick: () => router.push(`/products/edit/${row.id}`) }, { default: () => '母体档案' }),
       ],
     }),
@@ -298,30 +292,37 @@ const handleEdit = (row: Product) => {
   router.push(`/products/mall-edit/${row.id}`)
 }
 
-const handleToggleMall = async (row: Product) => {
-  if (!row.mallEnabled && !row.isEnabled) {
+const handleToggleMall = async (row: Product, nextValue: boolean) => {
+  if (row.mallEnabled === nextValue || togglingIds.value.includes(row.id)) {
+    return
+  }
+
+  if (nextValue && !row.isEnabled) {
     message.warning('母体商品未启用，不能上架商城')
     return
   }
 
-  if (!row.mallEnabled && (row.totalAvailable || 0) <= 0) {
+  if (nextValue && (row.totalAvailable || 0) <= 0) {
     message.warning('当前无可用库存，不能上架商城')
     return
   }
 
-  if (!row.mallEnabled && !isMallInfoComplete(row)) {
+  if (nextValue && !isMallInfoComplete(row)) {
     message.warning('请先完善商城名称、主图和售价')
     return
   }
 
   try {
+    togglingIds.value = [...togglingIds.value, row.id]
     await updateProductMallInfo(row.id, {
-      mallEnabled: !row.mallEnabled,
+      mallEnabled: nextValue,
     })
-    message.success(row.mallEnabled ? '已下架' : '已上架')
+    message.success(nextValue ? '已上架' : '已下架')
     loadData()
   } catch (error) {
-    message.error(row.mallEnabled ? '下架失败' : '上架失败')
+    message.error(nextValue ? '上架失败' : '下架失败')
+  } finally {
+    togglingIds.value = togglingIds.value.filter((id) => id !== row.id)
   }
 }
 

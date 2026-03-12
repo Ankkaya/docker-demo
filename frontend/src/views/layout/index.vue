@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-layout transition-theme">
+  <div class="h-screen flex flex-col overflow-hidden bg-layout transition-theme">
     <!-- 顶部导航 -->
     <header class="bg-container shadow-header h-16 flex items-center justify-between px-6 z-10 transition-theme">
       <div class="flex items-center gap-4">
@@ -24,23 +24,25 @@
     </header>
 
     <!-- 主体区域 -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- 左侧菜单 -->
-      <aside class="w-64 bg-container border-r border-gray-200 dark:border-gray-700 overflow-y-auto shadow-sider transition-theme">
-        <n-menu 
-          :value="activeMenu" 
-          :options="menuOptions" 
-          @update:value="handleMenuSelect"
-        />
+      <aside class="layout-scrollbar w-64 shrink-0 overflow-y-auto bg-container border-r border-gray-200 dark:border-gray-700 shadow-sider transition-theme">
+        <div class="min-h-full py-3">
+          <n-menu 
+            :value="activeMenu" 
+            :options="menuOptions" 
+            @update:value="handleMenuSelect"
+          />
+        </div>
       </aside>
 
       <!-- 右侧内容 -->
-      <main class="flex-1 flex flex-col overflow-hidden bg-layout transition-theme">
+      <main class="flex-1 flex min-h-0 flex-col overflow-hidden bg-layout transition-theme">
         <!-- 选项卡栏 -->
         <TabBar />
         
         <!-- 页面内容 -->
-        <div class="flex-1 overflow-y-auto p-6">
+        <div class="layout-scrollbar flex-1 overflow-y-auto p-6">
           <router-view v-slot="{ Component, route }">
             <keep-alive :include="cachedViews">
               <component :is="Component" :key="route.fullPath" />

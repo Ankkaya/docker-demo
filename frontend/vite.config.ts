@@ -13,6 +13,17 @@ export default defineConfig(({ mode }) => {
         '@': resolve(__dirname, 'src')
       }
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('tinymce') || id.includes('@tinymce/tinymce-vue')) {
+              return 'tinymce-vendor'
+            }
+          }
+        }
+      }
+    },
     server: {
       port: 5173,
       proxy: {

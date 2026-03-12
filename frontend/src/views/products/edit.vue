@@ -8,7 +8,7 @@
 
       <!-- 步骤1: 基础信息 -->
       <n-form
-        v-show="currentStep === 1"
+        v-if="currentStep === 1"
         ref="formRef1"
         :model="formData"
         :rules="rules1"
@@ -111,7 +111,7 @@
         <n-grid :cols="1">
           <n-grid-item>
             <n-form-item label="商品详情">
-              <TinymceEditor v-model="formData.detail" />
+              <TinymceEditor v-if="currentStep === 1" v-model="formData.detail" />
             </n-form-item>
           </n-grid-item>
         </n-grid>
@@ -168,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted, computed } from 'vue';
+import { ref, reactive, h, onMounted, computed, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { NInput, NInputNumber, NSpace, NButton, NSelect, NSwitch, useMessage, FormInst } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
@@ -178,9 +178,16 @@ import { getBrands } from '@/api/brand';
 import { getUnits } from '@/api/unit';
 import { uploadFile } from '@/api/file';
 import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url';
-import TinymceEditor from '@/components/common/TinymceEditor.vue';
+import RichTextEditorLoading from '@/components/common/RichTextEditorLoading.vue';
 import type { ProductSku, SkuSpec, SpecTemplateItem } from '@/types/product';
 import type { Category, Brand, Unit } from '@/types/basic-data';
+
+const TinymceEditor = defineAsyncComponent({
+  loader: () => import('@/components/common/TinymceEditor.vue'),
+  loadingComponent: RichTextEditorLoading,
+  delay: 120,
+  suspensible: false,
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -321,9 +328,9 @@ const rules1 = {
 const skuColumns = computed<DataTableColumns<any>>(() => [
   { title: 'SKU编码', key: 'skuCode', render: (row) => h(NInput, { value: row.skuCode, onUpdateValue: (v: string) => row.skuCode = v, placeholder: '自动生成', size: 'small' }) },
   { title: '规格', key: 'specs', render: (row) => row.specs?.map((s: SkuSpec) => `${s.name}:${s.value}`).join(', ') || '-' },
-  { title: '成本价', key: 'costPrice', width: 110, render: (row) => h(NInputNumber, { value: row.costPrice, onUpdateValue: (v: number | null) => row.costPrice = v || 0, min: 0, precision: 2, placeholder: '成本价', size: 'small' }) },
-  { title: '销售价', key: 'salePrice', width: 110, render: (row) => h(NInputNumber, { value: row.salePrice, onUpdateValue: (v: number | null) => row.salePrice = v || 0, min: 0, precision: 2, placeholder: '销售价', size: 'small' }) },
-  { title: '市场价', key: 'marketPrice', width: 110, render: (row) => h(NInputNumber, { value: row.marketPrice, onUpdateValue: (v: number | null) => row.marketPrice = v || undefined, min: 0, precision: 2, placeholder: '市场价', size: 'small' }) },
+  { title: '成本价', key: 'costPrice', width: 140, render: (row) => h(NInputNumber, { value: row.costPrice, onUpdateValue: (v: number | null) => row.costPrice = v || 0, min: 0, precision: 2, placeholder: '成本价', size: 'small' }) },
+  { title: '销售价', key: 'salePrice', width: 140, render: (row) => h(NInputNumber, { value: row.salePrice, onUpdateValue: (v: number | null) => row.salePrice = v || 0, min: 0, precision: 2, placeholder: '销售价', size: 'small' }) },
+  { title: '市场价', key: 'marketPrice', width: 140, render: (row) => h(NInputNumber, { value: row.marketPrice, onUpdateValue: (v: number | null) => row.marketPrice = v || undefined, min: 0, precision: 2, placeholder: '市场价', size: 'small' }) },
   { title: '条形码', key: 'barcode', width: 120, render: (row) => h(NInput, { value: row.barcode, onUpdateValue: (v: string) => row.barcode = v, placeholder: '条形码', size: 'small' }) },
   { title: '操作', key: 'actions', width: 60, render: (row) => h(NButton, { type: 'error', text: true, size: 'small', onClick: () => removeSku(row.tempId) }, { default: () => '删除' }) },
 ]);

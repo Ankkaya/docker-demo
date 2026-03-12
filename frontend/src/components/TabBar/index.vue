@@ -1,11 +1,14 @@
 <template>
   <div class="tab-bar bg-container border-b border-gray-200 dark:border-gray-700 transition-theme">
-    <div class="tab-list flex items-center px-2 h-10 overflow-x-auto scrollbar-thin">
+    <div ref="tabListRef" class="tab-list layout-scrollbar flex items-center px-2 h-10 overflow-x-auto overflow-y-hidden">
       <div
         v-for="tab in tabStore.tabs"
         :key="tab.key"
+        :data-tab-key="tab.key"
         :class="[
           'tab-item flex items-center gap-2 px-3 py-1.5 mr-1 rounded cursor-pointer text-sm select-none whitespace-nowrap transition-all',
+          tab.fixed ? 'tab-item--fixed' : 'tab-item--draggable',
+          getDropTargetClass(tab.key),
           tab.key === tabStore.activeTab
             ? 'bg-primary text-white'
             : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -40,16 +43,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, h, nextTick } from 'vue'
+import { ref, h, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTabStore } from '@/store/modules/tab'
 import { CloseOutline, RefreshOutline, CloseCircleOutline, ArrowForwardOutline } from '@vicons/ionicons5'
 import { NIcon } from 'naive-ui'
 import type { DropdownOption } from 'naive-ui'
 import type { Tab } from '@/store/modules/tab'
+import {
+  Sortable,
+  type DragOverEvent,
+  type DragStartEvent,
+  type DragStopEvent,
+  type SortableStopEvent
+} from '@shopify/draggable'
 
 const router = useRouter()
 const tabStore = useTabStore()
+const tabListRef = ref<HTMLElement | null>(null)
+let sortableInstance: Sortable | null = null
+const dragTargetKey = ref<string | null>(null)
+const dragInsertAfter = ref(false)
+const draggingTabKey = ref<string | null>(null)
 
 // 右键菜单
 const showContextMenu = ref(false)
@@ -202,6 +217,101 @@ const handleContextMenuSelect = (key: string) => {
       break
   }
 }
+
+const clearDropIndicator = () => {
+  dragTargetKey.value = null
+  dragInsertAfter.value = false
+}
+
+const syncTabOrderFromDom = () => {
+  if (!tabListRef.value) {
+    return
+  }
+
+  const orderedKeys = Array.from(tabListRef.value.querySelectorAll<HTMLElement>('.tab-item'))
+    .map(element => element.dataset.tabKey)
+    .filter((key): key is string => Boolean(key))
+
+  tabStore.setTabOrder(orderedKeys)
+}
+
+const getDropTargetClass = (tabKey: string) => {
+  if (dragTargetKey.value !== tabKey) {
+    return ''
+  }
+
+  return dragInsertAfter.value ? 'tab-item--drop-after' : 'tab-item--drop-before'
+}
+
+const handleDragStart = (event: DragStartEvent) => {
+  clearDropIndicator()
+  draggingTabKey.value = event.source.dataset.tabKey ?? null
+}
+
+const handleDragOver = (event: DragOverEvent) => {
+  const over = event.over
+  if (!over?.dataset.tabKey || over.dataset.tabKey === draggingTabKey.value) {
+    clearDropIndicator()
+    return
+  }
+
+  dragTargetKey.value = over.dataset.tabKey
+  const overRect = over.getBoundingClientRect()
+  dragInsertAfter.value = event.sensorEvent.clientX > overRect.left + overRect.width / 2
+}
+
+const handleDragStop = (_event: DragStopEvent) => {
+  clearDropIndicator()
+  draggingTabKey.value = null
+}
+
+const handleSortableStop = (_event: SortableStopEvent) => {
+  syncTabOrderFromDom()
+}
+
+onMounted(() => {
+  if (!tabListRef.value) {
+    return
+  }
+
+  sortableInstance = new Sortable(tabListRef.value, {
+    draggable: '.tab-item--draggable',
+    distance: 4,
+    classes: {
+      'body:dragging': 'tab-bar--dragging',
+      'container:dragging': 'tab-list--dragging',
+      'source:dragging': 'tab-item--dragging',
+      'source:placed': 'tab-item--placed',
+      'container:placed': 'tab-list--placed',
+      'draggable:over': 'tab-item--over',
+      'container:over': 'tab-list--over',
+      'source:original': 'tab-item--original',
+      'mirror': 'tab-item--mirror'
+    },
+    mirror: {
+      appendTo: tabListRef.value,
+      constrainDimensions: true,
+      xAxis: true
+    },
+    sortAnimation: {
+      duration: 180,
+      easingFunction: 'ease'
+    },
+  })
+
+  sortableInstance
+    .on('drag:start', handleDragStart)
+    .on('drag:over', handleDragOver)
+    .on('drag:stop', handleDragStop)
+    .on('sortable:stop', handleSortableStop)
+})
+
+onBeforeUnmount(() => {
+  clearDropIndicator()
+  draggingTabKey.value = null
+  sortableInstance?.destroy()
+  sortableInstance = null
+})
 </script>
 
 <style scoped>
@@ -213,27 +323,15 @@ const handleContextMenuSelect = (key: string) => {
 }
 
 .tab-list {
-  /* 隐藏滚动条但保持滚动功能 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-  /* 防止标签被压缩 */
   flex-wrap: nowrap;
-}
-
-/* 可选：hover 时显示滚动条 */
-.tab-list:hover {
-  scrollbar-width: thin;
-  -ms-overflow-style: auto;
-}
-
-.tab-list:hover::-webkit-scrollbar {
-  display: block;
-  height: 3px;
+  align-items: center;
+  overflow-y: hidden;
+  position: relative;
 }
 
 .tab-list::-webkit-scrollbar {
-  display: none; /* Chrome Safari */
-  height: 3px;
+  width: 0;
+  height: 6px;
 }
 
 .tab-list::-webkit-scrollbar-track {
@@ -252,6 +350,67 @@ const handleContextMenuSelect = (key: string) => {
 .tab-item {
   position: relative;
   flex-shrink: 0; /* 防止标签被压缩 */
+  min-height: 28px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.tab-item--draggable {
+  cursor: grab;
+}
+
+.tab-item--draggable:active {
+  cursor: grabbing;
+}
+
+.tab-item--dragging {
+  opacity: 0.3;
+  transform: scale(0.96);
+}
+
+.tab-item--original {
+  opacity: 0.3;
+}
+
+.tab-item--mirror {
+  opacity: 0.98;
+  transform: scale(1.03);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+  pointer-events: none;
+  z-index: 20;
+  cursor: grabbing;
+}
+
+.dark .tab-item--mirror {
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.42);
+}
+
+.tab-item--drop-before::before,
+.tab-item--drop-after::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.95), rgba(14, 165, 233, 0.75));
+  box-shadow: 0 0 0 2px rgba(191, 219, 254, 0.9);
+}
+
+.tab-item--drop-before::before {
+  left: -6px;
+}
+
+.tab-item--drop-after::after {
+  right: -5px;
+}
+
+.dark .tab-item--drop-before::before,
+.dark .tab-item--drop-after::after {
+  box-shadow: 0 0 0 2px rgba(30, 41, 59, 0.95);
 }
 
 .close-icon {

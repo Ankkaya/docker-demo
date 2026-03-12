@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@shopify/draggable": "^1.2.1",
     "@tinymce/tinymce-vue": "^6.2.1",
     "@vicons/ionicons5": "^0.12.0",
     "@vueuse/core": "^14.2.0",

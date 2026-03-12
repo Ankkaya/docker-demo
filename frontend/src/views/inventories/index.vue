@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <!-- 统计卡片 -->
-    <n-row :gutter="16" class="mb-4">
+    <n-row :gutter="16" class="mb-3" style="margin-left: -8px; margin-right: -8px; width: calc(100% + 16px);">
       <n-col :span="6">
         <n-card>
           <n-statistic label="SKU种类" :value="stats.totalSkuCount" />
@@ -29,7 +29,7 @@
     </n-row>
 
     <!-- 搜索栏 -->
-    <n-card class="mb-4">
+    <n-card class="mb-3">
       <n-form inline :model="searchForm" label-placement="left">
         <n-form-item label="商品名称">
           <n-input v-model:value="searchForm.productName" placeholder="商品名称" clearable />
@@ -63,6 +63,7 @@
         :data="inventoryList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="1800"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -123,6 +124,28 @@ import type { Inventory, QueryInventoryParams } from '@/types/product';
 import type { Warehouse } from '@/types/basic-data';
 
 const message = useMessage();
+type InventoryRow = Inventory & {
+  productName?: string;
+  skuCode?: string;
+  specs?: Record<string, string>;
+  warehouseName?: string;
+  sku?: {
+    skuCode?: string;
+    specs?: Record<string, string> | Array<{ name: string; value: string }> | null;
+    product?: {
+      name?: string;
+      spuCode?: string;
+      unit?: {
+        name?: string;
+      } | null;
+    } | null;
+  } | null;
+  warehouse?: {
+    id: number;
+    name: string;
+    code: string;
+  } | null;
+};
 
 // 统计数据
 const stats = reactive({
@@ -147,7 +170,7 @@ const warehouseOptions = ref<{ label: string; value: number }[]>([]);
 
 // 列表数据
 const loading = ref(false);
-const inventoryList = ref<(Inventory & { sku?: any; warehouse?: any })[]>([]);
+const inventoryList = ref<InventoryRow[]>([]);
 const pagination = reactive({
   page: 1,
   pageSize: 10,
@@ -160,7 +183,7 @@ const pagination = reactive({
 const warningModalVisible = ref(false);
 const warningType = ref<'low' | 'high'>('low');
 const warningLoading = ref(false);
-const warningList = ref<(Inventory & { warningType: 'low' | 'high'; sku?: any; warehouse?: any })[]>([]);
+const warningList = ref<(InventoryRow & { warningType: 'low' | 'high' })[]>([]);
 const warningPagination = reactive({
   page: 1,
   pageSize: 10,
@@ -180,12 +203,21 @@ const editForm = reactive({
 });
 
 // 表格列定义
-const columns: DataTableColumns<Inventory & { sku?: any; warehouse?: any }> = [
+const columns: DataTableColumns<InventoryRow> = [
+  {
+    title: 'SPU编码',
+    key: 'spuCode',
+    width: 150,
+    render(row) {
+      return row.sku?.product?.spuCode || '-';
+    },
+  },
   {
     title: '商品名称',
     key: 'productName',
+    width: 180,
     render(row) {
-      return row.sku?.product?.name || '-';
+      return row.sku?.product?.name || row.productName || '-';
     },
   },
   {
@@ -193,23 +225,39 @@ const columns: DataTableColumns<Inventory & { sku?: any; warehouse?: any }> = [
     key: 'skuCode',
     width: 160,
     render(row) {
-      return row.sku?.skuCode || '-';
+      return row.sku?.skuCode || row.skuCode || '-';
     },
   },
   {
     title: '规格',
     key: 'specs',
+    width: 220,
     render(row) {
-      const specs = row.sku?.specs || [];
-      return specs.map((s: any) => `${s.name}:${s.value}`).join(', ') || '-';
+      return formatSpecs(row.sku?.specs ?? row.specs);
     },
   },
   {
-    title: '仓库',
-    key: 'warehouse',
-    width: 120,
+    title: '单位',
+    key: 'unitName',
+    width: 90,
     render(row) {
-      return row.warehouse?.name || '-';
+      return row.sku?.product?.unit?.name || '-';
+    },
+  },
+  {
+    title: '仓库编码',
+    key: 'warehouseCode',
+    width: 140,
+    render(row) {
+      return row.warehouse?.code || '-';
+    },
+  },
+  {
+    title: '仓库名称',
+    key: 'warehouseName',
+    width: 140,
+    render(row) {
+      return row.warehouse?.name || row.warehouseName || '-';
     },
   },
   {
@@ -238,11 +286,27 @@ const columns: DataTableColumns<Inventory & { sku?: any; warehouse?: any }> = [
     width: 100,
   },
   {
+    title: '库存上限',
+    key: 'maxStock',
+    width: 100,
+    render(row) {
+      return row.maxStock ?? '-';
+    },
+  },
+  {
     title: '库位',
     key: 'location',
     width: 120,
     render(row) {
       return row.location || '-';
+    },
+  },
+  {
+    title: '更新时间',
+    key: 'updatedAt',
+    width: 180,
+    render(row) {
+      return formatDateTime(row.updatedAt);
     },
   },
   {
@@ -259,6 +323,34 @@ const columns: DataTableColumns<Inventory & { sku?: any; warehouse?: any }> = [
     },
   },
 ];
+
+const formatSpecs = (
+  specs?: Record<string, string> | Array<{ name: string; value: string }> | null,
+) => {
+  if (!specs) {
+    return '-';
+  }
+
+  if (Array.isArray(specs)) {
+    const items = specs
+      .map((item) => [item?.name, item?.value].filter(Boolean).join(':'))
+      .filter(Boolean);
+    return items.length > 0 ? items.join('，') : '-';
+  }
+
+  const entries = Object.entries(specs)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => `${key}:${value}`);
+  return entries.length > 0 ? entries.join('，') : '-';
+};
+
+const formatDateTime = (value?: string) => {
+  if (!value) {
+    return '-';
+  }
+
+  return new Date(value).toLocaleString('zh-CN');
+};
 
 // 预警表格列
 const warningColumns: DataTableColumns<any> = [
@@ -396,10 +488,10 @@ const handleWarningPageChange = (page: number) => {
 };
 
 // 编辑库存
-const handleEdit = (row: Inventory & { sku?: any; warehouse?: any }) => {
+const handleEdit = (row: InventoryRow) => {
   editForm.id = row.id;
-  editForm.skuName = row.sku?.product?.name || '-';
-  editForm.warehouseName = row.warehouse?.name || '-';
+  editForm.skuName = row.sku?.product?.name || row.productName || '-';
+  editForm.warehouseName = row.warehouse?.name || row.warehouseName || '-';
   editForm.currentQuantity = row.quantity;
   editForm.quantity = row.quantity;
   editForm.minStock = row.minStock;

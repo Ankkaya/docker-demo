@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@shopify/draggable':
+        specifier: ^1.2.1
+        version: 1.2.1
       '@tinymce/tinymce-vue':
         specifier: ^6.2.1
         version: 6.3.0(tinymce@7.9.2)(vue@3.5.27(typescript@5.9.3))
@@ -393,6 +396,9 @@ packages:
     resolution: {integrity: sha512-mxRFDdHIWRxg3UfIIAwCm6NzvxG0jDX/wBN6KsQFTvKFqqg9vTrWUE68qEjHt19A5wwx5X5aUi2zuZT7YR0jrA==}
     cpu: [x64]
     os: [win32]
+
+  '@shopify/draggable@1.2.1':
+    resolution: {integrity: sha512-hYKhd99nl1mkO4ybA8i3rxvZgYS2A4Imcxpq7BoUu7h4LmFt997YxHLy8Mm5J7ST+G4DTQXqBsTx9mDid6piZg==}
 
   '@tinymce/tinymce-vue@6.3.0':
     resolution: {integrity: sha512-DSP8Jhd3XqCCliTnusfbmz3D8GqQ4iRzkc4aadYHDcJPVjkaqopJ61McOdH82CSy599vGLkPjGzqJYWJkRMiUA==}
@@ -1283,6 +1289,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.57.1':
     optional: true
+
+  '@shopify/draggable@1.2.1': {}
 
   '@tinymce/tinymce-vue@6.3.0(tinymce@7.9.2)(vue@3.5.27(typescript@5.9.3))':
     dependencies:

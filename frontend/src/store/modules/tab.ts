@@ -124,6 +124,40 @@ export const useTabStore = defineStore('tab', () => {
     activeTab.value = tabs.value[0]?.key || '/dashboard'
   }
 
+  const reorderTabs = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) {
+      return
+    }
+
+    const movableTabs = tabs.value.filter(tab => !tab.fixed)
+    const targetTabs = [...movableTabs]
+    const [movedTab] = targetTabs.splice(fromIndex, 1)
+
+    if (!movedTab) {
+      return
+    }
+
+    targetTabs.splice(toIndex, 0, movedTab)
+    tabs.value = [...tabs.value.filter(tab => tab.fixed), ...targetTabs]
+  }
+
+  const setTabOrder = (orderedKeys: string[]) => {
+    if (!orderedKeys.length) {
+      return
+    }
+
+    const tabMap = new Map(tabs.value.map(tab => [tab.key, tab]))
+    const orderedTabs = orderedKeys
+      .map(key => tabMap.get(key))
+      .filter((tab): tab is Tab => Boolean(tab))
+
+    if (orderedTabs.length !== tabs.value.length) {
+      return
+    }
+
+    tabs.value = orderedTabs
+  }
+
   // 需要排除缓存的组件名（用于刷新）
   const excludeCache = ref<string[]>([])
 
@@ -187,6 +221,8 @@ export const useTabStore = defineStore('tab', () => {
     closeOthers,
     closeRight,
     closeAll,
+    reorderTabs,
+    setTabOrder,
     refreshTab,
     clearCache,
     restoreTabs,

@@ -33,6 +33,7 @@
                 accept="image/*"
                 :custom-request="handleMainImageUpload"
                 @change="handleMainImageChange"
+                @remove="handleMainImageRemove"
               >
                 <n-button>上传主图</n-button>
               </n-upload>
@@ -48,6 +49,7 @@
                 accept="image/*"
                 :custom-request="handleImagesUpload"
                 @change="handleImagesChange"
+                @remove="handleImagesRemove"
               >
                 <n-button>上传图片</n-button>
               </n-upload>
@@ -56,7 +58,7 @@
         </n-grid>
 
         <n-form-item label="商城详情">
-          <n-input v-model:value="formData.detail" type="textarea" :rows="10" placeholder="默认带出商品详情" />
+          <TinymceEditor v-model="formData.detail" />
         </n-form-item>
       </n-form>
 
@@ -73,13 +75,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, reactive, ref } from 'vue'
+import { computed, defineAsyncComponent, h, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NButton, NImage, NInput, NInputNumber, useMessage } from 'naive-ui'
+import { NButton, NInputNumber, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import { getProductMallInfo, updateProductMallInfo } from '@/api/product'
 import { uploadFile } from '@/api/file'
+import RichTextEditorLoading from '@/components/common/RichTextEditorLoading.vue'
+import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url'
 import type { Product, ProductSku } from '@/types/product'
+
+const TinymceEditor = defineAsyncComponent({
+  loader: () => import('@/components/common/TinymceEditor.vue'),
+  loadingComponent: RichTextEditorLoading,
+  delay: 120,
+  suspensible: false,
+})
 
 interface MallSkuForm {
   skuId: number
@@ -156,39 +167,38 @@ const skuColumns = computed<DataTableColumns<MallSkuForm>>(() => [
       },
     }),
   },
-  {
-    title: '商城图片',
-    key: 'image',
-    width: 100,
-    render: (row) => h(NImage, {
-      width: 48,
-      height: 48,
-      objectFit: 'cover',
-      src: row.image || '/placeholder.png',
-      fallbackSrc: '/placeholder.png',
-    }),
-  },
-  {
-    title: '图片地址',
-    key: 'imageInput',
-    width: 220,
-    render: (row) => h(NInput, {
-      value: row.image,
-      placeholder: '留空则使用进销存SKU图片',
-      onUpdateValue: (value: string) => {
-        row.image = value || undefined
-      },
-    }),
-  },
 ])
+
+const buildUploadFile = (value: string, index = 0) => {
+  const objectKey = extractFileObjectKey(value) || value
+  const url = resolveFileUrl(value)
+
+  return {
+    id: objectKey || `file-${index}`,
+    name: objectKey.split('/').pop() || `图片${index + 1}`,
+    status: 'finished',
+    url,
+    thumbnailUrl: url,
+    objectKey,
+  }
+}
+
+const syncImagesFromFileList = (fileList: any[]) => {
+  formData.images = fileList
+    .map((file: any) => file.objectKey || extractFileObjectKey(file.url) || file.id)
+    .filter((value: string | undefined): value is string => Boolean(value))
+}
 
 const handleMainImageUpload = async ({ file, onFinish, onError }: any) => {
   try {
     const result = await uploadFile(file.file, 'products/mall/main')
-    file.url = result.url
-    file.thumbnailUrl = result.url
+    const previewUrl = resolveFileUrl(result.url)
+    file.id = result.objectKey
+    file.name = result.objectKey.split('/').pop() || 'mall-main'
+    file.url = previewUrl
+    file.thumbnailUrl = previewUrl
     file.objectKey = result.objectKey
-    onFinish({ url: result.url })
+    onFinish({ id: result.objectKey, url: previewUrl })
   } catch (error) {
     onError()
   }
@@ -197,24 +207,38 @@ const handleMainImageUpload = async ({ file, onFinish, onError }: any) => {
 const handleImagesUpload = async ({ file, onFinish, onError }: any) => {
   try {
     const result = await uploadFile(file.file, 'products/mall/gallery')
-    file.url = result.url
-    file.thumbnailUrl = result.url
+    const previewUrl = resolveFileUrl(result.url)
+    file.id = result.objectKey
+    file.name = result.objectKey.split('/').pop() || 'mall-gallery'
+    file.url = previewUrl
+    file.thumbnailUrl = previewUrl
     file.objectKey = result.objectKey
-    onFinish({ url: result.url })
+    onFinish({ id: result.objectKey, url: previewUrl })
   } catch (error) {
     onError()
   }
 }
 
 const handleMainImageChange = (options: any) => {
+  mainImageList.value = options.fileList
   const file = options.fileList.find((f: any) => f.status === 'finished' && (f.objectKey || f.url))
-  formData.mainImage = file ? (file.objectKey || file.url) : ''
+  formData.mainImage = file ? (file.objectKey || extractFileObjectKey(file.url) || file.url) : ''
 }
 
 const handleImagesChange = (options: any) => {
-  formData.images = options.fileList
-    .filter((f: any) => f.status === 'finished' && (f.objectKey || f.url))
-    .map((f: any) => f.objectKey || f.url)
+  imagesList.value = options.fileList
+  syncImagesFromFileList(
+    options.fileList.filter((f: any) => f.status === 'finished' && (f.objectKey || f.url)),
+  )
+}
+
+const handleMainImageRemove = () => {
+  formData.mainImage = ''
+}
+
+const handleImagesRemove = (options: { fileList: any[] }) => {
+  imagesList.value = options.fileList
+  syncImagesFromFileList(options.fileList)
 }
 
 const loadProduct = async () => {
@@ -225,19 +249,16 @@ const loadProduct = async () => {
   formData.name = mallInfo.name || product.name || ''
   formData.description = mallInfo.description || product.description || ''
   formData.detail = mallInfo.detail || product.detail || ''
-  formData.mainImage = mallInfo.mainImage || product.mainImage || ''
-  formData.images = mallInfo.images?.length ? mallInfo.images : (product.images || [])
+  formData.mainImage = extractFileObjectKey(mallInfo.mainImage || product.mainImage || '') || ''
+  formData.images = (mallInfo.images?.length ? mallInfo.images : (product.images || []))
+    .map((value) => extractFileObjectKey(value) || value)
 
   mainImageList.value = formData.mainImage
-    ? [{ id: 'mall-main', name: '商城主图', status: 'finished', url: formData.mainImage }]
+    ? [buildUploadFile(mallInfo.mainImage || product.mainImage || formData.mainImage)]
     : []
 
-  imagesList.value = formData.images.map((url, index) => ({
-    id: `mall-image-${index}`,
-    name: `商城图片${index + 1}`,
-    status: 'finished',
-    url,
-  }))
+  imagesList.value = (mallInfo.images?.length ? mallInfo.images : (product.images || []))
+    .map((value, index) => buildUploadFile(value, index))
 
   skuList.length = 0
   product.skus.forEach((sku) => {
@@ -249,7 +270,7 @@ const loadProduct = async () => {
       baseMarketPrice: sku.marketPrice,
       salePrice: sku.mallInfo?.salePrice ?? sku.salePrice,
       marketPrice: sku.mallInfo?.marketPrice ?? sku.marketPrice,
-      image: sku.mallInfo?.image ?? sku.image,
+      image: extractFileObjectKey(sku.mallInfo?.image ?? sku.image) || undefined,
     })
   })
 }
