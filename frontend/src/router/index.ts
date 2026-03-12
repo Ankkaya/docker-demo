@@ -112,18 +112,18 @@ const router = createRouter({
         }
       ]
     },
-    // ==================== 商品管理模块 ====================
+    // ==================== 商品档案模块 ====================
     {
       path: '/products',
       component: () => import('@/views/layout/index.vue'),
       redirect: '/products/list',
-      meta: { title: '商品管理' },
+      meta: { title: '商品档案' },
       children: [
         {
           path: 'list',
           name: 'product-list',
           component: () => import('@/views/products/index.vue'),
-          meta: { title: '商品列表' }
+          meta: { title: '商品档案' }
         },
         {
           path: 'create',
@@ -136,6 +136,12 @@ const router = createRouter({
           name: 'product-edit',
           component: () => import('@/views/products/edit.vue'),
           meta: { title: '编辑商品' }
+        },
+        {
+          path: 'mall-edit/:id',
+          name: 'product-mall-edit',
+          component: () => import('@/views/products/mall-edit.vue'),
+          meta: { title: '商城信息' }
         }
       ]
     },
@@ -281,6 +287,19 @@ const router = createRouter({
           name: 'cart-list',
           component: () => import('@/views/carts/index.vue'),
           meta: { title: '购物车管理' }
+        }
+      ]
+    },
+    {
+      path: '/mall-products',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '商城商品' },
+      children: [
+        {
+          path: '',
+          name: 'mall-product-list',
+          component: () => import('@/views/mall-products/index.vue'),
+          meta: { title: '商城商品' }
         }
       ]
     },

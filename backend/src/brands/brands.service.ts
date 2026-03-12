@@ -3,10 +3,14 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { BrandVo } from '@/brands/vo';
+import { MinioService } from '@/minio/minio.service';
 
 @Injectable()
 export class BrandsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private minioService: MinioService,
+  ) {}
 
   async create(createBrandDto: CreateBrandDto) {
     // 检查名称是否已存在
@@ -19,9 +23,12 @@ export class BrandsService {
     }
 
     const brand = await this.prisma.brand.create({
-      data: createBrandDto,
+      data: {
+        ...createBrandDto,
+        logo: this.minioService.normalizeStoredFileReference(createBrandDto.logo),
+      },
     });
-    return BrandVo.fromEntity(brand);
+    return this.toBrandVo(brand);
   }
 
   async findAll() {
@@ -29,7 +36,7 @@ export class BrandsService {
       where: { deletedAt: null },
       orderBy: { sort: 'asc' },
     });
-    return BrandVo.fromEntities(brands);
+    return Promise.all(brands.map(brand => this.toBrandVo(brand)));
   }
 
   async findOne(id: number) {
@@ -41,7 +48,7 @@ export class BrandsService {
       throw new NotFoundException('品牌不存在');
     }
 
-    return BrandVo.fromEntity(brand);
+    return this.toBrandVo(brand);
   }
 
   async update(id: number, updateBrandDto: UpdateBrandDto) {
@@ -70,9 +77,14 @@ export class BrandsService {
 
     const updated = await this.prisma.brand.update({
       where: { id },
-      data: updateBrandDto,
+      data: {
+        ...updateBrandDto,
+        logo: updateBrandDto.logo === undefined
+          ? undefined
+          : this.minioService.normalizeStoredFileReference(updateBrandDto.logo),
+      },
     });
-    return BrandVo.fromEntity(updated);
+    return this.toBrandVo(updated);
   }
 
   async remove(id: number) {
@@ -87,6 +99,13 @@ export class BrandsService {
     return this.prisma.brand.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  private async toBrandVo(entity: any) {
+    return BrandVo.fromEntity({
+      ...entity,
+      logo: await this.minioService.resolveStoredFileUrl(entity.logo),
     });
   }
 }

@@ -43,6 +43,26 @@ export class ProductVo {
   @ApiProperty({ description: '是否在商城上架' })
   mallEnabled: boolean;
 
+  @ApiProperty({ description: '总可用库存', required: false })
+  totalAvailable?: number;
+
+  @ApiProperty({ description: '是否有库存', required: false })
+  hasStock?: boolean;
+
+  @ApiProperty({
+    description: '商城扩展信息',
+    nullable: true,
+    type: 'object',
+    additionalProperties: true,
+  })
+  mallInfo?: {
+    name: string | null;
+    description: string | null;
+    detail: string | null;
+    mainImage: string | null;
+    images: string[];
+  } | null;
+
   @ApiProperty({ description: '创建时间' })
   createdAt: Date;
 
@@ -64,6 +84,17 @@ export class ProductVo {
       specTemplate: entity.specTemplate,
       isEnabled: entity.isEnabled,
       mallEnabled: entity.mallEnabled,
+      totalAvailable: entity.totalAvailable,
+      hasStock: entity.hasStock,
+      mallInfo: entity.mallInfo
+        ? {
+            name: entity.mallInfo.name ?? null,
+            description: entity.mallInfo.description ?? null,
+            detail: entity.mallInfo.detail ?? null,
+            mainImage: entity.mallInfo.mainImage ?? null,
+            images: Array.isArray(entity.mallInfo.images) ? entity.mallInfo.images : [],
+          }
+        : null,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };
@@ -84,12 +115,21 @@ export class ProductWithRelationsVo extends ProductVo {
   @ApiProperty({ description: '单位信息', type: UnitVo, nullable: true })
   unit?: UnitVo | null;
 
+  @ApiProperty({
+    description: 'SKU列表',
+    type: 'array',
+    required: false,
+    items: { type: 'object', additionalProperties: true },
+  })
+  skus?: any[];
+
   static fromEntity(entity: any): ProductWithRelationsVo {
     return {
       ...ProductVo.fromEntity(entity),
       category: entity.category ? CategoryVo.fromEntity(entity.category) : null,
       brand: entity.brand ? BrandVo.fromEntity(entity.brand) : null,
       unit: entity.unit ? UnitVo.fromEntity(entity.unit) : null,
+      skus: entity.skus ?? [],
     };
   }
 

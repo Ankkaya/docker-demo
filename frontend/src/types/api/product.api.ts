@@ -5,6 +5,7 @@ import type {
   Inventory,
   CreateProductDto,
   UpdateProductDto,
+  UpdateProductMallDto,
   UpdateProductEnabledDto,
   UpdateSkuDto,
   UpdateInventoryDto,
@@ -23,6 +24,10 @@ export namespace ProductApi {
   export type Create = Product;
   /** 更新商品 */
   export type Update = Product;
+  /** 获取商品商城信息 */
+  export type MallDetail = Product;
+  /** 更新商品商城信息 */
+  export type MallUpdate = Product;
   /** 删除商品 */
   export type Delete = void;
   /** 更新商品状态 */
@@ -36,6 +41,8 @@ export namespace ProductApi {
   export type UpdateParams = UpdateProductDto;
   /** 更新状态参数 */
   export type UpdateStatusParams = UpdateProductEnabledDto;
+  /** 更新商城信息参数 */
+  export type UpdateMallParams = UpdateProductMallDto;
   /** 查询商品参数 */
   export type QueryParams = QueryProductParams;
 }

@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { QueryMallProductDto } from './dto/query-mall-product.dto';
 import { SkuStatus, Prisma } from '@prisma/client';
+import { MinioService } from '@/minio/minio.service';
 
 @Injectable()
 export class MallService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private minioService: MinioService,
+  ) {}
 
   // 获取商城商品列表（仅展示已上架的商品）
   async findProducts(query: QueryMallProductDto) {
@@ -19,7 +23,7 @@ export class MallService {
     } = query;
 
     // 构建where条件
-    const where: Prisma.ProductWhereInput = {
+    const where: any = {
       isEnabled: true,
       mallEnabled: true,
       deletedAt: null, // 过滤已删除的商品
@@ -61,11 +65,12 @@ export class MallService {
       this.prisma.product.findMany({
         where,
         include: {
+          mallInfo: true,
           category: {
             select: { id: true, name: true },
           },
           brand: {
-            select: { id: true, name: true },
+            select: { id: true, name: true, logo: true },
           },
           skus: {
             where: { status: SkuStatus.ACTIVE, deletedAt: null },
@@ -77,6 +82,7 @@ export class MallService {
               image: true,
               specs: true,
               isDefault: true,
+              mallInfo: true,
             },
             orderBy: { isDefault: 'desc' },
           },
@@ -87,25 +93,43 @@ export class MallService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy,
-      }),
+      } as any),
       this.prisma.product.count({ where }),
-    ]);
+    ]) as [any[], number];
 
     // 处理返回数据，计算价格区间
-    const processedData = data.map((product) => {
-      const prices = product.skus.map((s) => Number(s.salePrice));
+    const processedData = await Promise.all(data.map(async (product) => {
+      const prices = product.skus.map((s) => Number(s.mallInfo?.salePrice ?? s.salePrice));
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
+      const mallImages = Array.isArray(product.mallInfo?.images) ? product.mallInfo.images : product.images;
 
       return {
         ...product,
+        name: product.mallInfo?.name || product.name,
+        description: product.mallInfo?.description || product.description,
+        detail: product.mallInfo?.detail || product.detail,
+        mainImage: await this.minioService.resolveStoredFileUrl(product.mallInfo?.mainImage || product.mainImage),
+        images: await this.minioService.resolveStoredFileUrls(mallImages),
+        brand: product.brand
+          ? {
+              ...product.brand,
+              logo: await this.minioService.resolveStoredFileUrl(product.brand.logo),
+            }
+          : null,
+        skus: await Promise.all(product.skus.map(async (sku) => ({
+          ...sku,
+          salePrice: sku.mallInfo?.salePrice ?? sku.salePrice,
+          marketPrice: sku.mallInfo?.marketPrice ?? sku.marketPrice,
+          image: await this.minioService.resolveStoredFileUrl(sku.mallInfo?.image || sku.image),
+        }))),
         priceRange: minPrice === maxPrice
           ? `¥${minPrice.toFixed(2)}`
           : `¥${minPrice.toFixed(2)} - ¥${maxPrice.toFixed(2)}`,
         minPrice,
         maxPrice,
       };
-    });
+    }));
 
     return {
       data: processedData,
@@ -120,14 +144,15 @@ export class MallService {
 
   // 获取商品详情（商城展示）
   async findProductDetail(id: number) {
-    const product = await this.prisma.product.findFirst({
+    const product: any = await this.prisma.product.findFirst({
       where: {
         id,
         isEnabled: true,
         mallEnabled: true,
         deletedAt: null,
-      },
+      } as any,
       include: {
+        mallInfo: true,
         category: {
           select: { id: true, name: true },
         },
@@ -151,6 +176,7 @@ export class MallService {
             volume: true,
             isDefault: true,
             sort: true,
+            mallInfo: true,
             inventories: {
               select: {
                 warehouseId: true,
@@ -161,27 +187,43 @@ export class MallService {
           orderBy: { sort: 'asc' },
         },
       },
-    });
+    } as any);
 
     if (!product) {
       throw new NotFoundException('商品不存在或已下架');
     }
 
     // 计算总库存
-    const skusWithStock = product.skus.map((sku) => {
+    const skusWithStock = await Promise.all(product.skus.map(async (sku) => {
       const totalStock = sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
       return {
         ...sku,
+        salePrice: sku.mallInfo?.salePrice ?? sku.salePrice,
+        marketPrice: sku.mallInfo?.marketPrice ?? sku.marketPrice,
+        image: await this.minioService.resolveStoredFileUrl(sku.mallInfo?.image || sku.image),
         totalStock,
         inventories: undefined, // 移除详细库存信息
       };
-    });
+    }));
 
     // 提取规格选项
     const specOptions = this.extractSpecOptions(product.skus);
 
     return {
       ...product,
+      name: product.mallInfo?.name || product.name,
+      description: product.mallInfo?.description || product.description,
+      detail: product.mallInfo?.detail || product.detail,
+      mainImage: await this.minioService.resolveStoredFileUrl(product.mallInfo?.mainImage || product.mainImage),
+      images: await this.minioService.resolveStoredFileUrls(
+        Array.isArray(product.mallInfo?.images) ? product.mallInfo.images : product.images,
+      ),
+      brand: product.brand
+        ? {
+            ...product.brand,
+            logo: await this.minioService.resolveStoredFileUrl(product.brand.logo),
+          }
+        : null,
       skus: skusWithStock,
       specOptions,
     };
@@ -211,7 +253,7 @@ export class MallService {
 
   // 获取启用的分类列表
   async findCategories() {
-    return this.prisma.category.findMany({
+    const categories = await this.prisma.category.findMany({
       where: { isEnabled: true, deletedAt: null },
       select: {
         id: true,
@@ -224,11 +266,16 @@ export class MallService {
       },
       orderBy: { sort: 'asc' },
     });
+
+    return Promise.all(categories.map(async (category) => ({
+      ...category,
+      image: await this.minioService.resolveStoredFileUrl(category.image),
+    })));
   }
 
   // 获取启用的品牌列表
   async findBrands() {
-    return this.prisma.brand.findMany({
+    const brands = await this.prisma.brand.findMany({
       where: { isEnabled: true, deletedAt: null },
       select: {
         id: true,
@@ -238,5 +285,10 @@ export class MallService {
       },
       orderBy: { sort: 'asc' },
     });
+
+    return Promise.all(brands.map(async (brand) => ({
+      ...brand,
+      logo: await this.minioService.resolveStoredFileUrl(brand.logo),
+    })));
   }
 }

@@ -7,10 +7,12 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateProductMallDto } from './dto/update-product-mall.dto';
 import { UpdateSkuDto } from './dto/update-sku.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import { SkuStatus, Prisma } from '@prisma/client';
 import { ProductVo, ProductWithRelationsVo, ProductSkuVo, ProductSkuWithProductVo } from '@/products/vo';
+import { MinioService } from '@/minio/minio.service';
 
 // 生成SPU编码
 function generateSpuCode(): string {
@@ -36,7 +38,10 @@ function generateSkuCode(): string {
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private minioService: MinioService,
+  ) {}
 
   // 创建商品
   async create(createProductDto: CreateProductDto) {
@@ -138,13 +143,13 @@ export class ProductsService {
     // 使用事务创建商品
     return this.prisma.$transaction(async (tx) => {
       // 1. 创建商品SPU
-      const product = await tx.product.create({
+      const product: any = await tx.product.create({
         data: {
-          ...productData,
+          ...this.normalizeProductData(productData),
           spuCode: spuCode || generateSpuCode(),
           specTemplate: productData.specTemplate as unknown as Prisma.InputJsonValue,
         },
-      });
+      } as any);
 
       // 2. 创建SKU
       const createdSkus: any[] = [];
@@ -157,7 +162,7 @@ export class ProductsService {
           costPrice: skuData.costPrice,
           salePrice: skuData.salePrice,
           marketPrice: skuData.marketPrice,
-          image: skuData.image,
+          image: this.minioService.normalizeStoredFileReference(skuData.image),
           barcode: skuData.barcode || null,
           weight: skuData.weight,
           volume: skuData.volume,
@@ -186,7 +191,11 @@ export class ProductsService {
         }
       }
 
-      return ProductWithRelationsVo.fromEntity({
+      if (product.mallEnabled) {
+        await this.seedMallSnapshot(tx, product.id);
+      }
+
+      return this.toProductWithRelationsVo({
         ...product,
         skus: createdSkus,
       });
@@ -195,9 +204,9 @@ export class ProductsService {
 
   // 查询商品列表
   async findAll(query: QueryProductDto) {
-    const { keyword, categoryId, brandId, isEnabled, mallEnabled, page = 1, pageSize = 10 } = query;
+    const { keyword, categoryId, brandId, isEnabled, mallEnabled, hasStock, page = 1, pageSize = 10 } = query;
 
-    const where: Prisma.ProductWhereInput = {
+    const where: any = {
       // 默认过滤已删除的商品
       deletedAt: null,
     };
@@ -222,6 +231,19 @@ export class ProductsService {
       where.mallEnabled = mallEnabled;
     }
 
+    if (hasStock) {
+      where.skus = {
+        some: {
+          deletedAt: null,
+          inventories: {
+            some: {
+              available: { gt: 0 },
+            },
+          },
+        },
+      };
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.product.findMany({
         where,
@@ -235,6 +257,7 @@ export class ProductsService {
           unit: {
             select: { id: true, name: true },
           },
+          mallInfo: true,
           skus: {
             where: { deletedAt: null },
             select: {
@@ -245,18 +268,35 @@ export class ProductsService {
               status: true,
               isDefault: true,
               image: true,
+              mallInfo: true,
+              inventories: {
+                select: {
+                  available: true,
+                },
+              },
             },
           },
         },
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
-      }),
+      } as any),
       this.prisma.product.count({ where }),
     ]);
 
     return {
-      data: ProductWithRelationsVo.fromEntities(data),
+      data: await Promise.all((data as any[]).map(async (item: any) => {
+        const totalAvailable = (item.skus ?? []).reduce(
+          (sum: number, sku: any) => sum + (sku.inventories ?? []).reduce((skuSum: number, inv: any) => skuSum + inv.available, 0),
+          0,
+        );
+
+        return this.toProductWithRelationsVo({
+          ...item,
+          totalAvailable,
+          hasStock: totalAvailable > 0,
+        });
+      })),
       meta: {
         page,
         pageSize,
@@ -283,9 +323,11 @@ export class ProductsService {
         unit: {
           select: { id: true, name: true, code: true },
         },
+        mallInfo: true,
         skus: {
           where: { deletedAt: null },
           include: {
+            mallInfo: true,
             inventories: {
               include: {
                 warehouse: {
@@ -303,7 +345,7 @@ export class ProductsService {
       throw new NotFoundException('商品不存在');
     }
 
-    return ProductWithRelationsVo.fromEntity(product);
+    return this.toProductWithRelationsVo(product);
   }
 
   // 更新商品
@@ -346,15 +388,16 @@ export class ProductsService {
       const updated = await tx.product.update({
         where: { id },
         data: {
-          ...productData,
+          ...this.normalizeProductData(productData),
           specTemplate: productData.specTemplate as unknown as Prisma.InputJsonValue,
         },
         include: {
           category: { select: { id: true, name: true } },
           brand: { select: { id: true, name: true } },
           unit: { select: { id: true, name: true } },
+          mallInfo: true,
         },
-      });
+      } as any);
 
       // 如果提供了新的SKU列表，则更新SKU
       if (skus && skus.length > 0) {
@@ -375,7 +418,7 @@ export class ProductsService {
                   costPrice: skuData.costPrice,
                   salePrice: skuData.salePrice,
                   marketPrice: skuData.marketPrice,
-                  image: skuData.image,
+                  image: this.minioService.normalizeStoredFileReference(skuData.image),
                   barcode: skuData.barcode || null,
                   weight: skuData.weight,
                   volume: skuData.volume,
@@ -393,7 +436,7 @@ export class ProductsService {
                   costPrice: skuData.costPrice,
                   salePrice: skuData.salePrice,
                   marketPrice: skuData.marketPrice,
-                  image: skuData.image,
+                  image: this.minioService.normalizeStoredFileReference(skuData.image),
                   barcode: skuData.barcode || null,
                   weight: skuData.weight,
                   volume: skuData.volume,
@@ -407,7 +450,11 @@ export class ProductsService {
         }
       }
 
-      return ProductWithRelationsVo.fromEntity(updated);
+      if (productData.mallEnabled === true && !existing.mallEnabled) {
+        await this.seedMallSnapshot(tx, id);
+      }
+
+      return this.toProductWithRelationsVo(updated);
     });
   }
 
@@ -452,6 +499,7 @@ export class ProductsService {
         deletedAt: null,
       },
       include: {
+        mallInfo: true,
         inventories: {
           include: {
             warehouse: {
@@ -463,7 +511,7 @@ export class ProductsService {
       orderBy: { sort: 'asc' },
     });
 
-    return ProductSkuVo.fromEntities(skus);
+    return Promise.all(skus.map(sku => this.toProductSkuVo(sku)));
   }
 
   // 更新SKU
@@ -493,11 +541,17 @@ export class ProductsService {
       where: { id: skuId },
       data: {
         ...dto,
+        image: dto.image === undefined
+          ? undefined
+          : this.minioService.normalizeStoredFileReference(dto.image),
         barcode: dto.barcode || (dto.barcode === '' ? null : undefined),
       },
-    });
+      include: {
+        mallInfo: true,
+      },
+    } as any);
 
-    return ProductSkuVo.fromEntity(updated);
+    return this.toProductSkuVo(updated);
   }
 
   // 更新SKU价格
@@ -517,8 +571,248 @@ export class ProductsService {
         salePrice,
         marketPrice,
       },
-    });
+      include: {
+        mallInfo: true,
+      },
+    } as any);
 
-    return ProductSkuVo.fromEntity(updated);
+    return this.toProductSkuVo(updated);
+  }
+
+  async getMallInfo(productId: number) {
+    const product = await this.prisma.product.findFirst({
+      where: {
+        id: productId,
+        deletedAt: null,
+      },
+      include: {
+        mallInfo: true,
+        skus: {
+          where: { deletedAt: null },
+          include: {
+            mallInfo: true,
+          },
+          orderBy: { sort: 'asc' },
+        },
+      },
+    } as any);
+
+    if (!product) {
+      throw new NotFoundException('商品不存在');
+    }
+
+    return this.toProductWithRelationsVo(product);
+  }
+
+  async updateMallInfo(productId: number, dto: UpdateProductMallDto) {
+    const existing: any = await this.prisma.product.findFirst({
+      where: { id: productId, deletedAt: null },
+      include: {
+        skus: {
+          where: { deletedAt: null },
+          select: { id: true },
+        },
+      },
+    } as any);
+
+    if (!existing) {
+      throw new NotFoundException('商品不存在');
+    }
+
+    const validSkuIds = new Set(existing.skus.map((sku) => sku.id));
+    if (dto.skuMallInfos?.some((item) => !validSkuIds.has(item.skuId))) {
+      throw new BadRequestException('存在不属于当前商品的SKU');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          mallEnabled: dto.mallEnabled,
+        },
+      } as any);
+
+      const mallInfoData = this.normalizeMallInfoData(dto);
+      await (tx as any).productMallInfo.upsert({
+        where: { productId },
+        create: {
+          productId,
+          ...mallInfoData,
+        },
+        update: mallInfoData,
+      } as any);
+
+      for (const skuInfo of dto.skuMallInfos ?? []) {
+        await (tx as any).productSkuMallInfo.upsert({
+          where: { skuId: skuInfo.skuId },
+          create: {
+            skuId: skuInfo.skuId,
+            salePrice: skuInfo.salePrice,
+            marketPrice: skuInfo.marketPrice,
+            image: this.minioService.normalizeStoredFileReference(skuInfo.image),
+          },
+          update: {
+            salePrice: skuInfo.salePrice,
+            marketPrice: skuInfo.marketPrice,
+            image: skuInfo.image === undefined
+              ? undefined
+              : this.minioService.normalizeStoredFileReference(skuInfo.image),
+          },
+        } as any);
+      }
+
+      const updated = await tx.product.findFirst({
+        where: { id: productId },
+        include: {
+          category: {
+            select: { id: true, name: true, code: true },
+          },
+          brand: {
+            select: { id: true, name: true, logo: true },
+          },
+          unit: {
+            select: { id: true, name: true, code: true },
+          },
+          mallInfo: true,
+          skus: {
+            where: { deletedAt: null },
+            include: {
+              mallInfo: true,
+            },
+            orderBy: { sort: 'asc' },
+          },
+        },
+      } as any);
+
+      return this.toProductWithRelationsVo(updated);
+    });
+  }
+
+  private normalizeProductData<T extends { mainImage?: string | null; images?: string[] | null }>(productData: T): T {
+    return {
+      ...productData,
+      mainImage: productData.mainImage === undefined
+        ? undefined
+        : this.minioService.normalizeStoredFileReference(productData.mainImage),
+      images: productData.images === undefined
+        ? undefined
+        : (productData.images ?? [])
+            .map(image => this.minioService.normalizeStoredFileReference(image))
+            .filter((image): image is string => Boolean(image)),
+    };
+  }
+
+  private normalizeMallInfoData(dto: UpdateProductMallDto) {
+    return {
+      name: dto.name,
+      description: dto.description,
+      detail: dto.detail,
+      mainImage: dto.mainImage === undefined
+        ? undefined
+        : this.minioService.normalizeStoredFileReference(dto.mainImage),
+      images: dto.images === undefined
+        ? undefined
+        : dto.images
+            .map(image => this.minioService.normalizeStoredFileReference(image))
+            .filter((image): image is string => Boolean(image)) as unknown as Prisma.InputJsonValue,
+    };
+  }
+
+  private async seedMallSnapshot(tx: Prisma.TransactionClient, productId: number) {
+    const product: any = await tx.product.findUnique({
+      where: { id: productId },
+      include: {
+        skus: {
+          where: { deletedAt: null },
+        },
+      },
+    } as any);
+
+    if (!product) {
+      return;
+    }
+
+    await (tx as any).productMallInfo.upsert({
+      where: { productId },
+      create: {
+        productId,
+        name: product.name,
+        description: product.description,
+        detail: product.detail,
+        mainImage: product.mainImage,
+        images: product.images as unknown as Prisma.InputJsonValue,
+      },
+      update: {},
+    } as any);
+
+    for (const sku of product.skus) {
+      await (tx as any).productSkuMallInfo.upsert({
+        where: { skuId: sku.id },
+        create: {
+          skuId: sku.id,
+          salePrice: sku.salePrice,
+          marketPrice: sku.marketPrice,
+          image: sku.image,
+        },
+        update: {},
+      } as any);
+    }
+  }
+
+  private async toProductVo(entity: any) {
+    const mallInfo = entity.mallInfo
+      ? {
+          ...entity.mallInfo,
+          mainImage: await this.minioService.resolveStoredFileUrl(entity.mallInfo.mainImage),
+          images: await this.minioService.resolveStoredFileUrls(
+            Array.isArray(entity.mallInfo.images) ? entity.mallInfo.images : [],
+          ),
+        }
+      : null;
+
+    return ProductVo.fromEntity({
+      ...entity,
+      mainImage: await this.minioService.resolveStoredFileUrl(entity.mainImage),
+      images: await this.minioService.resolveStoredFileUrls(entity.images),
+      mallInfo,
+    });
+  }
+
+  private async toProductWithRelationsVo(entity: any) {
+    const product = await this.toProductVo(entity);
+    const skus = entity.skus
+      ? await Promise.all(entity.skus.map((sku: any) => this.toProductSkuVo(sku)))
+      : undefined;
+
+    return ProductWithRelationsVo.fromEntity({
+      ...product,
+      category: entity.category,
+      brand: entity.brand
+        ? {
+            ...entity.brand,
+            logo: await this.minioService.resolveStoredFileUrl(entity.brand.logo),
+          }
+        : null,
+      unit: entity.unit,
+      skus,
+    });
+  }
+
+  private async toProductSkuVo(entity: any) {
+    const product = entity.product
+      ? await this.toProductVo(entity.product)
+      : null;
+
+    return ProductSkuWithProductVo.fromEntity({
+      ...entity,
+      image: await this.minioService.resolveStoredFileUrl(entity.image),
+      mallInfo: entity.mallInfo
+        ? {
+            ...entity.mallInfo,
+            image: await this.minioService.resolveStoredFileUrl(entity.mallInfo.image),
+          }
+        : null,
+      product,
+    });
   }
 }

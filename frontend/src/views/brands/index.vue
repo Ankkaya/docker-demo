@@ -33,19 +33,16 @@
           <n-input v-model:value="form.name" placeholder="请输入品牌名称" />
         </n-form-item>
         <n-form-item label="品牌Logo" path="logo">
-          <n-space vertical>
-            <n-upload
-              list-type="image-card"
-              :max="1"
-              :custom-request="handleLogoUpload"
-              v-model:file-list="logoFileList"
-              @change="handleLogoChange"
-              accept="image/*"
-            >
-              <n-button>上传Logo</n-button>
-            </n-upload>
-            <n-input v-model:value="form.logo" placeholder="或输入图片URL" />
-          </n-space>
+          <n-upload
+            list-type="image-card"
+            :max="1"
+            :custom-request="handleLogoUpload"
+            v-model:file-list="logoFileList"
+            @remove="handleLogoRemove"
+            accept="image/*"
+          >
+            <n-button>上传Logo</n-button>
+          </n-upload>
         </n-form-item>
         <n-form-item label="品牌描述" path="description">
           <n-input v-model:value="form.description" type="textarea" placeholder="请输入品牌描述" />
@@ -76,6 +73,7 @@ import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace, NSwitch } from 'naive-ui'
 import { getBrands, createBrand, updateBrand, deleteBrand } from '@/api/brand'
 import { uploadFile } from '@/api/file'
+import { resolveFileUrl } from '@/utils/file-url'
 import type { Brand, CreateBrandDto } from '@/types/basic-data'
 
 const message = useMessage()
@@ -103,13 +101,15 @@ const logoFileList = ref<any[]>([])
 const handleLogoUpload = async ({ file, onFinish, onError }: any) => {
   try {
     const result = await uploadFile(file.file, 'brands')
-    console.log('[图片上传] 上传成功，URL:', result.data.url)
+    const previewUrl = resolveFileUrl(result.url)
+    console.log('[图片上传] 上传成功，URL:', previewUrl)
     
-    // 关键修复：确保文件对象上有 url 属性，供 onChange 使用
-    file.url = result.data.url
+    file.id = result.objectKey
+    file.url = previewUrl
+    file.thumbnailUrl = previewUrl
+    form.logo = result.objectKey
     
-    // 调用 onFinish 并传入文件信息，更新组件内部的 fileList
-    onFinish({ url: result.data.url })
+    onFinish({ id: result.objectKey, url: previewUrl })
     message.success('上传成功')
   } catch (error) {
     console.error('[图片上传] 上传失败:', error)
@@ -118,13 +118,8 @@ const handleLogoUpload = async ({ file, onFinish, onError }: any) => {
   }
 }
 
-// Logo 上传状态变化 - 统一通过 fileList 同步数据
-const handleLogoChange = (options: any) => {
-  console.log('[图片上传] onChange 触发，fileList:', options.fileList)
-  // 查找已完成且有 URL 的图片
-  const file = options.fileList.find((f: any) => f.status === 'finished' && f.url)
-  form.logo = file ? file.url : ''
-  console.log('[图片上传] Logo更新:', form.logo)
+const handleLogoRemove = () => {
+  form.logo = ''
 }
 
 const rules: FormRules = {
@@ -143,7 +138,7 @@ const createColumns = (): DataTableColumns<Brand> => {
       render: (row) => {
         if (row.logo) {
           return h('img', {
-            src: row.logo,
+            src: resolveFileUrl(row.logo),
             style: 'width: 40px; height: 40px; object-fit: contain;'
           })
         }
@@ -227,10 +222,10 @@ const handleEdit = (brand: Brand) => {
   // 加载Logo到文件列表（用于回显）
   if (brand.logo) {
     logoFileList.value = [{
-      id: 'brand-logo',
+      id: brand.logo,
       name: 'Logo',
       status: 'finished',
-      url: brand.logo,
+      url: resolveFileUrl(brand.logo),
     }]
   } else {
     logoFileList.value = []

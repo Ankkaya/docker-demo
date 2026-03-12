@@ -2,10 +2,14 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateCartDto, UpdateCartDto, QueryCartDto, AddToCartDto } from './dto';
 import { CartItemVo, CartStatsVo, CartListVo } from './vo';
+import { MinioService } from '@/minio/minio.service';
 
 @Injectable()
 export class CartsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private minioService: MinioService,
+  ) {}
 
   // 获取购物车列表（管理后台用）
   async findAll(query: QueryCartDto): Promise<{ data: CartItemVo[]; meta: any }> {
@@ -59,7 +63,7 @@ export class CartsService {
       this.prisma.cart.count({ where }),
     ]);
 
-    const list: CartItemVo[] = data.map((item) => {
+    const list: CartItemVo[] = await Promise.all(data.map(async (item) => {
       const totalStock = item.sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
       return {
         id: item.id,
@@ -70,8 +74,8 @@ export class CartsService {
         specs: item.sku.specs as Record<string, string>,
         productId: item.sku.product.id,
         productName: item.sku.product.name,
-        mainImage: item.sku.product.mainImage,
-        skuImage: item.sku.image,
+        mainImage: await this.minioService.resolveStoredFileUrl(item.sku.product.mainImage),
+        skuImage: await this.minioService.resolveStoredFileUrl(item.sku.image),
         salePrice: Number(item.sku.salePrice),
         quantity: item.quantity,
         selected: item.selected,
@@ -80,7 +84,7 @@ export class CartsService {
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       };
-    });
+    }));
 
     return {
       data: list,
@@ -129,8 +133,8 @@ export class CartsService {
       specs: cart.sku.specs as Record<string, string>,
       productId: cart.sku.product.id,
       productName: cart.sku.product.name,
-      mainImage: cart.sku.product.mainImage,
-      skuImage: cart.sku.image,
+      mainImage: await this.minioService.resolveStoredFileUrl(cart.sku.product.mainImage),
+      skuImage: await this.minioService.resolveStoredFileUrl(cart.sku.image),
       salePrice: Number(cart.sku.salePrice),
       quantity: cart.quantity,
       selected: cart.selected,
@@ -163,7 +167,7 @@ export class CartsService {
     let selectedCount = 0;
     let selectedAmount = 0;
 
-    const list: CartItemVo[] = carts.map((item) => {
+    const list: CartItemVo[] = await Promise.all(carts.map(async (item) => {
       const totalStock = item.sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
       const subtotal = Number(item.sku.salePrice) * item.quantity;
       
@@ -181,8 +185,8 @@ export class CartsService {
         specs: item.sku.specs as Record<string, string>,
         productId: item.sku.product.id,
         productName: item.sku.product.name,
-        mainImage: item.sku.product.mainImage,
-        skuImage: item.sku.image,
+        mainImage: await this.minioService.resolveStoredFileUrl(item.sku.product.mainImage),
+        skuImage: await this.minioService.resolveStoredFileUrl(item.sku.image),
         salePrice: Number(item.sku.salePrice),
         quantity: item.quantity,
         selected: item.selected,
@@ -191,7 +195,7 @@ export class CartsService {
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
       };
-    });
+    }));
 
     const stats: CartStatsVo = {
       totalCount: carts.reduce((sum, item) => sum + item.quantity, 0),
@@ -446,7 +450,7 @@ export class CartsService {
   }
 
   // 辅助方法：转换为 CartItemVo
-  private toCartItemVo(cart: any): CartItemVo {
+  private async toCartItemVo(cart: any): Promise<CartItemVo> {
     const totalStock = cart.sku.inventories.reduce((sum: number, inv: any) => sum + inv.available, 0);
     
     return {
@@ -458,8 +462,8 @@ export class CartsService {
       specs: cart.sku.specs as Record<string, string>,
       productId: cart.sku.product.id,
       productName: cart.sku.product.name,
-      mainImage: cart.sku.product.mainImage,
-      skuImage: cart.sku.image,
+      mainImage: await this.minioService.resolveStoredFileUrl(cart.sku.product.mainImage),
+      skuImage: await this.minioService.resolveStoredFileUrl(cart.sku.image),
       salePrice: Number(cart.sku.salePrice),
       quantity: cart.quantity,
       selected: cart.selected,

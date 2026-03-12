@@ -28,6 +28,18 @@ export class ProductSkuVo {
   @ApiProperty({ description: 'SKU图片', nullable: true })
   image: string | null;
 
+  @ApiProperty({
+    description: '商城SKU扩展信息',
+    nullable: true,
+    type: 'object',
+    additionalProperties: true,
+  })
+  mallInfo?: {
+    salePrice: number | null;
+    marketPrice: number | null;
+    image: string | null;
+  } | null;
+
   @ApiProperty({ description: '条形码', nullable: true })
   barcode: string | null;
 
@@ -62,6 +74,13 @@ export class ProductSkuVo {
       salePrice: entity.salePrice,
       marketPrice: entity.marketPrice,
       image: entity.image,
+      mallInfo: entity.mallInfo
+        ? {
+            salePrice: entity.mallInfo.salePrice ?? null,
+            marketPrice: entity.mallInfo.marketPrice ?? null,
+            image: entity.mallInfo.image ?? null,
+          }
+        : null,
       barcode: entity.barcode,
       weight: entity.weight,
       volume: entity.volume,

@@ -28,6 +28,16 @@ export const updateProduct = (id: number, data: ProductApi.UpdateParams) => {
   return api.patch<ProductApi.Update>(`/products/${id}`, data)
 }
 
+// 获取商品商城信息
+export const getProductMallInfo = (id: number) => {
+  return api.get<ProductApi.MallDetail>(`/products/${id}/mall-info`)
+}
+
+// 更新商品商城信息
+export const updateProductMallInfo = (id: number, data: ProductApi.UpdateMallParams) => {
+  return api.patch<ProductApi.MallUpdate>(`/products/${id}/mall-info`, data)
+}
+
 // 删除商品
 export const deleteProduct = (id: number) => {
   return api.delete<ProductApi.Delete>(`/products/${id}`)

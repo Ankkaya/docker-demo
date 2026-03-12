@@ -47,22 +47,25 @@
           />
         </n-form-item>
         <n-form-item label="分类图标" path="icon">
-          <n-input v-model:value="form.icon" placeholder="请输入图标名称" />
+          <n-space vertical style="width: 100%">
+            <IconPicker v-model:model-value="form.icon" />
+            <div v-if="form.icon" class="flex items-center gap-2 text-sm text-gray-500">
+              <n-icon size="18" :component="getIconComponent(form.icon)" />
+              <span>{{ form.icon }}</span>
+            </div>
+          </n-space>
         </n-form-item>
         <n-form-item label="分类图片" path="image">
-          <n-space vertical>
-            <n-upload
-              list-type="image-card"
-              :max="1"
-              :custom-request="handleImageUpload"
-              v-model:file-list="imageFileList"
-              @change="handleImageChange"
-              accept="image/*"
-            >
-              <n-button>上传图片</n-button>
-            </n-upload>
-            <n-input v-model:value="form.image" placeholder="或输入图片URL" />
-          </n-space>
+          <n-upload
+            list-type="image-card"
+            :max="1"
+            :custom-request="handleImageUpload"
+            v-model:file-list="imageFileList"
+            @remove="handleImageRemove"
+            accept="image/*"
+          >
+            <n-button>上传图片</n-button>
+          </n-upload>
         </n-form-item>
         <n-form-item label="排序号" path="sort">
           <n-input-number v-model:value="form.sort" :min="0" style="width: 100%" />
@@ -87,10 +90,13 @@
 import { ref, reactive, onMounted, h, computed } from 'vue'
 import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NSpace, NSwitch } from 'naive-ui'
+import { NButton, NIcon, NSpace, NSwitch } from 'naive-ui'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/category'
 import { uploadFile } from '@/api/file'
+import { resolveFileUrl } from '@/utils/file-url'
+import IconPicker from '@/components/common/IconPicker.vue'
 import type { Category, CreateCategoryDto } from '@/types/basic-data'
+import * as Ionicons from '@vicons/ionicons5'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -102,6 +108,8 @@ const categories = ref<Category[]>([])
 const flatCategories = ref<Category[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+
+const iconMap = Ionicons as Record<string, any>
 
 const form = reactive<CreateCategoryDto & { isEnabled: boolean }>({
   name: '',
@@ -116,17 +124,24 @@ const form = reactive<CreateCategoryDto & { isEnabled: boolean }>({
 // 分类图片上传文件列表
 const imageFileList = ref<any[]>([])
 
+const getIconComponent = (iconName?: string) => {
+  if (!iconName) return undefined
+  return iconMap[iconName]
+}
+
 // 自定义上传请求 - 分类图片
 const handleImageUpload = async ({ file, onFinish, onError }: any) => {
   try {
     const result = await uploadFile(file.file, 'categories')
-    console.log('[图片上传] 上传成功，URL:', result.data.url)
+    const previewUrl = resolveFileUrl(result.url)
+    console.log('[图片上传] 上传成功，URL:', previewUrl)
     
-    // 关键修复：确保文件对象上有 url 属性，供 onChange 使用
-    file.url = result.data.url
+    file.id = result.objectKey
+    file.url = previewUrl
+    file.thumbnailUrl = previewUrl
+    form.image = result.objectKey
     
-    // 调用 onFinish 并传入文件信息，更新组件内部的 fileList
-    onFinish({ url: result.data.url })
+    onFinish({ id: result.objectKey, url: previewUrl })
     message.success('上传成功')
   } catch (error) {
     console.error('[图片上传] 上传失败:', error)
@@ -135,13 +150,8 @@ const handleImageUpload = async ({ file, onFinish, onError }: any) => {
   }
 }
 
-// 图片上传状态变化 - 统一通过 fileList 同步数据
-const handleImageChange = (options: any) => {
-  console.log('[图片上传] onChange 触发，fileList:', options.fileList)
-  // 查找已完成且有 URL 的图片
-  const file = options.fileList.find((f: any) => f.status === 'finished' && f.url)
-  form.image = file ? file.url : ''
-  console.log('[图片上传] 图片更新:', form.image)
+const handleImageRemove = () => {
+  form.image = ''
 }
 
 const rules: FormRules = {
@@ -177,11 +187,25 @@ const createColumns = (): DataTableColumns<Category> => {
       render: (row) => {
         if (row.image) {
           return h('img', {
-            src: row.image,
+            src: resolveFileUrl(row.image),
             style: 'width: 50px; height: 50px; object-fit: cover; border-radius: 4px;'
           })
         }
         return '-'
+      }
+    },
+    {
+      title: '图标',
+      key: 'icon',
+      width: 110,
+      render: (row) => {
+        if (!row.icon) return '-'
+        const icon = getIconComponent(row.icon)
+        if (!icon) return row.icon
+        return h('div', { class: 'flex items-center gap-1' }, [
+          h(NIcon, { size: 16, component: icon }),
+          h('span', row.icon),
+        ])
       }
     },
     { title: '层级', key: 'level', width: 80 },
@@ -287,10 +311,10 @@ const handleEdit = (category: Category) => {
   // 加载图片到文件列表（用于回显）
   if (category.image) {
     imageFileList.value = [{
-      id: 'category-image',
+      id: category.image,
       name: '分类图片',
       status: 'finished',
-      url: category.image,
+      url: resolveFileUrl(category.image),
     }]
   } else {
     imageFileList.value = []

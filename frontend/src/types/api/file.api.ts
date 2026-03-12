@@ -5,6 +5,7 @@
  */
 export interface UploadedFileInfo {
   filename: string;
+  objectKey: string;
   url: string;
   etag: string;
 }
@@ -40,9 +41,9 @@ export interface FileStat {
  */
 export namespace FileApi {
   /** 单文件上传响应 */
-  export type UploadSingle = { code: number; message: string; data: UploadedFileInfo };
+  export type UploadSingle = UploadedFileInfo;
   /** 多文件上传响应 */
-  export type UploadMultiple = { code: number; message: string; data: UploadMultipleResponse };
+  export type UploadMultiple = UploadMultipleResponse;
   /** 获取文件URL响应 */
   export type GetUrl = { url: string };
   /** 列出文件响应 */

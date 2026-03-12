@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as Minio from 'minio';
 import { BufferedFile } from './dto/file.dto';
+import { Readable } from 'stream';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
@@ -60,13 +61,12 @@ export class MinioService implements OnModuleInit {
   /**
    * 上传文件
    */
-  async uploadFile(file: BufferedFile, path: string = ''): Promise<{ url: string; etag: string }> {
-    const timestamp = Date.now();
-    const filename = `${path ? path + '/' : ''}${timestamp}-${file.originalname}`;
+  async uploadFile(file: BufferedFile, path: string = ''): Promise<{ objectKey: string; url: string; etag: string }> {
+    const objectKey = this.buildObjectKey(file.originalname, path);
     
     const objectInfo = await this.minioClient.putObject(
       this.bucketName,
-      filename,
+      objectKey,
       file.buffer,
       file.size,
       {
@@ -74,9 +74,10 @@ export class MinioService implements OnModuleInit {
       },
     );
 
-    const url = await this.getFileUrl(filename);
+    const url = this.getProxyUrl(objectKey);
     
     return {
+      objectKey,
       url,
       etag: objectInfo.etag,
     };
@@ -85,7 +86,7 @@ export class MinioService implements OnModuleInit {
   /**
    * 上传多个文件
    */
-  async uploadFiles(files: BufferedFile[], path: string = ''): Promise<{ url: string; etag: string }[]> {
+  async uploadFiles(files: BufferedFile[], path: string = ''): Promise<{ objectKey: string; url: string; etag: string }[]> {
     const uploadPromises = files.map(file => this.uploadFile(file, path));
     return Promise.all(uploadPromises);
   }
@@ -175,5 +176,84 @@ export class MinioService implements OnModuleInit {
       filename,
       expiry,
     );
+  }
+
+  async getFileStream(filename: string): Promise<{ stream: Readable; contentType?: string }> {
+    const stat = await this.minioClient.statObject(this.bucketName, filename);
+    const stream = await this.minioClient.getObject(this.bucketName, filename);
+
+    return {
+      stream,
+      contentType: stat.metaData?.['content-type'],
+    };
+  }
+
+  normalizeStoredFileReference(value?: string | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const extracted = this.extractObjectKey(trimmed);
+    return extracted ?? trimmed;
+  }
+
+  async resolveStoredFileUrl(value?: string | null): Promise<string | null> {
+    const normalized = this.normalizeStoredFileReference(value);
+    if (!normalized) {
+      return null;
+    }
+
+    if (this.looksLikeExternalUrl(normalized)) {
+      return normalized;
+    }
+
+    return this.getProxyUrl(normalized);
+  }
+
+  async resolveStoredFileUrls(values?: Array<string | null> | null): Promise<string[]> {
+    if (!values || values.length === 0) {
+      return [];
+    }
+
+    const resolved = await Promise.all(values.map(value => this.resolveStoredFileUrl(value)));
+    return resolved.filter((value): value is string => Boolean(value));
+  }
+
+  private buildObjectKey(originalName: string, path: string = ''): string {
+    const timestamp = Date.now();
+    const safeName = originalName.replace(/\\/g, '/').split('/').pop() || 'file';
+    return `${path ? `${path}/` : ''}${timestamp}-${safeName}`;
+  }
+
+  private extractObjectKey(value: string): string | null {
+    try {
+      const parsed = value.startsWith('http://') || value.startsWith('https://')
+        ? new URL(value)
+        : new URL(value, 'http://local');
+      const bucketPrefix = `/${this.bucketName}/`;
+      if (parsed.pathname.startsWith(bucketPrefix)) {
+        return decodeURIComponent(parsed.pathname.slice(bucketPrefix.length));
+      }
+      if (parsed.pathname.endsWith('/api/files/preview') || parsed.pathname.endsWith('/files/preview')) {
+        const filename = parsed.searchParams.get('filename');
+        return filename ? decodeURIComponent(filename) : null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private looksLikeExternalUrl(value: string): boolean {
+    return /^https?:\/\//i.test(value);
+  }
+
+  private getProxyUrl(filename: string): string {
+    return `/api/files/preview?filename=${encodeURIComponent(filename)}`;
   }
 }

@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { UpdateProductMallDto } from './dto/update-product-mall.dto';
 import { UpdateSkuDto } from './dto/update-sku.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
@@ -50,6 +51,21 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
   ) {
     return this.productsService.update(id, updateProductDto);
+  }
+
+  @Get(':id/mall-info')
+  @ApiOperation({ summary: '获取商品商城信息' })
+  getMallInfo(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.getMallInfo(id);
+  }
+
+  @Patch(':id/mall-info')
+  @ApiOperation({ summary: '更新商品商城信息' })
+  updateMallInfo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProductMallDto,
+  ) {
+    return this.productsService.updateMallInfo(id, dto);
   }
 
   @Delete(':id')

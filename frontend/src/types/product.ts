@@ -25,6 +25,11 @@ export interface ProductSku {
   salePrice: number;
   marketPrice?: number;
   image?: string;
+  mallInfo?: {
+    salePrice?: number;
+    marketPrice?: number;
+    image?: string;
+  } | null;
   barcode?: string;
   weight?: number;
   volume?: number;
@@ -76,6 +81,13 @@ export interface Product {
   detail?: string;
   mainImage?: string;
   images: string[];
+  mallInfo?: {
+    name?: string;
+    description?: string;
+    detail?: string;
+    mainImage?: string;
+    images?: string[];
+  } | null;
   unitId: number;
   unit?: {
     id: number;
@@ -84,6 +96,9 @@ export interface Product {
   specTemplate?: SpecTemplateItem[];
   isEnabled: boolean;
   mallEnabled: boolean;
+  totalAvailable?: number;
+  hasStock?: boolean;
+  mallStatus?: 'PENDING_INFO' | 'READY' | 'LISTED' | 'NO_STOCK' | 'DISABLED';
   skus: ProductSku[];
   createdAt: string;
   updatedAt: string;
@@ -133,6 +148,21 @@ export interface CreateProductDto {
 // 更新商品DTO
 export interface UpdateProductDto extends Partial<CreateProductDto> {}
 
+export interface UpdateProductMallDto {
+  name?: string;
+  description?: string;
+  detail?: string;
+  mainImage?: string;
+  images?: string[];
+  mallEnabled?: boolean;
+  skuMallInfos?: {
+    skuId: number;
+    salePrice?: number;
+    marketPrice?: number;
+    image?: string;
+  }[];
+}
+
 // 更新商品启用状态DTO
 export interface UpdateProductEnabledDto {
   isEnabled: boolean;
@@ -167,6 +197,7 @@ export interface QueryProductParams {
   brandId?: number;
   isEnabled?: boolean;
   mallEnabled?: boolean;
+  hasStock?: boolean;
   page?: number;
   pageSize?: number;
 }

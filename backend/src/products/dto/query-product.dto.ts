@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -29,6 +29,11 @@ export class QueryProductDto {
   @IsOptional()
   @Type(() => Boolean)
   mallEnabled?: boolean;
+
+  @ApiPropertyOptional({ example: true, description: '是否仅查询有库存商品' })
+  @IsOptional()
+  @Type(() => Boolean)
+  hasStock?: boolean;
 
   @ApiPropertyOptional({ example: 1, description: '页码' })
   @IsNumber()

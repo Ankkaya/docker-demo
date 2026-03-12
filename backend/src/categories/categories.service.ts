@@ -3,10 +3,14 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryVo, CategoryTreeVo, CategoryWithParentVo } from '@/categories/vo';
+import { MinioService } from '@/minio/minio.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private minioService: MinioService,
+  ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
     // 检查编码是否已存在
@@ -38,10 +42,13 @@ export class CategoriesService {
     }
 
     const category = await this.prisma.category.create({
-      data: createCategoryDto,
+      data: {
+        ...createCategoryDto,
+        image: this.minioService.normalizeStoredFileReference(createCategoryDto.image),
+      },
     });
 
-    return CategoryVo.fromEntity(category);
+    return this.toCategoryVo(category);
   }
 
   async findAll() {
@@ -58,7 +65,7 @@ export class CategoriesService {
 
     // 构建树形结构
     const tree = this.buildTree(categories);
-    return CategoryTreeVo.fromEntities(tree);
+    return Promise.all(tree.map(category => this.toCategoryTreeVo(category)));
   }
 
   // 获取扁平化列表
@@ -71,7 +78,7 @@ export class CategoriesService {
       },
     });
 
-    return CategoryWithParentVo.fromEntities(categories);
+    return Promise.all(categories.map(category => this.toCategoryWithParentVo(category)));
   }
 
   async findOne(id: number) {
@@ -92,7 +99,7 @@ export class CategoriesService {
       throw new NotFoundException('分类不存在');
     }
 
-    return CategoryWithParentVo.fromEntity(category);
+    return this.toCategoryWithParentVo(category);
   }
 
   async update(id: number, updateCategoryDto: UpdateCategoryDto) {
@@ -150,10 +157,15 @@ export class CategoriesService {
 
     const updated = await this.prisma.category.update({
       where: { id },
-      data: updateCategoryDto,
+      data: {
+        ...updateCategoryDto,
+        image: updateCategoryDto.image === undefined
+          ? undefined
+          : this.minioService.normalizeStoredFileReference(updateCategoryDto.image),
+      },
     });
 
-    return CategoryVo.fromEntity(updated);
+    return this.toCategoryVo(updated);
   }
 
   async remove(id: number) {
@@ -244,5 +256,39 @@ export class CategoriesService {
     roots.forEach(cleanCategory);
 
     return roots;
+  }
+
+  private async toCategoryVo(entity: any) {
+    return CategoryVo.fromEntity({
+      ...entity,
+      image: await this.minioService.resolveStoredFileUrl(entity.image),
+    });
+  }
+
+  private async toCategoryWithParentVo(entity: any) {
+    const parent = entity.parent
+      ? {
+          ...entity.parent,
+          image: await this.minioService.resolveStoredFileUrl(entity.parent.image),
+        }
+      : null;
+
+    return CategoryWithParentVo.fromEntity({
+      ...entity,
+      image: await this.minioService.resolveStoredFileUrl(entity.image),
+      parent,
+    });
+  }
+
+  private async toCategoryTreeVo(entity: any): Promise<CategoryTreeVo> {
+    const children = entity.children
+      ? await Promise.all(entity.children.map((child: any) => this.toCategoryTreeVo(child)))
+      : undefined;
+
+    return CategoryTreeVo.fromEntity({
+      ...entity,
+      image: await this.minioService.resolveStoredFileUrl(entity.image),
+      children,
+    });
   }
 }

@@ -3,6 +3,7 @@ export interface UploadResponseDto {
   message: string;
   data: {
     filename: string;
+    objectKey: string;
     url: string;
     etag: string;
   };

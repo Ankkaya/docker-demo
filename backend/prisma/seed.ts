@@ -251,7 +251,10 @@ async function main() {
   // ==================== 3.1 创建商品管理菜单 ====================
   const productMenu = await prisma.menu.upsert({
     where: { id: 20 },
-    update: {},
+    update: {
+      hidden: true,
+      deletedAt: new Date(),
+    },
     create: {
       id: 20,
       name: '商品管理',
@@ -259,36 +262,51 @@ async function main() {
       icon: 'shopping',        // 购物袋图标 - 代表商品管理
       component: 'Layout',
       order: 3,
+      hidden: true,
+      deletedAt: new Date(),
       type: 'menu',
     },
   });
 
   const productListMenu = await prisma.menu.upsert({
     where: { id: 21 },
-    update: {},
+    update: {
+      name: '商品档案',
+      parentId: 30,
+      order: 4,
+      component: 'products/index',
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 21,
-      name: '商品列表',
+      name: '商品档案',
       path: '/products/list',
       icon: 'goods',           // 带勾选购物袋 - 代表商品清单
-      component: 'product/list/index',
-      parentId: 20,
-      order: 1,
+      component: 'products/index',
+      parentId: 30,
+      order: 4,
       type: 'menu',
     },
   });
 
   const inventoryMenu = await prisma.menu.upsert({
     where: { id: 22 },
-    update: {},
+    update: {
+      parentId: 30,
+      order: 7,
+      component: 'inventories/index',
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 22,
       name: '库存查询',
       path: '/inventories',
       icon: 'inventory',       // 层叠图标 - 代表库存/仓储
-      component: 'inventory/index',
-      parentId: 20,
-      order: 2,
+      component: 'inventories/index',
+      parentId: 30,
+      order: 7,
       type: 'menu',
     },
   });
@@ -361,45 +379,60 @@ async function main() {
 
   const orderMenu = await prisma.menu.upsert({
     where: { id: 34 },
-    update: {},
+    update: {
+      parentId: 40,
+      order: 3,
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 34,
       name: '销售订单',
       path: '/orders',
       icon: 'order',           // 订单图标
       component: 'orders/index',
-      parentId: 30,
-      order: 4,
+      parentId: 40,
+      order: 3,
       type: 'menu',
     },
   });
 
   const shipmentMenu = await prisma.menu.upsert({
     where: { id: 35 },
-    update: {},
+    update: {
+      parentId: 40,
+      order: 4,
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 35,
       name: '发货管理',
       path: '/shipments',
       icon: 'shipment',        // 发货图标
       component: 'shipments/index',
-      parentId: 30,
-      order: 5,
+      parentId: 40,
+      order: 4,
       type: 'menu',
     },
   });
 
   const saleReturnMenu = await prisma.menu.upsert({
     where: { id: 36 },
-    update: {},
+    update: {
+      parentId: 40,
+      order: 5,
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 36,
       name: '销售退货',
       path: '/sale-returns',
       icon: 'return',          // 退货图标
       component: 'sale-returns/index',
-      parentId: 30,
-      order: 6,
+      parentId: 40,
+      order: 5,
       type: 'menu',
     },
   });
@@ -407,7 +440,13 @@ async function main() {
   // ==================== 库存管理菜单（调拨、调整、流水）====================
   const transferMenu = await prisma.menu.upsert({
     where: { id: 37 },
-    update: {},
+    update: {
+      parentId: 30,
+      order: 8,
+      component: 'transfers/index',
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 37,
       name: '库存调拨',
@@ -415,14 +454,20 @@ async function main() {
       icon: 'transfer',        // 调拨图标
       component: 'transfers/index',
       parentId: 30,
-      order: 7,
+      order: 8,
       type: 'menu',
     },
   });
 
   const adjustmentMenu = await prisma.menu.upsert({
     where: { id: 38 },
-    update: {},
+    update: {
+      parentId: 30,
+      order: 9,
+      component: 'adjustments/index',
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 38,
       name: '库存调整',
@@ -430,14 +475,20 @@ async function main() {
       icon: 'adjust',          // 调整图标
       component: 'adjustments/index',
       parentId: 30,
-      order: 8,
+      order: 9,
       type: 'menu',
     },
   });
 
   const inventoryLogMenu = await prisma.menu.upsert({
     where: { id: 39 },
-    update: {},
+    update: {
+      parentId: 30,
+      order: 10,
+      component: 'inventory-logs/index',
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 39,
       name: '库存流水',
@@ -445,7 +496,7 @@ async function main() {
       icon: 'log',             // 流水图标
       component: 'inventory-logs/index',
       parentId: 30,
-      order: 9,
+      order: 10,
       type: 'menu',
     },
   });
@@ -467,7 +518,11 @@ async function main() {
 
   const cartMenu = await prisma.menu.upsert({
     where: { id: 41 },
-    update: {},
+    update: {
+      order: 1,
+      deletedAt: null,
+      hidden: false,
+    },
     create: {
       id: 41,
       name: '购物车管理',
@@ -476,6 +531,25 @@ async function main() {
       component: 'carts/index',
       parentId: 40,
       order: 1,
+      type: 'menu',
+    },
+  });
+
+  const mallProductMenu = await prisma.menu.upsert({
+    where: { id: 42 },
+    update: {
+      order: 2,
+      deletedAt: null,
+      hidden: false,
+    },
+    create: {
+      id: 42,
+      name: '商城商品',
+      path: '/mall-products',
+      icon: 'storefront',
+      component: 'mall-products/index',
+      parentId: 40,
+      order: 2,
       type: 'menu',
     },
   });
@@ -489,11 +563,10 @@ async function main() {
           { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }, // 系统管理
           { id: 10 }, { id: 11 }, { id: 12 }, { id: 13 },       // 基础数据
           { id: 14 }, { id: 15 }, { id: 16 },
-          { id: 20 }, { id: 21 }, { id: 22 },                   // 商品管理
+          { id: 21 }, { id: 22 },                               // 进销存-商品档案/库存查询
           { id: 30 }, { id: 31 }, { id: 32 }, { id: 33 },       // 进销存-采购
-          { id: 34 }, { id: 35 }, { id: 36 },                   // 进销存-销售+退货
-          { id: 37 }, { id: 38 }, { id: 39 },                   // 库存管理（调拨、调整、流水）
-          { id: 40 }, { id: 41 },                               // 商城管理
+          { id: 37 }, { id: 38 }, { id: 39 },                   // 进销存-库存管理（调拨、调整、流水）
+          { id: 40 }, { id: 41 }, { id: 42 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
         ],
       },
     },
@@ -665,7 +738,7 @@ async function main() {
   console.log('-----------------------------------');
   console.log('Basic Data Menus:', ['基础数据', '计量单位', '商品分类', '品牌管理', '仓库管理', '供应商管理', '客户管理']);
   console.log('-----------------------------------');
-  console.log('Product Menus:', ['商品管理', '商品列表', '库存查询']);
+  console.log('Product Menus:', ['进销存', '商品档案', '库存查询']);
   console.log('-----------------------------------');
   console.log('Inventory Menus:', ['库存调拨', '库存调整', '库存流水']);
   console.log('-----------------------------------');

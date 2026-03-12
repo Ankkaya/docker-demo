@@ -305,6 +305,7 @@ model Product {
   
   // 关联
   skus         ProductSku[]
+  mallInfo     ProductMallInfo?
   
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -318,6 +319,7 @@ model ProductSku {
   skuCode     String      @unique // SKU编码
   productId   Int         // SPU ID
   product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  mallInfo    ProductSkuMallInfo?
   
   // 规格组合（如：{"颜色": "红", "尺码": "XL"}）
   specs       Json        
@@ -365,6 +367,30 @@ model ProductSku {
   updatedAt   DateTime    @updatedAt
 
   @@index([deletedAt])
+}
+
+// 商城商品扩展信息
+model ProductMallInfo {
+  productId    Int      @id
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name         String?  // 商城显示名称
+  description  String?  // 商城简述
+  detail       String?  @db.Text // 商城详情
+  mainImage    String?  // 商城主图
+  images       Json?    // 商城图片列表
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// 商城SKU扩展信息
+model ProductSkuMallInfo {
+  skuId        Int        @id
+  sku          ProductSku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+  salePrice    Decimal?   @db.Decimal(12, 2) // 商城销售价
+  marketPrice  Decimal?   @db.Decimal(12, 2) // 商城市场价
+  image        String?    // 商城SKU图片
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 // 库存记录（按仓库+SKU）

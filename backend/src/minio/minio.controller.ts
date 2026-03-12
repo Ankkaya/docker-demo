@@ -1,25 +1,44 @@
 import {
+  BadRequestException,
   Controller,
   Post,
   Get,
   Delete,
   UseInterceptors,
+  UseGuards,
   UploadedFile,
   UploadedFiles,
   Query,
   Body,
   ParseArrayPipe,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { MinioService } from './minio.service';
 import { BufferedFile } from './dto/file.dto';
-import { UploadResponseDto, FileListResponseDto, FileStatResponseDto } from './dto/response.dto';
 
 @ApiTags('文件存储')
-@Controller('files')
+@Controller(['files', 'api/files'])
 @ApiBearerAuth()
 export class MinioController {
+  private static readonly MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+  private static readonly MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+  private static readonly ALLOWED_IMAGE_TYPES = new Set([
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+  ]);
+  private static readonly ALLOWED_VIDEO_TYPES = new Set([
+    'video/mp4',
+    'video/webm',
+    'video/ogg',
+    'video/quicktime',
+  ]);
+
   constructor(private readonly minioService: MinioService) {}
 
   /**
@@ -28,6 +47,7 @@ export class MinioController {
   @Post('upload')
   @ApiOperation({ summary: '上传单个文件' })
   @ApiConsumes('multipart/form-data')
+  @UseGuards(JwtAuthGuard)
   @ApiBody({
     schema: {
       type: 'object',
@@ -48,16 +68,15 @@ export class MinioController {
   async uploadFile(
     @UploadedFile() file: BufferedFile,
     @Query('path') path?: string,
-  ): Promise<UploadResponseDto> {
+  ): Promise<{ filename: string; objectKey: string; url: string; etag: string }> {
+    this.validateUploadFile(file);
+
     const result = await this.minioService.uploadFile(file, path);
     return {
-      code: 200,
-      message: '上传成功',
-      data: {
-        filename: file.originalname,
-        url: result.url,
-        etag: result.etag,
-      },
+      filename: file.originalname,
+      objectKey: result.objectKey,
+      url: result.url,
+      etag: result.etag,
     };
   }
 
@@ -67,6 +86,7 @@ export class MinioController {
   @Post('upload/multiple')
   @ApiOperation({ summary: '上传多个文件' })
   @ApiConsumes('multipart/form-data')
+  @UseGuards(JwtAuthGuard)
   @ApiBody({
     schema: {
       type: 'object',
@@ -90,17 +110,20 @@ export class MinioController {
   async uploadFiles(
     @UploadedFiles() files: BufferedFile[],
     @Query('path') path?: string,
-  ): Promise<{ code: number; message: string; data: Array<{ filename: string; url: string; etag: string }> }> {
+  ): Promise<Array<{ filename: string; objectKey: string; url: string; etag: string }>> {
+    if (!files?.length) {
+      throw new BadRequestException('请至少上传一个文件');
+    }
+
+    files.forEach(file => this.validateUploadFile(file));
+
     const results = await this.minioService.uploadFiles(files, path);
-    return {
-      code: 200,
-      message: '上传成功',
-      data: results.map((result, index) => ({
+    return results.map((result, index) => ({
         filename: files[index].originalname,
+        objectKey: result.objectKey,
         url: result.url,
         etag: result.etag,
-      })),
-    };
+      }));
   }
 
   /**
@@ -108,19 +131,35 @@ export class MinioController {
    */
   @Get('url')
   @ApiOperation({ summary: '获取文件访问 URL' })
+  @UseGuards(JwtAuthGuard)
   async getFileUrl(
     @Query('filename') filename: string,
     @Query('expiry') expiry?: string,
-  ): Promise<{ code: number; message: string; data: { url: string } }> {
+  ): Promise<{ url: string }> {
     const url = await this.minioService.getFileUrl(
       filename,
       expiry ? parseInt(expiry, 10) : undefined,
     );
-    return {
-      code: 200,
-      message: 'success',
-      data: { url },
-    };
+    return { url };
+  }
+
+  /**
+   * 预览文件（通过后端代理访问，避免暴露容器内地址）
+   */
+  @Get('preview')
+  @ApiOperation({ summary: '预览文件' })
+  async previewFile(
+    @Query('filename') filename: string,
+    @Res({ passthrough: true }) res: any,
+  ): Promise<StreamableFile> {
+    const { stream, contentType } = await this.minioService.getFileStream(filename);
+
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+    res.setHeader('Cache-Control', 'public, max-age=300');
+
+    return new StreamableFile(stream);
   }
 
   /**
@@ -128,14 +167,12 @@ export class MinioController {
    */
   @Delete('delete')
   @ApiOperation({ summary: '删除文件' })
+  @UseGuards(JwtAuthGuard)
   async deleteFile(
     @Body('filename') filename: string,
-  ): Promise<{ code: number; message: string }> {
+  ): Promise<{ success: boolean }> {
     await this.minioService.deleteFile(filename);
-    return {
-      code: 200,
-      message: '删除成功',
-    };
+    return { success: true };
   }
 
   /**
@@ -143,14 +180,12 @@ export class MinioController {
    */
   @Delete('delete/batch')
   @ApiOperation({ summary: '批量删除文件' })
+  @UseGuards(JwtAuthGuard)
   async deleteFiles(
     @Body('filenames', new ParseArrayPipe({ items: String })) filenames: string[],
-  ): Promise<{ code: number; message: string }> {
+  ): Promise<{ success: boolean }> {
     await this.minioService.deleteFiles(filenames);
-    return {
-      code: 200,
-      message: '删除成功',
-    };
+    return { success: true };
   }
 
   /**
@@ -158,25 +193,22 @@ export class MinioController {
    */
   @Get('list')
   @ApiOperation({ summary: '列出文件' })
+  @UseGuards(JwtAuthGuard)
   async listFiles(
     @Query('prefix') prefix?: string,
     @Query('recursive') recursive?: string,
-  ): Promise<FileListResponseDto> {
+  ): Promise<Array<{ name?: string; size: number; lastModified?: Date; etag?: string; prefix?: string }>> {
     const files = await this.minioService.listFiles(
       prefix,
       recursive === 'true',
     );
-    return {
-      code: 200,
-      message: 'success',
-      data: files.map(file => ({
+    return files.map(file => ({
         name: file.name,
         size: file.size,
         lastModified: file.lastModified,
         etag: file.etag,
         prefix: file.prefix,
-      })),
-    };
+      }));
   }
 
   /**
@@ -184,19 +216,16 @@ export class MinioController {
    */
   @Get('stat')
   @ApiOperation({ summary: '获取文件信息' })
+  @UseGuards(JwtAuthGuard)
   async getFileStat(
     @Query('filename') filename: string,
-  ): Promise<FileStatResponseDto> {
+  ): Promise<{ size: number; etag: string; lastModified: Date; contentType: string | undefined }> {
     const stat = await this.minioService.getFileStat(filename);
     return {
-      code: 200,
-      message: 'success',
-      data: {
-        size: stat.size,
-        etag: stat.etag,
-        lastModified: stat.lastModified,
-        contentType: stat.metaData?.['content-type'],
-      },
+      size: stat.size,
+      etag: stat.etag,
+      lastModified: stat.lastModified,
+      contentType: stat.metaData?.['content-type'],
     };
   }
 
@@ -205,19 +234,16 @@ export class MinioController {
    */
   @Get('presigned-upload')
   @ApiOperation({ summary: '获取预签名上传 URL（用于前端直传）' })
+  @UseGuards(JwtAuthGuard)
   async getPresignedUploadUrl(
     @Query('filename') filename: string,
     @Query('expiry') expiry?: string,
-  ): Promise<{ code: number; message: string; data: { url: string } }> {
+  ): Promise<{ url: string }> {
     const url = await this.minioService.getPresignedUploadUrl(
       filename,
       expiry ? parseInt(expiry, 10) : undefined,
     );
-    return {
-      code: 200,
-      message: 'success',
-      data: { url },
-    };
+    return { url };
   }
 
   /**
@@ -225,14 +251,33 @@ export class MinioController {
    */
   @Get('exists')
   @ApiOperation({ summary: '检查文件是否存在' })
+  @UseGuards(JwtAuthGuard)
   async fileExists(
     @Query('filename') filename: string,
-  ): Promise<{ code: number; message: string; data: { exists: boolean } }> {
+  ): Promise<{ exists: boolean }> {
     const exists = await this.minioService.fileExists(filename);
-    return {
-      code: 200,
-      message: 'success',
-      data: { exists },
-    };
+    return { exists };
+  }
+
+  private validateUploadFile(file?: BufferedFile): void {
+    if (!file) {
+      throw new BadRequestException('请选择要上传的文件');
+    }
+
+    if (MinioController.ALLOWED_IMAGE_TYPES.has(file.mimetype)) {
+      if (file.size > MinioController.MAX_IMAGE_SIZE) {
+        throw new BadRequestException('图片大小不能超过 5MB');
+      }
+      return;
+    }
+
+    if (MinioController.ALLOWED_VIDEO_TYPES.has(file.mimetype)) {
+      if (file.size > MinioController.MAX_VIDEO_SIZE) {
+        throw new BadRequestException('视频大小不能超过 50MB');
+      }
+      return;
+    }
+
+    throw new BadRequestException('仅支持 JPG、PNG、WEBP、GIF、MP4、WEBM、OGG、MOV 格式文件');
   }
 }

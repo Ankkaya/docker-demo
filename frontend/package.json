@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tinymce/tinymce-vue": "^6.2.1",
     "@vicons/ionicons5": "^0.12.0",
     "@vueuse/core": "^14.2.0",
     "axios": "^1.6.8",
@@ -15,6 +16,7 @@
     "dtpweb": "^2.7.251217",
     "naive-ui": "^2.38.0",
     "pinia": "^2.1.7",
+    "tinymce": "^7.9.1",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },

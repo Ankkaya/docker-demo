@@ -75,11 +75,6 @@
               <n-switch v-model:value="formData.isEnabled" />
             </n-form-item>
           </n-grid-item>
-          <n-grid-item>
-            <n-form-item label="商城上架" path="mallEnabled">
-              <n-switch v-model:value="formData.mallEnabled" />
-            </n-form-item>
-          </n-grid-item>
         </n-grid>
         <n-grid :cols="3" :x-gap="24">
           <n-grid-item>
@@ -89,7 +84,7 @@
                 :max="1"
                 v-model:file-list="mainImageList"
                 :custom-request="handleMainImageUpload"
-                @change="handleMainImageChange"
+                @remove="handleMainImageRemove"
                 accept="image/*"
               >
                 <n-button>上传主图</n-button>
@@ -105,6 +100,7 @@
                 v-model:file-list="imagesList"
                 :custom-request="handleImagesUpload"
                 @change="handleImagesChange"
+                @remove="handleImagesRemove"
                 accept="image/*"
               >
                 <n-button>上传图片</n-button>
@@ -115,13 +111,7 @@
         <n-grid :cols="1">
           <n-grid-item>
             <n-form-item label="商品详情">
-              <n-input
-                v-model:value="formData.detail"
-                type="textarea"
-                placeholder="请输入商品详情（支持HTML）"
-                :rows="10"
-                style="max-width: 100%"
-              />
+              <TinymceEditor v-model="formData.detail" />
             </n-form-item>
           </n-grid-item>
         </n-grid>
@@ -187,6 +177,8 @@ import { getCategoriesFlat } from '@/api/category';
 import { getBrands } from '@/api/brand';
 import { getUnits } from '@/api/unit';
 import { uploadFile } from '@/api/file';
+import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url';
+import TinymceEditor from '@/components/common/TinymceEditor.vue';
 import type { ProductSku, SkuSpec, SpecTemplateItem } from '@/types/product';
 import type { Category, Brand, Unit } from '@/types/basic-data';
 
@@ -214,7 +206,6 @@ const formData = reactive({
   mainImage: '',
   images: [] as string[],
   isEnabled: true,
-  mallEnabled: false,
 });
 
 // 选项数据
@@ -235,20 +226,63 @@ const skuList = reactive<EditableSku[]>([]);
 const mainImageList = ref<any[]>([]);
 const imagesList = ref<any[]>([]);
 
+const getFilenameFromKey = (value?: string | null) => {
+  if (!value) return 'image.png';
+  return value.split('/').pop() || 'image.png';
+};
+
+const inferImageMimeType = (value?: string | null) => {
+  const filename = getFilenameFromKey(value).toLowerCase();
+  if (filename.endsWith('.png')) return 'image/png';
+  if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg';
+  if (filename.endsWith('.webp')) return 'image/webp';
+  if (filename.endsWith('.gif')) return 'image/gif';
+  return 'image/png';
+};
+
+const normalizeNumberInputValue = (value: unknown, fallback: number | null = 0) => {
+  if (value === null || value === undefined || value === '') {
+    return fallback;
+  }
+
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : fallback;
+};
+
+const normalizeEditableSku = (sku: ProductSku): EditableSku => ({
+  ...sku,
+  costPrice: normalizeNumberInputValue(sku.costPrice, 0) ?? 0,
+  salePrice: normalizeNumberInputValue(sku.salePrice, 0) ?? 0,
+  marketPrice: normalizeNumberInputValue(sku.marketPrice, null) ?? undefined,
+  weight: normalizeNumberInputValue(sku.weight, null) ?? undefined,
+  volume: normalizeNumberInputValue(sku.volume, null) ?? undefined,
+  barcode: sku.barcode ?? undefined,
+  image: sku.image ?? undefined,
+  tempId: `sku_${sku.id}`,
+});
+
+const syncImagesFromFileList = () => {
+  formData.images = imagesList.value
+    .map((file: any) => file.id || file.objectKey)
+    .filter((image: string | undefined): image is string => Boolean(image));
+};
+
 // 自定义上传请求 - 商品主图
 const handleMainImageUpload = async ({ file, onFinish, onError }: any) => {
   try {
     const result = await uploadFile(file.file, 'products/main');
-    console.log('[图片上传] 主图上传成功，URL:', result.data.url);
+    const previewUrl = resolveFileUrl(result.url);
     
-    // 关键修复：确保文件对象上有 url 属性，供 onChange 使用
-    file.url = result.data.url;
+    file.id = result.objectKey;
+    file.name = getFilenameFromKey(result.objectKey);
+    file.type = inferImageMimeType(result.objectKey);
+    file.url = previewUrl;
+    file.thumbnailUrl = previewUrl;
+    formData.mainImage = result.objectKey;
     
-    // 调用 onFinish 并传入文件信息，更新组件内部的 fileList
-    onFinish({ url: result.data.url });
+    onFinish({ id: result.objectKey, url: previewUrl });
     message.success('上传成功');
   } catch (error) {
-    console.error('[图片上传] 主图上传失败:', error);
     message.error('上传失败');
     onError();
   }
@@ -258,16 +292,19 @@ const handleMainImageUpload = async ({ file, onFinish, onError }: any) => {
 const handleImagesUpload = async ({ file, onFinish, onError }: any) => {
   try {
     const result = await uploadFile(file.file, 'products/gallery');
-    console.log('[图片上传] 相册上传成功，URL:', result.data.url);
+    const previewUrl = resolveFileUrl(result.url);
     
-    // 关键修复：确保文件对象上有 url 属性，供 onChange 使用
-    file.url = result.data.url;
+    file.id = result.objectKey;
+    file.name = getFilenameFromKey(result.objectKey);
+    file.type = inferImageMimeType(result.objectKey);
+    file.url = previewUrl;
+    file.thumbnailUrl = previewUrl;
+    formData.images = Array.from(new Set([...formData.images, result.objectKey]));
+    syncImagesFromFileList();
 
-    // 调用 onFinish 并传入文件信息，更新组件内部的 fileList
-    onFinish({ url: result.data.url });
+    onFinish({ id: result.objectKey, url: previewUrl });
     message.success('上传成功');
   } catch (error) {
-    console.error('[图片上传] 相册上传失败:', error);
     message.error('上传失败');
     onError();
   }
@@ -371,22 +408,22 @@ const removeSku = (tempId: string) => {
 
 
 // 图片上传状态变化处理 - 统一通过 fileList 同步数据
-const handleMainImageChange = (options: any) => {
-  console.log('[图片上传] 主图 onChange，fileList:', options.fileList);
-  // 查找已完成且有 URL 的图片
-  const file = options.fileList.find((f: any) => f.status === 'finished' && f.url);
-  formData.mainImage = file ? file.url : '';
-  console.log('[图片上传] 主图更新:', formData.mainImage);
+const handleMainImageRemove = () => {
+  formData.mainImage = '';
 };
 
 const handleImagesChange = (options: any) => {
-  console.log('[图片上传] 相册 onChange，fileList:', options.fileList);
-  // 同步更新表单数据中的图片 URL 列表
-  // 过滤出已完成且有 URL 的图片
-  formData.images = options.fileList
-    .filter((f: any) => f.status === 'finished' && f.url)
-    .map((f: any) => f.url);
-  console.log('[图片上传] 相册更新:', formData.images);
+  imagesList.value = options.fileList;
+  syncImagesFromFileList();
+};
+
+const handleImagesRemove = (options: { file: { id?: string } }) => {
+  const removedId = options.file.id;
+  if (removedId) {
+    formData.images = formData.images.filter(image => image !== removedId);
+  } else {
+    syncImagesFromFileList();
+  }
 };
 
 // 步骤控制
@@ -420,10 +457,6 @@ const handleSubmit = async () => {
     return;
   }
 
-  // 调试：打印图片数据
-  console.log('[表单提交] 主图:', formData.mainImage);
-  console.log('[表单提交] 相册:', formData.images);
-
   submitLoading.value = true;
   try {
     const submitData: any = {
@@ -432,7 +465,6 @@ const handleSubmit = async () => {
       unitId: formData.unitId!,
       brandId: formData.brandId || undefined,
       isEnabled: formData.isEnabled,
-      mallEnabled: formData.mallEnabled,
       specTemplate: specTemplates.length > 0 ? [...specTemplates] : undefined,
       skus: skuList.map(s => ({
         skuCode: s.skuCode,
@@ -507,6 +539,8 @@ const loadProduct = async () => {
   if (!isEdit.value) return;
   try {
     const product = await getProduct(productId.value);
+    const mainImageKey = extractFileObjectKey(product.mainImage);
+    const imageKeys = (product.images || []).map(image => extractFileObjectKey(image));
     formData.name = product.name;
     formData.spuCode = product.spuCode;
     formData.categoryId = product.categoryId;
@@ -514,29 +548,37 @@ const loadProduct = async () => {
     formData.unitId = product.unitId;
     formData.description = product.description || '';
     formData.detail = product.detail || '';
-    formData.mainImage = product.mainImage || '';
-    formData.images = product.images || [];
+    formData.mainImage = mainImageKey || '';
+    formData.images = imageKeys;
     formData.isEnabled = product.isEnabled;
-    formData.mallEnabled = product.mallEnabled;
-
     // 加载主图到文件列表（用于回显）
     if (product.mainImage) {
+      const mainImageUrl = resolveFileUrl(product.mainImage);
       mainImageList.value = [{
-        id: 'main-image',
-        name: '主图',
+        id: mainImageKey,
+        name: getFilenameFromKey(mainImageKey),
         status: 'finished',
-        url: product.mainImage,
+        url: mainImageUrl,
+        thumbnailUrl: mainImageUrl,
+        type: inferImageMimeType(mainImageKey),
       }];
+    } else {
+      mainImageList.value = [];
     }
 
     // 加载商品相册到文件列表（用于回显）
     if (product.images && product.images.length > 0) {
       imagesList.value = product.images.map((url, index) => ({
-        id: `gallery-image-${index}`,
-        name: `图片${index + 1}`,
+        id: imageKeys[index],
+        name: getFilenameFromKey(imageKeys[index]),
         status: 'finished',
-        url: url,
+        url: resolveFileUrl(url),
+        thumbnailUrl: resolveFileUrl(url),
+        type: inferImageMimeType(imageKeys[index]),
       }));
+      syncImagesFromFileList();
+    } else {
+      imagesList.value = [];
     }
 
     // 加载规格模板
@@ -547,11 +589,8 @@ const loadProduct = async () => {
 
     // 加载SKU
     skuList.length = 0;
-    product.skus.forEach(s => {
-      skuList.push({
-        ...s,
-        tempId: `sku_${s.id}`,
-      } as any);
+    (product.skus || []).forEach(s => {
+      skuList.push(normalizeEditableSku(s));
     });
   } catch (error) {
     message.error('加载商品详情失败');
