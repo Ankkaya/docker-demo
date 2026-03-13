@@ -3,16 +3,20 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 import { MenuVo } from '@/menus/vo';
+import { IconAssetsService } from '@/icon-assets/icon-assets.service';
 
 @Injectable()
 export class MenusService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private iconAssetsService: IconAssetsService,
+  ) {}
 
   async create(createMenuDto: CreateMenuDto) {
     const menu = await this.prisma.menu.create({
       data: createMenuDto,
     });
-    return MenuVo.fromEntity(menu);
+    return this.toMenuVo(menu);
   }
 
   async findAll() {
@@ -32,18 +36,19 @@ export class MenusService {
 
     // 构建树形结构
     const treeMenus = this.buildTree(menus);
-    return MenuVo.fromEntities(treeMenus);
+    return Promise.all(treeMenus.map(menu => this.toMenuVo(menu)));
   }
 
   // 获取所有菜单（扁平化）
   async findAllFlat() {
-    return this.prisma.menu.findMany({
+    const menus = await this.prisma.menu.findMany({
       where: { deletedAt: null },
       orderBy: { order: 'asc' },
       include: {
         parent: true,
       },
     });
+    return Promise.all(menus.map(menu => this.toMenuVo(menu)));
   }
 
   async findOne(id: number) {
@@ -64,7 +69,7 @@ export class MenusService {
       throw new NotFoundException('菜单不存在');
     }
 
-    return MenuVo.fromEntity(menu);
+    return this.toMenuVo(menu);
   }
 
   async update(id: number, updateMenuDto: UpdateMenuDto) {
@@ -91,7 +96,7 @@ export class MenusService {
         },
       },
     });
-    return MenuVo.fromEntity(updatedMenu);
+    return this.toMenuVo(updatedMenu);
   }
 
   async remove(id: number) {
@@ -179,7 +184,7 @@ export class MenusService {
 
     // 构建树形结构
     const treeMenus = this.buildTree(menus);
-    return MenuVo.fromEntities(treeMenus);
+    return Promise.all(treeMenus.map(menu => this.toMenuVo(menu)));
   }
 
   // 构建树形结构
@@ -220,5 +225,17 @@ export class MenusService {
     roots.forEach(cleanMenu);
 
     return roots;
+  }
+
+  private async toMenuVo(entity: any): Promise<MenuVo> {
+    const children = entity.children?.length
+      ? await Promise.all(entity.children.map((child: any) => this.toMenuVo(child)))
+      : undefined;
+
+    return MenuVo.fromEntity({
+      ...entity,
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
+      children,
+    });
   }
 }

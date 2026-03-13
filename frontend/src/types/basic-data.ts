@@ -27,6 +27,7 @@ export interface Category {
   level: number;
   sort: number;
   icon?: string;
+  iconUrl?: string;
   image?: string;
   isEnabled: boolean;
   parent?: Category;
@@ -42,6 +43,7 @@ export interface CreateCategoryDto {
   level?: number;
   sort?: number;
   icon?: string;
+  iconUrl?: string;
   image?: string;
   isEnabled?: boolean;
 }
@@ -69,6 +71,32 @@ export interface CreateBrandDto {
 }
 
 export interface UpdateBrandDto extends Partial<CreateBrandDto> {}
+
+// 轮播图
+export interface Banner {
+  id: number;
+  name: string;
+  image: string;
+  jumpEnabled: boolean;
+  jumpPath?: string | null;
+  sort: number;
+  remark?: string | null;
+  isEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBannerDto {
+  name: string;
+  image: string;
+  jumpEnabled?: boolean;
+  jumpPath?: string;
+  sort?: number;
+  remark?: string;
+  isEnabled?: boolean;
+}
+
+export interface UpdateBannerDto extends Partial<CreateBannerDto> {}
 
 // 仓库
 export interface Warehouse {

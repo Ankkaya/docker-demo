@@ -22,6 +22,9 @@ export class CategoryVo {
   @ApiProperty({ description: '分类图标', nullable: true })
   icon: string | null;
 
+  @ApiProperty({ description: '分类图标 URL', nullable: true })
+  iconUrl?: string | null;
+
   @ApiProperty({ description: '分类图片', nullable: true })
   image: string | null;
 
@@ -43,6 +46,7 @@ export class CategoryVo {
       level: entity.level,
       sort: entity.sort,
       icon: entity.icon,
+      iconUrl: entity.iconUrl ?? null,
       image: entity.image,
       isEnabled: entity.isEnabled,
       createdAt: entity.createdAt,

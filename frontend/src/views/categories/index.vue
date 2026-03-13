@@ -48,15 +48,23 @@
         </n-form-item>
         <n-form-item label="分类图标" path="icon">
           <n-space vertical style="width: 100%">
-            <IconPicker v-model:model-value="form.icon" />
+            <n-input
+              v-model:value="form.icon"
+              placeholder="请输入 Iconify ID，例如 material-symbols:category-outline"
+            />
+            <div class="text-xs text-gray-500">
+              推荐统一保存 Iconify ID。旧 Ionicons 名称和旧业务 key 仍兼容显示，但不建议继续新增。
+            </div>
             <div v-if="form.icon" class="flex items-center gap-2 text-sm text-gray-500">
-              <n-icon size="18" :component="getIconComponent(form.icon)" />
+              <AppIcon v-if="iconPreviewUrl" :icon-url="iconPreviewUrl" :size="18" :alt="form.icon" />
+              <n-icon v-else-if="getIconComponent(form.icon)" size="18" :component="getIconComponent(form.icon)" />
               <span>{{ form.icon }}</span>
             </div>
           </n-space>
         </n-form-item>
         <n-form-item label="分类图片" path="image">
           <n-upload
+            :key="imageUploadKey"
             list-type="image-card"
             :max="1"
             :custom-request="handleImageUpload"
@@ -90,11 +98,11 @@
 import { ref, reactive, onMounted, h, computed } from 'vue'
 import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NIcon, NSpace, NSwitch } from 'naive-ui'
-import { getCategories, createCategory, updateCategory, deleteCategory } from '@/api/category'
+import { NButton, NIcon, NInput, NSpace, NSwitch } from 'naive-ui'
+import { getCategories, getCategoriesFlat, getCategory, createCategory, updateCategory, deleteCategory } from '@/api/category'
 import { uploadFile } from '@/api/file'
-import { resolveFileUrl } from '@/utils/file-url'
-import IconPicker from '@/components/common/IconPicker.vue'
+import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url'
+import AppIcon from '@/components/common/AppIcon.vue'
 import type { Category, CreateCategoryDto } from '@/types/basic-data'
 import * as Ionicons from '@vicons/ionicons5'
 
@@ -105,7 +113,6 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const categories = ref<Category[]>([])
-const flatCategories = ref<Category[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
 
@@ -129,6 +136,49 @@ const getIconComponent = (iconName?: string) => {
   return iconMap[iconName]
 }
 
+const getIconPreviewUrl = (icon?: string) => {
+  if (!icon) return ''
+  const trimmed = icon.trim()
+  if (!/^[a-z0-9-]+:[a-z0-9-]+$/i.test(trimmed)) {
+    return ''
+  }
+  return `https://api.iconify.design/${trimmed}.svg`
+}
+
+const getFilenameFromKey = (value?: string | null) => {
+  if (!value) return 'image.png'
+  return value.split('/').pop() || 'image.png'
+}
+
+const inferImageMimeType = (value?: string | null) => {
+  const filename = getFilenameFromKey(value).toLowerCase()
+  if (filename.endsWith('.png')) return 'image/png'
+  if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg'
+  if (filename.endsWith('.webp')) return 'image/webp'
+  if (filename.endsWith('.gif')) return 'image/gif'
+  if (filename.endsWith('.avif')) return 'image/avif'
+  return 'image/png'
+}
+
+const buildImageUploadFile = (image?: string | null) => {
+  if (!image) {
+    return []
+  }
+
+  const objectKey = extractFileObjectKey(image) || image
+  const previewUrl = resolveFileUrl(image)
+
+  return [{
+    id: objectKey,
+    name: getFilenameFromKey(objectKey),
+    status: 'finished',
+    url: previewUrl,
+    thumbnailUrl: previewUrl,
+    type: inferImageMimeType(objectKey),
+    objectKey,
+  }]
+}
+
 // 自定义上传请求 - 分类图片
 const handleImageUpload = async ({ file, onFinish, onError }: any) => {
   try {
@@ -137,8 +187,11 @@ const handleImageUpload = async ({ file, onFinish, onError }: any) => {
     console.log('[图片上传] 上传成功，URL:', previewUrl)
     
     file.id = result.objectKey
+    file.name = getFilenameFromKey(result.objectKey)
+    file.type = inferImageMimeType(result.objectKey)
     file.url = previewUrl
     file.thumbnailUrl = previewUrl
+    file.objectKey = result.objectKey
     form.image = result.objectKey
     
     onFinish({ id: result.objectKey, url: previewUrl })
@@ -176,6 +229,12 @@ const categoryOptions = computed<TreeSelectOption[]>(() => {
   return convert(categories.value)
 })
 
+const imageUploadKey = computed(() => {
+  return `${isEdit.value ? 'edit' : 'create'}-${currentId.value ?? 'new'}-${form.image || 'empty'}`
+})
+
+const iconPreviewUrl = computed(() => getIconPreviewUrl(form.icon))
+
 const createColumns = (): DataTableColumns<Category> => {
   return [
     { title: '分类名称', key: 'name' },
@@ -200,10 +259,13 @@ const createColumns = (): DataTableColumns<Category> => {
       width: 110,
       render: (row) => {
         if (!row.icon) return '-'
-        const icon = getIconComponent(row.icon)
-        if (!icon) return row.icon
+        const legacyIcon = getIconComponent(row.icon)
         return h('div', { class: 'flex items-center gap-1' }, [
-          h(NIcon, { size: 16, component: icon }),
+          row.iconUrl
+            ? h(AppIcon, { iconUrl: row.iconUrl, size: 16, alt: row.icon })
+            : legacyIcon
+              ? h(NIcon, { size: 16, component: legacyIcon })
+              : null,
           h('span', row.icon),
         ])
       }
@@ -258,13 +320,7 @@ const fetchCategories = async () => {
   loading.value = true
   try {
     categories.value = await getCategories()
-    // 同时获取扁平化列表用于选择父级
-    const flatRes = await fetch('/api/categories?format=flat', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    }).then(r => r.json())
-    flatCategories.value = flatRes.data || flatRes
+    await getCategoriesFlat()
   } catch (error) {
     message.error('获取分类列表失败')
   } finally {
@@ -274,6 +330,7 @@ const fetchCategories = async () => {
 
 const handleCreate = () => {
   isEdit.value = false
+  currentId.value = undefined
   form.name = ''
   form.code = ''
   form.parentId = undefined
@@ -287,6 +344,7 @@ const handleCreate = () => {
 
 const handleAddChild = (category: Category) => {
   isEdit.value = false
+  currentId.value = undefined
   form.name = ''
   form.code = ''
   form.parentId = category.id
@@ -298,28 +356,27 @@ const handleAddChild = (category: Category) => {
   dialogVisible.value = true
 }
 
-const handleEdit = (category: Category) => {
-  isEdit.value = true
-  currentId.value = category.id
-  form.name = category.name
-  form.code = category.code
-  form.parentId = category.parentId
-  form.icon = category.icon || ''
-  form.image = category.image || ''
-  form.sort = category.sort
-  form.isEnabled = category.isEnabled
-  // 加载图片到文件列表（用于回显）
-  if (category.image) {
-    imageFileList.value = [{
-      id: category.image,
-      name: '分类图片',
-      status: 'finished',
-      url: resolveFileUrl(category.image),
-    }]
-  } else {
-    imageFileList.value = []
+const handleEdit = async (category: Category) => {
+  try {
+    submitLoading.value = true
+    const detail = await getCategory(category.id)
+
+    isEdit.value = true
+    currentId.value = detail.id
+    form.name = detail.name
+    form.code = detail.code
+    form.parentId = detail.parentId
+    form.icon = detail.icon || ''
+    form.image = detail.image || ''
+    form.sort = detail.sort
+    form.isEnabled = detail.isEnabled
+    imageFileList.value = buildImageUploadFile(detail.image)
+    dialogVisible.value = true
+  } catch (error) {
+    message.error('获取分类详情失败')
+  } finally {
+    submitLoading.value = false
   }
-  dialogVisible.value = true
 }
 
 const handleDelete = (category: Category) => {
@@ -350,7 +407,7 @@ const handleSubmit = async () => {
     if (!errors) {
       submitLoading.value = true
       try {
-        const data = { ...form }
+        const data = { ...form, icon: form.icon?.trim() || '' }
         if (!data.parentId) {
           delete data.parentId
         }

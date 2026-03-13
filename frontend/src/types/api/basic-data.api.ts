@@ -3,6 +3,7 @@ import type {
   Unit,
   Category,
   Brand,
+  Banner,
   Warehouse,
   Supplier,
   Customer,
@@ -12,6 +13,8 @@ import type {
   UpdateCategoryDto,
   CreateBrandDto,
   UpdateBrandDto,
+  CreateBannerDto,
+  UpdateBannerDto,
   CreateWarehouseDto,
   UpdateWarehouseDto,
   CreateSupplierDto,
@@ -52,6 +55,17 @@ export namespace BrandApi {
   export type Delete = void;
   export type CreateParams = CreateBrandDto;
   export type UpdateParams = UpdateBrandDto;
+}
+
+// ==================== 轮播图 API ====================
+export namespace BannerApi {
+  export type List = Banner[];
+  export type Detail = Banner;
+  export type Create = Banner;
+  export type Update = Banner;
+  export type Delete = void;
+  export type CreateParams = CreateBannerDto;
+  export type UpdateParams = UpdateBannerDto;
 }
 
 // ==================== 仓库 API ====================

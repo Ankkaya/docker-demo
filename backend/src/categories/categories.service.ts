@@ -4,12 +4,14 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryVo, CategoryTreeVo, CategoryWithParentVo } from '@/categories/vo';
 import { MinioService } from '@/minio/minio.service';
+import { IconAssetsService } from '@/icon-assets/icon-assets.service';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     private prisma: PrismaService,
     private minioService: MinioService,
+    private iconAssetsService: IconAssetsService,
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
@@ -261,6 +263,7 @@ export class CategoriesService {
   private async toCategoryVo(entity: any) {
     return CategoryVo.fromEntity({
       ...entity,
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
       image: await this.minioService.resolveStoredFileUrl(entity.image),
     });
   }
@@ -275,6 +278,7 @@ export class CategoriesService {
 
     return CategoryWithParentVo.fromEntity({
       ...entity,
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
       image: await this.minioService.resolveStoredFileUrl(entity.image),
       parent,
     });
@@ -287,6 +291,7 @@ export class CategoriesService {
 
     return CategoryTreeVo.fromEntity({
       ...entity,
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
       image: await this.minioService.resolveStoredFileUrl(entity.image),
       children,
     });

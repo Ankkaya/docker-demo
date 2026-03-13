@@ -554,6 +554,25 @@ async function main() {
     },
   });
 
+  await prisma.menu.upsert({
+    where: { id: 43 },
+    update: {
+      order: 6,
+      deletedAt: null,
+      hidden: false,
+    },
+    create: {
+      id: 43,
+      name: '轮播图管理',
+      path: '/banners',
+      icon: 'slideshow',
+      component: 'banners/index',
+      parentId: 40,
+      order: 6,
+      type: 'menu',
+    },
+  });
+
   // ==================== 5. 分配菜单给角色 ====================
   await prisma.role.update({
     where: { id: adminRole.id },
@@ -566,7 +585,7 @@ async function main() {
           { id: 21 }, { id: 22 },                               // 进销存-商品档案/库存查询
           { id: 30 }, { id: 31 }, { id: 32 }, { id: 33 },       // 进销存-采购
           { id: 37 }, { id: 38 }, { id: 39 },                   // 进销存-库存管理（调拨、调整、流水）
-          { id: 40 }, { id: 41 }, { id: 42 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
+          { id: 40 }, { id: 41 }, { id: 42 }, { id: 43 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
         ],
       },
     },

@@ -3,12 +3,14 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { QueryMallProductDto } from './dto/query-mall-product.dto';
 import { SkuStatus, Prisma } from '@prisma/client';
 import { MinioService } from '@/minio/minio.service';
+import { IconAssetsService } from '@/icon-assets/icon-assets.service';
 
 @Injectable()
 export class MallService {
   constructor(
     private prisma: PrismaService,
     private minioService: MinioService,
+    private iconAssetsService: IconAssetsService,
   ) {}
 
   // 获取商城商品列表（仅展示已上架的商品）
@@ -269,6 +271,7 @@ export class MallService {
 
     return Promise.all(categories.map(async (category) => ({
       ...category,
+      iconUrl: await this.iconAssetsService.resolveIconUrl(category.icon),
       image: await this.minioService.resolveStoredFileUrl(category.image),
     })));
   }
@@ -289,6 +292,22 @@ export class MallService {
     return Promise.all(brands.map(async (brand) => ({
       ...brand,
       logo: await this.minioService.resolveStoredFileUrl(brand.logo),
+    })));
+  }
+
+  // 获取启用的轮播图列表
+  async findBanners() {
+    const banners = await this.prisma.banner.findMany({
+      where: {
+        isEnabled: true,
+        deletedAt: null,
+      },
+      orderBy: [{ sort: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    return Promise.all(banners.map(async (banner) => ({
+      ...banner,
+      image: await this.minioService.resolveStoredFileUrl(banner.image),
     })));
   }
 }

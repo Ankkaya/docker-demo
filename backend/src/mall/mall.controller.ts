@@ -37,4 +37,10 @@ export class MallController {
   findBrands() {
     return this.mallService.findBrands();
   }
+
+  @Get('banners')
+  @ApiOperation({ summary: '获取启用的轮播图列表' })
+  findBanners() {
+    return this.mallService.findBanners();
+  }
 }

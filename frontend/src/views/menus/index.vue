@@ -48,7 +48,7 @@
           <n-input v-model:value="form.component" placeholder="如: layout/System/index" />
         </n-form-item>
         <n-form-item label="图标" path="icon" v-if="form.type !== 'button'">
-          <n-input v-model:value="form.icon" placeholder="图标名称" />
+          <n-input v-model:value="form.icon" placeholder="请输入 Iconify ID，例如 material-symbols:home-rounded" />
         </n-form-item>
         <n-form-item label="重定向" path="redirect" v-if="form.type === 'menu'">
           <n-input v-model:value="form.redirect" placeholder="重定向路径" />
@@ -91,6 +91,7 @@ import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'na
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace, NTag } from 'naive-ui'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
+import AppIcon from '@/components/common/AppIcon.vue'
 import type { Menu, CreateMenuDto } from '@/types'
 
 const message = useMessage()
@@ -174,8 +175,14 @@ const createColumns = (): DataTableColumns<Menu> => {
     {
       title: '图标',
       key: 'icon',
-      width: 100,
-      render: (row) => row.icon || '-'
+      width: 180,
+      render: (row) => {
+        if (!row.icon) return '-'
+        return h('div', { class: 'flex items-center gap-2' }, [
+          row.iconUrl ? h(AppIcon, { iconUrl: row.iconUrl, size: 16, alt: row.icon }) : null,
+          h('span', row.icon),
+        ])
+      }
     },
     { title: '排序', key: 'order', width: 80, align: 'center' },
     {

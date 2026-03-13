@@ -91,6 +91,30 @@ export class MinioService implements OnModuleInit {
     return Promise.all(uploadPromises);
   }
 
+  async uploadBuffer(
+    buffer: Buffer,
+    filename: string,
+    path: string = '',
+    contentType: string = 'application/octet-stream',
+  ): Promise<{ objectKey: string; url: string; etag: string }> {
+    const objectKey = path ? `${path}/${filename}` : filename;
+    const objectInfo = await this.minioClient.putObject(
+      this.bucketName,
+      objectKey,
+      buffer,
+      buffer.length,
+      {
+        'Content-Type': contentType,
+      },
+    );
+
+    return {
+      objectKey,
+      url: this.getProxyUrl(objectKey),
+      etag: objectInfo.etag,
+    };
+  }
+
   /**
    * 获取文件访问 URL
    */
@@ -213,6 +237,10 @@ export class MinioService implements OnModuleInit {
     }
 
     return this.getProxyUrl(normalized);
+  }
+
+  getStoredFileProxyUrl(filename: string): string {
+    return this.getProxyUrl(filename);
   }
 
   async resolveStoredFileUrls(values?: Array<string | null> | null): Promise<string[]> {

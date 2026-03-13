@@ -91,6 +91,7 @@ import {
 } from '@vicons/ionicons5'
 import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
+import AppIcon from '@/components/common/AppIcon.vue'
 import ThemeSchemaSwitch from '@/components/common/ThemeSchemaSwitch.vue'
 import TabBar from '@/components/TabBar/index.vue'
 import { useTabStore } from '@/store/modules/tab'
@@ -154,9 +155,12 @@ const iconMap: Record<string, any> = {
 }
 
 // 图标渲染函数
-const renderIcon = (iconName?: string) => {
-  if (!iconName) return undefined
-  const icon = iconMap[iconName] || MenuOutline
+const renderIcon = (menu?: Pick<Menu, 'icon' | 'iconUrl'>) => {
+  if (menu?.iconUrl) {
+    return () => h(AppIcon, { iconUrl: menu.iconUrl, size: 18, alt: menu.icon })
+  }
+  if (!menu?.icon) return undefined
+  const icon = iconMap[menu.icon] || MenuOutline
   return () => h(NIcon, null, { default: () => h(icon) })
 }
 
@@ -165,7 +169,7 @@ const mapMenuToOption = (menu: Menu): MenuOption => {
   return {
     label: menu.name,
     key: menu.path || String(menu.id),
-    icon: renderIcon(menu.icon),
+    icon: renderIcon(menu),
     children: menu.children?.map(mapMenuToOption)
   }
 }
@@ -175,7 +179,7 @@ const menuOptions = computed<MenuOption[]>(() => {
   const dashboardOption: MenuOption = {
     label: '首页',
     key: '/dashboard',
-    icon: renderIcon('home')
+    icon: renderIcon({ icon: 'home' })
   }
 
   console.log('Raw menus from store:', authStore.menus)

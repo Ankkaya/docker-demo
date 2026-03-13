@@ -45,6 +45,7 @@ export type {
   UnitApi,
   CategoryApi,
   BrandApi,
+  BannerApi,
   WarehouseApi,
   SupplierApi,
   CustomerApi,

@@ -244,6 +244,7 @@ const inferImageMimeType = (value?: string | null) => {
   if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg';
   if (filename.endsWith('.webp')) return 'image/webp';
   if (filename.endsWith('.gif')) return 'image/gif';
+  if (filename.endsWith('.avif')) return 'image/avif';
   return 'image/png';
 };
 

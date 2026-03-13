@@ -189,6 +189,24 @@ model Brand {
   @@index([deletedAt])
 }
 
+// 商城轮播图
+model Banner {
+  id          Int       @id @default(autoincrement())
+  name        String    // 轮播图名称
+  image       String    // 图片地址或对象键
+  jumpEnabled Boolean   @default(false) // 是否启用跳转
+  jumpPath    String?   // 跳转路径
+  sort        Int       @default(0)
+  remark      String?   // 备注
+  isEnabled   Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([deletedAt])
+  @@index([isEnabled, sort])
+}
+
 // 仓库
 model Warehouse {
   id          Int               @id @default(autoincrement())

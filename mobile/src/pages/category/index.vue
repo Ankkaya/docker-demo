@@ -3,6 +3,7 @@
  * 分类页面 - BabyWhale Kids
  * 左侧分类导航 + 右侧子分类展示
  */
+import AppIcon from '@/components/common/AppIcon.vue'
 
 definePage({
   name: 'category',
@@ -212,7 +213,11 @@ const currentSubCategories = computed(() => {
             class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
             :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'"
           >
-            <wd-icon :name="category.icon" size="20" />
+            <app-icon
+              :icon="category.icon"
+              :size="20"
+              :color="activeCategory === index ? '#efb239' : '#94a3b8'"
+            />
           </view>
           <!-- Name -->
           <text

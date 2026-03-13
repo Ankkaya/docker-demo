@@ -31,6 +31,7 @@ export class MinioController {
     'image/png',
     'image/webp',
     'image/gif',
+    'image/avif',
   ]);
   private static readonly ALLOWED_VIDEO_TYPES = new Set([
     'video/mp4',
@@ -278,6 +279,6 @@ export class MinioController {
       return;
     }
 
-    throw new BadRequestException('仅支持 JPG、PNG、WEBP、GIF、MP4、WEBM、OGG、MOV 格式文件');
+    throw new BadRequestException('仅支持 JPG、PNG、WEBP、GIF、AVIF、MP4、WEBM、OGG、MOV 格式文件');
   }
 }

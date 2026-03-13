@@ -13,6 +13,9 @@ export class MenuVo {
   @ApiProperty({ description: '图标', nullable: true })
   icon: string | null;
 
+  @ApiProperty({ description: '图标 URL', nullable: true })
+  iconUrl?: string | null;
+
   @ApiProperty({ description: '组件路径', nullable: true })
   component: string | null;
 
@@ -43,6 +46,7 @@ export class MenuVo {
       name: entity.name,
       path: entity.path,
       icon: entity.icon,
+      iconUrl: entity.iconUrl ?? null,
       component: entity.component,
       redirect: entity.redirect,
       parentId: entity.parentId,

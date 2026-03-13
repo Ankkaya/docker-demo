@@ -3,6 +3,7 @@
  * 商城首页 - BabyWhale Kids
  * 包含：搜索栏、轮播图、分类、热销商品
  */
+import AppIcon from '@/components/common/AppIcon.vue'
 
 definePage({
   name: 'home',
@@ -225,7 +226,7 @@ function onProductClick(product: typeof hotProducts.value[0]) {
             @click="onCategoryClick(category)"
           >
             <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
-              <wd-icon :name="category.icon" size="28" />
+              <app-icon :icon="category.icon" :size="28" color="#efb239" />
             </view>
             <text class="text-[11px] text-slate-600 font-medium">
               {{ category.name }}

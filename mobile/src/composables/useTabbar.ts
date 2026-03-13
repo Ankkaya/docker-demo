@@ -3,7 +3,8 @@ export interface TabbarItem {
   value: number | null
   active: boolean
   title: string
-  icon: string
+  icon?: string
+  iconUrl?: string | null
 }
 
 const tabbarItems = ref<TabbarItem[]>([

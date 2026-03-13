@@ -304,6 +304,19 @@ const router = createRouter({
       ]
     },
     {
+      path: '/banners',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '轮播图管理' },
+      children: [
+        {
+          path: '',
+          name: 'banner-list',
+          component: () => import('@/views/banners/index.vue'),
+          meta: { title: '轮播图管理' }
+        }
+      ]
+    },
+    {
       path: '/redirect',
       component: () => import('@/views/layout/index.vue'),
       meta: { hidden: true },

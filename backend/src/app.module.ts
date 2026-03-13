@@ -27,6 +27,8 @@ import { CartsModule } from './carts/carts.module';
 import { PrintTemplatesModule } from './print-templates/print-templates.module';
 import { PrintersModule } from './printers/printers.module';
 import { PrinterConfigsModule } from './printer-configs/printer-configs.module';
+import { IconAssetsModule } from './icon-assets/icon-assets.module';
+import { BannersModule } from './banners/banners.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { PrinterConfigsModule } from './printer-configs/printer-configs.module';
     PrintTemplatesModule,
     PrintersModule,
     PrinterConfigsModule,
+    IconAssetsModule,
+    BannersModule,
   ],
 })
 export class AppModule {}
