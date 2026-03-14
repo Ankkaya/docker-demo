@@ -1,18 +1,19 @@
 <template>
   <div class="p-4">
-    <n-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span>打印模板</span>
-          <n-button type="primary" @click="handleCreate">新增模板</n-button>
-        </div>
-      </template>
-
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增模板</n-button>
+      </div>
       <n-data-table :columns="columns" :data="list" :loading="loading" striped />
     </n-card>
 
-    <n-modal v-model:show="dialogVisible" :title="isEdit ? '编辑打印模板' : '新增打印模板'" preset="card"
-      style="width: 1200px; max-width: 96vw">
+    <SmartFormContainer
+      v-model:show="dialogVisible"
+      :title="isEdit ? '编辑打印模板' : '新增打印模板'"
+      :form-item-count="7"
+      modal-width="1200px"
+      drawer-width="92vw"
+    >
       <div class="grid grid-cols-2 gap-4">
         <div>
           <n-form ref="formRef" :model="form" :rules="rules" label-width="100">
@@ -266,7 +267,7 @@
           <n-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -275,6 +276,7 @@ import { computed, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'v
 import type { CSSProperties } from 'vue';
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui';
 import { NAlert, NButton, NSpace, NSwitch, useDialog, useMessage } from 'naive-ui';
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue';
 import { createPrintTemplate, deletePrintTemplate, getPrintTemplates, updatePrintTemplate } from '@/api/print-template';
 import type { CreatePrintTemplateDto, PrintTemplate, TemplateBlock, TemplateBlockType } from '@/types/print';
 import { bizTypeOptions, BizType } from '@/types/print';

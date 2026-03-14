@@ -8,7 +8,7 @@
       <div class="flex items-center gap-4">
         <!-- 主题切换按钮 -->
         <ThemeSchemaSwitch :theme-scheme="themeStore.themeScheme" @switch="themeStore.toggleThemeScheme" />
-        
+
         <n-dropdown trigger="click" :options="dropdownOptions" @select="handleSelect">
           <div class="flex items-center gap-2 cursor-pointer">
             <n-avatar :size="32">
@@ -26,13 +26,10 @@
     <!-- 主体区域 -->
     <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- 左侧菜单 -->
-      <aside class="layout-scrollbar w-64 shrink-0 overflow-y-auto bg-container border-r border-gray-200 dark:border-gray-700 shadow-sider transition-theme">
+      <aside
+        class="layout-scrollbar w-64 shrink-0 overflow-y-auto bg-container border-r border-gray-200 dark:border-gray-700 shadow-sider transition-theme">
         <div class="min-h-full py-3">
-          <n-menu 
-            :value="activeMenu" 
-            :options="menuOptions" 
-            @update:value="handleMenuSelect"
-          />
+          <n-menu :value="activeMenu" :options="menuOptions" @update:value="handleMenuSelect" />
         </div>
       </aside>
 
@@ -40,9 +37,9 @@
       <main class="flex-1 flex min-h-0 flex-col overflow-hidden bg-layout transition-theme">
         <!-- 选项卡栏 -->
         <TabBar />
-        
+
         <!-- 页面内容 -->
-        <div class="layout-scrollbar flex-1 overflow-y-auto p-6">
+        <div class="layout-scrollbar flex-1 overflow-y-auto">
           <router-view v-slot="{ Component, route }">
             <keep-alive :include="cachedViews">
               <component :is="Component" :key="route.fullPath" />
@@ -59,10 +56,10 @@ import { computed, h, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store'
 import { useThemeStore } from '@/store/modules/theme'
-import { 
-  PersonOutline, 
-  ChevronDownOutline, 
-  HomeOutline, 
+import {
+  PersonOutline,
+  ChevronDownOutline,
+  HomeOutline,
   MenuOutline,
   SettingsOutline,
   PeopleOutline,
@@ -183,11 +180,11 @@ const menuOptions = computed<MenuOption[]>(() => {
   }
 
   console.log('Raw menus from store:', authStore.menus)
-  
+
   const dynamicOptions = authStore.menus
     .filter(menu => !menu.hidden)
     .map(mapMenuToOption)
-  
+
   console.log('Processed menu options:', dynamicOptions)
 
   return [dashboardOption, ...dynamicOptions]

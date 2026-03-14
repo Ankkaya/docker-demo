@@ -2,36 +2,21 @@
   <div class="p-4">
     <!-- 搜索栏 -->
     <n-card class="mb-4">
-      <n-form inline :model="searchForm" label-placement="left">
+      <QueryForm :model="searchForm">
         <n-form-item label="关键词">
           <n-input v-model:value="searchForm.keyword" placeholder="商品名称/编码" clearable />
         </n-form-item>
         <n-form-item label="分类">
-          <n-select
-            v-model:value="searchForm.categoryId"
-            :options="categoryOptions"
-            placeholder="选择分类"
-            clearable
-            style="width: 180px"
-          />
+          <n-select v-model:value="searchForm.categoryId" :options="categoryOptions" placeholder="选择分类" clearable
+            style="width: 180px" />
         </n-form-item>
         <n-form-item label="品牌">
-          <n-select
-            v-model:value="searchForm.brandId"
-            :options="brandOptions"
-            placeholder="选择品牌"
-            clearable
-            style="width: 180px"
-          />
+          <n-select v-model:value="searchForm.brandId" :options="brandOptions" placeholder="选择品牌" clearable
+            style="width: 180px" />
         </n-form-item>
         <n-form-item label="商品状态">
-          <n-select
-            v-model:value="searchForm.isEnabled"
-            :options="enabledOptions"
-            placeholder="选择状态"
-            clearable
-            style="width: 140px"
-          />
+          <n-select v-model:value="searchForm.isEnabled" :options="enabledOptions" placeholder="选择状态" clearable
+            style="width: 140px" />
         </n-form-item>
         <n-form-item>
           <n-space>
@@ -39,28 +24,17 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
-    </n-card>
-
-    <!-- 操作栏 -->
-    <n-card class="mb-4">
-      <n-space>
-        <n-button type="primary" @click="handleCreate">新增商品</n-button>
-        <n-button @click="handleInventoryQuery">库存查询</n-button>
-      </n-space>
+      </QueryForm>
     </n-card>
 
     <!-- 商品列表 -->
     <n-card>
-      <n-data-table
-        :columns="columns"
-        :data="productList"
-        :loading="loading"
-        :pagination="pagination"
-        @update:page="handlePageChange"
-        @update:page-size="handlePageSizeChange"
-        remote
-      />
+      <n-space class="mb-4" justify="end">
+        <n-button type="primary" @click="handleCreate">新增商品</n-button>
+        <n-button @click="handleInventoryQuery">库存查询</n-button>
+      </n-space>
+      <n-data-table :columns="columns" :data="productList" :loading="loading" :pagination="pagination"
+        @update:page="handlePageChange" @update:page-size="handlePageSizeChange" remote />
     </n-card>
   </div>
 </template>
@@ -70,6 +44,7 @@ import { ref, reactive, h, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { NButton, NSpace, NTag, NPopconfirm, NImage, NSwitch, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 import { getProducts, deleteProduct, updateProduct } from '@/api/product';
 import { getCategories } from '@/api/category';
 import { getBrands } from '@/api/brand';
@@ -109,7 +84,7 @@ const pagination = reactive({
 
 // 表格列定义
 const columns: DataTableColumns<Product> = [
-    {
+  {
     title: '商品名称',
     key: 'name',
     ellipsis: {

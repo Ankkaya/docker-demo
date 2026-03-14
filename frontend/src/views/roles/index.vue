@@ -1,13 +1,9 @@
 <template>
-  <div class="role-list">
+  <div class="p-4 role-list">
     <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">角色列表</span>
-          <n-button type="primary" @click="handleCreate">新增角色</n-button>
-        </div>
-      </template>
-
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增角色</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="roles"

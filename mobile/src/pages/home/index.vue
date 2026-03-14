@@ -152,10 +152,8 @@ function onProductClick(product: typeof hotProducts.value[0]) {
     <view class="bg-[#f8f7f6]/80 backdrop-blur-md">
       <!-- Search Bar -->
       <view class="flex items-center gap-2 px-4 pb-4">
-        <view
-          class="h-11 flex flex-1 items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
-          @click="onSearchClick"
-        >
+        <view class="h-11 flex flex-1 items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
+          @click="onSearchClick">
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
             <wd-icon name="search" size="18" />
           </view>
@@ -163,28 +161,21 @@ function onProductClick(product: typeof hotProducts.value[0]) {
             Search for organic cotton onesies...
           </view>
         </view>
-        <view class="size-11 flex items-center justify-center rounded-xl bg-white shadow-sm" @click="onCartClick">
-          <wd-icon name="shopping_cart" size="18" color="#efb239" />
-        </view>
       </view>
     </view>
 
     <scroll-view scroll-y class="pb-20">
       <!-- Hero Banner Carousel -->
-      <view class="px-4 py-2">
-        <swiper
-          class="h-44 w-full overflow-hidden rounded-xl" :indicator-dots="false" :autoplay="true" :interval="3000"
-          :duration="500" :circular="true" @change="onBannerChange"
-        >
+      <view class="px-4 pb-2">
+        <swiper class="h-44 w-full overflow-hidden rounded-xl" :indicator-dots="false" :autoplay="true" :interval="3000"
+          :duration="500" :circular="true" @change="onBannerChange">
           <swiper-item v-for="banner in banners" :key="banner.id">
             <view class="relative h-full w-full">
               <image :src="banner.image" class="absolute inset-0 h-full w-full" mode="aspectFill" />
               <view
-                class="from-black-50 absolute inset-0 flex flex-col justify-center to-transparent bg-gradient-to-r p-6"
-              >
+                class="from-black-50 absolute inset-0 flex flex-col justify-center to-transparent bg-gradient-to-r p-6">
                 <text
-                  class="mb-2 w-fit rounded-full bg-[#efb239] px-3 py-1 text-[10px] text-white font-bold tracking-widest uppercase"
-                >
+                  class="mb-2 w-fit rounded-full bg-[#efb239] px-3 py-1 text-[10px] text-white font-bold tracking-widest uppercase">
                   {{ banner.tag }}
                 </text>
                 <text class="mb-1 text-2xl text-white font-bold leading-tight">
@@ -202,16 +193,14 @@ function onProductClick(product: typeof hotProducts.value[0]) {
         </swiper>
         <!-- Pagination Dots -->
         <view class="mt-3 flex justify-center gap-1.5">
-          <view
-            v-for="(banner, index) in banners" :key="banner.id"
+          <view v-for="(banner, index) in banners" :key="banner.id"
             class="h-1.5 rounded-full transition-all duration-300"
-            :class="currentBanner === index ? 'w-4 bg-[#efb239]' : 'w-1.5 bg-slate-300'"
-          />
+            :class="currentBanner === index ? 'w-4 bg-[#efb239]' : 'w-1.5 bg-slate-300'" />
         </view>
       </view>
 
       <!-- Categories Grid -->
-      <view class="px-4 pt-6">
+      <view class="px-4 pt-4">
         <view class="mb-4 flex items-center justify-between">
           <text class="text-base text-slate-900 font-bold">
             Categories
@@ -221,10 +210,8 @@ function onProductClick(product: typeof hotProducts.value[0]) {
           </text>
         </view>
         <view class="grid grid-cols-4 gap-4">
-          <view
-            v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
-            @click="onCategoryClick(category)"
-          >
+          <view v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
+            @click="onCategoryClick(category)">
             <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
               <app-icon :icon="category.icon" :size="28" color="#efb239" />
             </view>
@@ -245,11 +232,9 @@ function onProductClick(product: typeof hotProducts.value[0]) {
         </view>
         <view class="grid grid-cols-2 gap-4">
           <!-- Product Card -->
-          <view
-            v-for="product in hotProducts" :key="product.id"
+          <view v-for="product in hotProducts" :key="product.id"
             class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm"
-            @click="onProductClick(product)"
-          >
+            @click="onProductClick(product)">
             <view class="aspect-square overflow-hidden">
               <image :src="product.image" class="h-full w-full" mode="aspectFill" />
             </view>
@@ -266,8 +251,7 @@ function onProductClick(product: typeof hotProducts.value[0]) {
                 </text>
                 <button
                   class="size-7 flex items-center justify-center border-0 rounded-full bg-[#efb239] p-0 text-white !m-0"
-                  @click.stop="addToCart(product)"
-                >
+                  @click.stop="addToCart(product)">
                   <wd-icon name="add" size="14" color="#fff" />
                 </button>
               </view>

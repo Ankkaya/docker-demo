@@ -75,7 +75,9 @@ export interface UpdateBrandDto extends Partial<CreateBrandDto> {}
 // 轮播图
 export interface Banner {
   id: number;
-  name: string;
+  title: string;
+  tag?: string | null;
+  subtitle?: string | null;
   image: string;
   jumpEnabled: boolean;
   jumpPath?: string | null;
@@ -87,7 +89,9 @@ export interface Banner {
 }
 
 export interface CreateBannerDto {
-  name: string;
+  title: string;
+  tag?: string;
+  subtitle?: string;
   image: string;
   jumpEnabled?: boolean;
   jumpPath?: string;

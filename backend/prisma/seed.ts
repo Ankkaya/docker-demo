@@ -737,6 +737,64 @@ async function main() {
     },
   });
 
+  // ==================== 11. 小程序首页轮播图 ====================
+  const homeBanners = [
+    {
+      title: 'Summer Sparkle',
+      tag: 'New Arrival',
+      subtitle: 'Up to 40% off on all rompers',
+      image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=800&h=450&fit=crop',
+      sort: 1,
+      remark: '小程序首页轮播图',
+      isEnabled: true,
+      jumpEnabled: false,
+      jumpPath: null,
+    },
+    {
+      title: 'Organic Cotton',
+      tag: 'Hot Sale',
+      subtitle: 'Soft & safe for your baby',
+      image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&h=450&fit=crop',
+      sort: 2,
+      remark: '小程序首页轮播图',
+      isEnabled: true,
+      jumpEnabled: false,
+      jumpPath: null,
+    },
+    {
+      title: 'Newborn Essentials',
+      tag: 'Limited',
+      subtitle: 'Everything you need',
+      image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&h=450&fit=crop',
+      sort: 3,
+      remark: '小程序首页轮播图',
+      isEnabled: true,
+      jumpEnabled: false,
+      jumpPath: null,
+    },
+  ];
+
+  for (const banner of homeBanners) {
+    const existingBanner = await prisma.banner.findFirst({
+      where: {
+        title: banner.title,
+        deletedAt: null,
+      },
+    });
+
+    if (existingBanner) {
+      await prisma.banner.update({
+        where: { id: existingBanner.id },
+        data: banner,
+      });
+      continue;
+    }
+
+    await prisma.banner.create({
+      data: banner,
+    });
+  }
+
   // ==================== 输出日志 ====================
   console.log('🌱 Seed data created successfully!');
   console.log('-----------------------------------');
@@ -775,6 +833,8 @@ async function main() {
   console.log('【可选】Brands:', ['Apple', '华为']);
   console.log('-----------------------------------');
   console.log('【可选】Supplier:', '示例供应商(SUP001)');
+  console.log('-----------------------------------');
+  console.log('【可选】Home Banners:', homeBanners.map(item => item.title).join(', '));
 }
 
 main()

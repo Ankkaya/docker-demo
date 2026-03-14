@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 搜索栏 -->
-    <n-form inline :model="searchForm" class="mb-4">
+    <QueryForm :model="searchForm" class="mb-4">
       <n-form-item label="关键词">
         <n-input v-model:value="searchForm.keyword" placeholder="商品名称/SKU编码" clearable />
       </n-form-item>
@@ -11,7 +11,7 @@
           <n-button @click="handleReset">重置</n-button>
         </n-space>
       </n-form-item>
-    </n-form>
+    </QueryForm>
 
     <!-- SKU列表 -->
     <n-data-table
@@ -43,6 +43,7 @@
 import { ref, reactive, h, onMounted } from 'vue';
 import { NButton, NImage, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 import { getProducts, getProductSkus } from '@/api/product';
 import type { ProductSku } from '@/types/product';
 

@@ -87,6 +87,9 @@ export interface Product {
     detail?: string;
     mainImage?: string;
     images?: string[];
+    isHot?: boolean;
+    hotSort?: number;
+    hotLabel?: string;
   } | null;
   unitId: number;
   unit?: {
@@ -155,6 +158,9 @@ export interface UpdateProductMallDto {
   mainImage?: string;
   images?: string[];
   mallEnabled?: boolean;
+  isHot?: boolean;
+  hotSort?: number;
+  hotLabel?: string;
   skuMallInfos?: {
     skuId: number;
     salePrice?: number;

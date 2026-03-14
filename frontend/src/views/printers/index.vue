@@ -1,25 +1,21 @@
 <template>
   <div class="p-4">
-    <n-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span>打印机管理</span>
-          <n-space>
-            <n-tooltip>
-              <template #trigger>
-                <n-switch v-model:value="autoRefreshEnabled" @update:value="handleAutoRefreshChange">
-                  <template #checked>自动刷新:开</template>
-                  <template #unchecked>自动刷新:关</template>
-                </n-switch>
-              </template>
-              开启后每10秒自动检测打印机状态
-            </n-tooltip>
-            <n-button :loading="isChecking" @click="refreshAllStatus">刷新状态</n-button>
-            <n-button type="primary" @click="handleCreate">新增打印机</n-button>
-          </n-space>
-        </div>
-      </template>
-
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-space>
+          <n-tooltip>
+            <template #trigger>
+              <n-switch v-model:value="autoRefreshEnabled" @update:value="handleAutoRefreshChange">
+                <template #checked>自动刷新:开</template>
+                <template #unchecked>自动刷新:关</template>
+              </n-switch>
+            </template>
+            开启后每10秒自动检测打印机状态
+          </n-tooltip>
+          <n-button :loading="isChecking" @click="refreshAllStatus">刷新状态</n-button>
+          <n-button type="primary" @click="handleCreate">新增打印机</n-button>
+        </n-space>
+      </div>
       <n-data-table :columns="columns" :data="listWithStatus" :loading="loading" striped />
     </n-card>
 

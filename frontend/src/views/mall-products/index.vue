@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <n-card class="mb-4">
-      <n-form inline :model="searchForm" label-placement="left">
+      <QueryForm :model="searchForm">
         <n-form-item label="关键词">
           <n-input v-model:value="searchForm.keyword" placeholder="商品名称/SPU编码" clearable />
         </n-form-item>
@@ -23,7 +23,7 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
     </n-card>
 
     <n-card>
@@ -52,6 +52,7 @@ import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NButton, NImage, NSpace, NSwitch, NTag, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
 import { getProducts, updateProductMallInfo } from '@/api/product'
 import { getBrands } from '@/api/brand'
 import { getCategories } from '@/api/category'

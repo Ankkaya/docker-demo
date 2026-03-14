@@ -2,7 +2,7 @@
   <div class="p-4">
     <!-- 搜索栏 -->
     <n-card class="mb-4">
-      <n-form inline :model="searchForm" label-placement="left">
+      <QueryForm :model="searchForm">
         <n-form-item label="仓库">
           <n-select
             v-model:value="searchForm.warehouseId"
@@ -30,7 +30,7 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
     </n-card>
 
     <!-- 流水列表 -->
@@ -52,6 +52,7 @@
 import { ref, reactive, h, onMounted } from 'vue';
 import { NTag } from 'naive-ui';
 import type { DataTableColumns, DataTableRowData } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 import { getInventoryLogs, type InventoryLog } from '@/api/inventory';
 import { getWarehouses } from '@/api/warehouse';
 import type { Warehouse } from '@/types/basic-data';

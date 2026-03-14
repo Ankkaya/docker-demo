@@ -1,17 +1,19 @@
 <template>
   <div class="p-4">
-    <n-card>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span>打印机配置</span>
-          <n-button type="primary" @click="handleCreate">新增配置</n-button>
-        </div>
-      </template>
-
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增配置</n-button>
+      </div>
       <n-data-table :columns="columns" :data="list" :loading="loading" striped />
     </n-card>
 
-    <n-modal v-model:show="dialogVisible" :title="isEdit ? '编辑打印配置' : '新增打印配置'" preset="card" style="width: 800px">
+    <SmartFormContainer
+      v-model:show="dialogVisible"
+      :title="isEdit ? '编辑打印配置' : '新增打印配置'"
+      :form-item-count="12"
+      modal-width="800px"
+      :drawer-width="960"
+    >
       <n-form ref="formRef" :model="form" :rules="rules" label-width="100">
         <n-grid :cols="2" :x-gap="12">
           <n-form-item-gi span="2" label="配置名称" path="name"><n-input v-model:value="form.name" /></n-form-item-gi>
@@ -51,7 +53,7 @@
           <n-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
 
     <n-modal v-model:show="previewVisible" title="模板预览" preset="card" style="width: 980px">
       <div class="grid grid-cols-2 gap-4">
@@ -86,6 +88,7 @@ import { computed, h, onMounted, reactive, ref } from 'vue';
 import type { CSSProperties } from 'vue';
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui';
 import { NButton, NSpace, NSwitch, useDialog, useMessage } from 'naive-ui';
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue';
 import { createPrinterConfig, deletePrinterConfig, getPrinterConfigs, updatePrinterConfig } from '@/api/printer-config';
 import { getPrinters } from '@/api/printer';
 import { getPrintTemplate, getPrintTemplates } from '@/api/print-template';

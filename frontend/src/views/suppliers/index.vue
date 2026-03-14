@@ -1,13 +1,32 @@
 <template>
-  <div class="supplier-list">
-    <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">供应商管理</span>
-          <n-button type="primary" @click="handleCreate">新增供应商</n-button>
-        </div>
-      </template>
+  <div class="p-4 supplier-list">
+    <n-card class="mb-4 bg-container transition-theme">
+      <QueryForm :model="searchForm" class="mb-4">
+        <n-form-item label="供应商名称">
+          <n-input v-model:value="searchForm.name" placeholder="请输入供应商名称" clearable />
+        </n-form-item>
+        <n-form-item label="供应商编码">
+          <n-input v-model:value="searchForm.code" placeholder="请输入供应商编码" clearable />
+        </n-form-item>
+        <n-form-item label="联系人">
+          <n-input v-model:value="searchForm.contact" placeholder="请输入联系人" clearable />
+        </n-form-item>
+        <n-form-item label="启用状态">
+          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable style="width: 160px" />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="handleSearch">查询</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </QueryForm>
+    </n-card>
 
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增供应商</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="suppliers"
@@ -17,11 +36,12 @@
     </n-card>
 
     <!-- 新增/编辑弹窗 -->
-    <n-modal
+    <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑供应商' : '新增供应商'"
-      preset="card"
-      style="width: 600px"
+      :form-item-count="12"
+      modal-width="600px"
+      :drawer-width="760"
     >
       <n-form
         ref="formRef"
@@ -95,7 +115,7 @@
           </n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -103,7 +123,9 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NSpace, NSwitch } from 'naive-ui'
+import { NButton, NSpace, NSelect, NSwitch } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/api/supplier'
 import type { Supplier, CreateSupplierDto } from '@/types/basic-data'
 
@@ -114,8 +136,24 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const suppliers = ref<Supplier[]>([])
+const allSuppliers = ref<Supplier[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+const searchForm = reactive<{
+  name: string
+  code: string
+  contact: string
+  isEnabled: 'enabled' | 'disabled' | null
+}>({
+  name: '',
+  code: '',
+  contact: '',
+  isEnabled: null
+})
+const statusOptions = [
+  { label: '启用', value: 'enabled' },
+  { label: '禁用', value: 'disabled' }
+]
 
 const form = reactive<CreateSupplierDto & { isEnabled: boolean }>({
   name: '',
@@ -203,15 +241,43 @@ const createColumns = (): DataTableColumns<Supplier> => {
 
 const columns = createColumns()
 
+const applyFilters = () => {
+  const name = searchForm.name.trim().toLowerCase()
+  const code = searchForm.code.trim().toLowerCase()
+  const contact = searchForm.contact.trim().toLowerCase()
+
+  suppliers.value = allSuppliers.value.filter(supplier => {
+    const matchName = !name || supplier.name.toLowerCase().includes(name)
+    const matchCode = !code || supplier.code.toLowerCase().includes(code)
+    const matchContact = !contact || (supplier.contact || '').toLowerCase().includes(contact)
+    const matchStatus = searchForm.isEnabled === null
+      || (searchForm.isEnabled === 'enabled' ? supplier.isEnabled : !supplier.isEnabled)
+    return matchName && matchCode && matchContact && matchStatus
+  })
+}
+
 const fetchSuppliers = async () => {
   loading.value = true
   try {
-    suppliers.value = await getSuppliers()
+    allSuppliers.value = await getSuppliers()
+    applyFilters()
   } catch (error) {
     message.error('获取供应商列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  applyFilters()
+}
+
+const handleReset = async () => {
+  searchForm.name = ''
+  searchForm.code = ''
+  searchForm.contact = ''
+  searchForm.isEnabled = null
+  await fetchSuppliers()
 }
 
 const handleCreate = () => {

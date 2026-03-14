@@ -192,7 +192,9 @@ model Brand {
 // 商城轮播图
 model Banner {
   id          Int       @id @default(autoincrement())
-  name        String    // 轮播图名称
+  title       String    // 轮播图标题
+  tag         String?   // 轮播图标签
+  subtitle    String?   // 轮播图子标题
   image       String    // 图片地址或对象键
   jumpEnabled Boolean   @default(false) // 是否启用跳转
   jumpPath    String?   // 跳转路径
@@ -324,6 +326,7 @@ model Product {
   // 关联
   skus         ProductSku[]
   mallInfo     ProductMallInfo?
+  mallStat     ProductMallStat?
   
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -396,8 +399,26 @@ model ProductMallInfo {
   detail       String?  @db.Text // 商城详情
   mainImage    String?  // 商城主图
   images       Json?    // 商城图片列表
+  isHot        Boolean  @default(false) // 是否手动设为热门
+  hotSort      Int      @default(0) // 热门排序，越小越靠前
+  hotLabel     String?  // 热门标签
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// 商城商品统计
+model ProductMallStat {
+  productId      Int      @id
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  saleQty7d      Int      @default(0)
+  saleQty30d     Int      @default(0)
+  orderCount7d   Int      @default(0)
+  orderCount30d  Int      @default(0)
+  hotScore       Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([hotScore])
 }
 
 // 商城SKU扩展信息

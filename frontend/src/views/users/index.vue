@@ -1,20 +1,15 @@
 <template>
-  <div class="user-list">
+  <div class="p-4 user-list">
     <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">用户列表</span>
-          <n-button type="primary" @click="handleCreate">新增用户</n-button>
-        </div>
-      </template>
-
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增用户</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="users"
         :loading="loading"
         striped
       />
-
       <div class="mt-4 flex justify-end">
         <n-pagination
           v-model:page="pagination.page"

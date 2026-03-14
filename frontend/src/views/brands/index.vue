@@ -1,13 +1,26 @@
 <template>
-  <div class="brand-list">
-    <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">品牌管理</span>
-          <n-button type="primary" @click="handleCreate">新增品牌</n-button>
-        </div>
-      </template>
+  <div class="p-4 brand-list">
+    <n-card class="mb-4 bg-container transition-theme">
+      <QueryForm :model="searchForm" class="mb-4">
+        <n-form-item label="品牌名称">
+          <n-input v-model:value="searchForm.name" placeholder="请输入品牌名称" clearable />
+        </n-form-item>
+        <n-form-item label="启用状态">
+          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable style="width: 160px" />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="handleSearch">查询</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </QueryForm>
+    </n-card>
 
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增品牌</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="brands"
@@ -70,7 +83,8 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NSpace, NSwitch } from 'naive-ui'
+import { NButton, NSpace, NSelect, NSwitch } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
 import { getBrands, createBrand, updateBrand, deleteBrand } from '@/api/brand'
 import { uploadFile } from '@/api/file'
 import { resolveFileUrl } from '@/utils/file-url'
@@ -83,8 +97,20 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const brands = ref<Brand[]>([])
+const allBrands = ref<Brand[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+const searchForm = reactive<{
+  name: string
+  isEnabled: 'enabled' | 'disabled' | null
+}>({
+  name: '',
+  isEnabled: null
+})
+const statusOptions = [
+  { label: '启用', value: 'enabled' },
+  { label: '禁用', value: 'disabled' }
+]
 
 const form = reactive<CreateBrandDto & { isEnabled: boolean }>({
   name: '',
@@ -189,15 +215,37 @@ const createColumns = (): DataTableColumns<Brand> => {
 
 const columns = createColumns()
 
+const applyFilters = () => {
+  const name = searchForm.name.trim().toLowerCase()
+
+  brands.value = allBrands.value.filter(brand => {
+    const matchName = !name || brand.name.toLowerCase().includes(name)
+    const matchStatus = searchForm.isEnabled === null
+      || (searchForm.isEnabled === 'enabled' ? brand.isEnabled : !brand.isEnabled)
+    return matchName && matchStatus
+  })
+}
+
 const fetchBrands = async () => {
   loading.value = true
   try {
-    brands.value = await getBrands()
+    allBrands.value = await getBrands()
+    applyFilters()
   } catch (error) {
     message.error('获取品牌列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  applyFilters()
+}
+
+const handleReset = async () => {
+  searchForm.name = ''
+  searchForm.isEnabled = null
+  await fetchBrands()
 }
 
 const handleCreate = () => {

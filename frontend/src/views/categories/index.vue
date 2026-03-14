@@ -1,13 +1,29 @@
 <template>
-  <div class="category-list">
-    <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">商品分类</span>
-          <n-button type="primary" @click="handleCreate">新增分类</n-button>
-        </div>
-      </template>
+  <div class="p-4 category-list">
+    <n-card class="mb-4 bg-container transition-theme">
+      <QueryForm :model="searchForm" class="mb-4">
+        <n-form-item label="分类名称">
+          <n-input v-model:value="searchForm.name" placeholder="请输入分类名称" clearable />
+        </n-form-item>
+        <n-form-item label="分类编码">
+          <n-input v-model:value="searchForm.code" placeholder="请输入分类编码" clearable />
+        </n-form-item>
+        <n-form-item label="启用状态">
+          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable style="width: 160px" />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="handleSearch">查询</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </QueryForm>
+    </n-card>
 
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增分类</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="categories"
@@ -18,11 +34,12 @@
     </n-card>
 
     <!-- 新增/编辑弹窗 -->
-    <n-modal
+    <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑分类' : '新增分类'"
-      preset="card"
-      style="width: 500px"
+      :form-item-count="7"
+      modal-width="500px"
+      :drawer-width="760"
     >
       <n-form
         ref="formRef"
@@ -90,7 +107,7 @@
           </n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -98,7 +115,9 @@
 import { ref, reactive, onMounted, h, computed } from 'vue'
 import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NIcon, NInput, NSpace, NSwitch } from 'naive-ui'
+import { NButton, NIcon, NInput, NSelect, NSpace, NSwitch } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getCategories, getCategoriesFlat, getCategory, createCategory, updateCategory, deleteCategory } from '@/api/category'
 import { uploadFile } from '@/api/file'
 import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url'
@@ -113,8 +132,22 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const categories = ref<Category[]>([])
+const allCategories = ref<Category[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+const searchForm = reactive<{
+  name: string
+  code: string
+  isEnabled: 'enabled' | 'disabled' | null
+}>({
+  name: '',
+  code: '',
+  isEnabled: null
+})
+const statusOptions = [
+  { label: '启用', value: 'enabled' },
+  { label: '禁用', value: 'disabled' }
+]
 
 const iconMap = Ionicons as Record<string, any>
 
@@ -226,7 +259,7 @@ const categoryOptions = computed<TreeSelectOption[]>(() => {
       children: cat.children ? convert(cat.children) : undefined
     }))
   }
-  return convert(categories.value)
+  return convert(allCategories.value)
 })
 
 const imageUploadKey = computed(() => {
@@ -316,10 +349,38 @@ const createColumns = (): DataTableColumns<Category> => {
 
 const columns = createColumns()
 
+const filterCategoryTree = (list: Category[]): Category[] => {
+  const name = searchForm.name.trim().toLowerCase()
+  const code = searchForm.code.trim().toLowerCase()
+
+  return list.reduce<Category[]>((result, category) => {
+    const children = category.children ? filterCategoryTree(category.children) : []
+    const matchName = !name || category.name.toLowerCase().includes(name)
+    const matchCode = !code || category.code.toLowerCase().includes(code)
+    const matchStatus = searchForm.isEnabled === null
+      || (searchForm.isEnabled === 'enabled' ? category.isEnabled : !category.isEnabled)
+    const matched = matchName && matchCode && matchStatus
+
+    if (matched || children.length > 0) {
+      result.push({
+        ...category,
+        children
+      })
+    }
+
+    return result
+  }, [])
+}
+
+const applyFilters = () => {
+  categories.value = filterCategoryTree(allCategories.value)
+}
+
 const fetchCategories = async () => {
   loading.value = true
   try {
-    categories.value = await getCategories()
+    allCategories.value = await getCategories()
+    applyFilters()
     await getCategoriesFlat()
   } catch (error) {
     message.error('获取分类列表失败')
@@ -377,6 +438,17 @@ const handleEdit = async (category: Category) => {
   } finally {
     submitLoading.value = false
   }
+}
+
+const handleSearch = () => {
+  applyFilters()
+}
+
+const handleReset = async () => {
+  searchForm.name = ''
+  searchForm.code = ''
+  searchForm.isEnabled = null
+  await fetchCategories()
 }
 
 const handleDelete = (category: Category) => {

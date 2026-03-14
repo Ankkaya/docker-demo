@@ -30,7 +30,7 @@
 
     <!-- 搜索栏 -->
     <n-card class="mb-3">
-      <n-form inline :model="searchForm" label-placement="left">
+      <QueryForm :model="searchForm">
         <n-form-item label="商品名称">
           <n-input v-model:value="searchForm.productName" placeholder="商品名称" clearable />
         </n-form-item>
@@ -53,7 +53,7 @@
             <n-button type="warning" @click="showWarningList">库存预警</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
     </n-card>
 
     <!-- 库存列表 -->
@@ -89,7 +89,13 @@
     </n-modal>
 
     <!-- 编辑库存弹窗 -->
-    <n-modal v-model:show="editModalVisible" title="调整库存" @ok="handleSaveInventory">
+    <SmartFormContainer
+      v-model:show="editModalVisible"
+      title="调整库存"
+      :form-item-count="6"
+      modal-width="500px"
+      :drawer-width="680"
+    >
       <n-form :model="editForm" label-placement="left" label-width="100">
         <n-form-item label="SKU">
           <span>{{ editForm.skuName }}</span>
@@ -110,7 +116,13 @@
           <n-input v-model:value="editForm.location" placeholder="库位编码" style="width: 200px" />
         </n-form-item>
       </n-form>
-    </n-modal>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="editModalVisible = false">取消</n-button>
+          <n-button type="primary" @click="handleSaveInventory">确定</n-button>
+        </n-space>
+      </template>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -118,6 +130,8 @@
 import { ref, reactive, h, onMounted } from 'vue';
 import { NButton, NSpace, NTag, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue';
 import { getInventories, getInventoryStats, getInventoryWarnings, updateInventory } from '@/api/product';
 import { getWarehouses } from '@/api/warehouse';
 import type { Inventory, QueryInventoryParams } from '@/types/product';

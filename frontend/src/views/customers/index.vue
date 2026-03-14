@@ -1,13 +1,32 @@
 <template>
-  <div class="customer-list">
-    <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">客户管理</span>
-          <n-button type="primary" @click="handleCreate">新增客户</n-button>
-        </div>
-      </template>
+  <div class="p-4 customer-list">
+    <n-card class="mb-4 bg-container transition-theme">
+      <QueryForm :model="searchForm" class="mb-4">
+        <n-form-item label="客户名称">
+          <n-input v-model:value="searchForm.name" placeholder="请输入客户名称" clearable />
+        </n-form-item>
+        <n-form-item label="客户编码">
+          <n-input v-model:value="searchForm.code" placeholder="请输入客户编码" clearable />
+        </n-form-item>
+        <n-form-item label="客户类型">
+          <n-select v-model:value="searchForm.type" :options="typeOptions" placeholder="全部类型" clearable style="width: 160px" />
+        </n-form-item>
+        <n-form-item label="启用状态">
+          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable style="width: 160px" />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="handleSearch">查询</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </QueryForm>
+    </n-card>
 
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增客户</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="customers"
@@ -17,11 +36,12 @@
     </n-card>
 
     <!-- 新增/编辑弹窗 -->
-    <n-modal
+    <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑客户' : '新增客户'"
-      preset="card"
-      style="width: 600px"
+      :form-item-count="11"
+      modal-width="600px"
+      :drawer-width="760"
     >
       <n-form
         ref="formRef"
@@ -89,7 +109,7 @@
           </n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -97,7 +117,9 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NSpace, NSwitch, NTag } from 'naive-ui'
+import { NButton, NSpace, NSelect, NSwitch, NTag } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/api/customer'
 import type { Customer, CreateCustomerDto, CustomerType } from '@/types/basic-data'
 
@@ -108,8 +130,28 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const customers = ref<Customer[]>([])
+const allCustomers = ref<Customer[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+const searchForm = reactive<{
+  name: string
+  code: string
+  type: CustomerType | null
+  isEnabled: 'enabled' | 'disabled' | null
+}>({
+  name: '',
+  code: '',
+  type: null,
+  isEnabled: null
+})
+const typeOptions = [
+  { label: '个人', value: 'INDIVIDUAL' },
+  { label: '企业', value: 'COMPANY' }
+]
+const statusOptions = [
+  { label: '启用', value: 'enabled' },
+  { label: '禁用', value: 'disabled' }
+]
 
 const form = reactive<CreateCustomerDto & { isEnabled: boolean }>({
   name: '',
@@ -209,15 +251,42 @@ const createColumns = (): DataTableColumns<Customer> => {
 
 const columns = createColumns()
 
+const applyFilters = () => {
+  const name = searchForm.name.trim().toLowerCase()
+  const code = searchForm.code.trim().toLowerCase()
+
+  customers.value = allCustomers.value.filter(customer => {
+    const matchName = !name || customer.name.toLowerCase().includes(name)
+    const matchCode = !code || customer.code.toLowerCase().includes(code)
+    const matchType = searchForm.type === null || customer.type === searchForm.type
+    const matchStatus = searchForm.isEnabled === null
+      || (searchForm.isEnabled === 'enabled' ? customer.isEnabled : !customer.isEnabled)
+    return matchName && matchCode && matchType && matchStatus
+  })
+}
+
 const fetchCustomers = async () => {
   loading.value = true
   try {
-    customers.value = await getCustomers()
+    allCustomers.value = await getCustomers()
+    applyFilters()
   } catch (error) {
     message.error('获取客户列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  applyFilters()
+}
+
+const handleReset = async () => {
+  searchForm.name = ''
+  searchForm.code = ''
+  searchForm.type = null
+  searchForm.isEnabled = null
+  await fetchCustomers()
 }
 
 const handleCreate = () => {

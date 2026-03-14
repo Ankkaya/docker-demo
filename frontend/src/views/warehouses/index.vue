@@ -1,13 +1,29 @@
 <template>
-  <div class="warehouse-list">
-    <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">仓库管理</span>
-          <n-button type="primary" @click="handleCreate">新增仓库</n-button>
-        </div>
-      </template>
+  <div class="p-4 warehouse-list">
+    <n-card class="mb-4 bg-container transition-theme">
+      <QueryForm :model="searchForm" class="mb-4">
+        <n-form-item label="仓库名称">
+          <n-input v-model:value="searchForm.name" placeholder="请输入仓库名称" clearable />
+        </n-form-item>
+        <n-form-item label="仓库编码">
+          <n-input v-model:value="searchForm.code" placeholder="请输入仓库编码" clearable />
+        </n-form-item>
+        <n-form-item label="启用状态">
+          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable style="width: 160px" />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="handleSearch">查询</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </QueryForm>
+    </n-card>
 
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增仓库</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="warehouses"
@@ -17,11 +33,12 @@
     </n-card>
 
     <!-- 新增/编辑弹窗 -->
-    <n-modal
+    <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑仓库' : '新增仓库'"
-      preset="card"
-      style="width: 500px"
+      :form-item-count="7"
+      modal-width="500px"
+      :drawer-width="680"
     >
       <n-form
         ref="formRef"
@@ -59,7 +76,7 @@
           </n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -67,7 +84,9 @@
 import { ref, reactive, onMounted, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
-import { NButton, NSpace, NSwitch, NTag } from 'naive-ui'
+import { NButton, NSpace, NSelect, NSwitch, NTag } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '@/api/warehouse'
 import type { Warehouse, CreateWarehouseDto } from '@/types/basic-data'
 
@@ -78,8 +97,22 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const warehouses = ref<Warehouse[]>([])
+const allWarehouses = ref<Warehouse[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+const searchForm = reactive<{
+  name: string
+  code: string
+  isEnabled: 'enabled' | 'disabled' | null
+}>({
+  name: '',
+  code: '',
+  isEnabled: null
+})
+const statusOptions = [
+  { label: '启用', value: 'enabled' },
+  { label: '禁用', value: 'disabled' }
+]
 
 const form = reactive<CreateWarehouseDto & { isEnabled: boolean }>({
   name: '',
@@ -169,15 +202,40 @@ const createColumns = (): DataTableColumns<Warehouse> => {
 
 const columns = createColumns()
 
+const applyFilters = () => {
+  const name = searchForm.name.trim().toLowerCase()
+  const code = searchForm.code.trim().toLowerCase()
+
+  warehouses.value = allWarehouses.value.filter(warehouse => {
+    const matchName = !name || warehouse.name.toLowerCase().includes(name)
+    const matchCode = !code || warehouse.code.toLowerCase().includes(code)
+    const matchStatus = searchForm.isEnabled === null
+      || (searchForm.isEnabled === 'enabled' ? warehouse.isEnabled : !warehouse.isEnabled)
+    return matchName && matchCode && matchStatus
+  })
+}
+
 const fetchWarehouses = async () => {
   loading.value = true
   try {
-    warehouses.value = await getWarehouses()
+    allWarehouses.value = await getWarehouses()
+    applyFilters()
   } catch (error) {
     message.error('获取仓库列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  applyFilters()
+}
+
+const handleReset = async () => {
+  searchForm.name = ''
+  searchForm.code = ''
+  searchForm.isEnabled = null
+  await fetchWarehouses()
 }
 
 const handleCreate = () => {

@@ -138,11 +138,9 @@ function onProductClick(product: typeof searchResults.value[0]) {
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
             <wd-icon name="search" size="18" />
           </view>
-          <input
-            v-model="searchKeyword"
+          <input v-model="searchKeyword"
             class="h-full flex-1 border-none bg-transparent px-3 text-sm font-normal placeholder:text-slate-400 focus:outline-none"
-            placeholder="Search for organic cotton onesies..." confirm-type="search" focus @confirm="onSearch"
-          >
+            placeholder="Search for organic cotton onesies..." confirm-type="search" focus @confirm="onSearch">
           <view v-if="searchKeyword" class="pr-3 text-slate-400" @click="searchKeyword = ''">
             <wd-icon name="close" size="16" />
           </view>
@@ -161,11 +159,9 @@ function onProductClick(product: typeof searchResults.value[0]) {
         </text>
       </view>
       <view class="grid grid-cols-2 gap-4">
-        <view
-          v-for="product in searchResults" :key="product.id"
+        <view v-for="product in searchResults" :key="product.id"
           class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm"
-          @click="onProductClick(product)"
-        >
+          @click="onProductClick(product)">
           <view class="aspect-square overflow-hidden">
             <image :src="product.image" class="h-full w-full" mode="aspectFill" />
           </view>
@@ -181,9 +177,8 @@ function onProductClick(product: typeof searchResults.value[0]) {
                 ${{ product.price.toFixed(2) }}
               </text>
               <button
-                class="size-7 flex items-center justify-center border-0 rounded-full bg-[#efb239] p-0 text-white"
-                @click.stop="addToCart(product)"
-              >
+                class="size-7 flex items-center !mx-0 justify-center border-0 rounded-full bg-[#efb239] p-0 text-white"
+                @click.stop="addToCart(product)">
                 <wd-icon name="add" size="14" color="#fff" />
               </button>
             </view>
@@ -208,10 +203,8 @@ function onProductClick(product: typeof searchResults.value[0]) {
           </view>
         </view>
         <view v-if="searchHistory.length > 0" class="flex flex-wrap gap-2">
-          <view
-            v-for="(item, index) in searchHistory" :key="index"
-            class="flex items-center gap-1 border border-slate-200 rounded-full bg-white px-3 py-2 text-sm text-slate-600 shadow-sm"
-          >
+          <view v-for="(item, index) in searchHistory" :key="index"
+            class="flex items-center gap-1 border border-slate-200 rounded-full bg-white px-3 py-2 text-sm text-slate-600 shadow-sm">
             <text @click="onHistoryClick(item)">
               {{ item }}
             </text>
@@ -232,10 +225,8 @@ function onProductClick(product: typeof searchResults.value[0]) {
           <wd-icon name="fire" size="18" class="text-red-500" />
         </view>
         <view class="flex flex-wrap gap-3">
-          <view
-            v-for="(item, index) in hotSearches" :key="index" class="rounded-full bg-white px-4 py-2 text-sm"
-            :class="index < 3 ? 'text-[#efb239] bg-[#efb239]/10' : 'text-slate-600'" @click="onHotSearchClick(item)"
-          >
+          <view v-for="(item, index) in hotSearches" :key="index" class="rounded-full bg-white px-4 py-2 text-sm"
+            :class="index < 3 ? 'text-[#efb239] bg-[#efb239]/10' : 'text-slate-600'" @click="onHotSearchClick(item)">
             <text class="font-medium">
               {{ index + 1 }}.
             </text>

@@ -1,13 +1,26 @@
 <template>
-  <div class="unit-list">
-    <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">计量单位</span>
-          <n-button type="primary" @click="handleCreate">新增单位</n-button>
-        </div>
-      </template>
+  <div class="p-4 unit-list">
+    <n-card class="mb-4 bg-container transition-theme">
+      <QueryForm :model="searchForm" class="mb-4">
+        <n-form-item label="单位名称">
+          <n-input v-model:value="searchForm.name" placeholder="请输入单位名称" clearable />
+        </n-form-item>
+        <n-form-item label="单位编码">
+          <n-input v-model:value="searchForm.code" placeholder="请输入单位编码" clearable />
+        </n-form-item>
+        <n-form-item>
+          <n-space>
+            <n-button type="primary" @click="handleSearch">查询</n-button>
+            <n-button @click="handleReset">重置</n-button>
+          </n-space>
+        </n-form-item>
+      </QueryForm>
+    </n-card>
 
+    <n-card class="bg-container transition-theme">
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate">新增单位</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="units"
@@ -56,6 +69,7 @@ import { ref, reactive, onMounted, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace } from 'naive-ui'
+import QueryForm from '@/components/common/QueryForm.vue'
 import { getUnits, createUnit, updateUnit, deleteUnit } from '@/api/unit'
 import type { Unit, CreateUnitDto } from '@/types/basic-data'
 
@@ -66,8 +80,13 @@ const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const units = ref<Unit[]>([])
+const allUnits = ref<Unit[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
+const searchForm = reactive({
+  name: '',
+  code: ''
+})
 
 const form = reactive<CreateUnitDto>({
   name: '',
@@ -116,15 +135,37 @@ const createColumns = (): DataTableColumns<Unit> => {
 
 const columns = createColumns()
 
+const applyFilters = () => {
+  const name = searchForm.name.trim().toLowerCase()
+  const code = searchForm.code.trim().toLowerCase()
+
+  units.value = allUnits.value.filter(unit => {
+    const matchName = !name || unit.name.toLowerCase().includes(name)
+    const matchCode = !code || unit.code.toLowerCase().includes(code)
+    return matchName && matchCode
+  })
+}
+
 const fetchUnits = async () => {
   loading.value = true
   try {
-    units.value = await getUnits()
+    allUnits.value = await getUnits()
+    applyFilters()
   } catch (error) {
     message.error('获取单位列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handleSearch = () => {
+  applyFilters()
+}
+
+const handleReset = async () => {
+  searchForm.name = ''
+  searchForm.code = ''
+  await fetchUnits()
 }
 
 const handleCreate = () => {

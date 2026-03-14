@@ -2,7 +2,7 @@
   <div class="p-4">
     <!-- 搜索栏 -->
     <n-card class="mb-4">
-      <n-form inline :model="searchForm" label-placement="left">
+      <QueryForm :model="searchForm">
         <n-form-item label="调拨单号">
           <n-input v-model:value="searchForm.transferNo" placeholder="调拨单号" clearable />
         </n-form-item>
@@ -40,7 +40,7 @@
             <n-button type="primary" @click="handleCreate">新建调拨单</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
     </n-card>
 
     <!-- 调拨单列表 -->
@@ -57,7 +57,13 @@
     </n-card>
 
     <!-- 创建调拨单弹窗 -->
-    <n-modal v-model:show="createModalVisible" title="新建调拨单" style="width: 900px">
+    <SmartFormContainer
+      v-model:show="createModalVisible"
+      title="新建调拨单"
+      :form-item-count="6"
+      modal-width="900px"
+      :drawer-width="960"
+    >
       <n-card>
         <n-form :model="createForm" label-placement="left" label-width="100" ref="formRef">
           <n-form-item label="出库仓库" required path="fromId">
@@ -130,19 +136,19 @@
             </n-space>
           </n-form-item>
         </n-form>
-        <template #footer>
-          <n-space justify="end">
-            <n-button @click="createModalVisible = false">取消</n-button>
-            <n-button type="primary" @click="handleSave" :disabled="createForm.items.length === 0">保存</n-button>
-          </n-space>
-        </template>
       </n-card>
-    </n-modal>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="createModalVisible = false">取消</n-button>
+          <n-button type="primary" @click="handleSave" :disabled="createForm.items.length === 0">保存</n-button>
+        </n-space>
+      </template>
+    </SmartFormContainer>
 
     <!-- SKU选择器弹窗 -->
     <n-modal v-model:show="skuSelectorVisible" title="选择商品" style="width: 700px">
       <n-card>
-        <n-form inline>
+        <QueryForm>
           <n-form-item label="商品名称">
             <n-input v-model:value="skuSearchForm.productName" placeholder="搜索商品" clearable />
           </n-form-item>
@@ -152,7 +158,7 @@
           <n-form-item>
             <n-button type="primary" @click="loadAvailableSkus">搜索</n-button>
           </n-form-item>
-        </n-form>
+        </QueryForm>
         
         <n-data-table
           :columns="skuSelectorColumns"
@@ -216,6 +222,8 @@
 import { ref, reactive, h, onMounted } from 'vue';
 import { NButton, NSpace, NTag, useMessage, NText } from 'naive-ui';
 import type { DataTableColumns, DataTableRowKey } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue';
 import { getTransfers, createTransfer, confirmOut, confirmIn, cancelTransfer, type Transfer } from '@/api/transfer';
 import { getWarehouses } from '@/api/warehouse';
 import { getInventories } from '@/api/inventory';

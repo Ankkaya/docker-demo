@@ -12,9 +12,27 @@
               <n-switch v-model:value="formData.mallEnabled" />
             </n-form-item>
           </n-grid-item>
+          <n-grid-item>
+            <n-form-item label="手动热门">
+              <n-switch v-model:value="formData.isHot" />
+            </n-form-item>
+          </n-grid-item>
           <n-grid-item span="2">
             <n-form-item label="商城名称">
               <n-input v-model:value="formData.name" placeholder="默认带出进销存商品名称" />
+            </n-form-item>
+          </n-grid-item>
+        </n-grid>
+
+        <n-grid :cols="3" :x-gap="24">
+          <n-grid-item>
+            <n-form-item label="热门排序">
+              <n-input-number v-model:value="formData.hotSort" :min="0" placeholder="数字越小越靠前" />
+            </n-form-item>
+          </n-grid-item>
+          <n-grid-item span="2">
+            <n-form-item label="热门标签">
+              <n-input v-model:value="formData.hotLabel" placeholder="例如：爆款、店长推荐" />
             </n-form-item>
           </n-grid-item>
         </n-grid>
@@ -115,6 +133,9 @@ const skuList = reactive<MallSkuForm[]>([])
 
 const formData = reactive({
   mallEnabled: false,
+  isHot: false,
+  hotSort: 0,
+  hotLabel: '',
   name: '',
   description: '',
   detail: '',
@@ -246,6 +267,9 @@ const loadProduct = async () => {
   const mallInfo = product.mallInfo || {}
 
   formData.mallEnabled = product.mallEnabled
+  formData.isHot = mallInfo.isHot ?? false
+  formData.hotSort = mallInfo.hotSort ?? 0
+  formData.hotLabel = mallInfo.hotLabel || ''
   formData.name = mallInfo.name || product.name || ''
   formData.description = mallInfo.description || product.description || ''
   formData.detail = mallInfo.detail || product.detail || ''
@@ -280,6 +304,9 @@ const handleSubmit = async () => {
   try {
     await updateProductMallInfo(productId.value, {
       mallEnabled: formData.mallEnabled,
+      isHot: formData.isHot,
+      hotSort: formData.hotSort,
+      hotLabel: formData.hotLabel || undefined,
       name: formData.name,
       description: formData.description,
       detail: formData.detail,

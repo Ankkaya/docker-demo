@@ -1,13 +1,9 @@
 <template>
-  <div class="menu-list">
+  <div class="p-4 menu-list">
     <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex justify-between items-center">
-          <span class="text-base-text">菜单列表</span>
-          <n-button type="primary" @click="handleCreate(null)">新增菜单</n-button>
-        </div>
-      </template>
-
+      <div class="mb-4 flex items-center justify-end">
+        <n-button type="primary" @click="handleCreate(null)">新增菜单</n-button>
+      </div>
       <n-data-table
         :columns="columns"
         :data="menus"
@@ -19,11 +15,12 @@
     </n-card>
 
     <!-- 新增/编辑弹窗 -->
-    <n-modal
+    <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑菜单' : '新增菜单'"
-      preset="card"
-      style="width: 600px"
+      :form-item-count="9"
+      modal-width="600px"
+      :drawer-width="760"
     >
       <n-form
         ref="formRef"
@@ -81,7 +78,7 @@
           </n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -90,6 +87,7 @@ import { ref, reactive, onMounted, computed, h } from 'vue'
 import type { DataTableColumns, FormInst, FormRules, TreeSelectOption } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace, NTag } from 'naive-ui'
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { Menu, CreateMenuDto } from '@/types'

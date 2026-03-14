@@ -1,35 +1,31 @@
 <template>
-  <div class="banner-list">
+  <div class="p-4 banner-list">
     <n-card class="bg-container transition-theme">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <span class="text-base-text">轮播图管理</span>
+      <div class="mb-4 flex items-center justify-end">
+        <n-space>
           <n-button type="primary" @click="handleCreate">新增轮播图</n-button>
-        </div>
-      </template>
-
-      <n-data-table
-        :columns="columns"
-        :data="banners"
-        :loading="loading"
-        striped
-      />
+          <n-button @click="handleResetList">重置</n-button>
+        </n-space>
+      </div>
+      <n-data-table :columns="columns" :data="banners" :loading="loading" striped />
     </n-card>
 
-    <n-modal
+    <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑轮播图' : '新增轮播图'"
-      preset="card"
-      style="width: 640px"
+      :form-item-count="10"
+      modal-width="640px"
+      :drawer-width="760"
     >
-      <n-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-      >
-        <n-form-item label="名称" path="name">
-          <n-input v-model:value="form.name" placeholder="请输入轮播图名称" />
+      <n-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <n-form-item label="标题" path="title">
+          <n-input v-model:value="form.title" placeholder="请输入轮播图标题" />
+        </n-form-item>
+        <n-form-item label="子标题" path="subtitle">
+          <n-input v-model:value="form.subtitle" placeholder="可选，填写轮播图副文案" />
+        </n-form-item>
+        <n-form-item label="标签" path="tag">
+          <n-input v-model:value="form.tag" placeholder="可选，例：新品上市" />
         </n-form-item>
         <n-form-item label="图片来源">
           <n-radio-group v-model:value="imageSourceType">
@@ -38,15 +34,8 @@
           </n-radio-group>
         </n-form-item>
         <n-form-item v-if="imageSourceType === 'upload'" label="轮播图片" path="image">
-          <n-upload
-            :key="uploadKey"
-            list-type="image-card"
-            :max="1"
-            :custom-request="handleImageUpload"
-            v-model:file-list="imageFileList"
-            @remove="handleImageRemove"
-            accept="image/*"
-          >
+          <n-upload :key="uploadKey" list-type="image-card" :max="1" :custom-request="handleImageUpload"
+            v-model:file-list="imageFileList" @remove="handleImageRemove" accept="image/*">
             <n-button>上传图片</n-button>
           </n-upload>
         </n-form-item>
@@ -78,7 +67,7 @@
           <n-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</n-button>
         </n-space>
       </template>
-    </n-modal>
+    </SmartFormContainer>
   </div>
 </template>
 
@@ -87,6 +76,7 @@ import { computed, h, onMounted, reactive, ref } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useDialog, useMessage } from 'naive-ui'
 import { NButton, NRadio, NRadioGroup, NSpace, NSwitch, NTag } from 'naive-ui'
+import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { createBanner, deleteBanner, getBanners, updateBanner } from '@/api/banner'
 import { uploadFile } from '@/api/file'
 import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url'
@@ -104,9 +94,10 @@ const banners = ref<Banner[]>([])
 const formRef = ref<FormInst>()
 const imageFileList = ref<any[]>([])
 const imageSourceType = ref<'upload' | 'url'>('upload')
-
 const form = reactive<CreateBannerDto & { jumpEnabled: boolean; isEnabled: boolean }>({
-  name: '',
+  title: '',
+  tag: '',
+  subtitle: '',
   image: '',
   jumpEnabled: false,
   jumpPath: '',
@@ -116,7 +107,7 @@ const form = reactive<CreateBannerDto & { jumpEnabled: boolean; isEnabled: boole
 })
 
 const rules: FormRules = {
-  name: [{ required: true, message: '请输入轮播图名称', trigger: 'blur' }],
+  title: [{ required: true, message: '请输入轮播图标题', trigger: 'blur' }],
   image: [{ required: true, message: '请上传图片或填写图片 URL', trigger: ['blur', 'change'] }],
   jumpPath: [{
     validator: () => {
@@ -168,7 +159,19 @@ const uploadKey = computed(() => `${isEdit.value ? 'edit' : 'create'}-${currentI
 const previewImageUrl = computed(() => form.image ? resolveFileUrl(form.image) : '')
 
 const columns = computed<DataTableColumns<Banner>>(() => [
-  { title: '名称', key: 'name', minWidth: 160 },
+  { title: '标题', key: 'title', minWidth: 160 },
+  {
+    title: '标签',
+    key: 'tag',
+    width: 120,
+    render: row => row.tag || '-',
+  },
+  {
+    title: '子标题',
+    key: 'subtitle',
+    minWidth: 180,
+    render: row => row.subtitle || '-',
+  },
   {
     title: '图片',
     key: 'image',
@@ -220,7 +223,9 @@ const columns = computed<DataTableColumns<Banner>>(() => [
 
 const resetForm = () => {
   currentId.value = undefined
-  form.name = ''
+  form.title = ''
+  form.tag = ''
+  form.subtitle = ''
   form.image = ''
   form.jumpEnabled = false
   form.jumpPath = ''
@@ -251,7 +256,9 @@ const handleCreate = () => {
 const handleEdit = (banner: Banner) => {
   isEdit.value = true
   currentId.value = banner.id
-  form.name = banner.name
+  form.title = banner.title
+  form.tag = banner.tag || ''
+  form.subtitle = banner.subtitle || ''
   form.image = banner.image
   form.jumpEnabled = banner.jumpEnabled
   form.jumpPath = banner.jumpPath || ''
@@ -263,10 +270,14 @@ const handleEdit = (banner: Banner) => {
   dialogVisible.value = true
 }
 
+const handleResetList = () => {
+  fetchBanners()
+}
+
 const handleDelete = (banner: Banner) => {
   dialog.warning({
     title: '提示',
-    content: `确定删除轮播图 "${banner.name}" 吗？`,
+    content: `确定删除轮播图 "${banner.title}" 吗？`,
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {

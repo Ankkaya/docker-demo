@@ -2,7 +2,7 @@
   <div class="p-4">
     <!-- 搜索栏 -->
     <n-card class="mb-4">
-      <n-form inline :model="searchForm" label-placement="left">
+      <QueryForm :model="searchForm">
         <n-form-item label="关键词">
           <n-input v-model:value="searchForm.keyword" placeholder="入库单号" clearable />
         </n-form-item>
@@ -22,7 +22,7 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
     </n-card>
 
     <!-- 入库单列表 -->
@@ -94,6 +94,7 @@
 import { ref, reactive, h, onMounted } from 'vue';
 import { NAlert, NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 import { getPurchaseReceipts, confirmReceipt, cancelReceipt, deleteReceipt } from '@/api/purchase';
 import { getPrinterConfigs } from '@/api/printer-config';
 import ReceiptForm from './components/ReceiptForm.vue';
