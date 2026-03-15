@@ -21,22 +21,97 @@ CREATE INDEX "Banner_deletedAt_idx" ON "Banner"("deletedAt");
 -- CreateIndex
 CREATE INDEX "Banner_isEnabled_sort_idx" ON "Banner"("isEnabled", "sort");
 
--- Insert admin menu for banners
-INSERT INTO "Menu" ("id", "name", "path", "icon", "component", "parentId", "order", "hidden", "alwaysShow", "type", "createdAt", "updatedAt", "deletedAt")
-VALUES (43, '轮播图管理', '/banners', 'slideshow', 'banners/index', 40, 6, false, false, 'menu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL)
-ON CONFLICT ("id") DO UPDATE SET
-  "name" = EXCLUDED."name",
-  "path" = EXCLUDED."path",
-  "icon" = EXCLUDED."icon",
-  "component" = EXCLUDED."component",
-  "parentId" = EXCLUDED."parentId",
-  "order" = EXCLUDED."order",
-  "hidden" = EXCLUDED."hidden",
-  "alwaysShow" = EXCLUDED."alwaysShow",
-  "type" = EXCLUDED."type",
-  "deletedAt" = NULL,
-  "updatedAt" = CURRENT_TIMESTAMP;
+DO $$
+DECLARE
+  mall_menu_id INTEGER;
+  banner_menu_id INTEGER;
+  admin_role_id INTEGER;
+BEGIN
+  SELECT "id"
+  INTO mall_menu_id
+  FROM "Menu"
+  WHERE "path" = '/mall'
+  ORDER BY "id"
+  LIMIT 1;
 
-INSERT INTO "_RoleMenus" ("A", "B")
-SELECT 43, "id" FROM "Role" WHERE "code" = 'admin'
-ON CONFLICT ("A", "B") DO NOTHING;
+  IF mall_menu_id IS NULL THEN
+    mall_menu_id := 40;
+
+    IF EXISTS (SELECT 1 FROM "Menu" WHERE "id" = mall_menu_id) THEN
+      SELECT COALESCE(MAX("id"), 0) + 1 INTO mall_menu_id FROM "Menu";
+    END IF;
+
+    INSERT INTO "Menu" (
+      "id", "name", "path", "icon", "component", "parentId",
+      "order", "hidden", "alwaysShow", "type", "createdAt", "updatedAt", "deletedAt"
+    )
+    VALUES (
+      mall_menu_id, '商城管理', '/mall', 'shopping-cart', 'Layout', NULL,
+      5, false, false, 'menu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL
+    );
+  ELSE
+    UPDATE "Menu"
+    SET
+      "name" = '商城管理',
+      "icon" = 'shopping-cart',
+      "component" = 'Layout',
+      "parentId" = NULL,
+      "order" = 5,
+      "hidden" = false,
+      "alwaysShow" = false,
+      "type" = 'menu',
+      "deletedAt" = NULL,
+      "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "id" = mall_menu_id;
+  END IF;
+
+  SELECT "id"
+  INTO banner_menu_id
+  FROM "Menu"
+  WHERE "path" = '/banners'
+  ORDER BY "id"
+  LIMIT 1;
+
+  IF banner_menu_id IS NULL THEN
+    banner_menu_id := 43;
+
+    IF EXISTS (SELECT 1 FROM "Menu" WHERE "id" = banner_menu_id) THEN
+      SELECT COALESCE(MAX("id"), 0) + 1 INTO banner_menu_id FROM "Menu";
+    END IF;
+
+    INSERT INTO "Menu" (
+      "id", "name", "path", "icon", "component", "parentId",
+      "order", "hidden", "alwaysShow", "type", "createdAt", "updatedAt", "deletedAt"
+    )
+    VALUES (
+      banner_menu_id, '轮播图管理', '/banners', 'slideshow', 'banners/index', mall_menu_id,
+      6, false, false, 'menu', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL
+    );
+  ELSE
+    UPDATE "Menu"
+    SET
+      "name" = '轮播图管理',
+      "icon" = 'slideshow',
+      "component" = 'banners/index',
+      "parentId" = mall_menu_id,
+      "order" = 6,
+      "hidden" = false,
+      "alwaysShow" = false,
+      "type" = 'menu',
+      "deletedAt" = NULL,
+      "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "id" = banner_menu_id;
+  END IF;
+
+  SELECT "id"
+  INTO admin_role_id
+  FROM "Role"
+  WHERE "code" = 'admin'
+  LIMIT 1;
+
+  IF admin_role_id IS NOT NULL THEN
+    INSERT INTO "_RoleMenus" ("A", "B")
+    VALUES (banner_menu_id, admin_role_id)
+    ON CONFLICT ("A", "B") DO NOTHING;
+  END IF;
+END $$;

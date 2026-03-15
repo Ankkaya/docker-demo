@@ -268,6 +268,21 @@ async function main() {
     },
   });
 
+  // ==================== 4. 创建进销存菜单 ====================
+  const inventoryMgmtMenu = await prisma.menu.upsert({
+    where: { id: 30 },
+    update: {},
+    create: {
+      id: 30,
+      name: '进销存',
+      path: '/inventory-mgmt',
+      icon: 'inventory-2',     // 仓库图标 - 代表进销存
+      component: 'Layout',
+      order: 4,
+      type: 'menu',
+    },
+  });
+
   const productListMenu = await prisma.menu.upsert({
     where: { id: 21 },
     update: {
@@ -311,17 +326,17 @@ async function main() {
     },
   });
 
-  // ==================== 4. 创建进销存菜单 ====================
-  const inventoryMgmtMenu = await prisma.menu.upsert({
-    where: { id: 30 },
+  // ==================== 商城管理菜单 ====================
+  const mallMenu = await prisma.menu.upsert({
+    where: { id: 40 },
     update: {},
     create: {
-      id: 30,
-      name: '进销存',
-      path: '/inventory-mgmt',
-      icon: 'inventory-2',     // 仓库图标 - 代表进销存
+      id: 40,
+      name: '商城管理',
+      path: '/mall',
+      icon: 'shopping-cart',   // 购物车图标
       component: 'Layout',
-      order: 4,
+      order: 5,
       type: 'menu',
     },
   });
@@ -497,21 +512,6 @@ async function main() {
       component: 'inventory-logs/index',
       parentId: 30,
       order: 10,
-      type: 'menu',
-    },
-  });
-
-  // ==================== 商城管理菜单 ====================
-  const mallMenu = await prisma.menu.upsert({
-    where: { id: 40 },
-    update: {},
-    create: {
-      id: 40,
-      name: '商城管理',
-      path: '/mall',
-      icon: 'shopping-cart',   // 购物车图标
-      component: 'Layout',
-      order: 5,
       type: 'menu',
     },
   });
