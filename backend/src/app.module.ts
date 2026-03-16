@@ -19,6 +19,7 @@ import { PurchaseReceiptsModule } from './domains/purchase-receipts/purchase-rec
 import { PurchaseReturnsModule } from './domains/purchase-returns/purchase-returns.module';
 import { PurchasesModule } from './domains/purchases/purchases.module';
 import { RolesModule } from './domains/roles/roles.module';
+import { ReviewsModule } from './domains/reviews/reviews.module';
 import { SaleReturnsModule } from './domains/sale-returns/sale-returns.module';
 import { ShipmentsModule } from './domains/shipments/shipments.module';
 import { SuppliersModule } from './domains/suppliers/suppliers.module';
@@ -57,6 +58,7 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
     TransfersModule,
     AdjustmentsModule,
     CartsModule,
+    ReviewsModule,
     PrintTemplatesModule,
     PrintersModule,
     PrinterConfigsModule,

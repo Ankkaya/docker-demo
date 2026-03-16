@@ -25,6 +25,22 @@ export class CreateCategoryDto {
   code: string;
 
   @ApiPropertyOptional({
+    example: '数码潮品，随心选购',
+    description: '分类子标题',
+  })
+  @IsString()
+  @IsOptional()
+  subtitle?: string;
+
+  @ApiPropertyOptional({
+    example: '适用于手机、电脑、智能硬件等电子产品展示与销售',
+    description: '分类备注',
+  })
+  @IsString()
+  @IsOptional()
+  remark?: string;
+
+  @ApiPropertyOptional({
     example: 1,
     description: '父级分类ID，为空表示顶级分类',
   })

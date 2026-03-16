@@ -37,7 +37,7 @@
     <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑分类' : '新增分类'"
-      :form-item-count="7"
+      :form-item-count="9"
       modal-width="500px"
       :drawer-width="760"
     >
@@ -53,6 +53,17 @@
         <n-form-item label="分类编码" path="code">
           <n-input v-model:value="form.code" placeholder="请输入分类编码" :disabled="isEdit" />
         </n-form-item>
+        <n-form-item label="子标题" path="subtitle">
+          <n-input v-model:value="form.subtitle" placeholder="请输入分类子标题" />
+        </n-form-item>
+        <n-form-item label="备注" path="remark">
+          <n-input
+            v-model:value="form.remark"
+            type="textarea"
+            placeholder="请输入分类备注"
+            :autosize="{ minRows: 2, maxRows: 4 }"
+          />
+        </n-form-item>
         <n-form-item label="父级分类" path="parentId">
           <n-tree-select
             v-model:value="form.parentId"
@@ -65,15 +76,17 @@
         </n-form-item>
         <n-form-item label="分类图标" path="icon">
           <n-space vertical style="width: 100%">
-            <n-input
-              v-model:value="form.icon"
-              placeholder="请输入 Iconify ID，例如 material-symbols:category-outline"
-            />
+            <IconPicker v-model="form.icon" />
             <div class="text-xs text-gray-500">
-              推荐统一保存 Iconify ID。旧 Ionicons 名称和旧业务 key 仍兼容显示，但不建议继续新增。
+              统一录入 Ionicons 名称。输入关键字会忽略大小写匹配，并在下方展示相似图标。
             </div>
             <div v-if="form.icon" class="flex items-center gap-2 text-sm text-gray-500">
-              <AppIcon v-if="iconPreviewUrl" :icon-url="iconPreviewUrl" :size="18" :alt="form.icon" />
+              <span
+                v-if="iconPreviewUrl"
+                class="inline-flex items-center justify-center rounded-md bg-slate-700 p-1"
+              >
+                <AppIcon :icon-url="iconPreviewUrl" :size="18" :alt="form.icon" />
+              </span>
               <n-icon v-else-if="getIconComponent(form.icon)" size="18" :component="getIconComponent(form.icon)" />
               <span>{{ form.icon }}</span>
             </div>
@@ -122,6 +135,7 @@ import { getCategories, getCategoriesFlat, getCategory, createCategory, updateCa
 import { uploadFile } from '@/api/file'
 import { extractFileObjectKey, resolveFileUrl } from '@/utils/file-url'
 import AppIcon from '@/components/common/AppIcon.vue'
+import IconPicker from '@/components/common/IconPicker.vue'
 import type { Category, CreateCategoryDto } from '@/types/basic-data'
 import * as Ionicons from '@vicons/ionicons5'
 
@@ -154,6 +168,8 @@ const iconMap = Ionicons as Record<string, any>
 const form = reactive<CreateCategoryDto & { isEnabled: boolean }>({
   name: '',
   code: '',
+  subtitle: '',
+  remark: '',
   parentId: undefined,
   icon: '',
   image: '',
@@ -170,12 +186,15 @@ const getIconComponent = (iconName?: string) => {
 }
 
 const getIconPreviewUrl = (icon?: string) => {
-  if (!icon) return ''
-  const trimmed = icon.trim()
-  if (!/^[a-z0-9-]+:[a-z0-9-]+$/i.test(trimmed)) {
-    return ''
-  }
-  return `https://api.iconify.design/${trimmed}.svg`
+  const component = getIconComponent(icon)
+  if (!component) return ''
+
+  const iconName = icon!.trim()
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z]+)([A-Z][a-z0-9]+)/g, '$1-$2')
+    .toLowerCase()
+
+  return `https://api.iconify.design/ion/${iconName}.svg?color=%23ffffff`
 }
 
 const getFilenameFromKey = (value?: string | null) => {
@@ -273,6 +292,11 @@ const createColumns = (): DataTableColumns<Category> => {
     { title: '分类名称', key: 'name' },
     { title: '分类编码', key: 'code' },
     {
+      title: '子标题',
+      key: 'subtitle',
+      render: (row) => row.subtitle || '-',
+    },
+    {
       title: '图片',
       key: 'image',
       width: 80,
@@ -293,17 +317,24 @@ const createColumns = (): DataTableColumns<Category> => {
       render: (row) => {
         if (!row.icon) return '-'
         const legacyIcon = getIconComponent(row.icon)
-        return h('div', { class: 'flex items-center gap-1' }, [
+        return h('div', { class: 'flex items-center' }, [
           row.iconUrl
-            ? h(AppIcon, { iconUrl: row.iconUrl, size: 16, alt: row.icon })
+            ? h('span', {
+              class: 'inline-flex items-center justify-center rounded-md bg-slate-700 p-1',
+            }, [
+              h(AppIcon, { iconUrl: row.iconUrl, size: 16, alt: row.icon }),
+            ])
             : legacyIcon
               ? h(NIcon, { size: 16, component: legacyIcon })
               : null,
-          h('span', row.icon),
         ])
       }
     },
-    { title: '层级', key: 'level', width: 80 },
+    {
+      title: '层级',
+      key: 'level',
+      width: 80,
+    },
     { title: '排序号', key: 'sort', width: 100 },
     {
       title: '状态',
@@ -317,6 +348,11 @@ const createColumns = (): DataTableColumns<Category> => {
           uncheckedValue: false
         })
       }
+    },
+    {
+      title: '备注',
+      key: 'remark',
+      render: (row) => row.remark || '-',
     },
     {
       title: '操作',
@@ -394,6 +430,8 @@ const handleCreate = () => {
   currentId.value = undefined
   form.name = ''
   form.code = ''
+  form.subtitle = ''
+  form.remark = ''
   form.parentId = undefined
   form.icon = ''
   form.image = ''
@@ -408,6 +446,8 @@ const handleAddChild = (category: Category) => {
   currentId.value = undefined
   form.name = ''
   form.code = ''
+  form.subtitle = ''
+  form.remark = ''
   form.parentId = category.id
   form.icon = ''
   form.image = ''
@@ -426,6 +466,8 @@ const handleEdit = async (category: Category) => {
     currentId.value = detail.id
     form.name = detail.name
     form.code = detail.code
+    form.subtitle = detail.subtitle || ''
+    form.remark = detail.remark || ''
     form.parentId = detail.parentId
     form.icon = detail.icon || ''
     form.image = detail.image || ''
@@ -505,3 +547,13 @@ onMounted(() => {
   fetchCategories()
 })
 </script>
+
+<style scoped>
+.category-list :deep(.n-data-table-th__title) {
+  white-space: nowrap;
+}
+
+.category-list :deep(.n-data-table-td:nth-child(1)) {
+  white-space: nowrap;
+}
+</style>

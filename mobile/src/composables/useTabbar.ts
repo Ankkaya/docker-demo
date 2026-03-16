@@ -7,6 +7,8 @@ export interface TabbarItem {
   iconUrl?: string | null
 }
 
+export const TABBAR_ROUTE_NAMES = ['home', 'category', 'cart', 'user'] as const
+
 const tabbarItems = ref<TabbarItem[]>([
   { name: 'home', value: null, active: false, title: '首页', icon: 'i-material-symbols:house' },
   { name: 'category', value: null, active: false, title: '分类', icon: 'i-material-symbols:category-rounded' },

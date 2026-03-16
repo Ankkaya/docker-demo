@@ -13,12 +13,13 @@ definePage({
 })
 
 const router = useRouter()
+const userStore = useUserStore()
 
-const userInfo = ref({
-  name: 'JoyfulParent88',
-  level: '黄金会员 Lv.2',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC7HQbD7l74qP4KY_mYzh7eti9QrX6NRRQpFmz2llc7Z6dKA19_7T7LCPm6ouvrUZQ6vHW6G4ASP0CwVCy6rfMN5buevPI2sn_7HJqA3woR9r9m_WI42q9DQ7oP4f3g4Fhwf3fwXuhG4SJY78nhi4G0QS5J_BfzqKtIeQBcg9rxMGGoSWIiEvYmbIdkTFFzd9O9qw0lOkAXFUQxNUJEGBWOVCxBapArUgviBq5T3_WK4tV8o2ywuVB7Gy6sEtOKf1swca_wBrHUY44g',
-})
+const userInfo = computed(() => ({
+  name: userStore.displayName,
+  level: userStore.isLoggedIn ? '微信会员' : '未登录',
+  avatar: userStore.displayAvatar,
+}))
 
 const orderMenus = ref([
   { key: 'pay', label: '待付款', icon: 'account_balance_wallet', badge: '' },
@@ -78,6 +79,20 @@ function contactSupport() {
   uni.showToast({ title: '客服功能开发中', icon: 'none' })
 }
 
+function handleRelogin() {
+  userStore.openAuthPopup({
+    name: 'user',
+    path: '/pages/user/index',
+    isTabbar: true,
+  })
+}
+
+function handleLogout() {
+  userStore.logout()
+  uni.showToast({ title: '已退出登录', icon: 'success' })
+  router.pushTab({ name: 'home' })
+}
+
 // 订单菜单图标: i-material-symbols:account-balance-wallet i-material-symbols:package-2 i-material-symbols:local-shipping i-material-symbols:chat-error
 // 服务菜单图标: i-material-symbols:favorite i-material-symbols:history i-material-symbols:location-on i-material-symbols:confirmation-number i-material-symbols:support-agent
 
@@ -109,7 +124,10 @@ function getServiceIconClass(key: string) {
       <view class="p-6">
         <view class="flex items-center justify-between gap-3">
           <view class="min-w-0 flex items-center gap-4">
-            <image :src="userInfo.avatar" class="size-20 border-4 border-[#efb239]/20 rounded-full" mode="aspectFill" />
+            <view class="size-20 flex items-center justify-center border-4 border-[#efb239]/20 rounded-full bg-white">
+              <image v-if="userInfo.avatar" :src="userInfo.avatar" class="size-full rounded-full" mode="aspectFill" />
+              <text v-else class="i-material-symbols:account-circle text-[64px] text-[#efb239] leading-none" />
+            </view>
             <view class="min-w-0">
               <view class="flex items-center gap-1">
                 <text class="max-w-[180px] truncate text-xl font-bold">
@@ -121,6 +139,17 @@ function getServiceIconClass(key: string) {
                 <text class="i-material-symbols:star text-[12px] text-[#efb239] leading-none" />
                 <text class="text-xs text-[#efb239] font-semibold">
                   {{ userInfo.level }}
+                </text>
+              </view>
+              <view class="mt-3 flex items-center gap-3">
+                <text class="text-xs text-slate-500" @click="handleRelogin">
+                  重新授权
+                </text>
+                <text class="text-xs text-slate-300">
+                  |
+                </text>
+                <text class="text-xs text-slate-500" @click="handleLogout">
+                  退出登录
                 </text>
               </view>
             </view>

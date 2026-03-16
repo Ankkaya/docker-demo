@@ -263,7 +263,7 @@ export class CategoriesService {
   private async toCategoryVo(entity: any) {
     return CategoryVo.fromEntity({
       ...entity,
-      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon, 'white'),
       image: await this.minioService.resolveStoredFileUrl(entity.image),
     });
   }
@@ -278,7 +278,7 @@ export class CategoriesService {
 
     return CategoryWithParentVo.fromEntity({
       ...entity,
-      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon, 'white'),
       image: await this.minioService.resolveStoredFileUrl(entity.image),
       parent,
     });
@@ -291,7 +291,7 @@ export class CategoriesService {
 
     return CategoryTreeVo.fromEntity({
       ...entity,
-      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon),
+      iconUrl: await this.iconAssetsService.resolveIconUrl(entity.icon, 'white'),
       image: await this.minioService.resolveStoredFileUrl(entity.image),
       children,
     });

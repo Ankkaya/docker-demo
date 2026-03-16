@@ -16,141 +16,127 @@ definePage({
 
 // 使用路由系统
 const router = useRouter()
+const { getTabbarItemValue } = useTabbar()
+const { error: showError } = useGlobalToast()
+
+const { topAreaHeight, safeAreaInsetsBottom } = usePlatform()
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || ''
+const fallbackCategoryIcons = ['child_care', 'stroller', 'face', 'toys', 'eco', 'local_offer', 'new_releases', 'trending_up']
+const fallbackCategoryImage = 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop'
+
+type RawCategory = {
+  id: number
+  name?: string | null
+  subtitle?: string | null
+  remark?: string | null
+  image?: string | null
+}
+
+type CategoryCardItem = {
+  id: number
+  name: string
+  icon: string
+  description: string
+  subCategories: {
+    id: number
+    name: string
+    count: number
+    image: string
+    style: 'dark' | 'light'
+    subTitle?: string
+  }[]
+}
 
 // 当前选中的分类
 const activeCategory = ref(0)
 
-// 搜索关键词
-const searchKeyword = ref('')
-
 // 分类数据
-const categories = ref([
-  {
-    id: 1,
-    name: 'Newborn',
-    icon: 'child_care',
-    description: 'Soft, organic fabrics for your little ones.',
-    subCategories: [
-      { id: 101, name: 'Onesies &\nBodysuits', count: 24, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 102, name: 'Sleepwear', count: 18, image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 103, name: 'Outdoor', count: 12, image: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 104, name: 'Accessories', count: 45, image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 105, name: 'Bedding', count: 16, image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 106, name: 'Gift Bundles', count: 0, image: '', style: 'light', subTitle: 'Perfect for baby showers and new arrivals' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Toddler',
-    icon: 'stroller',
-    description: 'Comfortable clothes for active toddlers.',
-    subCategories: [
-      { id: 201, name: 'Tops & Tees', count: 32, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 202, name: 'Bottoms', count: 28, image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 203, name: 'Dresses', count: 24, image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 204, name: 'Outerwear', count: 15, image: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 205, name: 'Pajamas', count: 20, image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 206, name: 'New Arrivals', count: 0, image: '', style: 'light', subTitle: 'Check out our latest collection' },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Kids',
-    icon: 'face',
-    description: 'Stylish outfits for growing kids.',
-    subCategories: [
-      { id: 301, name: 'Casual Wear', count: 45, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 302, name: 'School Uniform', count: 30, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 303, name: 'Sportswear', count: 25, image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 304, name: 'Party Wear', count: 18, image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 305, name: 'Seasonal', count: 22, image: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 306, name: 'Sale Items', count: 0, image: '', style: 'light', subTitle: 'Up to 50% off selected items' },
-    ],
-  },
-  {
-    id: 4,
-    name: 'Accessory',
-    icon: 'toys',
-    description: 'Cute accessories for your little ones.',
-    subCategories: [
-      { id: 401, name: 'Hats & Caps', count: 35, image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 402, name: 'Socks & Shoes', count: 42, image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 403, name: 'Bibs', count: 28, image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 404, name: 'Hair Accessories', count: 56, image: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 405, name: 'Bags', count: 15, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 406, name: 'Gift Sets', count: 0, image: '', style: 'light', subTitle: 'Perfect presents for any occasion' },
-    ],
-  },
-  {
-    id: 5,
-    name: 'Organic',
-    icon: 'eco',
-    description: '100% organic and eco-friendly products.',
-    subCategories: [
-      { id: 501, name: 'Organic Cotton', count: 38, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 502, name: 'Bamboo Fabric', count: 22, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 503, name: 'Natural Dye', count: 16, image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 504, name: 'Eco Toys', count: 30, image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&h=300&fit=crop', style: 'dark' },
-    ],
-  },
-  {
-    id: 6,
-    name: 'Sale',
-    icon: 'local_offer',
-    description: 'Great deals on baby essentials.',
-    subCategories: [
-      { id: 601, name: 'Clearance', count: 55, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 602, name: 'Seasonal Sale', count: 42, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 603, name: 'Bundle Deals', count: 18, image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 604, name: 'Last Chance', count: 24, image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&h=300&fit=crop', style: 'dark' },
-    ],
-  },
-  {
-    id: 7,
-    name: 'New',
-    icon: 'new_releases',
-    description: 'Check out our latest arrivals.',
-    subCategories: [
-      { id: 701, name: 'Newborn New', count: 28, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 702, name: 'Toddler New', count: 35, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 703, name: 'Kids New', count: 42, image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 704, name: 'Accessories New', count: 25, image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&h=300&fit=crop', style: 'dark' },
-    ],
-  },
-  {
-    id: 8,
-    name: 'Bestseller',
-    icon: 'trending_up',
-    description: 'Our most popular products.',
-    subCategories: [
-      { id: 801, name: 'Top Rated', count: 48, image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 802, name: 'Most Loved', count: 52, image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 803, name: 'Customer Favs', count: 38, image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=300&h=300&fit=crop', style: 'dark' },
-      { id: 804, name: 'Trending', count: 45, image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=300&h=300&fit=crop', style: 'dark' },
-    ],
-  },
-])
+const categories = ref<CategoryCardItem[]>([])
 
-// 页面加载时获取参数
-onLoad((options) => {
-  if (options?.activeIndex !== undefined) {
-    const index = Number.parseInt(options.activeIndex, 10)
-    if (index >= 0 && index < categories.value.length) {
-      activeCategory.value = index
-    }
+function resolveAssetUrl(url?: string | null) {
+  if (!url) {
+    return ''
   }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+
+  if (!apiBaseURL) {
+    return url
+  }
+
+  try {
+    return new URL(url, apiBaseURL).toString()
+  }
+  catch {
+    return url
+  }
+}
+
+function mapSubCategoryItem(category: RawCategory) {
+  const image = resolveAssetUrl(category.image)
+  const subTitle = category.subtitle || category.remark || ''
+  const hasImage = Boolean(image)
+
+  return {
+    id: category.id,
+    name: category.name || '未命名分类',
+    count: 0,
+    image: hasImage ? image : fallbackCategoryImage,
+    style: hasImage ? 'dark' as const : 'light' as const,
+    subTitle,
+  }
+}
+
+function mapCategoryItem(category: RawCategory, children: RawCategory[], index: number): CategoryCardItem {
+  return {
+    id: category.id,
+    name: category.name || `分类${index + 1}`,
+    icon: fallbackCategoryIcons[index] || fallbackCategoryIcons[fallbackCategoryIcons.length - 1],
+    description: category.subtitle || category.remark || '精选分类内容',
+    subCategories: children.map(mapSubCategoryItem),
+  }
+}
+
+async function loadCategories() {
+  try {
+    const categoryResponse = await Apis.general.MallHomeController_findCategories().send()
+    const categoryList = Array.isArray(categoryResponse) ? categoryResponse : []
+    const rootList = categoryList.filter((category: RawCategory & { parentId?: number | null }) => category.parentId == null)
+
+    categories.value = rootList.map((category: RawCategory, index: number) => {
+      const children = categoryList.filter(
+        (item: RawCategory & { parentId?: number | null }) => item.parentId === category.id,
+      )
+      return mapCategoryItem(category, children, index)
+    })
+
+    syncActiveCategory()
+  }
+  catch (error: any) {
+    showError(error?.message || '分类数据加载失败')
+  }
+}
+
+function syncActiveCategory() {
+  const index = getTabbarItemValue('category')
+  if (typeof index === 'number' && index >= 0 && index < categories.value.length) {
+    activeCategory.value = index
+  }
+  else {
+    activeCategory.value = 0
+  }
+}
+
+onShow(() => {
+  loadCategories()
+  syncActiveCategory()
 })
 
 // 切换分类
 function onCategoryChange(index: number) {
   activeCategory.value = index
-}
-
-// 搜索
-function onSearch() {
-  router.push({
-    name: 'search',
-  })
 }
 
 // 点击子分类
@@ -165,7 +151,13 @@ function onSubCategoryClick(subCategory: any) {
 
 // 获取当前分类
 const currentCategory = computed(() => {
-  return categories.value[activeCategory.value] || categories.value[0]
+  return categories.value[activeCategory.value] || categories.value[0] || {
+    id: 0,
+    name: '',
+    icon: fallbackCategoryIcons[0],
+    description: '',
+    subCategories: [],
+  }
 })
 
 // 获取当前子分类
@@ -175,55 +167,26 @@ const currentSubCategories = computed(() => {
 </script>
 
 <template>
-  <view class="h-screen flex flex-col bg-[#f8f7f6]">
-    <!-- Header & Search -->
-    <view class="z-50 bg-[#f8f7f6]/80 backdrop-blur-md">
-      <!-- Search Bar -->
-      <view class="px-4 pb-3">
-        <view
-          class="h-11 w-full flex items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
-          @click="onSearch"
-        >
-          <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
-            <wd-icon name="search" size="18" />
-          </view>
-          <view class="h-full w-full flex items-center px-3 text-sm text-slate-400">
-            Search products...
-          </view>
-        </view>
-      </view>
-    </view>
-
+  <view class="flex flex-col bg-[#f8f7f6]">
     <!-- Category Content -->
-    <view class="flex flex-1 overflow-hidden">
+    <view class="flex overflow-hidden"
+      :style="{ height: `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px - 50px)` }">
       <!-- Left Sidebar -->
-      <scroll-view scroll-y class="w-24 bg-white">
-        <view
-          v-for="(category, index) in categories" :key="category.id"
+      <scroll-view scroll-y class="w-24 bg-white flex-shrink-0">
+        <view v-for="(category, index) in categories" :key="category.id"
           class="relative flex flex-col items-center justify-center px-2 py-4 transition-all duration-200"
-          :class="activeCategory === index ? 'bg-[#f8f7f6]' : 'bg-white'" @click="onCategoryChange(index)"
-        >
+          :class="activeCategory === index ? 'bg-[#f8f7f6]' : 'bg-white'" @click="onCategoryChange(index)">
           <!-- Active Indicator -->
-          <view
-            v-if="activeCategory === index"
-            class="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-[#efb239] -translate-y-1/2"
-          />
+          <view v-if="activeCategory === index"
+            class="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-[#efb239] -translate-y-1/2" />
           <!-- Icon -->
-          <view
-            class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
-            :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'"
-          >
-            <app-icon
-              :icon="category.icon"
-              :size="20"
-              :color="activeCategory === index ? '#efb239' : '#94a3b8'"
-            />
+          <view class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
+            :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'">
+            <app-icon :icon="category.icon" :size="20" :color="activeCategory === index ? '#efb239' : '#94a3b8'" />
           </view>
           <!-- Name -->
-          <text
-            class="text-center text-[11px] font-medium"
-            :class="activeCategory === index ? 'text-[#efb239]' : 'text-slate-600'"
-          >
+          <text class="text-center text-[11px] font-medium"
+            :class="activeCategory === index ? 'text-[#efb239]' : 'text-slate-600'">
             {{ category.name }}
           </text>
         </view>
@@ -234,7 +197,7 @@ const currentSubCategories = computed(() => {
         <!-- Category Header -->
         <view class="mb-5">
           <text class="block text-2xl text-slate-900 font-bold">
-            {{ currentCategory.name }} Essentials
+            {{ currentCategory.name }}
           </text>
           <text class="mt-1 block text-sm text-slate-500">
             {{ currentCategory.description }}
@@ -243,12 +206,10 @@ const currentSubCategories = computed(() => {
 
         <!-- Sub Categories Grid -->
         <view class="grid grid-cols-2 gap-3">
-          <view
-            v-for="sub in currentSubCategories" :key="sub.id" class="relative overflow-hidden rounded-2xl"
+          <view v-for="sub in currentSubCategories" :key="sub.id" class="relative overflow-hidden rounded-2xl"
             :class="sub.style === 'light' ? 'bg-[#f5e6c8]' : 'bg-slate-400'"
             :style="sub.style === 'dark' ? `background-image: url(${sub.image}); background-size: cover; background-position: center;` : ''"
-            @click="onSubCategoryClick(sub)"
-          >
+            @click="onSubCategoryClick(sub)">
             <!-- Dark Style Card -->
             <view v-if="sub.style === 'dark'" class="relative aspect-[4/5]">
               <!-- Gradient Overlay -->

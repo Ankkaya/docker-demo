@@ -13,7 +13,7 @@ export default <Config>{
        * 1. openapi json file url
        * 2. local file
        */
-      input: ' http://localhost:3001/api/docs',
+      input: 'http://localhost:3001/api/docs/mall-json',
       /**
        * input file platform. Currently only swagger is supported.
        * When this parameter is specified, the input field only needs to specify the document address without specifying the openapi file

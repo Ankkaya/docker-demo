@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MinioService } from '@/infrastructure/minio/minio.service';
 
+type IconVariant = 'default' | 'white';
+
 @Injectable()
 export class IconAssetsService {
   private readonly logger = new Logger('IconAssetsService');
@@ -39,19 +41,19 @@ export class IconAssetsService {
 
   constructor(private readonly minioService: MinioService) {}
 
-  async resolveIconUrl(icon?: string | null): Promise<string | null> {
+  async resolveIconUrl(icon?: string | null, variant: IconVariant = 'default'): Promise<string | null> {
     const parsed = this.parseIconifyId(icon);
     if (!parsed) {
       return null;
     }
 
-    const objectKey = this.buildObjectKey(parsed.collection, parsed.name);
+    const objectKey = this.buildObjectKey(parsed.collection, parsed.name, variant);
 
     if (await this.minioService.fileExists(objectKey)) {
       return this.minioService.getStoredFileProxyUrl(objectKey);
     }
 
-    const svg = await this.fetchIconSvg(parsed.collection, parsed.name);
+    const svg = await this.fetchIconSvg(parsed.collection, parsed.name, variant);
     if (!svg) {
       return null;
     }
@@ -59,7 +61,7 @@ export class IconAssetsService {
     await this.minioService.uploadBuffer(
       Buffer.from(svg),
       `${parsed.name}.svg`,
-      `icons/${parsed.collection}`,
+      this.buildObjectDirectory(parsed.collection, variant),
       'image/svg+xml',
     );
 
@@ -113,11 +115,16 @@ export class IconAssetsService {
       .toLowerCase();
   }
 
-  private buildObjectKey(collection: string, name: string): string {
-    return `icons/${collection}/${name}.svg`;
+  private buildObjectDirectory(collection: string, variant: IconVariant): string {
+    const suffix = variant === 'white' ? 'white' : 'default';
+    return `icons/${suffix}/${collection}`;
   }
 
-  private async fetchIconSvg(collection: string, name: string): Promise<string | null> {
+  private buildObjectKey(collection: string, name: string, variant: IconVariant): string {
+    return `${this.buildObjectDirectory(collection, variant)}/${name}.svg`;
+  }
+
+  private async fetchIconSvg(collection: string, name: string, variant: IconVariant): Promise<string | null> {
     const url = `${this.iconifyApiBase}/${collection}/${name}.svg`;
 
     try {
@@ -133,18 +140,35 @@ export class IconAssetsService {
       }
 
       const rawSvg = await response.text();
-      return this.normalizeSvg(rawSvg);
+      return this.normalizeSvg(rawSvg, variant);
     } catch (error) {
       this.logger.warn(`获取 Iconify SVG 异常: ${collection}:${name}, error=${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
   }
 
-  private normalizeSvg(svg: string): string {
+  private normalizeSvg(svg: string, variant: IconVariant): string {
     let normalized = svg
       .replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/\s(width|height)=["'][^"']*%[^"']*["']/gi, '')
+      .replace(/currentColor/gi, variant === 'white' ? '#ffffff' : 'currentColor')
       .trim();
+
+    if (variant === 'white') {
+      normalized = normalized
+        .replace(/\s(fill|stroke)=["'](?!none\b|url\()[^"']*["']/gi, (_match, attr: string) => ` ${attr}="#ffffff"`)
+        .replace(/\sstyle=["']([^"']*)["']/gi, (_match, styleText: string) => {
+          const updatedStyle = styleText
+            .replace(/(^|;)\s*color\s*:\s*[^;]+/gi, '$1color:#ffffff')
+            .replace(/(^|;)\s*fill\s*:\s*(?!none\b|url\()[^;]+/gi, '$1fill:#ffffff')
+            .replace(/(^|;)\s*stroke\s*:\s*(?!none\b|url\()[^;]+/gi, '$1stroke:#ffffff');
+          return ` style="${updatedStyle}"`;
+        });
+
+      if (!/\scolor=/.test(normalized)) {
+        normalized = normalized.replace('<svg', '<svg color="#ffffff"');
+      }
+    }
 
     if (!/\swidth=/.test(normalized)) {
       normalized = normalized.replace('<svg', '<svg width="24"');

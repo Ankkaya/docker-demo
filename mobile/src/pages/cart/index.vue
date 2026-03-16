@@ -116,26 +116,14 @@ function goProfile() {
 </script>
 
 <template>
-  <view class="h-screen flex flex-col overflow-x-hidden bg-[#f8f7f6] text-slate-900">
-    <view class="sticky top-0 z-20 border-b border-[#efb239]/10 bg-[#f8f7f6]/90 backdrop-blur-md">
-      <view class="flex items-center justify-between p-4">
-        <view class="size-10 flex items-center justify-center rounded-full text-slate-900" @click="goBack">
-          <wd-icon name="arrow-left" size="20" color="#0f172a" />
-        </view>
-        <text class="flex-1 pr-10 text-center text-lg font-bold">
-          Shopping Bag
-        </text>
-      </view>
-    </view>
+  <view class="
+   flex flex-col overflow-x-hidden bg-[#f8f7f6] text-slate-900">
 
     <scroll-view scroll-y class="flex-1">
       <view class="overflow-x-hidden px-4 py-6">
-        <view
-          v-for="(item, index) in cartItems"
-          :key="item.id"
+        <view v-for="(item, index) in cartItems" :key="item.id"
           class="box-border w-full flex gap-4 border border-[#efb239]/5 rounded-xl bg-white p-4 shadow-sm"
-          :class="index > 0 ? 'mt-4' : ''"
-        >
+          :class="index > 0 ? 'mt-4' : ''">
           <image :src="item.image" mode="aspectFill" class="size-24 rounded-lg" />
           <view class="min-w-0 flex flex-1 flex-col justify-between">
             <view>
@@ -157,13 +145,15 @@ function goProfile() {
 
             <view class="mt-2">
               <view class="inline-flex items-center gap-3 rounded-full bg-[#f8f7f6] px-2 py-1">
-                <view class="size-6 flex items-center justify-center rounded-full bg-white shadow-sm" @click="decreaseQty(item)">
+                <view class="size-6 flex items-center justify-center rounded-full bg-white shadow-sm"
+                  @click="decreaseQty(item)">
                   <wd-icon name="remove" size="14" color="#0f172a" />
                 </view>
                 <text class="w-4 text-center text-sm font-bold">
                   {{ item.quantity }}
                 </text>
-                <view class="size-6 flex items-center justify-center rounded-full bg-[#efb239]" @click="increaseQty(item)">
+                <view class="size-6 flex items-center justify-center rounded-full bg-[#efb239]"
+                  @click="increaseQty(item)">
                   <wd-icon name="add" size="14" color="#fff" />
                 </view>
               </view>
@@ -172,12 +162,11 @@ function goProfile() {
         </view>
 
         <view class="mt-8 box-border min-w-0 w-full flex gap-2">
-          <input
-            v-model="promoCode"
+          <input v-model="promoCode"
             class="h-10 min-w-0 flex-1 border border-[#efb239]/20 rounded-lg bg-white px-3 text-sm"
-            placeholder="Promo code"
-          >
-          <view class="h-10 flex shrink-0 items-center rounded-lg bg-[#efb239]/20 px-4 text-sm text-[#efb239] font-bold" @click="applyPromoCode">
+            placeholder="Promo code">
+          <view class="h-10 flex shrink-0 items-center rounded-lg bg-[#efb239]/20 px-4 text-sm text-[#efb239] font-bold"
+            @click="applyPromoCode">
             Apply
           </view>
         </view>
@@ -204,8 +193,7 @@ function goProfile() {
         </view>
         <view
           class="mt-4 h-12 flex items-center justify-center gap-1 rounded-xl bg-[#efb239] text-base text-slate-900 font-bold"
-          @click="checkout"
-        >
+          @click="checkout">
           <text>Checkout Now</text>
           <wd-icon name="arrow-right" size="16" color="#0f172a" />
         </view>
@@ -227,7 +215,8 @@ function goProfile() {
         <view class="tab-item text-[#efb239]">
           <view class="relative">
             <wd-icon name="shopping_cart" size="20" color="#efb239" />
-            <view class="absolute h-4 min-w-4 flex items-center justify-center rounded-full bg-[#efb239] px-1 text-[8px] text-white font-bold -right-2 -top-1">
+            <view
+              class="absolute h-4 min-w-4 flex items-center justify-center rounded-full bg-[#efb239] px-1 text-[8px] text-white font-bold -right-2 -top-1">
               {{ cartCount }}
             </view>
           </view>

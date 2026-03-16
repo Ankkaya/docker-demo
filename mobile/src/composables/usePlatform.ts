@@ -42,5 +42,6 @@ export function usePlatform() {
     navigationBarHeight,
     statusBarHeight: WINDOW_INFO.statusBarHeight,
     topAreaHeight,
+    safeAreaInsetsBottom: WINDOW_INFO.safeAreaInsets.bottom,
   }
 }

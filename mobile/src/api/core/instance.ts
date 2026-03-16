@@ -1,19 +1,27 @@
 import AdapterUniapp from '@alova/adapter-uniapp'
 import { createAlova } from 'alova'
 import vueHook from 'alova/vue'
+import { useUserStore } from '@/store/userStore'
 import mockAdapter from '../mock/mockAdapter'
 import { handleAlovaError, handleAlovaResponse } from './handlers'
 
 export const alovaInstance = createAlova({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://petstore3.swagger.io/api/v3',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   ...AdapterUniapp({
     mockRequest: mockAdapter,
   }),
   statesHook: vueHook,
   beforeRequest: (method) => {
+    const userStore = useUserStore()
+    method.config.headers = method.config.headers || {}
+
     // Add content type for POST/PUT/PATCH requests
     if (['POST', 'PUT', 'PATCH'].includes(method.type)) {
       method.config.headers['Content-Type'] = 'application/json'
+    }
+
+    if (userStore.token) {
+      method.config.headers.Authorization = `Bearer ${userStore.token}`
     }
 
     // Add timestamp to prevent caching for GET requests

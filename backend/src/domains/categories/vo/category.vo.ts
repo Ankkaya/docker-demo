@@ -10,6 +10,12 @@ export class CategoryVo {
   @ApiProperty({ description: '分类编码' })
   code: string;
 
+  @ApiProperty({ description: '子标题', nullable: true })
+  subtitle: string | null;
+
+  @ApiProperty({ description: '备注', nullable: true })
+  remark: string | null;
+
   @ApiProperty({ description: '父级ID', nullable: true })
   parentId: number | null;
 
@@ -42,6 +48,8 @@ export class CategoryVo {
       id: entity.id,
       name: entity.name,
       code: entity.code,
+      subtitle: entity.subtitle,
+      remark: entity.remark,
       parentId: entity.parentId,
       level: entity.level,
       sort: entity.sort,

@@ -23,6 +23,8 @@ export interface Category {
   id: number;
   name: string;
   code: string;
+  subtitle?: string | null;
+  remark?: string | null;
   parentId?: number;
   level: number;
   sort: number;
@@ -39,6 +41,8 @@ export interface Category {
 export interface CreateCategoryDto {
   name: string;
   code: string;
+  subtitle?: string;
+  remark?: string;
   parentId?: number;
   level?: number;
   sort?: number;

@@ -16,11 +16,38 @@ definePage({
 })
 
 const router = useRouter()
+const { setTabbarItem, setTabbarItemActive } = useTabbar()
 
 const { navigationBarHeight, statusBarHeight } = usePlatform()
+const { error: showError } = useGlobalToast()
+
+type HomeBannerItem = {
+  id: number
+  tag?: string | null
+  title: string
+  subtitle?: string | null
+  image: string
+}
+
+type HomeCategoryItem = {
+  id: number
+  name: string
+  icon?: string | null
+  iconUrl?: string | null
+}
+
+type HomeHotProductItem = {
+  id: number
+  name: string
+  hotLabel: string
+  minPrice: number
+  mainImage?: string | null
+}
+
+const fallbackCategoryIcons = ['child_care', 'stroller', 'face', 'toys']
 
 // 轮播图数据
-const banners = ref([
+const banners = ref<HomeBannerItem[]>([
   {
     id: 1,
     tag: 'New Arrival',
@@ -48,7 +75,7 @@ const banners = ref([
 const currentBanner = ref(0)
 
 // 分类数据
-const categories = ref([
+const categories = ref<HomeCategoryItem[]>([
   { id: 1, name: 'Newborn', icon: 'child_care' },
   { id: 2, name: 'Toddler', icon: 'stroller' },
   { id: 3, name: 'Kids', icon: 'face' },
@@ -56,36 +83,104 @@ const categories = ref([
 ])
 
 // 热销商品数据
-const hotProducts = ref([
+const hotProducts = ref<HomeHotProductItem[]>([
   {
     id: 1,
-    tag: 'Organic Collection',
     name: 'Linen Sun Suit Set',
-    price: 24.00,
-    image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=400&h=400&fit=crop',
+    hotLabel: 'Organic Collection',
+    minPrice: 24.00,
+    mainImage: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=400&h=400&fit=crop',
   },
   {
     id: 2,
-    tag: 'Spring Sale',
     name: 'Petal Floral Dress',
-    price: 18.50,
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
+    hotLabel: 'Spring Sale',
+    minPrice: 18.50,
+    mainImage: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
   },
   {
     id: 3,
-    tag: 'Cozy Wear',
     name: 'Knit Comfort Sweater',
-    price: 32.00,
-    image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop',
+    hotLabel: 'Cozy Wear',
+    minPrice: 32.00,
+    mainImage: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop',
   },
   {
     id: 4,
-    tag: 'Essentials',
     name: 'Cotton Bib Set (3pc)',
-    price: 12.99,
-    image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop',
+    hotLabel: 'Essentials',
+    minPrice: 12.99,
+    mainImage: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop',
   },
 ])
+
+function mapBanners(list: BannerVo[]) {
+  if (!list.length) {
+    return
+  }
+
+  banners.value = list.map(item => ({
+    id: item.id,
+    tag: typeof item.tag === 'string' ? item.tag : '',
+    title: item.title,
+    subtitle: typeof item.subtitle === 'string' ? item.subtitle : '',
+    image: item.image,
+  }))
+}
+
+function mapCategories(list: CategoryTreeVo[]) {
+  const rootCategories = list.filter(item => item.parentId == null).slice(0, 4)
+  if (!rootCategories.length) {
+    return
+  }
+
+  categories.value = rootCategories.map((item, index) => ({
+    id: item.id,
+    name: item.name,
+    icon: typeof item.icon === 'string' && item.icon ? item.icon : fallbackCategoryIcons[index] || fallbackCategoryIcons[0],
+    iconUrl: typeof item.iconUrl === 'string' ? item.iconUrl : '',
+  }))
+}
+
+function mapHotProducts(response: MallHotProductListResponseVo) {
+  const list = Array.isArray(response?.list) ? response.list.slice(0, 4) : []
+  if (!list.length) {
+    return
+  }
+
+  hotProducts.value = list.map(item => ({
+    id: item.id,
+    name: item.name,
+    hotLabel: item.hotLabel || '热门商品',
+    minPrice: item.minPrice,
+    mainImage: typeof item.mainImage === 'string' ? item.mainImage : '',
+  }))
+}
+
+async function loadHomeData() {
+  try {
+    const [bannerList, categoryList, hotProductResponse] = await Promise.all([
+      Apis.general.MallHomeController_findBanners().send(),
+      Apis.general.MallHomeController_findCategories().send(),
+      Apis.general.MallProductsController_findHotProducts({
+        params: {
+          limit: 4,
+        },
+      }).send(),
+    ])
+
+    mapBanners(Array.isArray(bannerList) ? bannerList : [])
+    mapCategories(Array.isArray(categoryList) ? categoryList : [])
+    mapHotProducts(hotProductResponse)
+  }
+  catch (error: any) {
+    showError(error?.message || '首页数据加载失败')
+  }
+}
+
+onShow(() => {
+  loadHomeData()
+})
 
 // 轮播图变化事件
 function onBannerChange(e: any) {
@@ -108,25 +203,25 @@ function onCartClick() {
 // 点击分类 - 跳转到分类页面并激活对应分类
 function onCategoryClick(category: typeof categories.value[0]) {
   const index = categories.value.findIndex(c => c.id === category.id)
-  router.push({
+  setTabbarItem('category', index)
+  setTabbarItemActive('category')
+  router.pushTab({
     name: 'category',
-    query: { activeIndex: String(index) },
   })
 }
 
 // 查看全部分类 - 跳转到分类页面，默认选中第一个
 function onViewAllCategories() {
-  router.push({
+  setTabbarItem('category', 0)
+  setTabbarItemActive('category')
+  router.pushTab({
     name: 'category',
   })
 }
 
 // 添加到购物车
 function addToCart(product: typeof hotProducts.value[0]) {
-  uni.showToast({
-    title: `已添加: ${product.name}`,
-    icon: 'success',
-  })
+  onProductClick(product)
 }
 
 // 点击商品
@@ -134,9 +229,10 @@ function onProductClick(product: typeof hotProducts.value[0]) {
   router.push({
     name: 'product-detail',
     query: {
+      id: String(product.id),
       name: product.name,
-      price: product.price.toFixed(2),
-      image: encodeURIComponent(product.image),
+      price: product.minPrice.toFixed(2),
+      image: encodeURIComponent(product.mainImage || ''),
     },
   })
 }
@@ -213,7 +309,7 @@ function onProductClick(product: typeof hotProducts.value[0]) {
           <view v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
             @click="onCategoryClick(category)">
             <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
-              <app-icon :icon="category.icon" :size="28" color="#efb239" />
+              <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28" color="#efb239" />
             </view>
             <text class="text-[11px] text-slate-600 font-medium">
               {{ category.name }}
@@ -236,18 +332,18 @@ function onProductClick(product: typeof hotProducts.value[0]) {
             class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm"
             @click="onProductClick(product)">
             <view class="aspect-square overflow-hidden">
-              <image :src="product.image" class="h-full w-full" mode="aspectFill" />
+              <image :src="product.mainImage || ''" class="h-full w-full" mode="aspectFill" />
             </view>
             <view class="p-3">
               <text class="mb-1 block text-xs text-slate-400">
-                {{ product.tag }}
+                {{ product.hotLabel }}
               </text>
               <text class="line-clamp-1 block text-sm text-slate-800 font-semibold">
                 {{ product.name }}
               </text>
               <view class="mt-2 flex items-center justify-between">
                 <text class="text-[#efb239] font-bold">
-                  ${{ product.price.toFixed(2) }}
+                  ${{ product.minPrice.toFixed(2) }}
                 </text>
                 <button
                   class="size-7 flex items-center justify-center border-0 rounded-full bg-[#efb239] p-0 text-white !m-0"

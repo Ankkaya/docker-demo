@@ -8,6 +8,7 @@ export class MinioService implements OnModuleInit {
   private readonly logger = new Logger('MinioService');
   private minioClient: Minio.Client;
   private bucketName: string;
+  private readonly fileBaseUrl: string;
 
   constructor() {
     this.minioClient = new Minio.Client({
@@ -18,6 +19,7 @@ export class MinioService implements OnModuleInit {
       secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin123',
     });
     this.bucketName = process.env.MINIO_BUCKET_NAME || 'docker-demo';
+    this.fileBaseUrl = this.resolveFileBaseUrl();
   }
 
   async onModuleInit() {
@@ -36,6 +38,7 @@ export class MinioService implements OnModuleInit {
     this.logger.log(`🌐 服务端点: ${useSSL ? 'https' : 'http'}://${endpoint}:${port}`);
     this.logger.log(`🔑 访问密钥: ${maskedAccessKey}`);
     this.logger.log(`📁 存储桶名: ${this.bucketName}`);
+    this.logger.log(`🖼️ 文件访问基地址: ${this.fileBaseUrl}`);
 
     try {
       // 检查 bucket 是否存在，不存在则创建
@@ -282,6 +285,25 @@ export class MinioService implements OnModuleInit {
   }
 
   private getProxyUrl(filename: string): string {
-    return `/api/files/preview?filename=${encodeURIComponent(filename)}`;
+    const previewPath = `/api/files/preview?filename=${encodeURIComponent(filename)}`;
+    return new URL(previewPath, this.fileBaseUrl).toString();
+  }
+
+  private resolveFileBaseUrl(): string {
+    const explicitBaseUrl = process.env.FILE_BASE_URL
+      || process.env.PUBLIC_BASE_URL
+      || process.env.APP_BASE_URL;
+    if (explicitBaseUrl?.trim()) {
+      return this.ensureTrailingSlash(explicitBaseUrl.trim());
+    }
+
+    const protocol = process.env.APP_PROTOCOL || 'http';
+    const host = process.env.APP_HOST || 'localhost';
+    const port = process.env.PORT || '3001';
+    return this.ensureTrailingSlash(`${protocol}://${host}:${port}`);
+  }
+
+  private ensureTrailingSlash(value: string): string {
+    return value.endsWith('/') ? value : `${value}/`;
   }
 }

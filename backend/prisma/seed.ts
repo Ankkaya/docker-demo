@@ -646,12 +646,36 @@ async function main() {
 
   // ==================== 8. 【可选】示例商品分类 ====================
   // 帮助用户理解多级分类结构
+  const categoryContentMap = {
+    ELEC: {
+      subtitle: '数码潮品，随心选购',
+      remark: '汇聚手机、电脑、智能配件等热门数码商品，适合商城首页重点展示。',
+      image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80',
+    },
+    PHONE: {
+      subtitle: '热门机型，快速上新',
+      remark: '覆盖主流品牌手机与配件，适合新品首发、爆款促销和日常零售场景。',
+      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80',
+    },
+    COMPUTER: {
+      subtitle: '办公娱乐，性能兼顾',
+      remark: '包含笔记本、台式机及办公设备，适合企业采购与个人办公娱乐需求。',
+      image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1200&q=80',
+    },
+    DAILY: {
+      subtitle: '居家日常，一站备齐',
+      remark: '涵盖清洁、收纳、个护等居家常用品，适合高频复购商品陈列。',
+      image: 'https://images.unsplash.com/photo-1517705008128-361805f42e86?auto=format&fit=crop&w=1200&q=80',
+    },
+  } as const;
+
   const electronics = await prisma.category.upsert({
     where: { code: 'ELEC' },
-    update: {},
+    update: categoryContentMap.ELEC,
     create: {
       name: '电子产品',
       code: 'ELEC',
+      ...categoryContentMap.ELEC,
       level: 1,
       sort: 1,
       isEnabled: true,
@@ -660,10 +684,14 @@ async function main() {
 
   const phone = await prisma.category.upsert({
     where: { code: 'PHONE' },
-    update: {},
+    update: {
+      ...categoryContentMap.PHONE,
+      parentId: electronics.id,
+    },
     create: {
       name: '手机',
       code: 'PHONE',
+      ...categoryContentMap.PHONE,
       parentId: electronics.id,
       level: 2,
       sort: 1,
@@ -673,10 +701,14 @@ async function main() {
 
   const computer = await prisma.category.upsert({
     where: { code: 'COMPUTER' },
-    update: {},
+    update: {
+      ...categoryContentMap.COMPUTER,
+      parentId: electronics.id,
+    },
     create: {
       name: '电脑',
       code: 'COMPUTER',
+      ...categoryContentMap.COMPUTER,
       parentId: electronics.id,
       level: 2,
       sort: 2,
@@ -686,10 +718,11 @@ async function main() {
 
   const daily = await prisma.category.upsert({
     where: { code: 'DAILY' },
-    update: {},
+    update: categoryContentMap.DAILY,
     create: {
       name: '日用百货',
       code: 'DAILY',
+      ...categoryContentMap.DAILY,
       level: 1,
       sort: 2,
       isEnabled: true,

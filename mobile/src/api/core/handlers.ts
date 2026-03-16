@@ -7,7 +7,7 @@
  * @FilePath: /wot-starter/src/api/core/handlers.ts
  */
 import type { Method } from 'alova'
-import router from '@/router'
+import { useUserStore } from '@/store/userStore'
 
 // Custom error class for API errors
 export class ApiError extends Error {
@@ -25,6 +25,7 @@ export class ApiError extends Error {
 // Define a type for the expected API response structure
 interface ApiResponse {
   code: number
+  message?: string
   msg?: string
   data?: any
   success?: boolean
@@ -37,17 +38,15 @@ export async function handleAlovaResponse(
   response: UniApp.RequestSuccessCallbackResult | UniApp.UploadFileSuccessCallbackResult | UniApp.DownloadSuccessData,
 ) {
   const globalToast = useGlobalToast()
+  const userStore = useUserStore()
   // Extract status code and data from UniApp response
   const { statusCode, data } = response as UniNamespace.RequestSuccessCallbackResult
 
   // 处理401/403错误（如果不是在handleAlovaResponse中处理的）
   if ((statusCode === 401 || statusCode === 403)) {
-    // 如果是未授权错误，清除用户信息并跳转到登录页
+    userStore.logout()
+    userStore.openAuthPopup()
     globalToast.error({ msg: '登录已过期，请重新登录！', duration: 500 })
-    const timer = setTimeout(() => {
-      clearTimeout(timer)
-      router.replaceAll({ name: 'login' })
-    }, 500)
 
     throw new ApiError('登录已过期，请重新登录！', statusCode, data)
   }
@@ -65,13 +64,14 @@ export async function handleAlovaResponse(
     console.log('[Alova Response]', json)
   }
 
-  // Return data for successful responses
-  return json
+  // Return unwrapped data for successful responses
+  return json?.data
 }
 
 // Handle request errors
 export function handleAlovaError(error: any, method: Method) {
   const globalToast = useGlobalToast()
+  const userStore = useUserStore()
   // Log error in development
   if (import.meta.env.MODE === 'development') {
     console.error('[Alova Error]', error, method)
@@ -79,12 +79,9 @@ export function handleAlovaError(error: any, method: Method) {
 
   // 处理401/403错误（如果不是在handleAlovaResponse中处理的）
   if (error instanceof ApiError && (error.code === 401 || error.code === 403)) {
-    // 如果是未授权错误，清除用户信息并跳转到登录页
+    userStore.logout()
+    userStore.openAuthPopup()
     globalToast.error({ msg: '登录已过期，请重新登录！', duration: 500 })
-    const timer = setTimeout(() => {
-      clearTimeout(timer)
-      router.replaceAll({ name: 'login' })
-    }, 500)
     throw new ApiError('登录已过期，请重新登录！', error.code, error.data)
   }
 

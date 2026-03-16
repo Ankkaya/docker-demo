@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AuthLoginSheet: typeof import('./components/AuthLoginSheet.vue')['default']
     BaseBaseFixed: typeof import('./components/base/BaseFixed.vue')['default']
     BaseBaseInnerNavbar: typeof import('./components/base/BaseInnerNavbar.vue')['default']
     BaseBaseLayout: typeof import('./components/base/BaseLayout.vue')['default']

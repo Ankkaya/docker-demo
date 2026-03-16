@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { QueryMallProductDto } from './dto/query-mall-product.dto';
 import { QueryHotProductDto } from './dto/query-hot-product.dto';
+import { QueryMallCategoryDto } from './dto/query-mall-category.dto';
 import { SkuStatus, Prisma } from '@prisma/client';
 import { MinioService } from '@/infrastructure/minio/minio.service';
 import { IconAssetsService } from '@/infrastructure/icon-assets/icon-assets.service';
+import { AuthService } from '@/domains/auth/auth.service';
+import { WechatLoginDto } from './dto/wechat-login.dto';
+import { UserVo } from '@/users/vo';
 
 @Injectable()
 export class MallService {
@@ -12,7 +22,70 @@ export class MallService {
     private prisma: PrismaService,
     private minioService: MinioService,
     private iconAssetsService: IconAssetsService,
+    private authService: AuthService,
   ) {}
+
+  async wechatLogin(dto: WechatLoginDto) {
+    const appId = process.env.WECHAT_APP_ID;
+    const appSecret = process.env.WECHAT_APP_SECRET;
+
+    if (!appId || !appSecret) {
+      throw new InternalServerErrorException('未配置微信登录参数');
+    }
+
+    const session = await this.getWechatSession(appId, appSecret, dto.code);
+    const openId = session.openid;
+    const unionId = session.unionid;
+
+    if (!openId) {
+      throw new UnauthorizedException('微信授权失败，未获取到用户标识');
+    }
+
+    let user = await this.prisma.user.findFirst({
+      where: {
+        deletedAt: null,
+        OR: [
+          { wechatOpenId: openId },
+          ...(unionId ? [{ wechatUnionId: unionId }] : []),
+        ],
+      },
+    });
+
+    if (!user) {
+      const role = await this.prisma.role.findUnique({
+        where: { code: 'user' },
+        select: { id: true },
+      });
+
+      const username = await this.generateWechatUsername(openId);
+      user = await this.prisma.user.create({
+        data: {
+          username,
+          password: await this.generateWechatPassword(openId),
+          name: dto.nickname?.trim() || '微信用户',
+          wechatOpenId: openId,
+          wechatUnionId: unionId || null,
+          roles: role ? {
+            connect: [{ id: role.id }],
+          } : undefined,
+        },
+      });
+    } else if (user.wechatOpenId !== openId || (unionId && user.wechatUnionId !== unionId) || (!user.name && dto.nickname)) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          wechatOpenId: openId,
+          wechatUnionId: unionId || user.wechatUnionId,
+          name: user.name || dto.nickname?.trim() || undefined,
+        },
+      });
+    }
+
+    return {
+      token: this.authService.generateToken(user.id),
+      user: UserVo.fromEntity(user),
+    };
+  }
 
   private buildMallProductInclude() {
     return {
@@ -291,13 +364,24 @@ export class MallService {
   }
 
   // 获取启用的分类列表
-  async findCategories() {
+  async findCategories(query?: QueryMallCategoryDto) {
+    const where: Prisma.CategoryWhereInput = {
+      isEnabled: true,
+      deletedAt: null,
+    };
+
+    if (query && 'parentId' in query) {
+      where.parentId = query.parentId === null ? null : query.parentId;
+    }
+
     const categories = await this.prisma.category.findMany({
-      where: { isEnabled: true, deletedAt: null },
+      where,
       select: {
         id: true,
         name: true,
         code: true,
+        subtitle: true,
+        remark: true,
         parentId: true,
         level: true,
         icon: true,
@@ -308,7 +392,7 @@ export class MallService {
 
     return Promise.all(categories.map(async (category) => ({
       ...category,
-      iconUrl: await this.iconAssetsService.resolveIconUrl(category.icon),
+      iconUrl: await this.iconAssetsService.resolveIconUrl(category.icon, 'white'),
       image: await this.minioService.resolveStoredFileUrl(category.image),
     })));
   }
@@ -436,5 +520,56 @@ export class MallService {
       soldCount: totalSold,
       defaultSkuId: card.skus.find((sku: any) => sku.isDefault)?.id ?? card.skus[0]?.id ?? null,
     };
+  }
+
+  private async getWechatSession(appId: string, appSecret: string, code: string) {
+    const url = new URL('https://api.weixin.qq.com/sns/jscode2session');
+    url.searchParams.set('appid', appId);
+    url.searchParams.set('secret', appSecret);
+    url.searchParams.set('js_code', code);
+    url.searchParams.set('grant_type', 'authorization_code');
+
+    let response: Response;
+    try {
+      response = await fetch(url.toString());
+    } catch {
+      throw new BadGatewayException('微信服务请求失败');
+    }
+
+    if (!response.ok) {
+      throw new BadGatewayException('微信服务响应异常');
+    }
+
+    const data = await response.json() as {
+      openid?: string;
+      unionid?: string;
+      session_key?: string;
+      errcode?: number;
+      errmsg?: string;
+    };
+
+    if (data.errcode) {
+      throw new UnauthorizedException(`微信授权失败: ${data.errmsg || data.errcode}`);
+    }
+
+    return data;
+  }
+
+  private async generateWechatUsername(openId: string) {
+    const base = `wx_${openId.slice(-10).toLowerCase()}`;
+    let username = base;
+    let index = 1;
+
+    while (await this.prisma.user.findFirst({ where: { username } })) {
+      username = `${base}_${index}`;
+      index += 1;
+    }
+
+    return username;
+  }
+
+  private async generateWechatPassword(openId: string) {
+    const bcrypt = await import('bcrypt');
+    return bcrypt.hash(`wx:${openId}:${Date.now()}`, 10);
   }
 }

@@ -13,6 +13,8 @@ model User {
   email     String?   @unique
   password  String
   name      String?
+  wechatOpenId String? @unique
+  wechatUnionId String? @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // 软删除标记
@@ -23,6 +25,7 @@ model User {
   customer  Customer?
   // 关联购物车
   carts     Cart[]
+  reviews   Review[]
 
   @@index([deletedAt])
 }
@@ -157,6 +160,8 @@ model Category {
   id        Int        @id @default(autoincrement())
   name      String     // 分类名称
   code      String     @unique // 分类编码
+  subtitle  String?    // 子标题
+  remark    String?    // 备注
   parentId  Int?       // 父级ID
   level     Int        @default(1) // 层级
   sort      Int        @default(0)
@@ -284,6 +289,7 @@ model Customer {
   deletedAt   DateTime?    // 软删除标记
   orders      Order[]      // 销售订单
   saleReturns SaleReturn[] // 销售退货单
+  reviews     Review[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -327,6 +333,8 @@ model Product {
   skus         ProductSku[]
   mallInfo     ProductMallInfo?
   mallStat     ProductMallStat?
+  reviews      Review[]
+  reviewStat   ProductReviewStat?
   
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -377,6 +385,7 @@ model ProductSku {
   adjustmentItems     AdjustmentItem[] // 调整明细
   // 购物车关联
   carts               Cart[]          // 购物车
+  reviews             Review[]
   
   // 商城显示
   isDefault   Boolean     @default(false) // 是否默认SKU
@@ -717,6 +726,7 @@ model Order {
   items        OrderItem[]
   shipments    Shipment[]
   payments     Payment[]
+  reviews      Review[]
   
   remark       String?
   createdBy    Int?
@@ -743,9 +753,64 @@ model OrderItem {
   amount    Decimal    @db.Decimal(12, 2)
   
   createdAt DateTime   @default(now())
+  reviews   Review[]
 
   @@index([orderId])
   @@index([skuId])
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+}
+
+model Review {
+  id             Int          @id @default(autoincrement())
+  reviewNo       String       @unique
+  orderId        Int
+  order          Order        @relation(fields: [orderId], references: [id])
+  orderItemId    Int
+  orderItem      OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productId      Int
+  product        Product      @relation(fields: [productId], references: [id])
+  skuId          Int
+  sku            ProductSku   @relation(fields: [skuId], references: [id])
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  customerId     Int?
+  customer       Customer?    @relation(fields: [customerId], references: [id])
+  rating         Int
+  content        String?      @db.Text
+  images         String[]
+  isAnonymous    Boolean      @default(false)
+  status         ReviewStatus @default(PENDING)
+  replyContent   String?      @db.Text
+  replyAt        DateTime?
+  reviewedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([orderItemId, userId])
+  @@index([productId, status, createdAt])
+  @@index([userId, createdAt])
+  @@index([orderId])
+  @@index([deletedAt])
+}
+
+model ProductReviewStat {
+  id             Int      @id @default(autoincrement())
+  productId      Int      @unique
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  totalCount     Int      @default(0)
+  goodCount      Int      @default(0)
+  mediumCount    Int      @default(0)
+  badCount       Int      @default(0)
+  withImageCount Int      @default(0)
+  avgRating      Decimal  @default(0) @db.Decimal(4, 2)
+  updatedAt      DateTime @updatedAt
 }
 
 // 发货单

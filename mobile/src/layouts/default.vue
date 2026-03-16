@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import BaseLayout from '@/components/base/BaseLayout.vue'
+import AuthLoginSheet from '@/components/AuthLoginSheet.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -42,6 +43,7 @@ export default {
   <base-layout>
     <slot />
   </base-layout>
+  <AuthLoginSheet />
   <wd-tabbar
     v-if="comShowTabbar" :model-value="activeTabbar.name" bordered safe-area-inset-bottom placeholder fixed
     @change="handleTabbarChange"
