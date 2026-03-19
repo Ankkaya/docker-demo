@@ -374,6 +374,10 @@ export class MallService {
       where.parentId = query.parentId === null ? null : query.parentId;
     }
 
+    if (query?.recommendOnly) {
+      where.mallRecommend = true;
+    }
+
     const categories = await this.prisma.category.findMany({
       where,
       select: {
@@ -384,10 +388,18 @@ export class MallService {
         remark: true,
         parentId: true,
         level: true,
+        sort: true,
+        mallRecommend: true,
+        mallRecommendSort: true,
         icon: true,
         image: true,
+        isEnabled: true,
+        createdAt: true,
+        updatedAt: true,
       },
-      orderBy: { sort: 'asc' },
+      orderBy: query?.recommendOnly
+        ? [{ mallRecommendSort: 'asc' }, { sort: 'asc' }, { id: 'asc' }]
+        : [{ sort: 'asc' }, { id: 'asc' }],
     });
 
     return Promise.all(categories.map(async (category) => ({

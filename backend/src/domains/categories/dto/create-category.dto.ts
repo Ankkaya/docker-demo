@@ -65,6 +65,22 @@ export class CreateCategoryDto {
   sort?: number;
 
   @ApiPropertyOptional({
+    example: true,
+    description: '是否作为商城搜索推荐分类',
+  })
+  @IsBoolean()
+  @IsOptional()
+  mallRecommend?: boolean;
+
+  @ApiPropertyOptional({
+    example: 0,
+    description: '商城搜索推荐排序，数字越小越靠前',
+  })
+  @IsNumber()
+  @IsOptional()
+  mallRecommendSort?: number;
+
+  @ApiPropertyOptional({
     example: 'icon-electron',
     description: '分类图标',
   })

@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional } from 'class-validator';
 
 export class QueryMallCategoryDto {
   @ApiPropertyOptional({
@@ -18,4 +18,23 @@ export class QueryMallCategoryDto {
   })
   @IsNumber()
   parentId?: number | null;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: '是否仅返回商城搜索推荐分类',
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) {
+      return undefined;
+    }
+
+    if (typeof value === 'boolean') {
+      return value;
+    }
+
+    return ['true', '1'].includes(String(value).toLowerCase());
+  })
+  @IsBoolean()
+  recommendOnly?: boolean;
 }

@@ -25,6 +25,12 @@ export class CategoryVo {
   @ApiProperty({ description: '排序号' })
   sort: number;
 
+  @ApiProperty({ description: '是否作为商城搜索推荐分类' })
+  mallRecommend: boolean;
+
+  @ApiProperty({ description: '商城搜索推荐排序号' })
+  mallRecommendSort: number;
+
   @ApiProperty({ description: '分类图标', nullable: true })
   icon: string | null;
 
@@ -53,6 +59,8 @@ export class CategoryVo {
       parentId: entity.parentId,
       level: entity.level,
       sort: entity.sort,
+      mallRecommend: entity.mallRecommend ?? false,
+      mallRecommendSort: entity.mallRecommendSort ?? 0,
       icon: entity.icon,
       iconUrl: entity.iconUrl ?? null,
       image: entity.image,

@@ -165,6 +165,8 @@ model Category {
   parentId  Int?       // 父级ID
   level     Int        @default(1) // 层级
   sort      Int        @default(0)
+  mallRecommend Boolean @default(false) // 商城搜索推荐分类
+  mallRecommendSort Int @default(0) // 商城搜索推荐排序，越小越靠前
   icon      String?    // 图标
   image     String?    // 分类图片
   isEnabled Boolean    @default(true)

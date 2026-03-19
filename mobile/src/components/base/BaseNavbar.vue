@@ -24,13 +24,12 @@ const titleBarStyle = computed(() => ({
   ...defaultNavbarStyle,
 }))
 
-const iconColor = computed(() => route.baseNavbar?.iconColor || '#000')
+const iconColor = computed(() => route.baseNavbar?.iconColor || '#efb239')
 
 const showBackIcon = computed(() => {
   // 获取页面栈
   const pages = getCurrentPages()
   // 如果当前页面是第一个页面，不显示返回按钮
-  console.log(pages, '111111111111')
   return pages.length > 1
 })
 
@@ -50,7 +49,7 @@ function clickBack() {
         <wd-icon name="arrow-left" size="20" />
       </view> -->
       <view v-if="showBackIcon" class="page-navbar__content-left" @click="clickBack">
-        <wd-icon name="left" size="25" :color="iconColor" />
+        <wd-icon name="arrow-left" size="25" :color="iconColor" />
       </view>
       <view class="page-navbar__content-center">
         <view class="page-navbar__content-center-title">

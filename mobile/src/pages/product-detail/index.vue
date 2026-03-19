@@ -117,48 +117,25 @@ function openRelated(item: typeof relatedProducts.value[number]) {
 
 <template>
   <view class="h-screen flex flex-col bg-[#f8f7f6] text-slate-900">
-    <view class="sticky top-0 z-40 flex items-center justify-between bg-[#f8f7f6]/90 px-4 py-3 backdrop-blur-md">
-      <view class="size-10 flex items-center justify-center rounded-full bg-white shadow-sm" @click="goBack">
-        <wd-icon name="arrow-left" size="18" color="#0f172a" />
-      </view>
-      <view class="flex gap-2">
-        <view class="size-10 flex items-center justify-center rounded-full bg-white shadow-sm">
-          <wd-icon name="share" size="17" color="#0f172a" />
-        </view>
-        <view class="relative size-10 flex items-center justify-center rounded-full bg-white shadow-sm" @click="goCart">
-          <wd-icon name="shopping_bag" size="17" color="#0f172a" />
-          <view class="absolute right-0 top-0 h-4 min-w-4 flex items-center justify-center rounded-full bg-[#efb239] px-1 text-[10px] text-white font-bold">
-            2
-          </view>
-        </view>
-      </view>
-    </view>
 
     <scroll-view scroll-y class="flex-1">
       <view class="pb-28">
         <view class="relative h-[640rpx] w-full overflow-hidden bg-[#efb239]/10">
-          <swiper
-            class="h-full w-full"
-            :indicator-dots="false"
-            :autoplay="false"
-            :circular="true"
-            @change="onImageChange"
-          >
+          <swiper class="h-full w-full" :indicator-dots="false" :autoplay="false" :circular="true"
+            @change="onImageChange">
             <swiper-item v-for="(img, idx) in gallery" :key="idx">
               <image :src="img" mode="aspectFill" class="h-full w-full" />
             </swiper-item>
           </swiper>
 
           <view class="absolute bottom-6 left-1/2 flex gap-2 -translate-x-1/2">
-            <view
-              v-for="(_, idx) in gallery"
-              :key="idx"
-              class="size-2 rounded-full"
-              :class="idx === currentImage ? 'bg-[#efb239]' : 'bg-[#efb239]/30'"
-            />
+            <view v-for="(_, idx) in gallery" :key="idx" class="size-2 rounded-full"
+              :class="idx === currentImage ? 'bg-[#efb239]' : 'bg-[#efb239]/30'" />
           </view>
 
-          <view class="absolute right-4 top-6 size-10 flex items-center justify-center rounded-full bg-white/90 shadow-md" @click="toggleLike">
+          <view
+            class="absolute right-4 top-6 size-10 flex items-center justify-center rounded-full bg-white/90 shadow-md"
+            @click="toggleLike">
             <wd-icon :name="liked ? 'favorite' : 'favorite_border'" size="18" :color="liked ? '#f43f5e' : '#64748b'" />
           </view>
         </view>
@@ -184,18 +161,14 @@ function openRelated(item: typeof relatedProducts.value[number]) {
           <view class="mt-6">
             <text class="mb-3 block text-sm text-slate-600 font-bold uppercase">
               Color: <text class="text-slate-900">
-                {{ colors.find(c => c.key === activeColor)?.label }}
+                {{colors.find(c => c.key === activeColor)?.label}}
               </text>
             </text>
             <view class="flex gap-3">
-              <view
-                v-for="color in colors"
-                :key="color.key"
-                class="size-10 rounded-full"
+              <view v-for="color in colors" :key="color.key" class="size-10 rounded-full"
                 :style="`background-color:${color.color};`"
                 :class="activeColor === color.key ? 'ring-2 ring-[#efb239] ring-offset-2' : ''"
-                @click="activeColor = color.key"
-              />
+                @click="activeColor = color.key" />
             </view>
           </view>
 
@@ -211,13 +184,9 @@ function openRelated(item: typeof relatedProducts.value[number]) {
               </text>
             </view>
             <view class="grid grid-cols-4 gap-2">
-              <view
-                v-for="size in sizes"
-                :key="size"
-                class="border rounded-lg py-3 text-center text-sm font-medium"
+              <view v-for="size in sizes" :key="size" class="border rounded-lg py-3 text-center text-sm font-medium"
                 :class="activeSize === size ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold' : 'border-slate-200 bg-white text-slate-700'"
-                @click="activeSize = size"
-              >
+                @click="activeSize = size">
                 {{ size }}
               </view>
             </view>
@@ -265,7 +234,8 @@ function openRelated(item: typeof relatedProducts.value[number]) {
           <view class="border border-slate-100 rounded-xl bg-white p-4 shadow-sm">
             <view class="mb-2 flex items-center justify-between">
               <view class="flex items-center gap-2">
-                <view class="size-8 flex items-center justify-center rounded-full bg-[#efb239]/20 text-xs text-[#efb239] font-bold">
+                <view
+                  class="size-8 flex items-center justify-center rounded-full bg-[#efb239]/20 text-xs text-[#efb239] font-bold">
                   EL
                 </view>
                 <text class="text-sm text-slate-900 font-bold">
@@ -287,12 +257,8 @@ function openRelated(item: typeof relatedProducts.value[number]) {
             Complete the Look
           </text>
           <scroll-view scroll-x class="no-scrollbar w-full whitespace-nowrap px-5 pb-4">
-            <view
-              v-for="item in relatedProducts"
-              :key="item.id"
-              class="mr-4 inline-block w-[280rpx]"
-              @click="openRelated(item)"
-            >
+            <view v-for="item in relatedProducts" :key="item.id" class="mr-4 inline-block w-[280rpx]"
+              @click="openRelated(item)">
               <image :src="item.image" mode="aspectFill" class="h-[280rpx] w-[280rpx] rounded-lg bg-slate-200" />
               <text class="line-clamp-1 mt-2 block text-xs text-slate-900 font-bold">
                 {{ item.name }}
@@ -306,7 +272,8 @@ function openRelated(item: typeof relatedProducts.value[number]) {
       </view>
     </scroll-view>
 
-    <view class="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 border-t border-slate-100 bg-white/95 p-4 pb-6 backdrop-blur-md">
+    <view
+      class="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 border-t border-slate-100 bg-white/95 p-4 pb-6 backdrop-blur-md">
       <view class="flex flex-col items-center justify-center text-slate-500">
         <wd-icon name="support_agent" size="18" color="#64748b" />
         <text class="mt-1 text-[10px] font-bold">
@@ -315,7 +282,8 @@ function openRelated(item: typeof relatedProducts.value[number]) {
       </view>
       <view class="h-10 w-px bg-slate-200" />
       <view class="flex flex-1 gap-3">
-        <view class="flex-1 border-2 border-[#efb239] rounded-xl py-3 text-center text-sm text-[#efb239] font-bold" @click="addToCart">
+        <view class="flex-1 border-2 border-[#efb239] rounded-xl py-3 text-center text-sm text-[#efb239] font-bold"
+          @click="addToCart">
           Add to Cart
         </view>
         <view class="flex-[1.5] rounded-xl bg-[#efb239] py-3 text-center text-sm text-white font-bold" @click="buyNow">

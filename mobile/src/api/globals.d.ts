@@ -312,6 +312,14 @@ export interface CategoryVo {
    */
   sort: number;
   /**
+   * 是否作为商城搜索推荐分类
+   */
+  mallRecommend: boolean;
+  /**
+   * 商城搜索推荐排序号
+   */
+  mallRecommendSort: number;
+  /**
    * 分类图标
    */
   icon: object | null;
@@ -685,6 +693,14 @@ export interface CategoryTreeVo {
    * 排序号
    */
   sort: number;
+  /**
+   * 是否作为商城搜索推荐分类
+   */
+  mallRecommend: boolean;
+  /**
+   * 商城搜索推荐排序号
+   */
+  mallRecommendSort: number;
   /**
    * 分类图标
    */
@@ -1184,6 +1200,8 @@ declare global {
        * type QueryParameters = {
        *   // 父级分类ID，传空字符串时筛选一级分类
        *   parentId?: object
+       *   // 是否仅返回商城搜索推荐分类
+       *   recommendOnly?: boolean
        * }
        * ```
        *
@@ -1237,6 +1255,10 @@ declare global {
              * 父级分类ID，传空字符串时筛选一级分类
              */
             parentId?: Object;
+            /**
+             * 是否仅返回商城搜索推荐分类
+             */
+            recommendOnly?: boolean;
           };
         }
       >(
