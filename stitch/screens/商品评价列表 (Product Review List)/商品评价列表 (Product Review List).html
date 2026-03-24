@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<!-- Main Container -->
+<div class="max-w-md mx-auto min-h-screen shadow-sm bg-white dark:bg-slate-900">
+<!-- Header -->
+<header class="sticky top-0 z-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-primary/10">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold">Reviews</h1>
+<div class="w-10"></div> <!-- Spacer for balance -->
+</header>
+<!-- Summary Section -->
+<div class="p-6 bg-gradient-to-b from-primary/5 to-transparent">
+<div class="flex items-center gap-8">
+<div class="flex flex-col items-center">
+<div class="text-4xl font-extrabold text-slate-900 dark:text-slate-100">4.9</div>
+<div class="flex gap-0.5 my-1 text-primary">
+<span class="material-symbols-outlined fill-1" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined fill-1" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined fill-1" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined fill-1" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined fill-1" style="font-variation-settings: 'FILL' 1">star_half</span>
+</div>
+<p class="text-xs text-slate-500 font-medium">1,250 reviews</p>
+</div>
+<div class="flex-1 space-y-2">
+<div class="flex items-center gap-3">
+<span class="text-xs font-semibold w-2">5</span>
+<div class="flex-1 h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[90%]"></div>
+</div>
+<span class="text-[10px] text-slate-400 w-8 text-right">90%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs font-semibold w-2">4</span>
+<div class="flex-1 h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[6%]"></div>
+</div>
+<span class="text-[10px] text-slate-400 w-8 text-right">6%</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-xs font-semibold w-2">3</span>
+<div class="flex-1 h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[2%]"></div>
+</div>
+<span class="text-[10px] text-slate-400 w-8 text-right">2%</span>
+</div>
+<div class="flex items-center gap-3 text-slate-300">
+<span class="text-xs font-semibold w-2">2</span>
+<div class="flex-1 h-2 bg-primary/5 rounded-full overflow-hidden">
+<div class="h-full bg-primary/30 rounded-full w-[1%]"></div>
+</div>
+<span class="text-[10px] text-slate-400 w-8 text-right">1%</span>
+</div>
+</div>
+</div>
+<!-- Chips / Filters -->
+<div class="flex flex-wrap gap-2 mt-6">
+<button class="px-4 py-2 rounded-full bg-primary text-white text-xs font-semibold">All</button>
+<button class="px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-primary/20 text-slate-700 dark:text-slate-300 text-xs font-medium">With Photos (450)</button>
+<button class="px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-primary/20 text-slate-700 dark:text-slate-300 text-xs font-medium">Positive (1.1k)</button>
+<button class="px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-primary/20 text-slate-700 dark:text-slate-300 text-xs font-medium">Comfortable Material (800)</button>
+</div>
+</div>
+<!-- Reviews List -->
+<div class="px-4 pb-12 space-y-4">
+<!-- Review Card 1 -->
+<div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-primary/5 shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User avatar for children clothing app" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeiwLmcjK1rB7-37cw2-BUhOi6BTT9pLHfjvTyTtb8UGn0gpi3OYbWlSgwIhyejUcF4B2eGXvwLiSxcaH0eACvZ8I1zmNe3fyH8KJOxinIMuKkDr9nOOeIhdQCw5yGSsMMACkQ90P3f7e14t2nvfACazfrtuUd7o8kiTOgKkvZp3E1QPwdGjuerXtFK1bkCiLo7hhTA-l_WMnRL4tqbOqxhCtWuQRAX906qzX-IjwR9x354Y9a7om5r2a573kuNAE1mr3NER-FaKBU"/>
+</div>
+<div>
+<div class="text-sm font-bold">L***a</div>
+<div class="flex gap-0.5 text-primary scale-75 origin-left">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+</div>
+</div>
+</div>
+<span class="text-[10px] text-slate-400">2023-11-20</span>
+</div>
+<p class="text-[11px] text-slate-400 mb-2">Color: Soft Yellow | Size: 6-12m</p>
+<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 mb-4">
+                    The fabric is so incredibly soft for my baby's skin. The yellow is more of a pastel butter color which is exactly what I wanted. Definitely buying more!
+                </p>
+<!-- Photo Gallery -->
+<div class="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+<img class="w-24 h-24 object-cover rounded-lg flex-shrink-0" data-alt="Close up of yellow baby garment fabric" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsU1eVSpC0SYpkNRdUDOQ9rOMK_6dpQdD5P0FerUI_Byt6uMLpbAN5He64WTRoqvR_AjuRDS9XsmNOyTCxHkX7qULGEnc1WLbySStynLRrFoex773Wie7-ZnEuB53HlKOTTa1spOXKzAPUJpJ1tq32jo2MM0SWb49p8FDYyo0-LcntPvftsDmzMmCxh9uu3TwWH2yJc6gO0lpW3U20uMpB2Ee9pf8uGIwQ98miHWe5ijglzjFhrLaKUgcDH09o0OwWwYGeszkAC0t6"/>
+<img class="w-24 h-24 object-cover rounded-lg flex-shrink-0" data-alt="Baby outfit on wooden background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDa-M8mxcaV_F-eVugzyh230C-4oQUljWP2iRt_g-N_3htbgy76NUhXD9AL-4R3mvlrq2ByfU7q-Jjy9Ymo_169IAGAXe5BlPmZFEXmg5RJ9OPY00hBcTmSoBgSsjm_KLdTXkiag1h_NSZEIO4DspNKWw8tlbDpAom9lpM65txkKhYIvyFXMFWsBeTxqgwJhOT3VvP9S1dSnwIolpYoac2PIrUc2Vs6wwfDkTcVgJVpOdfULxCx0ajSk9b781U3VzbrA__VCrrJq1AS"/>
+</div>
+<!-- Seller Reply -->
+<div class="bg-primary/5 rounded-lg p-3 border-l-2 border-primary">
+<div class="text-xs font-bold text-primary mb-1">Seller's Reply</div>
+<p class="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                        Thank you so much for your kind words, L***a! We're thrilled your little one is enjoying the comfort. We focus on organic materials just for that soft feel.
+                    </p>
+</div>
+</div>
+<!-- Review Card 2 -->
+<div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-primary/5 shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Male user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBORV8DE4NdrojdvLqR9Y6msZSoG1v4LF7M1Wv_wkxyLm6ZO-Qh4nsi0OauxlLrkXLKApkE-p_uKtE360p1CI7Vh3mvDmGkA5URL59smumUAnqqSVzssEVfiuCI4AGNUdj09fak6e2z7SNG2qbIg2WRe_7Y6JfbFaRrCqVaCzv1DsJrApVz4A90Y8R9davLfCSKtV9eEm2NOCwnga3e6PfpsC-mAj6k-8EmJVzOuuQKMvL4D3sVyjvnuVrbc_QDJ9fNdhH_6KaBQ3qt"/>
+</div>
+<div>
+<div class="text-sm font-bold">M***k</div>
+<div class="flex gap-0.5 text-primary scale-75 origin-left">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 0">star</span>
+</div>
+</div>
+</div>
+<span class="text-[10px] text-slate-400">2023-11-18</span>
+</div>
+<p class="text-[11px] text-slate-400 mb-2">Color: Sky Blue | Size: 12-18m</p>
+<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 mb-4">
+                    Great quality for the price. It washed well and didn't shrink. Fits slightly larger than expected but that just means he'll wear it longer!
+                </p>
+<!-- Photo Gallery -->
+<div class="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar">
+<img class="w-24 h-24 object-cover rounded-lg flex-shrink-0" data-alt="Blue baby t-shirt folded neatly" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKcEbroKho4L5m-TiE_xlt9CPGfFm1IfD5veSs4VIMGW5YBDFTlsXzEpnXq8o81DREFbgWf49odpONY7EGv0FpYCiZB2Dwv9ZtFbuSmMzS6bPm85DwDGuZhlZxRgXTNoU_GyusOg9U6q2QST_baSZYWziGogTwwgi4nz7oPbGURTJbgtCc_0CEDLyU_Jjm4IYr2E2zzLFqFrF_yRh9-TEdkPMamCPrksaTc58Aby_T6m9O4YGlaKI9WBOPKihA5pKGZuNy2ef6YeIr"/>
+</div>
+</div>
+<!-- Review Card 3 -->
+<div class="bg-white dark:bg-slate-800 rounded-xl p-4 border border-primary/5 shadow-sm">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary/10 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Female user avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ_vaOKeLZuAfTh4FQWGEOZQhhYTkAvU6iBMdLZVisGfANqhB36skDfb43lpaglvPWR0ljtrDURqOXzcs0kL0BUn76QQ7Uswy1a8smpIeKvj5X9G4MU8QiBgNfwoJ_bEGshAG80EYsC0DwPbCp-MfuEycNs-CBrQATJSc_2xEH5p0_7ZA1cGDcZ7U1ekOm4Mv4zChyVm54nhb-hXzHaHIQZkzP0DuQoKcA4jLFLK7I5ufOPfiRT8iAAMzhvRO-NGQHvk4fhV3vLDqp"/>
+</div>
+<div>
+<div class="text-sm font-bold">S***y</div>
+<div class="flex gap-0.5 text-primary scale-75 origin-left">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1">star</span>
+</div>
+</div>
+</div>
+<span class="text-[10px] text-slate-400">2023-11-15</span>
+</div>
+<p class="text-[11px] text-slate-400 mb-2">Color: Soft Pink | Size: 0-3m</p>
+<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300 mb-4">
+                    Fast delivery and cute packaging. The buttons are sturdy and easy to use. Recommended.
+                </p>
+<div class="bg-primary/5 rounded-lg p-3 border-l-2 border-primary">
+<div class="text-xs font-bold text-primary mb-1">Seller's Reply</div>
+<p class="text-xs text-slate-600 dark:text-slate-400 leading-normal">
+                        We are so glad you liked the packaging! We try to make every delivery special for the little ones.
+                    </p>
+</div>
+</div>
+</div>
+<!-- Floating Action Button for writing a review -->
+</div>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

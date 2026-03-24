@@ -14,10 +14,11 @@ definePage({
 
 const router = useRouter()
 const userStore = useUserStore()
+const isLoggedIn = computed(() => userStore.isLoggedIn)
 
 const userInfo = computed(() => ({
   name: userStore.displayName,
-  level: userStore.isLoggedIn ? '微信会员' : '未登录',
+  level: userStore.isLoggedIn ? '商城会员' : '未登录',
   avatar: userStore.displayAvatar,
 }))
 
@@ -38,6 +39,14 @@ const serviceMenus = ref([
 
 function openSettings() {
   uni.showToast({ title: '设置开发中', icon: 'none' })
+}
+
+function openLogin() {
+  userStore.openAuthPopup({
+    name: 'user',
+    path: '/pages/user/index',
+    isTabbar: true,
+  })
 }
 
 function checkIn() {
@@ -79,14 +88,6 @@ function contactSupport() {
   uni.showToast({ title: '客服功能开发中', icon: 'none' })
 }
 
-function handleRelogin() {
-  userStore.openAuthPopup({
-    name: 'user',
-    path: '/pages/user/index',
-    isTabbar: true,
-  })
-}
-
 function handleLogout() {
   userStore.logout()
   uni.showToast({ title: '已退出登录', icon: 'success' })
@@ -119,44 +120,59 @@ function getServiceIconClass(key: string) {
 </script>
 
 <template>
-  <view class="h-screen flex flex-col overflow-hidden bg-[#f8f7f6] text-slate-900">
+  <view class="flex flex-col overflow-hidden bg-[#f8f7f6] text-slate-900">
     <scroll-view scroll-y class="flex-1 pb-6">
       <view class="p-6">
         <view class="flex items-center justify-between gap-3">
           <view class="min-w-0 flex items-center gap-4">
-            <view class="size-20 flex items-center justify-center border-4 border-[#efb239]/20 rounded-full bg-white">
+            <view class="size-20 flex items-center justify-center border-4 rounded-full bg-white"
+              :class="isLoggedIn ? 'border-[#efb239]/20' : 'border-white/60 shadow-[0_8px_24px_rgba(15,23,42,0.08)]'">
               <image v-if="userInfo.avatar" :src="userInfo.avatar" class="size-full rounded-full" mode="aspectFill" />
-              <text v-else class="i-material-symbols:account-circle text-[64px] text-[#efb239] leading-none" />
+              <text v-else class="i-material-symbols:account-circle text-[64px] leading-none"
+                :class="isLoggedIn ? 'text-[#efb239]' : 'text-slate-300'" />
             </view>
             <view class="min-w-0">
-              <view class="flex items-center gap-1">
-                <text class="max-w-[180px] truncate text-xl font-bold">
-                  {{ userInfo.name }}
+              <template v-if="isLoggedIn">
+                <view class="flex items-center gap-1">
+                  <text class="max-w-[180px] truncate text-xl font-bold">
+                    {{ userInfo.name }}
+                  </text>
+                  <text class="i-material-symbols:verified text-[16px] text-[#efb239] leading-none" />
+                </view>
+                <view class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#efb239]/10 px-2 py-1">
+                  <text class="i-material-symbols:star text-[12px] text-[#efb239] leading-none" />
+                  <text class="text-xs text-[#efb239] font-semibold">
+                    {{ userInfo.level }}
+                  </text>
+                </view>
+              </template>
+
+              <template v-else>
+                <text class="block text-xl font-bold">
+                  未登录
                 </text>
-                <text class="i-material-symbols:verified text-[16px] text-[#efb239] leading-none" />
-              </view>
-              <view class="mt-2 inline-flex items-center gap-1 rounded-full bg-[#efb239]/10 px-2 py-1">
-                <text class="i-material-symbols:star text-[12px] text-[#efb239] leading-none" />
-                <text class="text-xs text-[#efb239] font-semibold">
-                  {{ userInfo.level }}
-                </text>
-              </view>
-              <view class="mt-3 flex items-center gap-3">
-                <text class="text-xs text-slate-500" @click="handleRelogin">
-                  重新授权
-                </text>
-                <text class="text-xs text-slate-300">
-                  |
-                </text>
-                <text class="text-xs text-slate-500" @click="handleLogout">
-                  退出登录
-                </text>
-              </view>
+                <view class="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 py-1">
+                  <text class="text-xs text-slate-500 font-medium">
+                    登陆后同步购物车，收藏等信息
+                  </text>
+                </view>
+              </template>
             </view>
           </view>
-          <view class="h-10 flex shrink-0 items-center rounded-full bg-[#efb239] px-5 text-sm text-white font-bold" @click="checkIn">
-            签到
-          </view>
+
+          <template v-if="isLoggedIn">
+            <view class="h-10 flex shrink-0 items-center rounded-full bg-[#efb239] px-5 text-sm text-white font-bold"
+              @click="checkIn">
+              签到
+            </view>
+          </template>
+          <template v-else>
+            <view
+              class="flex shrink-0 items-center rounded-full bg-[#efb239] px-5 py-3 text-sm text-white font-bold shadow-[0_10px_24px_rgba(239,178,57,0.28)]"
+              @click="openLogin">
+              立即登录
+            </view>
+          </template>
         </view>
       </view>
 
@@ -173,25 +189,16 @@ function getServiceIconClass(key: string) {
           </view>
 
           <view class="grid grid-cols-4 gap-2">
-            <view
-              v-for="item in orderMenus"
-              :key="item.key"
-              class="relative flex flex-col items-center gap-2 py-2"
-              @click="onOrderMenuClick(item)"
-            >
+            <view v-for="item in orderMenus" :key="item.key" class="relative flex flex-col items-center gap-2 py-2"
+              @click="onOrderMenuClick(item)">
               <view class="relative rounded-full bg-[#efb239]/10 p-3">
-                <text
-                  class="text-[20px] text-[#efb239] leading-none"
-                  :class="getOrderIconClass(item.key)"
-                />
+                <text class="text-[20px] text-[#efb239] leading-none" :class="getOrderIconClass(item.key)" />
               </view>
               <text class="text-xs text-slate-600">
                 {{ item.label }}
               </text>
-              <view
-                v-if="item.badge"
-                class="absolute right-3 top-0 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white font-bold"
-              >
+              <view v-if="item.badge"
+                class="absolute right-3 top-0 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white font-bold">
                 {{ item.badge }}
               </view>
             </view>
@@ -201,31 +208,33 @@ function getServiceIconClass(key: string) {
 
       <view class="px-4 py-4">
         <view class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm">
-          <view
-            v-for="item in serviceMenus"
-            :key="item.key"
-            class="service-row"
-            @click="onServiceMenuClick(item)"
-          >
+          <view v-for="item in serviceMenus" :key="item.key" class="service-row" @click="onServiceMenuClick(item)">
             <view class="flex items-center gap-4">
               <view class="rounded-lg p-2" :class="item.iconBg">
-                <text
-                  class="text-[20px] leading-none"
-                  :class="getServiceIconClass(item.key)"
-                  :style="{ color: item.iconColor }"
-                />
+                <text class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
+                  :style="{ color: item.iconColor }" />
               </view>
               <text class="text-sm font-medium">
                 {{ item.label }}
               </text>
             </view>
             <view class="flex items-center gap-1">
-              <text v-if="item.extra" class="text-xs" :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'">
+              <text v-if="item.extra" class="text-xs"
+                :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'">
                 {{ item.extra }}
               </text>
               <text class="i-material-symbols:chevron-right text-[16px] text-slate-400 leading-none" />
             </view>
           </view>
+        </view>
+      </view>
+
+      <view v-if="isLoggedIn" class="px-4 pb-4">
+        <view
+          class="flex items-center justify-center rounded-xl border border-red-100 bg-white py-4 text-sm text-red-500 font-semibold shadow-sm"
+          @click="handleLogout"
+        >
+          退出登录
         </view>
       </view>
 

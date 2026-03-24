@@ -17,95 +17,12 @@ const isVisible = computed({
   },
 })
 
-const draftNickname = computed({
-  get: () => userStore.draftProfile.nickname,
-  set: (value: string) => userStore.updateDraftProfile({ nickname: value }),
+const loginForm = reactive({
+  phone: '',
+  password: '',
 })
 
-const draftAvatar = computed(() => userStore.draftProfile.avatarUrl)
 const isSubmitting = ref(false)
-
-async function handleAuthorize() {
-  // #ifdef MP-WEIXIN
-  if (typeof wx !== 'undefined' && typeof wx.getUserProfile === 'function') {
-    try {
-      const loginResult = await new Promise<any>((resolve, reject) => {
-        wx.login({
-          success: resolve,
-          fail: reject,
-        })
-      })
-      const code = loginResult?.code
-      if (!code) {
-        toast.show('未获取到微信登录凭证')
-        return
-      }
-
-      const profile = await new Promise<any>((resolve, reject) => {
-        wx.getUserProfile({
-          desc: '用于完善会员资料',
-          success: resolve,
-          fail: reject,
-        })
-      })
-
-      const nickname = profile?.userInfo?.nickName || ''
-      const avatarUrl = profile?.userInfo?.avatarUrl || ''
-
-      const result = await Apis.general.MallAuthController_wechatLogin({
-        data: {
-          code,
-          nickname: nickname || undefined,
-        },
-      }).send()
-
-      userStore.setSession({
-        token: result.token,
-        user: result.user,
-        nickname: result.user?.name || nickname,
-        avatarUrl,
-        keepPopupOpen: true,
-      })
-
-      userStore.applyWechatProfile({
-        nickname: result.user?.name || nickname,
-        avatarUrl,
-      })
-      return
-    }
-    catch (error: any) {
-      toast.show(error?.message || '未完成微信授权，无法继续登录')
-      return
-    }
-  }
-  // #endif
-
-  toast.show('当前环境暂不支持微信授权登录')
-}
-
-function handleChooseAvatar(event: any) {
-  const avatarUrl = event?.detail?.avatarUrl || ''
-  if (avatarUrl) {
-    userStore.updateDraftProfile({ avatarUrl })
-  }
-}
-
-async function handleChooseAvatarFallback() {
-  try {
-    const result = await uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
-    })
-    const avatarUrl = result.tempFilePaths?.[0] || ''
-    if (avatarUrl) {
-      userStore.updateDraftProfile({ avatarUrl })
-    }
-  }
-  catch {
-    toast.show('未选择头像')
-  }
-}
 
 async function resumePendingRoute(target: PendingRoute | null) {
   if (!target) {
@@ -134,17 +51,44 @@ async function resumePendingRoute(target: PendingRoute | null) {
   }
 }
 
-async function handleConfirmProfile() {
-  if (!draftNickname.value.trim()) {
-    toast.show('请输入昵称')
+async function handlePhoneLogin() {
+  const phone = loginForm.phone.trim()
+  const password = loginForm.password.trim()
+
+  if (!/^1\d{10}$/.test(phone)) {
+    toast.show('请输入正确的手机号')
+    return
+  }
+
+  if (!password) {
+    toast.show('请输入登录密码')
     return
   }
 
   isSubmitting.value = true
   try {
-    userStore.completeLogin()
+    const loginResult = await (Apis.general as any).MallAuthController_login({
+      data: {
+        phone,
+        password,
+      },
+    }).send()
+
+    userStore.setSession({
+      token: loginResult.token,
+      refreshToken: loginResult.refreshToken,
+    })
+
+    const profile = await (Apis.general as any).MallAuthController_getProfile().send()
+    userStore.setCurrentUser(profile)
+
+    loginForm.password = ''
+
     const pendingRoute = userStore.consumePendingRoute()
     await resumePendingRoute(pendingRoute)
+  }
+  catch {
+    userStore.logout()
   }
   finally {
     isSubmitting.value = false
@@ -152,6 +96,7 @@ async function handleConfirmProfile() {
 }
 
 function handleCancel() {
+  loginForm.password = ''
   userStore.consumePendingRoute()
   userStore.closeAuthPopup()
 }
@@ -174,104 +119,74 @@ export default {
     safe-area-inset-bottom
     custom-class="auth-login-sheet"
     :close-on-click-modal="false"
+    lock-scroll
+    root-portal
+    :z-index="2000"
   >
     <view class="auth-login-sheet__panel">
       <view class="auth-login-sheet__handle" />
-      <template v-if="userStore.authStep === 'prompt'">
-        <view class="auth-login-sheet__hero">
-          <view class="auth-login-sheet__badge">
-            微信授权
-          </view>
-          <view class="auth-login-sheet__title">
-            登录后解锁完整商城服务
-          </view>
-          <view class="auth-login-sheet__desc">
-            购物车、订单、地址和收藏等功能需要先完成微信授权。
-          </view>
-        </view>
-        <view class="auth-login-sheet__benefits">
-          <view class="auth-login-sheet__benefit">
-            <text class="i-material-symbols:shopping-cart-checkout-rounded auth-login-sheet__benefit-icon" />
-            <text>同步购物车与结算信息</text>
-          </view>
-          <view class="auth-login-sheet__benefit">
-            <text class="i-material-symbols:receipt-long-rounded auth-login-sheet__benefit-icon" />
-            <text>查看订单与售后进度</text>
-          </view>
-          <view class="auth-login-sheet__benefit">
-            <text class="i-material-symbols:location-on-rounded auth-login-sheet__benefit-icon" />
-            <text>管理收货地址与常用资料</text>
-          </view>
-        </view>
-        <view class="auth-login-sheet__actions">
-          <wd-button block hairline @click="handleCancel">
-            暂不登录
-          </wd-button>
-          <wd-button block type="primary" @click="handleAuthorize">
-            微信授权登录
-          </wd-button>
-        </view>
-      </template>
 
-      <template v-else>
-        <view class="auth-login-sheet__profile">
-          <view class="auth-login-sheet__title">
-            完善头像与昵称
-          </view>
-          <view class="auth-login-sheet__desc">
-            已优先读取微信资料，你可以继续调整后完成登录。
-          </view>
-
-          <view class="auth-login-sheet__avatar-row">
-            <view class="auth-login-sheet__avatar-preview">
-              <image
-                v-if="draftAvatar"
-                :src="draftAvatar"
-                mode="aspectFill"
-                class="auth-login-sheet__avatar-image"
-              />
-              <text
-                v-else
-                class="i-material-symbols:account-circle auth-login-sheet__avatar-placeholder"
-              />
-            </view>
-            <!-- #ifdef MP-WEIXIN -->
-            <button
-              class="auth-login-sheet__avatar-button"
-              open-type="chooseAvatar"
-              @chooseavatar="handleChooseAvatar"
-            >
-              更换头像
-            </button>
-            <!-- #endif -->
-            <!-- #ifndef MP-WEIXIN -->
-            <button class="auth-login-sheet__avatar-button" @click="handleChooseAvatarFallback">
-              选择头像
-            </button>
-            <!-- #endif -->
-          </view>
-
-          <view class="auth-login-sheet__field">
-            <view class="auth-login-sheet__label">
-              昵称
-            </view>
-            <wd-input
-              v-model="draftNickname"
-              clearable
-              placeholder="请输入昵称"
-            />
-          </view>
-
-          <view class="auth-login-sheet__actions">
-            <wd-button block hairline @click="handleCancel">
-              稍后设置
-            </wd-button>
-            <wd-button block type="primary" :loading="isSubmitting" @click="handleConfirmProfile">
-              完成登录
-            </wd-button>
-          </view>
+      <view class="auth-login-sheet__hero">
+        <view class="auth-login-sheet__badge">
+          账号登录
         </view>
-      </template>
+        <view class="auth-login-sheet__title">
+          登录后解锁完整商城服务
+        </view>
+        <view class="auth-login-sheet__desc">
+          购物车、订单、地址和评价等功能需要先完成登录。
+        </view>
+      </view>
+
+      <view class="auth-login-sheet__benefits">
+        <view class="auth-login-sheet__benefit">
+          <text class="i-material-symbols:shopping-cart-checkout-rounded auth-login-sheet__benefit-icon" />
+          <text>同步购物车与结算信息</text>
+        </view>
+        <view class="auth-login-sheet__benefit">
+          <text class="i-material-symbols:receipt-long-rounded auth-login-sheet__benefit-icon" />
+          <text>查看订单与售后进度</text>
+        </view>
+        <view class="auth-login-sheet__benefit">
+          <text class="i-material-symbols:location-on-rounded auth-login-sheet__benefit-icon" />
+          <text>管理收货地址与常用资料</text>
+        </view>
+      </view>
+
+      <view class="auth-login-sheet__form">
+        <view class="auth-login-sheet__field">
+          <view class="auth-login-sheet__label">
+            手机号
+          </view>
+          <wd-input
+            v-model="loginForm.phone"
+            clearable
+            placeholder="请输入手机号"
+            type="number"
+          />
+        </view>
+
+        <view class="auth-login-sheet__field">
+          <view class="auth-login-sheet__label">
+            密码
+          </view>
+          <wd-input
+            v-model="loginForm.password"
+            clearable
+            placeholder="请输入登录密码"
+            type="password"
+          />
+        </view>
+      </view>
+
+      <view class="auth-login-sheet__actions">
+        <wd-button block hairline @click="handleCancel">
+          暂不登录
+        </wd-button>
+        <wd-button block type="primary" :loading="isSubmitting" @click="handlePhoneLogin">
+          登录
+        </wd-button>
+      </view>
     </view>
   </wd-popup>
 </template>
@@ -298,8 +213,7 @@ export default {
     background: rgba(148, 163, 184, 0.35);
   }
 
-  &__hero,
-  &__profile {
+  &__hero {
     display: flex;
     flex-direction: column;
     gap: 16rpx;
@@ -352,68 +266,27 @@ export default {
     line-height: 1;
   }
 
-  &__actions {
+  &__form {
     display: grid;
-    gap: 16rpx;
-    margin-top: 32rpx;
-  }
-
-  &__avatar-row {
-    display: flex;
-    align-items: center;
-    gap: 24rpx;
-    margin-top: 12rpx;
-  }
-
-  &__avatar-preview {
-    width: 132rpx;
-    height: 132rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 999rpx;
-    background: linear-gradient(135deg, rgba(239, 178, 57, 0.2), rgba(251, 146, 60, 0.1));
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  &__avatar-image {
-    width: 100%;
-    height: 100%;
-  }
-
-  &__avatar-placeholder {
-    color: #efb239;
-    font-size: 84rpx;
-    line-height: 1;
-  }
-
-  &__avatar-button {
-    border: none;
-    border-radius: 999rpx;
-    background: #0f172a;
-    color: #fff;
-    font-size: 26rpx;
-    font-weight: 600;
-    line-height: 1;
-    padding: 22rpx 28rpx;
-    margin: 0;
-  }
-
-  &__avatar-button::after {
-    border: none;
+    gap: 18rpx;
+    margin-top: 28rpx;
   }
 
   &__field {
     display: grid;
     gap: 14rpx;
-    margin-top: 8rpx;
   }
 
   &__label {
     color: #334155;
     font-size: 24rpx;
     font-weight: 600;
+  }
+
+  &__actions {
+    display: grid;
+    gap: 16rpx;
+    margin-top: 32rpx;
   }
 }
 </style>

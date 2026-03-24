@@ -279,7 +279,7 @@ model Customer {
   code        String       @unique // 客户编码
   type        CustomerType @default(INDIVIDUAL) // 客户类型
   contact     String?      // 联系人
-  phone       String?      // 联系电话
+  phone       String?      @unique // 联系电话
   email       String?      // 邮箱
   address     String?      // 地址
   creditLimit Decimal?     @db.Decimal(12, 2) // 信用额度

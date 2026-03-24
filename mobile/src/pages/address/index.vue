@@ -10,6 +10,7 @@ definePage({
     navigationBarTitleText: '地址管理',
     navigationStyle: 'custom',
   },
+  needLogin: true
 })
 
 const router = useRouter()
@@ -83,10 +84,10 @@ function addAddress() {
 function editAddress(id: number) {
   addresses.value = addresses.value.map(item => item.id === id
     ? {
-        ...item,
-        tag: item.tag === '已编辑' ? '常用' : '已编辑',
-        address: item.address.includes('（已编辑）') ? item.address : `${item.address}（已编辑）`,
-      }
+      ...item,
+      tag: item.tag === '已编辑' ? '常用' : '已编辑',
+      address: item.address.includes('（已编辑）') ? item.address : `${item.address}（已编辑）`,
+    }
     : item)
   uni.showToast({ title: '已更新地址', icon: 'success' })
 }
@@ -105,44 +106,31 @@ function setDefault(id: number) {
 </script>
 
 <template>
-  <view class="address-page min-h-screen text-slate-900">
-    <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 px-4 py-3 backdrop-blur-md">
-      <view class="flex items-center justify-between">
-        <view class="size-10 flex items-center justify-center rounded-full bg-white/90" @click="goBack">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getAddressUiIcon('back')" />
-        </view>
-        <text class="text-base font-bold tracking-[0.02em]">
-          地址管理
-        </text>
-        <view class="size-10 flex items-center justify-center rounded-full bg-white/90" @click="addAddress">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getAddressUiIcon('more')" />
-        </view>
-      </view>
-    </view>
-
+  <view class="address-page text-slate-900">
     <scroll-view scroll-y class="pb-28">
       <view class="px-4 pt-4">
-        <view
-          v-for="item in addresses"
-          :key="item.id"
+        <view v-for="item in addresses" :key="item.id"
           class="address-card mb-4 overflow-hidden rounded-2xl bg-white p-5"
-          :class="item.isDefault ? 'address-card-default' : 'address-card-normal'"
-        >
+          :class="item.isDefault ? 'address-card-default' : 'address-card-normal'">
           <view class="flex items-start justify-between">
             <view class="flex items-center gap-2">
               <view class="size-10 flex items-center justify-center rounded-2xl bg-[#efb239]/12">
-                <text class="text-[20px] text-[#efb239] leading-none" :class="getAddressIcon(item.tag, item.isDefault)" />
+                <text class="text-[20px] text-[#efb239] leading-none"
+                  :class="getAddressIcon(item.tag, item.isDefault)" />
               </view>
-              <view v-if="item.isDefault" class="rounded-full bg-[#efb239]/18 px-2 py-0.5 text-[10px] text-[#c98500] font-bold tracking-[0.08em]">
+              <view v-if="item.isDefault"
+                class="rounded-full bg-[#efb239]/18 px-2 py-0.5 text-[10px] text-[#c98500] font-bold tracking-[0.08em]">
                 DEFAULT
               </view>
             </view>
 
             <view class="flex items-center gap-3">
-              <view class="size-8 flex items-center justify-center rounded-full bg-[#f8f7f6]" @click="editAddress(item.id)">
+              <view class="size-8 flex items-center justify-center rounded-full bg-[#f8f7f6]"
+                @click="editAddress(item.id)">
                 <text class="text-[18px] text-slate-400 leading-none" :class="getAddressUiIcon('edit')" />
               </view>
-              <view class="size-8 flex items-center justify-center rounded-full bg-[#f8f7f6]" @click="deleteAddress(item.id)">
+              <view class="size-8 flex items-center justify-center rounded-full bg-[#f8f7f6]"
+                @click="deleteAddress(item.id)">
                 <text class="text-[18px] text-red-500 leading-none" :class="getAddressUiIcon('delete')" />
               </view>
             </view>
@@ -163,11 +151,9 @@ function setDefault(id: number) {
           </view>
 
           <view class="mt-4 flex items-center justify-between border-t border-[#efb239]/8 pt-3 text-xs text-slate-500">
-            <view
-              class="flex items-center gap-1.5"
-              @click="setDefault(item.id)"
-            >
-              <text class="text-[16px] text-[#efb239] leading-none" :class="item.isDefault ? getAddressUiIcon('checked') : getAddressUiIcon('unchecked')" />
+            <view class="flex items-center gap-1.5" @click="setDefault(item.id)">
+              <text class="text-[16px] text-[#efb239] leading-none"
+                :class="item.isDefault ? getAddressUiIcon('checked') : getAddressUiIcon('unchecked')" />
               设为默认
             </view>
             <view class="rounded-full bg-[#f8f7f6] px-3 py-1 text-[11px] text-slate-500 font-medium">
@@ -183,7 +169,8 @@ function setDefault(id: number) {
     </scroll-view>
 
     <view class="fixed bottom-0 left-0 right-0 z-40 bg-[#f8f7f6]/88 p-4 pb-6 backdrop-blur-md">
-      <view class="address-action rounded-2xl bg-[#efb239] py-4 text-center text-sm text-slate-900 font-bold" @click="addAddress">
+      <view class="address-action rounded-2xl bg-[#efb239] py-4 text-center text-sm text-slate-900 font-bold"
+        @click="addAddress">
         <view class="flex items-center justify-center gap-2">
           <text class="text-[18px] text-slate-900 leading-none" :class="getAddressUiIcon('add')" />
           新增地址

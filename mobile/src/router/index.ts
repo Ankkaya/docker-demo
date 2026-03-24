@@ -20,13 +20,75 @@ function generateRoutes() {
   return routes
 }
 
+function isNavigationCancelled(error: unknown) {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const routeError = error as { name?: string, message?: string }
+  return routeError.name === 'NavigationCancelled' || routeError.message === 'NavigationCancelled'
+}
+
 const router = createRouter({
   routes: generateRoutes(),
 })
+
+const rawPush = router.push.bind(router)
+router.push = async (to) => {
+  try {
+    return await rawPush(to)
+  }
+  catch (error) {
+    if (isNavigationCancelled(error)) {
+      return error
+    }
+    throw error
+  }
+}
+
+const rawReplace = router.replace.bind(router)
+router.replace = async (to) => {
+  try {
+    return await rawReplace(to)
+  }
+  catch (error) {
+    if (isNavigationCancelled(error)) {
+      return error
+    }
+    throw error
+  }
+}
+
+const rawReplaceAll = router.replaceAll.bind(router)
+router.replaceAll = async (to) => {
+  try {
+    return await rawReplaceAll(to)
+  }
+  catch (error) {
+    if (isNavigationCancelled(error)) {
+      return error
+    }
+    throw error
+  }
+}
+
+const rawPushTab = router.pushTab.bind(router)
+router.pushTab = async (to) => {
+  try {
+    return await rawPushTab(to)
+  }
+  catch (error) {
+    if (isNavigationCancelled(error)) {
+      return error
+    }
+    throw error
+  }
+}
+
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   const { setTabbarItemActive } = useTabbar()
-  const requiresAuth = Boolean((to as any).meta?.auth)
+  const requiresAuth = Boolean((to as any).needLogin)
 
   if (requiresAuth && !userStore.isLoggedIn) {
     userStore.openAuthPopup({

@@ -173,9 +173,7 @@ async function loadHomeData() {
     mapCategories(Array.isArray(categoryList) ? categoryList : [])
     mapHotProducts(hotProductResponse)
   }
-  catch (error: any) {
-    showError(error?.message || '首页数据加载失败')
-  }
+  catch {}
 }
 
 onShow(() => {
@@ -228,11 +226,8 @@ function addToCart(product: typeof hotProducts.value[0]) {
 function onProductClick(product: typeof hotProducts.value[0]) {
   router.push({
     name: 'product-detail',
-    query: {
+    params: {
       id: String(product.id),
-      name: product.name,
-      price: product.minPrice.toFixed(2),
-      image: encodeURIComponent(product.mainImage || ''),
     },
   })
 }
@@ -260,7 +255,7 @@ function onProductClick(product: typeof hotProducts.value[0]) {
       </view>
     </view>
 
-    <scroll-view scroll-y class="pb-20">
+    <scroll-view scroll-y class="pb-10">
       <!-- Hero Banner Carousel -->
       <view class="px-4 pb-2">
         <swiper class="h-44 w-full overflow-hidden rounded-xl" :indicator-dots="false" :autoplay="true" :interval="3000"
@@ -309,7 +304,8 @@ function onProductClick(product: typeof hotProducts.value[0]) {
           <view v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
             @click="onCategoryClick(category)">
             <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
-              <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28" color="#efb239" />
+              <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28"
+                color="#efb239" />
             </view>
             <text class="text-[11px] text-slate-600 font-medium">
               {{ category.name }}

@@ -10,6 +10,7 @@ definePage({
     navigationBarTitleText: '订单列表',
     navigationStyle: 'custom',
   },
+  needLogin: true,
 })
 
 const router = useRouter()
@@ -195,27 +196,12 @@ function buyAgain(order: typeof orders.value[number]) {
 <template>
   <view class="orders-page min-h-screen text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 px-4 pt-3 backdrop-blur-md">
-      <view class="mb-3 flex items-center justify-between">
-        <view class="size-10 flex items-center justify-center rounded-full bg-white/90" @click="goBack">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getOrderListIconClass('back')" />
-        </view>
-        <text class="text-base font-bold tracking-[0.02em]">
-          订单列表
-        </text>
-        <view class="size-10 flex items-center justify-center rounded-full bg-white/90">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getOrderListIconClass('search')" />
-        </view>
-      </view>
 
       <scroll-view scroll-x class="no-scrollbar whitespace-nowrap">
         <view class="flex gap-7">
-          <view
-            v-for="tab in statusTabs"
-            :key="tab.key"
-            class="border-b-[3px] px-0.5 pb-3 pt-1 text-sm font-semibold"
+          <view v-for="tab in statusTabs" :key="tab.key" class="border-b-[3px] px-0.5 pb-3 pt-1 text-sm font-semibold"
             :class="activeStatus === tab.key ? 'border-[#efb239] text-[#efb239]' : 'border-transparent text-slate-500'"
-            @click="switchStatus(tab.key)"
-          >
+            @click="switchStatus(tab.key)">
             {{ tab.label }}
           </view>
         </view>
@@ -224,13 +210,11 @@ function buyAgain(order: typeof orders.value[number]) {
 
     <scroll-view scroll-y class="pb-24">
       <view class="px-4 pt-4">
-        <view
-          v-for="order in filteredOrders"
-          :key="order.id"
+        <view v-for="order in filteredOrders" :key="order.id"
           class="order-card mb-4 overflow-hidden rounded-2xl border border-[#efb239]/8 bg-white"
-          @click="openDetail(order.id)"
-        >
-          <view class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5" :class="headerTone(order.status)">
+          @click="openDetail(order.id)">
+          <view class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5"
+            :class="headerTone(order.status)">
             <text class="text-xs text-slate-400">
               订单号 {{ order.no }}
             </text>
@@ -240,11 +224,7 @@ function buyAgain(order: typeof orders.value[number]) {
           </view>
 
           <view class="flex flex-col gap-3 px-4 py-4">
-            <view
-              v-for="item in order.items.slice(0, 2)"
-              :key="item.id"
-              class="flex items-center gap-3"
-            >
+            <view v-for="item in order.items.slice(0, 2)" :key="item.id" class="flex items-center gap-3">
               <image :src="item.image" class="size-20 rounded-xl bg-[#f5efe5]" mode="aspectFill" />
               <view class="min-w-0 flex-1">
                 <text class="line-clamp-1 block text-sm font-semibold">
@@ -279,46 +259,34 @@ function buyAgain(order: typeof orders.value[number]) {
           </view>
 
           <view class="flex flex-wrap justify-end gap-2 border-t border-[#efb239]/8 bg-[#faf9f7] px-4 py-3">
-            <view
-              v-if="order.status === 'pending'"
+            <view v-if="order.status === 'pending'"
               class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 font-bold"
-              @click.stop="cancelOrder(order.id)"
-            >
+              @click.stop="cancelOrder(order.id)">
               取消订单
             </view>
-            <view
-              v-if="order.status === 'pending'"
+            <view v-if="order.status === 'pending'"
               class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
-              @click.stop="payOrder(order.id)"
-            >
+              @click.stop="payOrder(order.id)">
               去支付
             </view>
-            <view
-              v-if="order.status === 'receiving'"
+            <view v-if="order.status === 'receiving'"
               class="rounded-lg border border-[#efb239]/20 bg-[#efb239]/20 px-4 py-2 text-xs text-[#c98500] font-bold"
-              @click.stop
-            >
+              @click.stop>
               查看物流
             </view>
-            <view
-              v-if="order.status === 'receiving'"
+            <view v-if="order.status === 'receiving'"
               class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
-              @click.stop="confirmReceive(order.id)"
-            >
+              @click.stop="confirmReceive(order.id)">
               确认收货
             </view>
-            <view
-              v-if="order.status === 'completed'"
+            <view v-if="order.status === 'completed'"
               class="rounded-lg bg-[#efb239]/10 px-4 py-2 text-xs text-[#c98500] font-bold"
-              @click.stop="buyAgain(order)"
-            >
+              @click.stop="buyAgain(order)">
               再次购买
             </view>
-            <view
-              v-if="order.status === 'completed'"
+            <view v-if="order.status === 'completed'"
               class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 font-bold"
-              @click.stop
-            >
+              @click.stop>
               评价商品
             </view>
           </view>

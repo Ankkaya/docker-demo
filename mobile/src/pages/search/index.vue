@@ -121,9 +121,7 @@ async function loadRecommendCategories() {
 
     mapRecommendCategories(Array.isArray(rootCategoryList) ? rootCategoryList : [])
   }
-  catch (error: any) {
-    showError(error?.message || '推荐分类加载失败')
-  }
+  catch {}
 }
 
 async function performSearchByKeyword(keyword: string) {
@@ -151,7 +149,6 @@ async function performSearchByKeyword(keyword: string) {
   }
   catch (error: any) {
     searchResults.value = []
-    showError(error?.message || '搜索失败')
   }
   finally {
     isLoading.value = false
@@ -178,7 +175,6 @@ async function performSearchByCategory(category: RecommendCategoryItem) {
   }
   catch (error: any) {
     searchResults.value = []
-    showError(error?.message || '搜索失败')
   }
   finally {
     isLoading.value = false
@@ -242,9 +238,6 @@ function onProductClick(product: SearchResultItem) {
     name: 'product-detail',
     query: {
       id: String(product.id),
-      name: product.name,
-      price: product.price.toFixed(2),
-      image: encodeURIComponent(product.image || ''),
     },
   })
 }

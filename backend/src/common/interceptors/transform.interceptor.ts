@@ -11,9 +11,6 @@ export interface Response<T> {
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
-    const response = context.switchToHttp().getResponse();
-    const statusCode = response.statusCode;
-    
     return next.handle().pipe(
       map(data => {
         if (data instanceof StreamableFile) {
@@ -21,7 +18,7 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
         }
 
         return {
-          code: statusCode,
+          code: 200,
           message: 'success',
           data: data || null
         };

@@ -21,6 +21,19 @@ export class CustomersService {
       throw new ConflictException('客户编码已存在');
     }
 
+    if (createCustomerDto.phone) {
+      const existingPhone = await this.prisma.customer.findFirst({
+        where: {
+          phone: createCustomerDto.phone,
+          deletedAt: null,
+        },
+      });
+
+      if (existingPhone) {
+        throw new ConflictException('客户手机号已存在');
+      }
+    }
+
     // 如果关联了用户，检查用户是否已存在
     if (createCustomerDto.userId) {
       const user = await this.prisma.user.findUnique({
@@ -109,6 +122,20 @@ export class CustomersService {
 
       if (conflict) {
         throw new ConflictException('客户编码已存在');
+      }
+    }
+
+    if (updateCustomerDto.phone) {
+      const existingPhone = await this.prisma.customer.findFirst({
+        where: {
+          id: { not: id },
+          phone: updateCustomerDto.phone,
+          deletedAt: null,
+        },
+      });
+
+      if (existingPhone) {
+        throw new ConflictException('客户手机号已存在');
       }
     }
 

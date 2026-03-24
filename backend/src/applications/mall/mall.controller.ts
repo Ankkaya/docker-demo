@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Query,
   ParseIntPipe,
   Post,
@@ -22,6 +24,8 @@ import { QueryMallProductDto } from './dto/query-mall-product.dto';
 import { QueryHotProductDto } from './dto/query-hot-product.dto';
 import { QueryMallCategoryDto } from './dto/query-mall-category.dto';
 import { WechatLoginDto } from './dto/wechat-login.dto';
+import { MallLoginDto } from './dto/mall-login.dto';
+import { MallRefreshTokenDto } from './dto/mall-refresh-token.dto';
 import {
   MallHotProductListResponseVo,
   MallProductDetailVo,
@@ -32,7 +36,8 @@ import { BrandVo } from '@/brands/vo';
 import { BannerVo } from '@/domains/banners/vo/banner.vo';
 import { CartsService } from '@/domains/carts/carts.service';
 import { CartListVo } from '@/domains/carts/vo';
-import { MallWechatLoginVo } from './vo/mall-auth.vo';
+import { AddToCartDto, UpdateCartDto } from '@/domains/carts/dto';
+import { MallCurrentUserVo, MallTokenPairVo, MallWechatLoginVo } from './vo/mall-auth.vo';
 import { ReviewsService } from '@/domains/reviews/reviews.service';
 import {
   CreateMallReviewDto,
@@ -101,16 +106,39 @@ export class MallHomeController {
 }
 
 @ApiTags('商城接口/认证')
-@ApiExtraModels(MallWechatLoginVo)
+@ApiExtraModels(MallTokenPairVo, MallWechatLoginVo, MallCurrentUserVo)
 @Controller('mall/auth')
 export class MallAuthController {
   constructor(private readonly mallService: MallService) {}
+
+  @Post('login')
+  @ApiOperation({ summary: '手机号密码登录' })
+  @ApiOkResponse({ type: MallTokenPairVo })
+  login(@Body() dto: MallLoginDto) {
+    return this.mallService.login(dto);
+  }
+
+  @Post('refresh')
+  @ApiOperation({ summary: '刷新登录令牌' })
+  @ApiOkResponse({ type: MallTokenPairVo })
+  refresh(@Body() dto: MallRefreshTokenDto) {
+    return this.mallService.refreshToken(dto);
+  }
 
   @Post('wechat-login')
   @ApiOperation({ summary: '微信授权登录' })
   @ApiOkResponse({ type: MallWechatLoginVo })
   wechatLogin(@Body() dto: WechatLoginDto) {
     return this.mallService.wechatLogin(dto);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '获取当前商城登录用户信息' })
+  @ApiOkResponse({ type: MallCurrentUserVo })
+  getProfile(@Request() req) {
+    return this.mallService.getCurrentUser(req.user.userId);
   }
 }
 
@@ -127,6 +155,50 @@ export class MallCartController {
   @ApiOkResponse({ type: CartListVo })
   findCurrentUserCart(@Request() req) {
     return this.cartsService.findByUserId(req.user.sub);
+  }
+
+  @Post('add')
+  @ApiOperation({ summary: '添加商品到购物车' })
+  addToCart(@Request() req, @Body() dto: AddToCartDto) {
+    return this.cartsService.addToCart(req.user.sub, dto);
+  }
+
+  @Patch('select-all')
+  @ApiOperation({ summary: '全选或取消全选购物车项' })
+  selectAll(@Request() req, @Body('selected') selected: boolean) {
+    return this.cartsService.selectAllByUserId(req.user.sub, selected);
+  }
+
+  @Delete('clear')
+  @ApiOperation({ summary: '清空当前登录用户购物车' })
+  clearCurrentUserCart(@Request() req) {
+    return this.cartsService.clearByUserId(req.user.sub);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: '修改当前登录用户购物车项' })
+  updateCurrentUserCart(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateCartDto,
+  ) {
+    return this.cartsService.updateForUser(req.user.sub, id, dto);
+  }
+
+  @Patch(':id/select')
+  @ApiOperation({ summary: '切换购物车项选中状态' })
+  toggleSelect(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('selected') selected: boolean,
+  ) {
+    return this.cartsService.updateForUser(req.user.sub, id, { selected });
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除当前登录用户购物车项' })
+  removeCurrentUserCart(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.cartsService.removeForUser(req.user.sub, id);
   }
 }
 

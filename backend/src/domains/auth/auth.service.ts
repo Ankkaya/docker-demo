@@ -41,4 +41,30 @@ export class AuthService {
     const payload = { sub: userId };
     return this.jwtService.sign(payload);
   }
+
+  generateRefreshToken(userId: number): string {
+    const payload = { sub: userId };
+    return this.jwtService.sign(payload, {
+      secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-secret-key',
+      expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any,
+    });
+  }
+
+  generateAuthTokens(userId: number) {
+    return {
+      token: this.generateToken(userId),
+      refreshToken: this.generateRefreshToken(userId),
+    };
+  }
+
+  async verifyRefreshToken(refreshToken: string): Promise<{ sub: number }> {
+    try {
+      return await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'your-secret-key',
+      });
+    }
+    catch {
+      throw new UnauthorizedException('刷新令牌无效或已过期');
+    }
+  }
 }

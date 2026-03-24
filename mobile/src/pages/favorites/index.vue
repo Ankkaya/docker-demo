@@ -10,6 +10,7 @@ definePage({
     navigationBarTitleText: '我的收藏',
     navigationStyle: 'custom',
   },
+  needLogin: true,
 })
 
 const router = useRouter()
@@ -66,9 +67,7 @@ function openProduct(item: typeof favorites.value[number]) {
   router.push({
     name: 'product-detail',
     query: {
-      name: item.name,
-      price: item.price.toFixed(2),
-      image: encodeURIComponent(item.image),
+      id: String(item.id),
     },
   })
 }
@@ -84,22 +83,8 @@ function addToCart(item: typeof favorites.value[number]) {
 </script>
 
 <template>
-  <view class="favorites-page min-h-screen text-slate-900">
+  <view class="favorites-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-[#f8f7f6]/92 px-4 py-3 backdrop-blur-md">
-      <view class="flex items-center justify-between">
-        <view class="size-10 flex items-center justify-center rounded-full bg-white/90" @click="goBack">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getFavoriteIconClass('back')" />
-        </view>
-        <text class="text-base font-bold tracking-[0.02em]">
-          我的收藏
-        </text>
-        <view class="relative size-10 flex items-center justify-center rounded-full bg-white/90" @click="onSearch">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getFavoriteIconClass('search')" />
-          <view class="absolute right-1.5 top-1.5 min-w-4 rounded-full bg-[#efb239] px-1 text-center text-[10px] text-white font-bold">
-            {{ Math.min(favorites.length, 9) }}
-          </view>
-        </view>
-      </view>
 
       <view class="mt-3 flex items-center gap-6 overflow-x-auto whitespace-nowrap text-sm">
         <text class="border-b-2 border-[#efb239] pb-2 text-slate-900 font-bold">
@@ -120,25 +105,22 @@ function addToCart(item: typeof favorites.value[number]) {
     <scroll-view scroll-y class="pb-28">
       <view class="px-4 pt-4">
         <view class="px-1 text-center text-sm text-slate-400">
-          你还有 <text class="text-[#efb239] font-bold">{{ favorites.length }}</text> 件心动好物待带回家
+          你还有 <text class="text-[#efb239] font-bold">
+            {{ favorites.length }}
+          </text> 件心动好物待带回家
         </view>
 
-        <view
-          v-for="item in favorites"
-          :key="item.id"
-          class="favorite-card mt-4 flex gap-4 rounded-2xl border border-[#efb239]/8 bg-white p-3"
-          @click="openProduct(item)"
-        >
+        <view v-for="item in favorites" :key="item.id"
+          class="favorite-card mt-4 flex gap-4 border border-[#efb239]/8 rounded-2xl bg-white p-3"
+          @click="openProduct(item)">
           <image :src="item.image" class="h-28 w-28 shrink-0 rounded-xl bg-[#f6efe0]" mode="aspectFill" />
           <view class="min-w-0 flex-1 py-1">
             <view class="flex items-start justify-between gap-3">
               <text class="line-clamp-2 block text-[30rpx] font-bold leading-[1.35]">
                 {{ item.name }}
               </text>
-              <view
-              class="size-8 flex shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-400"
-                @click.stop="removeFavorite(item)"
-              >
+              <view class="size-8 flex shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-400"
+                @click.stop="removeFavorite(item)">
                 <text class="text-[18px] text-slate-400 leading-none" :class="getFavoriteIconClass('close')" />
               </view>
             </view>
@@ -147,7 +129,8 @@ function addToCart(item: typeof favorites.value[number]) {
               {{ item.variant }}
             </text>
 
-            <view class="mt-2 inline-flex rounded-full bg-[#efb239]/10 px-2.5 py-1 text-[11px] text-[#c98500] font-semibold">
+            <view
+              class="mt-2 inline-flex rounded-full bg-[#efb239]/10 px-2.5 py-1 text-[11px] text-[#c98500] font-semibold">
               {{ item.tag }}
             </view>
 
@@ -162,8 +145,7 @@ function addToCart(item: typeof favorites.value[number]) {
 
             <view
               class="mt-3 h-9 flex items-center justify-center gap-1 rounded-xl bg-[#efb239] text-xs text-slate-900 font-bold"
-              @click.stop="addToCart(item)"
-            >
+              @click.stop="addToCart(item)">
               <text class="text-[16px] text-slate-900 leading-none" :class="getFavoriteIconClass('cart')" />
               加入购物车
             </view>

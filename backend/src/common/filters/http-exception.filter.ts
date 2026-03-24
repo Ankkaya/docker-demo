@@ -7,10 +7,28 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
     const request = ctx.getRequest();
     const status = exception.getStatus();
+    const exceptionResponse = exception.getResponse();
 
-    response.status(status).json({
+    let message = exception.message || '请求异常';
+
+    if (typeof exceptionResponse === 'string') {
+      message = exceptionResponse;
+    } else if (
+      typeof exceptionResponse === 'object' &&
+      exceptionResponse !== null &&
+      'message' in exceptionResponse
+    ) {
+      const rawMessage = (exceptionResponse as { message?: string | string[] }).message;
+      if (Array.isArray(rawMessage)) {
+        message = rawMessage[0] || message;
+      } else if (rawMessage) {
+        message = rawMessage;
+      }
+    }
+
+    response.status(200).json({
       code: status,
-      message: exception.message || '请求失败',
+      message,
       data: null,
       path: request.url,
       timestamp: new Date().toISOString()

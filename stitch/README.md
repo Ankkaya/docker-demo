@@ -19,3 +19,5 @@
 - 项目：`11131971736005700711`（首页 Home）
 - 页面：`dd4902990e634bc28f938d998e49d1d4`（商品列表页 Product List）
 - 功能目录：`商品列表页 (Product List)`
+- 页面：`a4ee73ec800148c1ad15a75ce8ac4379`（商品评价列表）
+- 功能目录：`商品评价列表 (Product Review List)`

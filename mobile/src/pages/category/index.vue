@@ -114,9 +114,7 @@ async function loadCategories() {
 
     syncActiveCategory()
   }
-  catch (error: any) {
-    showError(error?.message || '分类数据加载失败')
-  }
+  catch {}
 }
 
 function syncActiveCategory() {

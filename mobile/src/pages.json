@@ -41,7 +41,8 @@
       "style": {
         "navigationBarTitleText": "地址管理",
         "navigationStyle": "custom"
-      }
+      },
+      "needLogin": true
     },
     {
       "path": "pages/cart/index",
@@ -63,6 +64,7 @@
         "navigationStyle": "custom"
       }
     },
+    // #ifdef MP-WEIXIN
     {
       "path": "pages/favorites/index",
       "type": "page",
@@ -73,6 +75,21 @@
         "navigationStyle": "custom"
       }
     },
+    // #endif
+    // #ifdef H5
+    {
+      "path": "pages/favorites/index",
+      "type": "page",
+      "name": "favorites",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "我的收藏",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
+    },
+    // #endif
+    // #ifdef MP-WEIXIN
     {
       "path": "pages/history/index",
       "type": "page",
@@ -83,6 +100,20 @@
         "navigationStyle": "custom"
       }
     },
+    // #endif
+    // #ifdef H5
+    {
+      "path": "pages/history/index",
+      "type": "page",
+      "name": "history",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "浏览历史",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
+    },
+    // #endif
     {
       "path": "pages/index/index",
       "type": "page",
@@ -103,6 +134,7 @@
         "navigationStyle": "custom"
       }
     },
+    // #ifdef MP-WEIXIN
     {
       "path": "pages/order-list/index",
       "type": "page",
@@ -113,6 +145,20 @@
         "navigationStyle": "custom"
       }
     },
+    // #endif
+    // #ifdef H5
+    {
+      "path": "pages/order-list/index",
+      "type": "page",
+      "name": "order-list",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "订单列表",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
+    },
+    // #endif
     {
       "path": "pages/product-detail/index",
       "type": "page",
@@ -120,6 +166,16 @@
       "layout": "default",
       "style": {
         "navigationBarTitleText": "商品详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/review-list/index",
+      "type": "page",
+      "name": "review-list",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "商品评价",
         "navigationStyle": "custom"
       }
     },

@@ -1,0 +1,4 @@
+# Stitch screen assets download commands (Product Review List)
+curl.exe -L "https://lh3.googleusercontent.com/aida/ADBb0uhUViBK9u42jkT6SB30tEhTyq2c7uWnbWlnBxUOI57IsdI08VWk_oXOSKxXVdu7SoPudMsUE7ZqC92DqcRu2Ok0OBrxz-5SQ3bxy8gR7PkuKssFJxuIz-UPp9GwO0I7hElgw7npePMQckqV9c8J8riD7Qs-DXtdXULypGPt8QNrvcGyR-QmVfHzuBa7NoK-043n0H2CAUwh_w5sChVvUCwDd06wf-NsoWcLglkm8dfsvysfIAru8mVfclyZ" -o "商品评价列表 (Product Review List).png"
+
+curl.exe -L "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2U3NGJlMGM1NjU4MjQzMjVhNDE2MjdmNmRmMzNiZmM4EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086" -o "商品评价列表 (Product Review List).html"

@@ -9,6 +9,14 @@ export interface LoginUser {
   id: number
   username?: string
   name?: string | null
+  email?: string | null
+  phone?: string | null
+  customer?: {
+    id: number
+    name: string
+    phone?: string | null
+    address?: string | null
+  } | null
 }
 
 export interface PendingRoute {
@@ -26,16 +34,15 @@ const createEmptyProfile = (): UserProfile => ({
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
+    refreshToken: '',
     isLoggedIn: false,
     user: null as LoginUser | null,
     profile: createEmptyProfile() as UserProfile,
     authPopupVisible: false,
-    authStep: 'prompt' as 'prompt' | 'profile',
     pendingRoute: null as PendingRoute | null,
-    draftProfile: createEmptyProfile() as UserProfile,
   }),
   getters: {
-    displayName: state => state.profile.nickname || '微信用户',
+    displayName: state => state.user?.name || state.user?.username || state.profile.nickname || '未登录用户',
     displayAvatar: state => state.profile.avatarUrl || '',
   },
   actions: {
@@ -49,60 +56,26 @@ export const useUserStore = defineStore('user', {
         }
       }
 
-      this.authStep = 'prompt'
-      this.draftProfile = {
-        nickname: this.profile.nickname || '',
-        avatarUrl: this.profile.avatarUrl || '',
-      }
       this.authPopupVisible = true
     },
     closeAuthPopup() {
       this.authPopupVisible = false
     },
-    applyWechatProfile(profile?: Partial<UserProfile> | null) {
-      this.draftProfile = {
-        nickname: profile?.nickname || this.profile.nickname || '',
-        avatarUrl: profile?.avatarUrl || this.profile.avatarUrl || '',
-      }
-      this.authStep = 'profile'
+    setSession(payload: {
+      token: string
+      refreshToken: string
+    }) {
+      this.token = payload.token
+      this.refreshToken = payload.refreshToken
     },
-    updateDraftProfile(payload: Partial<UserProfile>) {
-      this.draftProfile = {
-        ...this.draftProfile,
-        ...payload,
-      }
-    },
-    completeLogin() {
-      const nickname = this.draftProfile.nickname.trim() || '微信用户'
+    setCurrentUser(user: LoginUser) {
+      this.user = user
       this.profile = {
-        nickname,
-        avatarUrl: this.draftProfile.avatarUrl || '',
+        nickname: user.name || user.username || '',
+        avatarUrl: '',
       }
       this.isLoggedIn = true
       this.authPopupVisible = false
-      this.authStep = 'prompt'
-    },
-    setSession(payload: {
-      token: string
-      user: LoginUser
-      nickname?: string
-      avatarUrl?: string
-      keepPopupOpen?: boolean
-    }) {
-      this.token = payload.token
-      this.user = payload.user
-      this.profile = {
-        nickname: payload.nickname?.trim() || payload.user.name || this.profile.nickname || '微信用户',
-        avatarUrl: payload.avatarUrl || this.profile.avatarUrl || '',
-      }
-      this.draftProfile = {
-        ...this.profile,
-      }
-      this.isLoggedIn = true
-      if (!payload.keepPopupOpen) {
-        this.authPopupVisible = false
-        this.authStep = 'prompt'
-      }
     },
     consumePendingRoute() {
       const route = this.pendingRoute
@@ -111,13 +84,12 @@ export const useUserStore = defineStore('user', {
     },
     logout() {
       this.token = ''
+      this.refreshToken = ''
       this.isLoggedIn = false
       this.user = null
       this.profile = createEmptyProfile()
-      this.draftProfile = createEmptyProfile()
       this.pendingRoute = null
       this.authPopupVisible = false
-      this.authStep = 'prompt'
     },
   },
 })

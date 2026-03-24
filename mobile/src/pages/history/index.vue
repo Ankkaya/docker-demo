@@ -10,6 +10,7 @@ definePage({
     navigationBarTitleText: '浏览历史',
     navigationStyle: 'custom',
   },
+  needLogin: true,
 })
 
 const router = useRouter()
@@ -96,23 +97,12 @@ function removeItem(id: number) {
 </script>
 
 <template>
-  <view class="history-page min-h-screen text-slate-900">
+  <view class="history-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 backdrop-blur-md">
-      <view class="flex items-center justify-between px-4 py-3">
-        <view class="size-10 flex items-center justify-center rounded-full bg-white/90" @click="goBack">
-          <text class="text-[20px] text-slate-900 leading-none" :class="getHistoryIconClass('back')" />
-        </view>
-        <text class="text-base font-bold tracking-[0.02em]">
-          浏览历史
-        </text>
-        <view class="size-10 flex items-center justify-center rounded-full text-slate-500" @click="clearHistory">
-          <text class="text-[20px] text-slate-500 leading-none" :class="getHistoryIconClass('clear')" />
-        </view>
-      </view>
 
       <view class="overflow-x-auto px-4 whitespace-nowrap">
         <view class="flex gap-6 text-sm">
-          <text class="border-b-2 border-[#efb239] pb-3 text-[#efb239] font-bold">
+          <text class="border-b-2 border-[#efb239] pyy-3 text-[#efb239] font-bold">
             全部商品
           </text>
           <text class="pb-3 text-slate-500">
@@ -130,10 +120,8 @@ function removeItem(id: number) {
 
     <scroll-view scroll-y class="pb-20">
       <view class="px-4 pt-4">
-        <view
-          v-if="historyGroups.length === 0"
-          class="mt-10 rounded-3xl border border-[#efb239]/10 bg-white/70 px-6 py-12 text-center text-slate-400"
-        >
+        <view v-if="historyGroups.length === 0"
+          class="mt-10 rounded-3xl border border-[#efb239]/10 bg-white/70 px-6 py-12 text-center text-slate-400">
           <text class="text-[40px] text-[#cbd5f5] leading-none" :class="getHistoryIconClass('empty')" />
           <text class="mt-3 text-sm">
             暂无浏览记录
@@ -149,18 +137,12 @@ function removeItem(id: number) {
           </view>
 
           <view class="grid grid-cols-2 gap-4">
-            <view
-              v-for="item in group.items"
-              :key="item.id"
-              class="history-card overflow-hidden"
-              @click="openProduct(item)"
-            >
+            <view v-for="item in group.items" :key="item.id" class="history-card overflow-hidden"
+              @click="openProduct(item)">
               <view class="relative">
                 <image :src="item.image" class="history-image w-full rounded-2xl bg-[#f6efe0]" mode="aspectFill" />
-                <view
-                  class="absolute right-2 top-2 size-8 flex items-center justify-center rounded-full bg-white/92"
-                  @click.stop="removeItem(item.id)"
-                >
+                <view class="absolute right-2 top-2 size-8 flex items-center justify-center rounded-full bg-white/92"
+                  @click.stop="removeItem(item.id)">
                   <text class="text-[16px] text-slate-400 leading-none" :class="getHistoryIconClass('close')" />
                 </view>
               </view>

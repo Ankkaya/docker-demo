@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { CreateCartDto, UpdateCartDto, QueryCartDto, AddToCartDto } from './dto';
 import { CartItemVo, CartStatsVo, CartListVo } from './vo';
@@ -418,6 +418,23 @@ export class CartsService {
     return this.toCartItemVo(updated);
   }
 
+  async updateForUser(userId: number, id: number, dto: UpdateCartDto): Promise<CartItemVo> {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!cart) {
+      throw new NotFoundException('购物车项不存在');
+    }
+
+    if (cart.userId !== userId) {
+      throw new ForbiddenException('无权操作该购物车项');
+    }
+
+    return this.update(id, dto);
+  }
+
   // 删除购物车项
   async remove(id: number): Promise<void> {
     const cart = await this.prisma.cart.findUnique({
@@ -433,11 +450,37 @@ export class CartsService {
     });
   }
 
+  async removeForUser(userId: number, id: number): Promise<void> {
+    const cart = await this.prisma.cart.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!cart) {
+      throw new NotFoundException('购物车项不存在');
+    }
+
+    if (cart.userId !== userId) {
+      throw new ForbiddenException('无权操作该购物车项');
+    }
+
+    await this.remove(id);
+  }
+
   // 清空用户购物车
   async clearByUserId(userId: number): Promise<void> {
     await this.prisma.cart.deleteMany({
       where: { userId },
     });
+  }
+
+  async selectAllByUserId(userId: number, selected: boolean): Promise<CartListVo> {
+    await this.prisma.cart.updateMany({
+      where: { userId },
+      data: { selected },
+    });
+
+    return this.findByUserId(userId);
   }
 
   // 批量删除购物车项

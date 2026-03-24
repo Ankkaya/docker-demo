@@ -14,7 +14,10 @@ import { MinioService } from '@/infrastructure/minio/minio.service';
 import { IconAssetsService } from '@/infrastructure/icon-assets/icon-assets.service';
 import { AuthService } from '@/domains/auth/auth.service';
 import { WechatLoginDto } from './dto/wechat-login.dto';
+import { MallLoginDto } from './dto/mall-login.dto';
+import { MallRefreshTokenDto } from './dto/mall-refresh-token.dto';
 import { UserVo } from '@/users/vo';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class MallService {
@@ -24,6 +27,78 @@ export class MallService {
     private iconAssetsService: IconAssetsService,
     private authService: AuthService,
   ) {}
+
+  async login(dto: MallLoginDto) {
+    const phone = dto.phone.trim();
+
+    const customer = await this.prisma.customer.findFirst({
+      where: {
+        phone,
+        isEnabled: true,
+        deletedAt: null,
+        user: {
+          is: {
+            deletedAt: null,
+          },
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!customer?.user) {
+      throw new UnauthorizedException('手机号或密码错误');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.password, customer.user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('手机号或密码错误');
+    }
+
+    return this.authService.generateAuthTokens(customer.user.id);
+  }
+
+  async refreshToken(dto: MallRefreshTokenDto) {
+    const payload = await this.authService.verifyRefreshToken(dto.refreshToken);
+    return this.authService.generateAuthTokens(payload.sub);
+  }
+
+  async getCurrentUser(userId: number) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            address: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('用户不存在或已失效');
+    }
+
+    return {
+      ...UserVo.fromEntity(user),
+      phone: user.customer?.phone || null,
+      customer: user.customer
+        ? {
+            id: user.customer.id,
+            name: user.customer.name,
+            phone: user.customer.phone,
+            address: user.customer.address,
+          }
+        : null,
+    };
+  }
 
   async wechatLogin(dto: WechatLoginDto) {
     const appId = process.env.WECHAT_APP_ID;
@@ -82,7 +157,7 @@ export class MallService {
     }
 
     return {
-      token: this.authService.generateToken(user.id),
+      ...this.authService.generateAuthTokens(user.id),
       user: UserVo.fromEntity(user),
     };
   }
@@ -346,15 +421,19 @@ export class MallService {
     const specMap = new Map<string, Set<string>>();
 
     skus.forEach((sku) => {
-      const specs = sku.specs as Record<string, string>;
-      if (specs) {
-        Object.entries(specs).forEach(([key, value]) => {
-          if (!specMap.has(key)) {
-            specMap.set(key, new Set());
-          }
-          specMap.get(key)!.add(value);
-        });
-      }
+      const rawSpecs = sku.specs;
+      const specs = Array.isArray(rawSpecs)
+        ? rawSpecs
+            .filter((item): item is { name: string; value: string } => Boolean(item?.name) && Boolean(item?.value))
+            .map(item => [item.name, item.value] as const)
+        : Object.entries((rawSpecs || {}) as Record<string, string>);
+
+      specs.forEach(([key, value]) => {
+        if (!specMap.has(key)) {
+          specMap.set(key, new Set());
+        }
+        specMap.get(key)!.add(value);
+      });
     });
 
     return Array.from(specMap.entries()).map(([name, values]) => ({

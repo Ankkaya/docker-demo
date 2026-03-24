@@ -20,9 +20,14 @@ export default {
   'general.MallProductsController_findProducts': ['GET', '/mall/products'],
   'general.MallProductsController_findHotProducts': ['GET', '/mall/products/hot'],
   'general.MallProductsController_findProductDetail': ['GET', '/mall/products/{id}'],
+  'general.MallReviewsController_findProductReviews': ['GET', '/mall/products/{id}/reviews'],
+  'general.MallReviewsController_getProductReviewStats': ['GET', '/mall/products/{id}/review-stats'],
   'general.MallHomeController_findCategories': ['GET', '/mall/categories'],
   'general.MallHomeController_findBrands': ['GET', '/mall/brands'],
   'general.MallHomeController_findBanners': ['GET', '/mall/banners'],
+  'general.MallAuthController_login': ['POST', '/mall/auth/login'],
+  'general.MallAuthController_refresh': ['POST', '/mall/auth/refresh'],
+  'general.MallAuthController_getProfile': ['GET', '/mall/auth/me'],
   'general.MallAuthController_wechatLogin': ['POST', '/mall/auth/wechat-login'],
   'general.MallCartController_findCurrentUserCart': ['GET', '/mall/carts/current']
 };

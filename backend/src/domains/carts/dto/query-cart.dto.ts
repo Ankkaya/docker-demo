@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 
@@ -34,6 +34,7 @@ export class AddToCartDto {
 
   @ApiPropertyOptional({ description: '数量', default: 1 })
   @IsInt()
+  @Min(1)
   @IsOptional()
   quantity?: number = 1;
 }

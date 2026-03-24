@@ -89,9 +89,7 @@ function onProductClick(product: typeof products.value[number]) {
   router.push({
     name: 'product-detail',
     query: {
-      name: product.name,
-      price: product.price.toFixed(2),
-      image: encodeURIComponent(product.image),
+      id: String(product.id),
     },
   })
 }

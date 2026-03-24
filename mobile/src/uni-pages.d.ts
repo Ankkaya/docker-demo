@@ -16,6 +16,7 @@ type _LocationUrl =
   "/pages/order-list/index" |
   "/pages/product-detail/index" |
   "/pages/product-list/index" |
+  "/pages/review-list/index" |
   "/pages/search/index" |
   "/pages/user/index" |
   "/subPages/ci/index" |
