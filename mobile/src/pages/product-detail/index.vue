@@ -3,7 +3,7 @@
  * 商品详情页 - 参考 Stitch 设计稿
  */
 
-import { addToCart as addToCartRequest } from '@/api/cart'
+import { useCheckoutStore } from '@/store/checkoutStore'
 import { useUserStore } from '@/store/userStore'
 
 definePage({
@@ -16,6 +16,7 @@ definePage({
 })
 
 const router = useRouter()
+const checkoutStore = useCheckoutStore()
 const userStore = useUserStore()
 const { error: showError } = useGlobalToast()
 
@@ -61,6 +62,10 @@ interface ProductHighlightItem {
   value: string
 }
 
+interface LoadProductDataOptions {
+  preserveSelectedSpecs?: boolean
+}
+
 const routeProductId = ref<number | null>(null)
 const loading = ref(false)
 const productDetail = ref<MallProductDetailVo | null>(null)
@@ -68,7 +73,7 @@ const reviewStats = ref<{ totalCount?: number, avgRating?: number } | null>(null
 const reviewPreview = ref<ReviewPreview | null>(null)
 const relatedProducts = ref<RelatedProduct[]>([])
 const currentImage = ref(0)
-const liked = ref(true)
+const liked = ref(false)
 const selectedSpecs = ref<Record<string, string>>({})
 const lastLoadedProductId = ref<number | null>(null)
 const addingToCart = ref(false)
@@ -78,29 +83,46 @@ const specGroups = computed<ProductOptionGroup[]>(() => {
   return Array.isArray(list) ? list : []
 })
 
-const normalizedSkus = computed<NormalizedSku[]>(() => {
-  const list = Array.isArray(productDetail.value?.skus) ? productDetail.value.skus : []
-  return list.map((sku: any) => {
-    const rawSpecs = Array.isArray(sku.specs) ? sku.specs : []
-    const specsMap = rawSpecs.reduce((result: Record<string, string>, item: any) => {
-      if (item?.name && item?.value) {
-        result[item.name] = item.value
-      }
-      return result
-    }, {})
-
-    return {
-      id: sku.id,
-      skuCode: sku.skuCode,
-      salePrice: Number(sku.salePrice || 0),
-      marketPrice: Number(sku.marketPrice || 0),
-      image: typeof sku.image === 'string' ? sku.image : null,
-      barcode: typeof sku.barcode === 'string' ? sku.barcode : null,
-      isDefault: Boolean(sku.isDefault),
-      totalStock: Number(sku.totalStock || 0),
-      specsMap,
+function buildSkuSpecsMap(rawSpecs: unknown) {
+  const list = Array.isArray(rawSpecs) ? rawSpecs : []
+  return list.reduce((result: Record<string, string>, item: any) => {
+    if (item?.name && item?.value) {
+      result[item.name] = item.value
     }
-  })
+    return result
+  }, {})
+}
+
+function getNormalizedSkus(detail: MallProductDetailVo | null | undefined): NormalizedSku[] {
+  const list = Array.isArray(detail?.skus) ? detail.skus : []
+  return list.map((sku: any) => ({
+    id: sku.id,
+    skuCode: sku.skuCode,
+    salePrice: Number(sku.salePrice || 0),
+    marketPrice: Number(sku.marketPrice || 0),
+    image: typeof sku.image === 'string' ? sku.image : null,
+    barcode: typeof sku.barcode === 'string' ? sku.barcode : null,
+    isDefault: Boolean(sku.isDefault),
+    totalStock: Number(sku.totalStock || 0),
+    specsMap: buildSkuSpecsMap(sku.specs),
+  }))
+}
+
+const normalizedSkus = computed<NormalizedSku[]>(() => {
+  return getNormalizedSkus(productDetail.value)
+})
+
+const firstSku = computed(() => normalizedSkus.value[0] || null)
+const aggregateStock = computed(() => {
+  return normalizedSkus.value.reduce((sum, sku) => sum + Number(sku.totalStock || 0), 0)
+})
+
+const hasSelectedAllSpecs = computed(() => {
+  if (!specGroups.value.length) {
+    return Boolean(firstSku.value)
+  }
+
+  return specGroups.value.every(group => Boolean(selectedSpecs.value[group.name]))
 })
 
 const gallery = computed(() => {
@@ -120,29 +142,48 @@ const selectedSku = computed(() => {
     return null
   }
 
-  const optionCount = specGroups.value.length
-  if (!optionCount) {
-    return skus.find(sku => sku.isDefault) || skus[0]
+  if (!specGroups.value.length) {
+    return firstSku.value
   }
 
-  const matchedSku = skus.find((sku) => {
+  if (!hasSelectedAllSpecs.value) {
+    return null
+  }
+
+  return skus.find((sku) => {
     return specGroups.value.every(group => selectedSpecs.value[group.name] === sku.specsMap[group.name])
   })
-
-  return matchedSku || skus.find(sku => sku.isDefault) || skus[0]
 })
 
+const displaySku = computed(() => selectedSku.value || firstSku.value)
+
 const productName = computed(() => productDetail.value?.name || '商品详情')
-const productPrice = computed(() => Number(selectedSku.value?.salePrice ?? 0))
+const productPrice = computed(() => Number(displaySku.value?.salePrice ?? 0))
 const productMarketPrice = computed(() => {
-  const marketPrice = Number(selectedSku.value?.marketPrice ?? 0)
+  const marketPrice = Number(displaySku.value?.marketPrice ?? 0)
   return Number.isFinite(marketPrice) && marketPrice > 0 ? marketPrice : null
 })
 const reviewCount = computed(() => Number(reviewStats.value?.totalCount ?? 0))
 const avgRating = computed(() => Number(reviewStats.value?.avgRating ?? 5))
-const totalStock = computed(() => Number(selectedSku.value?.totalStock ?? 0))
-const isPurchasable = computed(() => Boolean(selectedSku.value) && totalStock.value > 0)
+const totalStock = computed(() => {
+  if (selectedSku.value) {
+    return Number(selectedSku.value.totalStock ?? 0)
+  }
+
+  return Number(aggregateStock.value || 0)
+})
+const canSelectSku = computed(() => Boolean(selectedSku.value))
+const hasStock = computed(() => totalStock.value > 0)
+const specDisplayLabel = computed(() => (selectedSku.value ? '已选' : '默认'))
 const selectedSpecSummary = computed(() => {
+  if (!selectedSku.value && displaySku.value) {
+    const values = specGroups.value
+      .map(group => displaySku.value?.specsMap[group.name])
+      .filter(Boolean)
+
+    return values.length ? values.join(' / ') : '请选择规格'
+  }
+
   const values = specGroups.value
     .map(group => selectedSpecs.value[group.name])
     .filter(Boolean)
@@ -230,12 +271,38 @@ function getReviewInitial(name: string) {
   return normalized.slice(0, 1).toUpperCase()
 }
 
-function syncSelectedSpecs(detail: MallProductDetailVo) {
-  const defaultSku = normalizedSkus.value.find(sku => sku.isDefault) || normalizedSkus.value[0]
+function syncSelectedSpecs(
+  detail: MallProductDetailVo,
+  preferredSpecs: Record<string, string> = {},
+) {
+  const groups = Array.isArray(detail.specOptions) ? detail.specOptions : []
+  const skus = getNormalizedSkus(detail)
+  const preferredSku = skus.find((sku) => {
+    return groups.every((group) => {
+      const selectedValue = preferredSpecs[group.name]
+      return selectedValue && sku.specsMap[group.name] === selectedValue
+    })
+  })
+
+  if (preferredSku && preferredSku.totalStock > 0) {
+    const nextSelected: Record<string, string> = {}
+    for (const group of groups) {
+      nextSelected[group.name] = preferredSku.specsMap[group.name] || group.values[0] || ''
+    }
+    selectedSpecs.value = nextSelected
+    return
+  }
+
+  const fallbackSku = skus[0]
+  if (!fallbackSku || fallbackSku.totalStock <= 0) {
+    selectedSpecs.value = {}
+    return
+  }
+
   const nextSelected: Record<string, string> = {}
 
-  for (const group of Array.isArray(detail.specOptions) ? detail.specOptions : []) {
-    const fromSku = defaultSku?.specsMap?.[group.name]
+  for (const group of groups) {
+    const fromSku = fallbackSku?.specsMap?.[group.name]
     nextSelected[group.name] = fromSku || group.values[0] || ''
   }
 
@@ -328,8 +395,11 @@ async function loadRelatedProducts(productId: number) {
   }
 }
 
-async function loadProductData(productId: number) {
+async function loadProductData(productId: number, options: LoadProductDataOptions = {}) {
   loading.value = true
+  const previousSelectedSpecs = options.preserveSelectedSpecs
+    ? { ...selectedSpecs.value }
+    : {}
 
   try {
     const detail = await Apis.general.MallProductsController_findProductDetail({
@@ -339,7 +409,8 @@ async function loadProductData(productId: number) {
     }).send()
 
     productDetail.value = detail
-    syncSelectedSpecs(detail)
+    liked.value = Boolean(detail?.isFavorite)
+    syncSelectedSpecs(detail, previousSelectedSpecs)
 
     await Promise.all([
       loadReviewStats(productId),
@@ -383,7 +454,7 @@ function onImageChange(e: any) {
 
 function selectSpec(groupName: string, value: string) {
   const optionState = getOptionState(groupName, value)
-  if (!optionState.exists) {
+  if (!optionState.exists || !optionState.inStock) {
     return
   }
 
@@ -394,11 +465,49 @@ function selectSpec(groupName: string, value: string) {
 }
 
 function toggleLike() {
-  liked.value = !liked.value
+  if (!routeProductId.value) {
+    return
+  }
+
+  if (!userStore.isLoggedIn) {
+    userStore.openAuthPopup({
+      name: 'product-detail',
+      path: '/pages/product-detail/index',
+      query: routeProductId.value ? { id: String(routeProductId.value) } : undefined,
+    })
+    return
+  }
+
+  const nextLiked = !liked.value
+  liked.value = nextLiked
+
+  const request = nextLiked
+    ? (Apis.general as any).MallFavoritesController_createFavorite({
+      data: { productId: routeProductId.value },
+    })
+    : (Apis.general as any).MallFavoritesController_removeFavorite({
+      pathParams: { productId: routeProductId.value },
+    })
+
+  request.send()
+    .then(() => {
+      if (productDetail.value) {
+        productDetail.value.isFavorite = nextLiked
+      }
+      uni.showToast({ title: nextLiked ? '已收藏' : '已取消收藏', icon: 'none' })
+    })
+    .catch(() => {
+      liked.value = !nextLiked
+    })
 }
 
 async function addToCart() {
-  if (!isPurchasable.value) {
+  if (!canSelectSku.value) {
+    uni.showToast({ title: '请先选择规格', icon: 'none' })
+    return
+  }
+
+  if (!hasStock.value) {
     uni.showToast({ title: '当前规格暂无库存', icon: 'none' })
     return
   }
@@ -418,12 +527,14 @@ async function addToCart() {
 
   addingToCart.value = true
   try {
-    await addToCartRequest({
-      skuId: selectedSku.value.id,
-      quantity: 1,
+    await (Apis.general as any).MallCartController_addToCart({
+      data: {
+        skuId: selectedSku.value.id,
+        quantity: 1,
+      },
     }).send()
     if (routeProductId.value) {
-      await loadProductData(routeProductId.value)
+      await loadProductData(routeProductId.value, { preserveSelectedSpecs: true })
     }
     uni.showToast({ title: '已加入购物车', icon: 'success' })
   }
@@ -434,11 +545,36 @@ async function addToCart() {
 }
 
 function buyNow() {
-  if (!isPurchasable.value) {
+  if (!canSelectSku.value || !selectedSku.value) {
+    uni.showToast({ title: '请先选择规格', icon: 'none' })
+    return
+  }
+
+  if (!hasStock.value) {
     uni.showToast({ title: '当前规格暂不可购买', icon: 'none' })
     return
   }
-  uni.showToast({ title: '立即购买开发中', icon: 'none' })
+
+  checkoutStore.setPayload({
+    source: 'product-detail',
+    items: [{
+      productId: Number(routeProductId.value || productDetail.value?.id || 0),
+      skuId: selectedSku.value.id,
+      productName: productName.value,
+      specText: selectedSpecSummary.value,
+      image: selectedSku.value.image || gallery.value[0] || '',
+      price: productPrice.value,
+      quantity: 1,
+    }],
+    totalAmount: productPrice.value,
+  })
+
+  router.push({
+    name: 'order-payment',
+    query: {
+      source: 'product-detail',
+    },
+  })
 }
 
 function openRelated(item: typeof relatedProducts.value[number]) {
@@ -512,15 +648,15 @@ function openReviewList() {
               ¥{{ productMarketPrice.toFixed(2) }}
             </text>
           </view>
-          <view v-if="selectedSku" class="mt-3 flex items-center gap-3 text-xs">
-            <text class="rounded-full bg-[#efb239]/10 px-3 py-1 font-semibold text-[#c98500]">
-              已选 {{ selectedSpecSummary }}
+          <view v-if="displaySku" class="mt-3 flex items-center gap-3 text-xs">
+            <text v-if="canSelectSku" class="rounded-full bg-[#efb239]/10 px-3 py-1 font-semibold text-[#c98500]">
+              {{ specDisplayLabel }} {{ selectedSpecSummary }}
             </text>
             <text :class="totalStock > 0 ? 'text-emerald-600' : 'text-rose-500'">
               {{ totalStock > 0 ? `库存 ${totalStock}` : '暂时缺货' }}
             </text>
-            <text v-if="selectedSku.barcode" class="text-slate-400">
-              条码 {{ selectedSku.barcode }}
+            <text v-if="displaySku.barcode" class="text-slate-400">
+              条码 {{ displaySku.barcode }}
             </text>
           </view>
         </view>
@@ -530,24 +666,26 @@ function openReviewList() {
             <text class="mb-3 block text-sm text-slate-600 font-bold uppercase">
               {{ group.name }}:
               <text class="text-slate-900">
-                {{ selectedSpecs[group.name] }}
+                {{ selectedSpecs[group.name] || '请选择' }}
               </text>
             </text>
             <view class="flex flex-wrap gap-2">
-              <view v-for="value in group.values" :key="`${group.name}-${value}`"
-                class="border rounded-lg px-4 py-3 text-center text-sm font-medium" :class="[
-                  selectedSpecs[group.name] === value
-                    ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold'
-                    : 'border-slate-200 bg-white text-slate-700',
-                  !getOptionState(group.name, value).exists ? 'cursor-not-allowed opacity-35' : '',
-                  getOptionState(group.name, value).exists && !getOptionState(group.name, value).inStock ? 'border-dashed text-slate-400' : '',
-                ]" @click="selectSpec(group.name, value)">
-                {{ value }}
-                <text v-if="getOptionState(group.name, value).exists && !getOptionState(group.name, value).inStock"
-                  class="ml-1 text-[10px] text-rose-400">
-                  售罄
-                </text>
-              </view>
+              <template v-for="value in group.values" :key="`${group.name}-${value}`">
+                <view
+                  class="border rounded-lg px-4 py-3 text-center text-sm font-medium"
+                  :class="[
+                    selectedSpecs[group.name] === value
+                      ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold'
+                      : 'border-slate-200 bg-white text-slate-700',
+                    !getOptionState(group.name, value).exists || !getOptionState(group.name, value).inStock
+                      ? 'cursor-not-allowed opacity-35'
+                      : '',
+                  ]"
+                  @click="selectSpec(group.name, value)"
+                >
+                  {{ value }}
+                </view>
+              </template>
             </view>
           </view>
         </view>
@@ -667,14 +805,14 @@ function openReviewList() {
       class="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 border-t border-slate-100 bg-white/95 p-4 pb-6 backdrop-blur-md">
 
       <view class="flex flex-1 gap-3">
-        <view class="flex-1 rounded-xl py-3 text-center text-sm font-bold transition"
-          :class="isPurchasable ? 'border-[3px] border-[#efb239] bg-white text-[#efb239] shadow-[inset_0_0_0_1px_rgba(239,178,57,0.24)]' : 'border-2 border-slate-200 text-slate-300 bg-slate-50'"
+        <view v-if="hasStock" class="flex-1 rounded-xl py-3 text-center text-sm font-bold transition"
+          :class="'border-[3px] border-[#efb239] bg-white text-[#efb239] shadow-[inset_0_0_0_1px_rgba(239,178,57,0.24)]'"
           @click="addToCart">
-          {{ addingToCart ? '加入中...' : (isPurchasable ? '加入购物车' : '暂时缺货') }}
+          {{ addingToCart ? '加入中...' : '加入购物车' }}
         </view>
         <view class="flex-[1.5] rounded-xl py-3 text-center text-sm font-bold transition"
-          :class="isPurchasable ? 'bg-[#efb239] text-white' : 'bg-slate-200 text-slate-400'" @click="buyNow">
-          {{ isPurchasable ? '立即购买' : '暂无库存' }}
+          :class="hasStock ? 'bg-[#efb239] text-white' : 'bg-slate-200 text-slate-400'" @click="buyNow">
+          {{ hasStock ? '立即购买' : '暂无库存' }}
         </view>
       </view>
     </view>

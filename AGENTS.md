@@ -257,6 +257,12 @@ pnpm build:h5            # Build for H5
 pnpm build:mp-weixin     # Build for WeChat mini-program
 ```
 
+### Agent Workflow Preference
+
+- 对 `mobile/` 目录下的常规页面与样式修改，默认不执行 `pnpm build`、`pnpm build:h5`、`eslint` 或类似校验命令
+- 仅在用户明确要求验证、修改涉及构建配置/依赖、或代理判断存在高风险时，才执行移动端构建或 lint 检查
+- 对 `backend/`、`frontend/` 的验证步骤，按任务风险单独判断，不受本偏好影响
+
 ### Docker Compose Commands
 
 ```bash

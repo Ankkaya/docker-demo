@@ -6,17 +6,26 @@ import {
   MallAuthController,
   MallCartController,
   MallHomeController,
+  MallOrdersController,
   MallProductsController,
   MallReviewsController,
 } from './mall.controller';
 import { MinioModule } from '@/infrastructure/minio/minio.module';
 import { CartsModule } from '@/domains/carts/carts.module';
+import { CustomerAddressesModule } from '@/domains/customer-addresses/customer-addresses.module';
 import { AuthModule } from '@/domains/auth/auth.module';
 import { ReviewsModule } from '@/domains/reviews/reviews.module';
+import { MallAddressesController } from './mall.controller';
+import { MallOrdersService } from './mall-orders.service';
+import { MallBalanceService } from './mall-balance.service';
+import { MallBalanceController } from './mall.controller';
+import { FavoritesModule } from '@/domains/favorites/favorites.module';
+import { BrowseHistoriesModule } from '@/domains/browse-histories/browse-histories.module';
+import { MallBrowseHistoriesController, MallFavoritesController } from './mall.controller';
 
 @Module({
-  imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, AuthModule, ReviewsModule],
-  controllers: [MallProductsController, MallHomeController, MallAuthController, MallCartController, MallReviewsController],
-  providers: [MallService],
+  imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, CustomerAddressesModule, AuthModule, ReviewsModule, FavoritesModule, BrowseHistoriesModule],
+  controllers: [MallProductsController, MallHomeController, MallAuthController, MallCartController, MallAddressesController, MallOrdersController, MallReviewsController, MallBalanceController, MallFavoritesController, MallBrowseHistoriesController],
+  providers: [MallService, MallOrdersService, MallBalanceService],
 })
 export class MallModule {}

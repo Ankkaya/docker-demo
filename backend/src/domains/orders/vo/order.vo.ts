@@ -37,6 +37,7 @@ export class OrderVo {
   orderNo: string;
   type: string;
   customerId: number;
+  addressId?: number;
   customerName: string;
   receiverName?: string;
   receiverPhone?: string;
@@ -50,6 +51,7 @@ export class OrderVo {
   payStatus: string;
   shipStatus: string;
   orderDate: Date;
+  expireAt?: Date;
   payDate?: Date;
   shipDate?: Date;
   receiveDate?: Date;
@@ -64,6 +66,7 @@ export class OrderVo {
     vo.orderNo = entity.orderNo;
     vo.type = entity.type;
     vo.customerId = entity.customerId;
+    vo.addressId = entity.addressId || undefined;
     vo.customerName = entity.customer?.name || '';
     vo.receiverName = entity.receiverName || undefined;
     vo.receiverPhone = entity.receiverPhone || undefined;
@@ -77,6 +80,7 @@ export class OrderVo {
     vo.payStatus = entity.payStatus;
     vo.shipStatus = entity.shipStatus;
     vo.orderDate = entity.orderDate;
+    vo.expireAt = entity.expireAt || undefined;
     vo.payDate = entity.payDate || undefined;
     vo.shipDate = entity.shipDate || undefined;
     vo.receiveDate = entity.receiveDate || undefined;

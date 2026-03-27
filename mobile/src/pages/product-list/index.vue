@@ -13,9 +13,18 @@ definePage({
 })
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const pageTitle = ref('Onesies & Bodysuits')
 const activeFilter = ref('recommended')
+const priceSortDirection = ref<'asc' | 'desc'>('asc')
+const categoryId = ref<number | null>(null)
+const keyword = ref('')
+const loading = ref(false)
+const loadingMore = ref(false)
+const page = ref(1)
+const pageSize = 20
+const hasMore = ref(true)
 
 const filters = [
   { key: 'recommended', label: 'Recommended', sort: true },
@@ -24,57 +33,115 @@ const filters = [
   { key: 'new', label: 'New', sort: false },
 ]
 
-const products = ref([
-  {
-    id: 1,
-    name: 'Organic Cotton Onesie',
-    price: 24,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBl8d--agawjMT10fLz9P-MYMct9fh-tdwZJqASgjI7C5EonkcXkFchIfK6uur136QDkpWhCAtR5OaePOrktxvcLG7OWvsC7710vlEr0RTI7YXIhLETl9sYF6SvgfiraJ4FGiqWiXweDGHI9QwhFDVhjEYRWPG6s6OU8E29_8aQRzdQCakd3DVcEzFVsexHL7uEzE-zpp7rJjYyeHEX7wW7tZLEl2LAWa6PV6EysS_Y6VhemwfFEt25Yk74j4QgJXHl_MSFqJho8S_x',
-    ratio: '3/4.5',
-    offset: '',
-  },
-  {
-    id: 2,
-    name: 'Ribbed Bodysuit',
-    price: 18,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDI9oLaAp9j4ZCr4y28nVdulMZhdzq6IZwU1VOfHljRaUDJoes34va-2HTbMGtbYusV1w5ghoYg3H2b7Yy4lq0mnS7zLO-z7kzq4UY5VM_BP3QwleyM3XIYlOIosfzMGTdi-HYDeIdiAarcXmleLnZkuu5gGnTtHD5qO4prfyGEGnow87zskQd612Y88iWmbeqLpM3lX9GHVoGsaSFPaUxG_EjZlq1g84XVbnAOP-zyAxwcK_QpZldk3cKQMXOhlZDAX8zrzqLy_D1T',
-    ratio: '3/3.5',
-    offset: 'pt-8',
-  },
-  {
-    id: 3,
-    name: 'Linen Blend Romper',
-    price: 32,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBLeTAH4g-5sjUNE4V0TzcjKjOyrjpxnLbvpxAwNsfd1Of85-0Uq9TbCrPYqc4O-B4R2wy33VmPABvpld9qsc6Q-DNG8YRgdhxAOafqdHW7sBBj5RmsYZAz-yzFBF6EZEtMBkCFi4ioSHA6icmptck9bpUhIV-Z8DSDlhmI6eAUUbdd3woAfr76vSlOEwRhI7VawqmszUo3wcfSOXA9R2EQKrdYd-o68xZsnbTcVC5xgirfrTJW3NS7NyEDg39AI55IJpseikU6EnZT',
-    ratio: '3/3.8',
-    offset: '-mt-4',
-  },
-  {
-    id: 4,
-    name: 'Quilted Sleep Suit',
-    price: 45,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDeG1V5VAFIdNkM68-XowYvabFHjQG3XH27EqaJ4pdYg674mXxUdTm8xqaLLY_iNZFewa937hHjt_gTxgVCIkh_K4PnbHTdo--RKDEVTNCe2DDgZSYDnOkC9CSYUN0YwBIVTd8vGqbLLpwFCENnBKceLeX4fQvj5K6FLEZE-xg6f1IAhGamXsqcfyoccNSS4d5OPCTRHGPqIC1DIh6IhlONf6JqWw-Iuzco-PZZXtruzgscOcoYSuvPsb2LdpwGl-0IQHyEi2kBkfM4',
-    ratio: '3/4.2',
-    offset: '',
-  },
-  {
-    id: 5,
-    name: 'Knitted Wool Suit',
-    price: 52,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuATLUeSEperzYujCBv50PBwKJmWHGOfV7jMUcymGqfvP6SQizLSheMMXXCg6SYUajxafpcv6G80R6Lk5jf-iUTckvBwEUDXMqjvMIEj1jyj75d767cNGivoF5EBJWa2kiMS5vTF06Jo-GN9vrylgmgasv4iaQQLHeUH9Tm0ljBrW5InsVHyoefCUPQX907pzJvdcwTVf4dUfXTEikeKvCqrPahZjLveCRPi_k7UZEaEJS892z3-DzRWPUIo4zkXpR1Yp6OQswCtL3ds',
-    ratio: '1/1',
-    offset: '-mt-6',
-  },
-])
+type ProductListItem = {
+  id: number
+  name: string
+  price: number
+  image: string
+  ratio: string
+  offset: string
+  skuId: number | null
+}
+
+const products = ref<ProductListItem[]>([])
+
+function getCardOffset(index: number) {
+  const offsets = ['', 'pt-8', '-mt-4', '', '-mt-6', 'pt-6']
+  return offsets[index % offsets.length]
+}
+
+function getCardRatio(index: number) {
+  const ratios = ['3/4.5', '3/3.5', '3/3.8', '3/4.2', '1/1', '3/4']
+  return ratios[index % ratios.length]
+}
+
+function normalizeProduct(item: any, index: number): ProductListItem {
+  const skus = Array.isArray(item?.skus) ? item.skus : []
+  const defaultSku = skus.find((sku: any) => sku.isDefault) || skus[0] || null
+
+  return {
+    id: Number(item?.id || 0),
+    name: item?.name || '未命名商品',
+    price: Number(item?.minPrice || 0),
+    image: typeof item?.mainImage === 'string' ? item.mainImage : '',
+    ratio: getCardRatio(index),
+    offset: getCardOffset(index),
+    skuId: defaultSku?.id ? Number(defaultSku.id) : null,
+  }
+}
+
+function resolveSort() {
+  if (activeFilter.value === 'sales') {
+    return 'sales'
+  }
+  if (activeFilter.value === 'price') {
+    return priceSortDirection.value === 'asc' ? 'price_asc' : 'price_desc'
+  }
+  return 'new'
+}
+
+async function loadProducts(reset = false) {
+  const nextPage = reset ? 1 : page.value
+  if (reset) {
+    loading.value = true
+  }
+  else {
+    loadingMore.value = true
+  }
+
+  try {
+    const response = await Apis.general.MallProductsController_findProducts({
+      params: {
+        categoryId: categoryId.value || undefined,
+        keyword: keyword.value || undefined,
+        sort: resolveSort(),
+        page: nextPage,
+        pageSize,
+      },
+    }).send()
+
+    const list = Array.isArray(response?.data) ? response.data : []
+    const normalized = list.map((item: any, index: number) =>
+      normalizeProduct(item, (nextPage - 1) * pageSize + index),
+    )
+
+    products.value = reset ? normalized : [...products.value, ...normalized]
+    hasMore.value = nextPage < Number(response?.meta?.totalPages || 1)
+    page.value = nextPage + 1
+  }
+  catch {
+    if (reset) {
+      products.value = []
+    }
+    hasMore.value = false
+  }
+  finally {
+    loading.value = false
+    loadingMore.value = false
+  }
+}
 
 onLoad((options) => {
   if (options?.title) {
     pageTitle.value = String(options.title)
   }
+
+  const nextCategoryId = Number(options?.categoryId || 0)
+  categoryId.value = !Number.isNaN(nextCategoryId) && nextCategoryId > 0 ? nextCategoryId : null
+  keyword.value = typeof options?.keyword === 'string' ? options.keyword : ''
+  loadProducts(true)
 })
 
 function setFilter(key: string) {
+  if (key === 'price' && activeFilter.value === 'price') {
+    priceSortDirection.value = priceSortDirection.value === 'asc' ? 'desc' : 'asc'
+  }
+  else if (key !== 'price') {
+    priceSortDirection.value = 'asc'
+  }
+
   activeFilter.value = key
+  loadProducts(true)
 }
 
 function goBack() {
@@ -85,7 +152,7 @@ function goSearch() {
   router.push({ name: 'search' })
 }
 
-function onProductClick(product: typeof products.value[number]) {
+function onProductClick(product: ProductListItem) {
   router.push({
     name: 'product-detail',
     query: {
@@ -94,11 +161,44 @@ function onProductClick(product: typeof products.value[number]) {
   })
 }
 
-function addToCart(product: typeof products.value[number]) {
-  uni.showToast({
-    title: `已加入购物车: ${product.name}`,
-    icon: 'success',
-  })
+async function addToCart(product: ProductListItem) {
+  if (!product.skuId) {
+    onProductClick(product)
+    return
+  }
+
+  if (!userStore.isLoggedIn) {
+    userStore.openAuthPopup({
+      name: 'product-list',
+      path: '/pages/product-list/index',
+      query: {
+        title: pageTitle.value,
+        categoryId: categoryId.value ? String(categoryId.value) : '',
+      },
+    })
+    return
+  }
+
+  try {
+    await (Apis.general as any).MallCartController_addToCart({
+      data: {
+        skuId: product.skuId,
+        quantity: 1,
+      },
+    }).send()
+    uni.showToast({
+      title: `已加入购物车: ${product.name}`,
+      icon: 'success',
+    })
+  }
+  catch {}
+}
+
+function handleScrollToLower() {
+  if (loading.value || loadingMore.value || !hasMore.value) {
+    return
+  }
+  loadProducts()
 }
 </script>
 
@@ -116,7 +216,7 @@ function addToCart(product: typeof products.value[number]) {
       </view>
     </view>
 
-    <scroll-view scroll-y class="flex-1">
+    <scroll-view scroll-y class="flex-1" @scrolltolower="handleScrollToLower">
       <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-3">
         <view
           v-for="item in filters"
@@ -132,14 +232,22 @@ function addToCart(product: typeof products.value[number]) {
           </text>
           <wd-icon
             v-if="item.sort"
-            :name="activeFilter === item.key ? 'arrow-down' : 'switch-horizontal'"
+            :name="activeFilter === item.key && item.key === 'price'
+              ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
+              : 'switch-horizontal'"
             size="14"
             :color="activeFilter === item.key ? '#fff' : '#64748b'"
           />
         </view>
       </view>
 
-      <view class="grid grid-cols-2 gap-4 px-4 pb-24">
+      <view v-if="loading" class="px-4 py-12 text-center text-sm text-slate-400">
+        正在加载商品...
+      </view>
+      <view v-else-if="products.length === 0" class="px-4 py-12 text-center text-sm text-slate-400">
+        暂无商品
+      </view>
+      <view v-else class="grid grid-cols-2 gap-4 px-4 pb-24">
         <view
           v-for="product in products"
           :key="product.id"
@@ -167,6 +275,9 @@ function addToCart(product: typeof products.value[number]) {
               ${{ product.price.toFixed(2) }}
             </text>
           </view>
+        </view>
+        <view v-if="loadingMore" class="col-span-2 py-6 text-center text-sm text-slate-400">
+          正在加载更多...
         </view>
       </view>
     </scroll-view>

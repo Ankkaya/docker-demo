@@ -573,6 +573,79 @@ async function main() {
     },
   });
 
+  const balanceMenu = await prisma.menu.upsert({
+    where: { id: 44 },
+    update: {
+      name: '余额管理',
+      path: '/balances',
+      icon: 'wallet',
+      component: 'Layout',
+      order: 6,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 44,
+      name: '余额管理',
+      path: '/balances',
+      icon: 'wallet',
+      component: 'Layout',
+      order: 6,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 45 },
+    update: {
+      name: '余额账户',
+      path: '/balances/accounts',
+      icon: 'wallet',
+      component: 'balances/accounts',
+      parentId: balanceMenu.id,
+      order: 1,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 45,
+      name: '余额账户',
+      path: '/balances/accounts',
+      icon: 'wallet',
+      component: 'balances/accounts',
+      parentId: balanceMenu.id,
+      order: 1,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 46 },
+    update: {
+      name: '余额流水',
+      path: '/balances/logs',
+      icon: 'wallet',
+      component: 'balances/logs',
+      parentId: balanceMenu.id,
+      order: 2,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 46,
+      name: '余额流水',
+      path: '/balances/logs',
+      icon: 'wallet',
+      component: 'balances/logs',
+      parentId: balanceMenu.id,
+      order: 2,
+      type: 'menu',
+    },
+  });
+
   // ==================== 5. 分配菜单给角色 ====================
   await prisma.role.update({
     where: { id: adminRole.id },
@@ -586,6 +659,7 @@ async function main() {
           { id: 30 }, { id: 31 }, { id: 32 }, { id: 33 },       // 进销存-采购
           { id: 37 }, { id: 38 }, { id: 39 },                   // 进销存-库存管理（调拨、调整、流水）
           { id: 40 }, { id: 41 }, { id: 42 }, { id: 43 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
+          { id: 44 }, { id: 45 }, { id: 46 },                   // 余额管理
         ],
       },
     },
@@ -851,6 +925,8 @@ async function main() {
   console.log('Product Menus:', ['进销存', '商品档案', '库存查询']);
   console.log('-----------------------------------');
   console.log('Inventory Menus:', ['库存调拨', '库存调整', '库存流水']);
+  console.log('-----------------------------------');
+  console.log('Balance Menus:', ['余额管理', '余额账户', '余额流水']);
   console.log('-----------------------------------');
   console.log('【必需】Default Warehouse:', {
     id: defaultWarehouse.id,

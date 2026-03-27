@@ -26,6 +26,8 @@ model User {
   // 关联购物车
   carts     Cart[]
   reviews   Review[]
+  favorites Favorite[]
+  browseHistories BrowseHistory[]
 
   @@index([deletedAt])
 }
@@ -289,12 +291,40 @@ model Customer {
   userId      Int?         @unique // 关联系统用户（如果是注册用户）
   user        User?        @relation(fields: [userId], references: [id])
   deletedAt   DateTime?    // 软删除标记
+  addresses   CustomerAddress[] // 收货地址
   orders      Order[]      // 销售订单
   saleReturns SaleReturn[] // 销售退货单
   reviews     Review[]
+  balanceAccount BalanceAccount?
+  balanceLogs  BalanceLog[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
+  @@index([deletedAt])
+}
+
+model CustomerAddress {
+  id            Int       @id @default(autoincrement())
+  customerId    Int
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  receiverName  String    // 收货人
+  receiverPhone String    // 收货电话
+  province      String?   // 省
+  city          String?   // 市
+  district      String?   // 区/县
+  address       String    // 详细地址
+  postalCode    String?   // 邮编
+  tag           String?   // 标签，如家/公司
+  isDefault     Boolean   @default(false)
+  sort          Int       @default(0)
+  remark        String?
+  deletedAt     DateTime?
+  orders        Order[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([customerId])
+  @@index([customerId, isDefault])
   @@index([deletedAt])
 }
 
@@ -337,6 +367,8 @@ model Product {
   mallStat     ProductMallStat?
   reviews      Review[]
   reviewStat   ProductReviewStat?
+  favorites    Favorite[]
+  browseHistories BrowseHistory[]
   
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -700,6 +732,8 @@ model Order {
   // 客户信息
   customerId   Int
   customer     Customer    @relation(fields: [customerId], references: [id])
+  addressId    Int?
+  address      CustomerAddress? @relation(fields: [addressId], references: [id])
   
   // 收货信息
   receiverName    String?
@@ -720,6 +754,7 @@ model Order {
   
   // 时间
   orderDate    DateTime    @default(now())
+  expireAt     DateTime?
   payDate      DateTime?
   shipDate     DateTime?
   receiveDate  DateTime?
@@ -739,6 +774,7 @@ model Order {
   @@index([deletedAt])
   @@index([status])
   @@index([customerId])
+  @@index([addressId])
   @@index([orderNo])
 }
 
@@ -1047,6 +1083,34 @@ model AdjustmentItem {
 
 // ==================== 商城模块（购物车）====================
 
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId, createdAt])
+  @@index([productId])
+}
+
+model BrowseHistory {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     Int
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  viewCount     Int      @default(1)
+  firstViewedAt DateTime @default(now())
+  lastViewedAt  DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId, lastViewedAt])
+  @@index([productId])
+}
+
 // 购物车
 model Cart {
   id        Int        @id @default(autoincrement())
@@ -1079,6 +1143,20 @@ enum PaymentMethod {
   ALIPAY    // 支付宝
   WECHAT    // 微信支付
   CREDIT    // 挂账/赊销
+  BALANCE   // 余额支付
+}
+
+enum BalanceAccountStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum BalanceLogType {
+  RECHARGE
+  CONSUME
+  REFUND
+  ADJUST_INCREASE
+  ADJUST_DECREASE
 }
 
 // 收付款状态
@@ -1115,4 +1193,45 @@ model Payment {
   @@index([status])
   @@index([purchaseId])
   @@index([orderId])
+}
+
+model BalanceAccount {
+  id               Int                  @id @default(autoincrement())
+  customerId       Int                  @unique
+  customer         Customer             @relation(fields: [customerId], references: [id])
+  availableBalance Decimal              @default(0) @db.Decimal(12, 2)
+  frozenBalance    Decimal              @default(0) @db.Decimal(12, 2)
+  totalRecharged   Decimal              @default(0) @db.Decimal(12, 2)
+  totalConsumed    Decimal              @default(0) @db.Decimal(12, 2)
+  totalRefunded    Decimal              @default(0) @db.Decimal(12, 2)
+  totalAdjusted    Decimal              @default(0) @db.Decimal(12, 2)
+  status           BalanceAccountStatus @default(ACTIVE)
+  remark           String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  logs             BalanceLog[]
+
+  @@index([status])
+}
+
+model BalanceLog {
+  id            Int            @id @default(autoincrement())
+  accountId     Int
+  account       BalanceAccount @relation(fields: [accountId], references: [id])
+  customerId    Int
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  type          BalanceLogType
+  changeAmount  Decimal        @db.Decimal(12, 2)
+  balanceBefore Decimal        @db.Decimal(12, 2)
+  balanceAfter  Decimal        @db.Decimal(12, 2)
+  bizType       String?
+  bizId         Int?
+  bizNo         String?
+  remark        String?
+  createdBy     Int
+  createdAt     DateTime       @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([customerId, createdAt])
+  @@index([type, createdAt])
 }

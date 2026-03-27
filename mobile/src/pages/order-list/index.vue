@@ -24,177 +24,177 @@ const statusTabs = [
 ]
 
 const activeStatus = ref('all')
+const loading = ref(false)
+const orders = ref<any[]>([])
+const currentTime = ref(Date.now())
+const countdownTimer = ref<ReturnType<typeof setInterval> | null>(null)
 
-const orders = ref([
-  {
-    id: 1001,
-    no: 'NO20260311001',
-    status: 'pending',
-    statusLabel: '待付款',
-    total: 287,
-    count: 2,
-    items: [
-      {
-        id: 1,
-        name: 'Honey Bear Organic Romper',
-        price: 129,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAWaIaKjBwQgnbqplCXR4IQaNVbY0Vo3c9uUBVT5LuEItWSV28FTXuLsiVMUAXu4uWDGXv3F84NECLPsn39bFAXUvZ6jUyrUSdqJ5BtPa48qrrn7gXXImrZoCExrvk4xVDi8KwNVvsqPJbPXWOvEZ_mHxPN_PUG7mdRgJcVt_HJd3lDUveM9HUWBsRQY9UZbgBI6AAMQB4u8ahwd1Tegb07jThalGq4Em-KrAeilUgvtiW-1CwPsZsCcJ274YVJ0Y5CsRKXadyY_xA',
-      },
-      {
-        id: 2,
-        name: 'Cotton Bib Set (3pc)',
-        price: 79,
-        image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop',
-      },
-    ],
-  },
-  {
-    id: 1002,
-    no: 'NO20260310032',
-    status: 'shipping',
-    statusLabel: '待发货',
-    total: 189,
-    count: 1,
-    items: [
-      {
-        id: 3,
-        name: 'Knit Comfort Sweater',
-        price: 189,
-        image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop',
-      },
-    ],
-  },
-  {
-    id: 1003,
-    no: 'NO20260308008',
-    status: 'receiving',
-    statusLabel: '待收货',
-    total: 358,
-    count: 3,
-    items: [
-      {
-        id: 4,
-        name: 'Soft Leather Booties',
-        price: 128,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnbUqWacZuzAdhQaTDNQIPFCOQmDmxvCasJ3WAf-T1GGe-4iap9zN9rNBwwANgtoPhxxVranbxfO823RVrsOeIYCkQgVUnhZGLtS-ebIb6Q6zcieXcuwOW8Yckn53iF5Tc2YeJ1UcHuzpmMl8yPnD8vmvIyouBYdnGojnC0KyLHAT1PRyzqUrR3CikjxeBy8Si4oCJ5pRDeZt92m0ij7VnzHMLxCp0905o42jTHBQDffQp2JtFIfSxtgpmiL4GCjNOdFoHOJbE-WIt',
-      },
-      {
-        id: 5,
-        name: 'Petal Floral Dress',
-        price: 189,
-        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
-      },
-      {
-        id: 6,
-        name: 'Cotton Bib Set (3pc)',
-        price: 79,
-        image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop',
-      },
-    ],
-  },
-  {
-    id: 1004,
-    no: 'NO20260301016',
-    status: 'completed',
-    statusLabel: '已完成',
-    total: 158,
-    count: 1,
-    items: [
-      {
-        id: 7,
-        name: 'Linen Sun Suit Set',
-        price: 158,
-        image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=400&h=400&fit=crop',
-      },
-    ],
-  },
-])
+function formatSpecs(specs: Record<string, string>) {
+  const entries = Object.entries(specs || {})
+  if (!entries.length)
+    return '默认规格'
+  return entries.map(([key, value]) => `${key}: ${value}`).join(' / ')
+}
 
-const filteredOrders = computed(() => {
-  if (activeStatus.value === 'all')
-    return orders.value
-  return orders.value.filter(order => order.status === activeStatus.value)
-})
+function resolveOrderStatus(order: any) {
+  if (order.status === 'CANCELLED')
+    return { key: 'cancelled', label: '已取消' }
+  if (order.status === 'COMPLETED')
+    return { key: 'completed', label: '已完成' }
+  if (order.shipStatus === 'SHIPPED')
+    return { key: 'receiving', label: '待收货' }
+  if (order.payStatus === 'PAID')
+    return { key: 'shipping', label: '待发货' }
+  return { key: 'pending', label: '待付款' }
+}
+
+function normalizeOrder(order: any) {
+  const statusInfo = resolveOrderStatus(order)
+  return {
+    id: order.id,
+    no: order.orderNo,
+    status: statusInfo.key,
+    statusLabel: statusInfo.label,
+    total: Number(order.payable || 0),
+    count: Number(order.itemCount || 0),
+    expireAt: order.expireAt || '',
+    items: (order.items || []).map((item: any, index: number) => ({
+      id: `${order.id}-${item.skuId}-${index}`,
+      productId: Number(item.productId || 0),
+      skuId: Number(item.skuId || 0),
+      name: item.productName || '未命名商品',
+      spec: formatSpecs(item.specs || {}),
+      price: Number(item.price || 0),
+      quantity: Number(item.quantity || 0),
+      image: item.image || '',
+    })),
+  }
+}
+
+function formatCountdown(expireAt?: string) {
+  if (!expireAt) {
+    return ''
+  }
+
+  const diff = Math.max(0, Math.floor((new Date(expireAt).getTime() - currentTime.value) / 1000))
+  const minutes = Math.floor(diff / 60)
+  const seconds = diff % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+async function loadOrders() {
+  loading.value = true
+  try {
+    const list = await (Apis.general as any).MallOrdersController_findOrders({
+      params: {
+        status: activeStatus.value === 'all' ? undefined : activeStatus.value,
+      },
+    }).send()
+    orders.value = (Array.isArray(list) ? list : []).map(normalizeOrder)
+  }
+  catch {
+    orders.value = []
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+const filteredOrders = computed(() => orders.value)
 
 function statusTone(status: string) {
   if (status === 'pending')
     return 'text-orange-500'
-  if (status === 'receiving')
-    return 'text-[#efb239]'
-  if (status === 'completed')
+  if (status === 'completed' || status === 'cancelled')
     return 'text-slate-400'
   return 'text-[#efb239]'
 }
 
 function headerTone(status: string) {
-  if (status === 'completed')
+  if (status === 'completed' || status === 'cancelled')
     return 'bg-slate-100'
   return 'bg-[#efb239]/6'
-}
-
-function getOrderListIconClass(name: string) {
-  const map: Record<string, string> = {
-    back: 'i-material-symbols:arrow-back',
-    search: 'i-material-symbols:search',
-  }
-  return map[name] || ''
 }
 
 onLoad((options) => {
   const status = options?.status ? String(options.status) : 'all'
   const valid = statusTabs.some(tab => tab.key === status)
   activeStatus.value = valid ? status : 'all'
+  countdownTimer.value = setInterval(() => {
+    currentTime.value = Date.now()
+  }, 1000)
+  loadOrders()
 })
 
-function goBack() {
-  router.back()
-}
+onShow(() => {
+  loadOrders()
+})
+
+onUnload(() => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+  }
+})
 
 function switchStatus(key: string) {
   activeStatus.value = key
+  loadOrders()
 }
 
 function openDetail(orderId: number) {
   router.push({
     name: 'order-detail',
-    query: { id: String(orderId) },
+    params: { id: String(orderId) },
   })
 }
 
 function payOrder(orderId: number) {
-  orders.value = orders.value.map(order => order.id === orderId
-    ? { ...order, status: 'shipping', statusLabel: '待发货' }
-    : order)
-  uni.showToast({ title: '订单已支付', icon: 'success' })
+  router.push({
+    name: 'order-detail',
+    params: {
+      id: String(orderId),
+    },
+  })
 }
 
-function cancelOrder(orderId: number) {
-  orders.value = orders.value.filter(order => order.id !== orderId)
-  uni.showToast({ title: '订单已取消', icon: 'none' })
+async function cancelOrder(orderId: number) {
+  try {
+    await alovaInstance.Patch(`/mall/orders/${orderId}/cancel`, {}).send()
+    uni.showToast({ title: '订单已取消', icon: 'none' })
+    loadOrders()
+  }
+  catch (error: any) {
+    uni.showToast({ title: error?.message || '取消订单失败', icon: 'none' })
+  }
 }
 
-function confirmReceive(orderId: number) {
-  orders.value = orders.value.map(order => order.id === orderId
-    ? { ...order, status: 'completed', statusLabel: '已完成' }
-    : order)
-  uni.showToast({ title: '已确认收货', icon: 'success' })
+async function confirmReceive(orderId: number) {
+  try {
+    await alovaInstance.Patch(`/mall/orders/${orderId}/receive`, {}).send()
+    uni.showToast({ title: '已确认收货', icon: 'success' })
+    loadOrders()
+  }
+  catch (error: any) {
+    uni.showToast({ title: error?.message || '确认收货失败', icon: 'none' })
+  }
 }
 
 function buyAgain(order: typeof orders.value[number]) {
   const firstItem = order.items[0]
+  if (!firstItem?.productId)
+    return
+
   router.push({
     name: 'product-detail',
     query: {
-      name: firstItem.name,
-      price: firstItem.price.toFixed(2),
-      image: encodeURIComponent(firstItem.image),
+      id: String(firstItem.productId),
     },
   })
 }
 </script>
 
 <template>
-  <view class="orders-page min-h-screen text-slate-900">
+  <view class="orders-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 px-4 pt-3 backdrop-blur-md">
 
       <scroll-view scroll-x class="no-scrollbar whitespace-nowrap">
@@ -210,14 +210,25 @@ function buyAgain(order: typeof orders.value[number]) {
 
     <scroll-view scroll-y class="pb-24">
       <view class="px-4 pt-4">
+        <view v-if="loading" class="py-12 text-center text-sm text-slate-400">
+          正在加载订单...
+        </view>
+        <view v-else-if="!filteredOrders.length" class="py-12 text-center text-sm text-slate-400">
+          暂无订单
+        </view>
         <view v-for="order in filteredOrders" :key="order.id"
           class="order-card mb-4 overflow-hidden rounded-2xl border border-[#efb239]/8 bg-white"
           @click="openDetail(order.id)">
           <view class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5"
             :class="headerTone(order.status)">
-            <text class="text-xs text-slate-400">
-              订单号 {{ order.no }}
-            </text>
+            <view class="flex flex-col gap-1">
+              <text class="text-xs text-slate-400">
+                订单号 {{ order.no }}
+              </text>
+              <text v-if="order.status === 'pending' && order.expireAt" class="text-[11px] text-orange-400 font-medium">
+                支付剩余 {{ formatCountdown(order.expireAt) }}
+              </text>
+            </view>
             <text class="text-sm font-bold" :class="statusTone(order.status)">
               {{ order.statusLabel }}
             </text>
@@ -231,14 +242,14 @@ function buyAgain(order: typeof orders.value[number]) {
                   {{ item.name }}
                 </text>
                 <text class="mt-1 block text-xs text-slate-400">
-                  默认规格
+                  {{ item.spec }}
                 </text>
                 <view class="mt-2 flex items-end justify-between">
                   <text class="text-sm text-slate-900 font-bold">
                     ￥{{ item.price.toFixed(2) }}
                   </text>
                   <text class="text-xs text-slate-400">
-                    x1
+                    x{{ item.quantity }}
                   </text>
                 </view>
               </view>

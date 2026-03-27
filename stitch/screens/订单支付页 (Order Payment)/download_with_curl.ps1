@@ -1,0 +1,3 @@
+# Redownload Stitch assets for 订单支付页 (Order Payment)
+curl.exe -L "https://lh3.googleusercontent.com/aida/ADBb0ugqUNrt8tTAz2XmRHnk75hqEA1Sjc5-ktjd6Cl8BSagDN-btcvlesL5TmQp67VZl6AOfVvl-A8qK1muIWca4v_GqrJyF07ITyiUyDG2-9oFKl2MEX905e7uu6dL32NPvfN2V8HQ3Av9dPv33Hfv4xR6rp77Cpu2HiQhLmylizWioPczQrgt5YPrHb9RDY74d_4y4sYBNM8-uSP0xriaggkBvPqlAyV0j8GJW-lFos2m1aIRGWkhTBGEIjU" -o "订单支付页 (Order Payment).png"
+curl.exe -L "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzFmMWM3MDAyM2RjNzRhMTZiNDFjYjZiOGJjYmRmYTM3EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086" -o "订单支付页 (Order Payment).html"

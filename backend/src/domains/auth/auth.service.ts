@@ -67,4 +67,15 @@ export class AuthService {
       throw new UnauthorizedException('刷新令牌无效或已过期');
     }
   }
+
+  async verifyAccessToken(token: string): Promise<{ sub: number }> {
+    try {
+      return await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_SECRET || 'your-secret-key',
+      });
+    }
+    catch {
+      throw new UnauthorizedException('访问令牌无效或已过期');
+    }
+  }
 }

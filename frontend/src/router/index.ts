@@ -317,6 +317,26 @@ const router = createRouter({
       ]
     },
     {
+      path: '/balances',
+      component: () => import('@/views/layout/index.vue'),
+      redirect: '/balances/accounts',
+      meta: { title: '余额管理' },
+      children: [
+        {
+          path: 'accounts',
+          name: 'balance-accounts',
+          component: () => import('@/views/balances/accounts.vue'),
+          meta: { title: '余额账户' }
+        },
+        {
+          path: 'logs',
+          name: 'balance-logs',
+          component: () => import('@/views/balances/logs.vue'),
+          meta: { title: '余额流水' }
+        }
+      ]
+    },
+    {
       path: '/redirect',
       component: () => import('@/views/layout/index.vue'),
       meta: { hidden: true },

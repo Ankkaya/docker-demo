@@ -1,0 +1,3 @@
+# Redownload Stitch assets for 新增收货地址 (Add New Address)
+curl.exe -L "https://lh3.googleusercontent.com/aida/ADBb0ug11cI8wyWv4lzalGppIxtHPZGUV8aUB6SJCSakwTMvFvXfP-xBT9-GXoTT9HO_253TG1jYd9P0JWLurZb_LVqNeJme_byrgGBGAxV0NEc3s15bkYDoeMGE_ron7oimEPiazcaleXSQrenX7Ko67QIZMikhddnG0B4righcJX-b9c2eouC3bPo4WQZWfcuc5peLIg56F_EyWziS3f8s88n-lYYtH7vLXlV-VnObr_vItQKeobMZc1xHVPF7" -o "新增收货地址 (Add New Address).png"
+curl.exe -L "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sX2U5ZmYxNDdiOTdkMzRkMDJiODgwMjI0NDAxODA4MTQ2EgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086" -o "新增收货地址 (Add New Address).html"

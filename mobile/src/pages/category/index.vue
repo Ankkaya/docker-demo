@@ -143,6 +143,7 @@ function onSubCategoryClick(subCategory: any) {
     name: 'product-list',
     query: {
       title: subCategory.name.replace('\n', ' '),
+      categoryId: String(subCategory.id),
     },
   })
 }

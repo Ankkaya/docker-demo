@@ -26,6 +26,12 @@ export class MallCurrentCustomerVo {
 
   @ApiProperty({ description: '地址', nullable: true })
   address: string | null;
+
+  @ApiProperty({ description: '余额账户ID', nullable: true })
+  balanceAccountId: number | null;
+
+  @ApiProperty({ description: '可用余额', nullable: true, type: String })
+  availableBalance: string | null;
 }
 
 export class MallCurrentUserVo extends UserVo {

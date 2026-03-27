@@ -35,6 +35,9 @@ export class MallProductSkuCardVo {
 }
 
 export class MallProductCardVo extends ProductWithRelationsVo {
+  @ApiProperty({ description: '当前用户是否已收藏', required: false })
+  isFavorite?: boolean;
+
   @ApiProperty({
     description: 'SKU列表',
     type: [MallProductSkuCardVo],
@@ -108,6 +111,9 @@ export class MallProductDetailSkuVo extends MallProductSkuCardVo {
 }
 
 export class MallProductDetailVo extends ProductWithRelationsVo {
+  @ApiProperty({ description: '当前用户是否已收藏', required: false })
+  isFavorite?: boolean;
+
   @ApiProperty({
     description: '品牌信息',
     type: BrandVo,

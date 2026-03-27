@@ -13,6 +13,8 @@ import { SkuStatus, Prisma } from '@prisma/client';
 import { MinioService } from '@/infrastructure/minio/minio.service';
 import { IconAssetsService } from '@/infrastructure/icon-assets/icon-assets.service';
 import { AuthService } from '@/domains/auth/auth.service';
+import { FavoritesService } from '@/domains/favorites/favorites.service';
+import { BrowseHistoriesService } from '@/domains/browse-histories/browse-histories.service';
 import { WechatLoginDto } from './dto/wechat-login.dto';
 import { MallLoginDto } from './dto/mall-login.dto';
 import { MallRefreshTokenDto } from './dto/mall-refresh-token.dto';
@@ -26,6 +28,8 @@ export class MallService {
     private minioService: MinioService,
     private iconAssetsService: IconAssetsService,
     private authService: AuthService,
+    private favoritesService: FavoritesService,
+    private browseHistoriesService: BrowseHistoriesService,
   ) {}
 
   async login(dto: MallLoginDto) {
@@ -77,6 +81,12 @@ export class MallService {
             name: true,
             phone: true,
             address: true,
+            balanceAccount: {
+              select: {
+                id: true,
+                availableBalance: true,
+              },
+            },
           },
         },
       },
@@ -95,6 +105,8 @@ export class MallService {
             name: user.customer.name,
             phone: user.customer.phone,
             address: user.customer.address,
+            balanceAccountId: user.customer.balanceAccount?.id || null,
+            availableBalance: user.customer.balanceAccount?.availableBalance?.toString() || null,
           }
         : null,
     };
@@ -291,7 +303,7 @@ export class MallService {
   }
 
   // 获取商品详情（商城展示）
-  async findProductDetail(id: number) {
+  async findProductDetail(id: number, userId?: number) {
     const product: any = await this.prisma.product.findFirst({
       where: this.buildMallProductWhere({
         id,
@@ -344,6 +356,11 @@ export class MallService {
 
     // 提取规格选项
     const specOptions = this.extractSpecOptions(product.skus);
+    const isFavorite = userId ? await this.favoritesService.isFavorite(userId, product.id) : undefined;
+
+    if (userId) {
+      await this.browseHistoriesService.record(userId, { productId: product.id });
+    }
 
     return {
       ...product,
@@ -362,6 +379,7 @@ export class MallService {
         : null,
       skus: skusWithStock,
       specOptions,
+      isFavorite,
     };
   }
 
@@ -376,7 +394,7 @@ export class MallService {
             isHot: true,
           },
         },
-      }, true),
+      }),
       include: include as any,
       orderBy: [
         { mallInfo: { hotSort: 'asc' } },
@@ -396,7 +414,7 @@ export class MallService {
           mallStat: {
             isNot: null,
           },
-        }, true),
+        }),
         include: include as any,
         orderBy: [
           { mallStat: { hotScore: 'desc' } },

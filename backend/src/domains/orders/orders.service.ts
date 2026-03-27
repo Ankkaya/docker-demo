@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
+import { CustomerAddressesService } from '@/domains/customer-addresses/customer-addresses.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
@@ -25,12 +26,16 @@ function generateOrderNo(): string {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private customerAddressesService: CustomerAddressesService,
+  ) {}
 
   // 创建销售订单
   async create(createDto: CreateOrderDto, userId: number) {
     const {
       customerId,
+      addressId,
       items,
       discount = 0,
       freight = 0,
@@ -47,6 +52,19 @@ export class OrdersService {
     if (!customer) {
       throw new NotFoundException('客户不存在');
     }
+
+    const selectedAddress = await this.customerAddressesService.findAddressForOrder(
+      customerId,
+      addressId,
+    );
+
+    const finalReceiverName = selectedAddress?.receiverName || receiverName;
+    const finalReceiverPhone = selectedAddress?.receiverPhone || receiverPhone;
+    const finalReceiverAddress = selectedAddress
+      ? [selectedAddress.province, selectedAddress.city, selectedAddress.district, selectedAddress.address]
+          .filter(Boolean)
+          .join('')
+      : receiverAddress;
 
     if (!items || items.length === 0) {
       throw new BadRequestException('订单商品不能为空');
@@ -85,9 +103,10 @@ export class OrdersService {
         orderNo: generateOrderNo(),
         type: 'SALE',
         customerId,
-        receiverName,
-        receiverPhone,
-        receiverAddress,
+        addressId: selectedAddress?.id,
+        receiverName: finalReceiverName,
+        receiverPhone: finalReceiverPhone,
+        receiverAddress: finalReceiverAddress,
         totalAmount,
         discount,
         freight,

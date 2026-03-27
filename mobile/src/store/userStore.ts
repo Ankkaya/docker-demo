@@ -16,6 +16,8 @@ export interface LoginUser {
     name: string
     phone?: string | null
     address?: string | null
+    balanceAccountId?: number | null
+    availableBalance?: string | null
   } | null
 }
 

@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { MallModule } from './applications/mall/mall.module';
 import { AdjustmentsModule } from './domains/adjustments/adjustments.module';
 import { AuthModule } from './domains/auth/auth.module';
 import { BannersModule } from './domains/banners/banners.module';
+import { BalancesModule } from './domains/balances/balances.module';
 import { BrandsModule } from './domains/brands/brands.module';
 import { CartsModule } from './domains/carts/carts.module';
 import { CategoriesModule } from './domains/categories/categories.module';
 import { CustomersModule } from './domains/customers/customers.module';
+import { CustomerAddressesModule } from './domains/customer-addresses/customer-addresses.module';
 import { InventoriesModule } from './domains/inventories/inventories.module';
 import { MenusModule } from './domains/menus/menus.module';
 import { OrdersModule } from './domains/orders/orders.module';
@@ -33,6 +36,7 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     UsersModule,
     AuthModule,
     PrismaModule,
@@ -41,9 +45,11 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
     UnitsModule,
     CategoriesModule,
     BrandsModule,
+    BalancesModule,
     WarehousesModule,
     SuppliersModule,
     CustomersModule,
+    CustomerAddressesModule,
     ProductsModule,
     InventoriesModule,
     MallModule,

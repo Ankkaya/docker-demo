@@ -63,6 +63,22 @@ export class ShipmentsService {
       throw new BadRequestException('发货商品不能为空');
     }
 
+    const fallbackWarehouse = await this.prisma.warehouse.findFirst({
+      where: {
+        deletedAt: null,
+        isEnabled: true,
+      },
+      orderBy: [
+        { isDefault: 'desc' },
+        { id: 'asc' },
+      ],
+      select: { id: true },
+    });
+
+    if (!fallbackWarehouse) {
+      throw new BadRequestException('系统中不存在可用仓库，无法创建发货单');
+    }
+
     // 验证每个商品的数量是否超过待发货数量
     for (const item of items) {
       const orderItem = order.items.find((oi) => oi.skuId === item.skuId);
@@ -78,12 +94,13 @@ export class ShipmentsService {
       }
     }
 
-    // 创建发货单 - 不绑定仓库
+    // 发货单创建阶段尚未指定真实出库仓库，但 shipment.warehouseId 仍受外键约束，
+    // 这里先落到一个可用仓库，确认发货时再用实际仓库覆盖。
     const shipment = await this.prisma.shipment.create({
       data: {
         shipmentNo: generateShipmentNo(),
         orderId,
-        warehouseId: 0, // 暂时设为0，表示未指定仓库
+        warehouseId: fallbackWarehouse.id,
         logisticsCompany,
         trackingNo,
         status: ShipmentStatus.PENDING,

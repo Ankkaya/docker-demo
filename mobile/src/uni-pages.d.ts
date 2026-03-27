@@ -6,7 +6,10 @@
 type _LocationUrl =
   "/pages/home/index" |
   "/pages/about/index" |
+  "/pages/address/form" |
   "/pages/address/index" |
+  "/pages/balance/index" |
+  "/pages/balance-recharge/index" |
   "/pages/cart/index" |
   "/pages/category/index" |
   "/pages/favorites/index" |
@@ -14,6 +17,7 @@ type _LocationUrl =
   "/pages/index/index" |
   "/pages/order-detail/index" |
   "/pages/order-list/index" |
+  "/pages/order-payment/index" |
   "/pages/product-detail/index" |
   "/pages/product-list/index" |
   "/pages/review-list/index" |

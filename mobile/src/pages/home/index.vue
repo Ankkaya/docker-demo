@@ -7,7 +7,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 
 definePage({
   name: 'home',
-  layout: 'tabbar',
+  layout: 'default',
   type: 'home',
   style: {
     navigationBarTitleText: 'BabyWhale',
@@ -173,7 +173,7 @@ async function loadHomeData() {
     mapCategories(Array.isArray(categoryList) ? categoryList : [])
     mapHotProducts(hotProductResponse)
   }
-  catch {}
+  catch { }
 }
 
 onShow(() => {

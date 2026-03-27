@@ -3,6 +3,8 @@
  * 浏览历史页面 - 参考 Stitch 设计稿
  */
 
+type MallBrowseHistoryItem = any
+
 definePage({
   name: 'history',
   layout: 'default',
@@ -14,47 +16,75 @@ definePage({
 })
 
 const router = useRouter()
+const historyList = ref<MallBrowseHistoryItem[]>([])
+const loading = ref(false)
 
-const historyGroups = ref([
-  {
-    label: '今天',
-    items: [
-      {
-        id: 1,
-        name: 'Petal Floral Dress',
-        time: '10:32',
-        price: 189,
-        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
+const historyGroups = computed(() => {
+  const groups = new Map<string, Array<MallBrowseHistoryItem & { time: string, image: string, price: number }>>()
+
+  for (const item of historyList.value) {
+    const date = new Date(item.lastViewedAt)
+    const label = getDateLabel(date)
+    const groupItems = groups.get(label) || []
+    groupItems.push({
+      ...item,
+      time: formatTime(date),
+      image: item.mainImage || '',
+      price: Number(item.minPrice || 0),
+    })
+    groups.set(label, groupItems)
+  }
+
+  return Array.from(groups.entries()).map(([label, items]) => ({ label, items }))
+})
+
+function formatTime(date: Date) {
+  const hours = `${date.getHours()}`.padStart(2, '0')
+  const minutes = `${date.getMinutes()}`.padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+function isSameDay(left: Date, right: Date) {
+  return left.getFullYear() === right.getFullYear()
+    && left.getMonth() === right.getMonth()
+    && left.getDate() === right.getDate()
+}
+
+function getDateLabel(date: Date) {
+  const now = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+
+  if (isSameDay(date, now)) {
+    return '今天'
+  }
+  if (isSameDay(date, yesterday)) {
+    return '昨天'
+  }
+
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  return `${month}-${day}`
+}
+
+async function loadHistories() {
+  loading.value = true
+  try {
+    const result = await (Apis.general as any).MallBrowseHistoriesController_findHistories({
+      params: {
+        page: 1,
+        pageSize: 100,
       },
-      {
-        id: 2,
-        name: 'Cotton Bib Set (3pc)',
-        time: '09:15',
-        price: 79,
-        image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop',
-      },
-    ],
-  },
-  {
-    label: '昨天',
-    items: [
-      {
-        id: 3,
-        name: 'Soft Leather Booties',
-        time: '21:08',
-        price: 128,
-        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnbUqWacZuzAdhQaTDNQIPFCOQmDmxvCasJ3WAf-T1GGe-4iap9zN9rNBwwANgtoPhxxVranbxfO823RVrsOeIYCkQgVUnhZGLtS-ebIb6Q6zcieXcuwOW8Yckn53iF5Tc2YeJ1UcHuzpmMl8yPnD8vmvIyouBYdnGojnC0KyLHAT1PRyzqUrR3CikjxeBy8Si4oCJ5pRDeZt92m0ij7VnzHMLxCp0905o42jTHBQDffQp2JtFIfSxtgpmiL4GCjNOdFoHOJbE-WIt',
-      },
-      {
-        id: 4,
-        name: 'Knit Comfort Sweater',
-        time: '18:44',
-        price: 229,
-        image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop',
-      },
-    ],
-  },
-])
+    }).send()
+    historyList.value = Array.isArray(result?.data) ? result.data : []
+  }
+  catch {
+    historyList.value = []
+  }
+  finally {
+    loading.value = false
+  }
+}
 
 function getHistoryIconClass(name: string) {
   const map: Record<string, string> = {
@@ -70,35 +100,47 @@ function goBack() {
   router.back()
 }
 
-function clearHistory() {
-  historyGroups.value = []
-  uni.showToast({ title: '已清空历史', icon: 'none' })
+async function clearHistory() {
+  try {
+    await (Apis.general as any).MallBrowseHistoriesController_clearHistories({}).send()
+    historyList.value = []
+    uni.showToast({ title: '已清空历史', icon: 'none' })
+  }
+  catch {}
 }
 
-function openProduct(item: { id: number; name: string; price: number; image: string }) {
+function openProduct(item: { id: number }) {
   router.push({
     name: 'product-detail',
     query: {
-      name: item.name,
-      price: item.price.toFixed(2),
-      image: encodeURIComponent(item.image),
+      id: String(item.id),
     },
   })
 }
 
-function removeItem(id: number) {
-  historyGroups.value = historyGroups.value
-    .map(group => ({
-      ...group,
-      items: group.items.filter(item => item.id !== id),
-    }))
-    .filter(group => group.items.length > 0)
+async function removeItem(id: number) {
+  try {
+    await (Apis.general as any).MallBrowseHistoriesController_removeHistory({
+      pathParams: { productId: id },
+    }).send()
+    historyList.value = historyList.value.filter(item => item.id !== id)
+  }
+  catch {}
 }
+
+onShow(() => {
+  loadHistories()
+})
 </script>
 
 <template>
   <view class="history-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 backdrop-blur-md">
+      <view class="flex items-center justify-end px-4 pb-2 pt-3">
+        <view class="rounded-full bg-[#efb239]/10 px-3 py-1 text-xs text-[#c98500] font-semibold" @click="clearHistory">
+          清空历史
+        </view>
+      </view>
 
       <view class="overflow-x-auto px-4 whitespace-nowrap">
         <view class="flex gap-6 text-sm">
@@ -120,6 +162,10 @@ function removeItem(id: number) {
 
     <scroll-view scroll-y class="pb-20">
       <view class="px-4 pt-4">
+        <view v-if="loading" class="mt-8 text-center text-sm text-slate-400">
+          加载中...
+        </view>
+
         <view v-if="historyGroups.length === 0"
           class="mt-10 rounded-3xl border border-[#efb239]/10 bg-white/70 px-6 py-12 text-center text-slate-400">
           <text class="text-[40px] text-[#cbd5f5] leading-none" :class="getHistoryIconClass('empty')" />
@@ -154,7 +200,7 @@ function removeItem(id: number) {
                   ￥{{ item.price.toFixed(2) }}
                 </text>
                 <text class="mt-0.5 block text-xs text-slate-400">
-                  浏览于 {{ item.time }}
+                  浏览于 {{ item.time }} · {{ item.viewCount }} 次
                 </text>
               </view>
             </view>

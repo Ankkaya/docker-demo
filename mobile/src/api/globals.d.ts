@@ -90,6 +90,22 @@ type Alova2Method<
     : never;
 
 export type Object = object;
+export interface MallLoginDto {
+  /**
+   * 手机号
+   */
+  phone: string;
+  /**
+   * 登录密码
+   */
+  password: string;
+}
+export interface MallRefreshTokenDto {
+  /**
+   * 刷新令牌
+   */
+  refreshToken: string;
+}
 export interface WechatLoginDto {
   /**
    * 微信小程序 wx.login 返回的 code
@@ -99,6 +115,107 @@ export interface WechatLoginDto {
    * 微信昵称，可选
    */
   nickname?: string;
+}
+export interface AddToCartDto {
+  /**
+   * SKU ID
+   */
+  skuId?: number;
+  /**
+   * 数量
+   */
+  quantity?: number;
+}
+export interface CreateCustomerAddressDto {
+  /**
+   * 收货人
+   */
+  receiverName: string;
+  /**
+   * 收货电话
+   */
+  receiverPhone: string;
+  /**
+   * 省
+   */
+  province?: string;
+  /**
+   * 市
+   */
+  city?: string;
+  /**
+   * 区/县
+   */
+  district?: string;
+  /**
+   * 详细地址
+   */
+  address: string;
+  /**
+   * 邮编
+   */
+  postalCode?: string;
+  /**
+   * 地址标签，如家/公司
+   */
+  tag?: string;
+  /**
+   * 是否默认地址
+   */
+  isDefault?: boolean;
+  /**
+   * 排序值
+   */
+  sort?: number;
+  /**
+   * 备注
+   */
+  remark?: string;
+}
+export type CreateMallOrderDto = object;
+export interface CreateMallReviewDto {
+  /**
+   * 订单明细ID
+   */
+  orderItemId: number;
+  /**
+   * 评分，1-5
+   */
+  rating: number;
+  /**
+   * 评价内容
+   */
+  content?: string;
+  /**
+   * 评价图片列表
+   */
+  images?: string[];
+  /**
+   * 是否匿名
+   */
+  isAnonymous?: boolean;
+}
+export interface CreateMallBalanceRechargeDto {
+  /**
+   * 充值金额
+   */
+  amount: number;
+  /**
+   * 充值方式
+   */
+  method: 'WECHAT' | 'ALIPAY' | 'BANK' | 'CASH';
+}
+export interface CreateFavoriteDto {
+  /**
+   * 商品ID
+   */
+  productId: number;
+}
+export interface CreateBrowseHistoryDto {
+  /**
+   * 商品ID
+   */
+  productId: number;
 }
 export interface BrandVo {
   /**
@@ -183,6 +300,66 @@ export interface BannerVo {
    * 更新时间
    */
   updatedAt: string;
+}
+export interface MallCurrentCustomerVo {
+  /**
+   * 客户ID
+   */
+  id: number;
+  /**
+   * 客户名称
+   */
+  name: string;
+  /**
+   * 手机号
+   */
+  phone: object | null;
+  /**
+   * 地址
+   */
+  address: object | null;
+  /**
+   * 余额账户ID
+   */
+  balanceAccountId: object | null;
+  /**
+   * 可用余额
+   */
+  availableBalance: string | null;
+}
+export interface MallCurrentUserVo {
+  /**
+   * 用户ID
+   */
+  id: number;
+  /**
+   * 用户名
+   */
+  username: string;
+  /**
+   * 邮箱
+   */
+  email: object | null;
+  /**
+   * 姓名
+   */
+  name: object | null;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   */
+  updatedAt: string;
+  /**
+   * 手机号
+   */
+  phone: object | null;
+  /**
+   * 关联客户信息
+   */
+  customer: MallCurrentCustomerVo;
 }
 export interface CartItemVo {
   /**
@@ -278,6 +455,195 @@ export interface CartListVo {
    */
   stats: CartStatsVo;
 }
+export interface CustomerAddressVo {
+  /**
+   * 地址ID
+   */
+  id: number;
+  /**
+   * 客户ID
+   */
+  customerId: number;
+  /**
+   * 收货人
+   */
+  receiverName: string;
+  /**
+   * 收货电话
+   */
+  receiverPhone: string;
+  /**
+   * 省
+   */
+  province?: object;
+  /**
+   * 市
+   */
+  city?: object;
+  /**
+   * 区/县
+   */
+  district?: object;
+  /**
+   * 详细地址
+   */
+  address: string;
+  /**
+   * 完整地址
+   */
+  fullAddress: string;
+  /**
+   * 邮编
+   */
+  postalCode?: object;
+  /**
+   * 标签
+   */
+  tag?: object;
+  /**
+   * 是否默认地址
+   */
+  isDefault: boolean;
+  /**
+   * 排序值
+   */
+  sort: number;
+  /**
+   * 备注
+   */
+  remark?: object;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   */
+  updatedAt: string;
+}
+export interface MallOrderItemVo {
+  /**
+   * 商品ID
+   */
+  productId: number;
+  /**
+   * SKU ID
+   */
+  skuId: number;
+  /**
+   * 商品名称
+   */
+  productName: string;
+  /**
+   * SKU 编码
+   */
+  skuCode: string;
+  /**
+   * 规格
+   */
+  specs: object;
+  /**
+   * 商品图片
+   */
+  image: object | null;
+  /**
+   * 单价
+   */
+  price: number;
+  /**
+   * 数量
+   */
+  quantity: number;
+  /**
+   * 金额
+   */
+  amount: number;
+}
+export interface MallOrderListItemVo {
+  /**
+   * 订单ID
+   */
+  id: number;
+  /**
+   * 订单号
+   */
+  orderNo: string;
+  /**
+   * 订单状态
+   */
+  status: string;
+  /**
+   * 支付状态
+   */
+  payStatus: string;
+  /**
+   * 发货状态
+   */
+  shipStatus: string;
+  /**
+   * 下单时间
+   */
+  orderDate: string;
+  /**
+   * 支付截止时间
+   */
+  expireAt: object | null;
+  /**
+   * 商品总额
+   */
+  totalAmount: number;
+  /**
+   * 应付金额
+   */
+  payable: number;
+  /**
+   * 已付金额
+   */
+  paid: number;
+  /**
+   * 商品件数
+   */
+  itemCount: number;
+  /**
+   * 订单商品
+   */
+  items: MallOrderItemVo[];
+}
+export interface MallBalanceSummaryVo {
+  /**
+   * 账户ID
+   */
+  id: number;
+  /**
+   * 客户ID
+   */
+  customerId: number;
+  /**
+   * 可用余额
+   */
+  availableBalance: string;
+  /**
+   * 冻结余额
+   */
+  frozenBalance: string;
+  /**
+   * 累计充值
+   */
+  totalRecharged: string;
+  /**
+   * 累计消费
+   */
+  totalConsumed: string;
+  /**
+   * 累计退款
+   */
+  totalRefunded: string;
+  /**
+   * 最近更新时间
+   */
+  updatedAt: string;
+}
+export type PayMallOrderDto = object;
 export interface CategoryVo {
   /**
    * 分类ID
@@ -459,6 +825,10 @@ export interface MallProductCardVo {
    * SKU列表
    */
   skus?: Array<Record<string, any>>;
+  /**
+   * 当前用户是否已收藏
+   */
+  isFavorite?: boolean;
   /**
    * 最低价
    */
@@ -656,6 +1026,10 @@ export interface MallProductDetailVo {
    */
   skus?: Array<Record<string, any>>;
   /**
+   * 当前用户是否已收藏
+   */
+  isFavorite?: boolean;
+  /**
    * 规格选项
    */
   specOptions: MallProductSpecOptionVo[];
@@ -730,6 +1104,16 @@ export interface CategoryTreeVo {
    */
   children: CategoryTreeVo[] | null;
 }
+export interface MallTokenPairVo {
+  /**
+   * JWT token
+   */
+  token: string;
+  /**
+   * 刷新 token
+   */
+  refreshToken: string;
+}
 export interface UserVo {
   /**
    * 用户ID
@@ -762,9 +1146,488 @@ export interface MallWechatLoginVo {
    */
   token: string;
   /**
+   * 刷新 token
+   */
+  refreshToken: string;
+  /**
    * 用户信息
    */
   user: UserVo;
+}
+export interface MallCreateOrderVo {
+  /**
+   * 订单ID
+   */
+  id: number;
+  /**
+   * 订单号
+   */
+  orderNo: string;
+  /**
+   * 订单来源
+   */
+  source: 'cart' | 'product-detail';
+  /**
+   * 商品总金额
+   */
+  totalAmount: number;
+  /**
+   * 应付金额
+   */
+  payable: number;
+  /**
+   * 商品件数
+   */
+  itemCount: number;
+  /**
+   * 订单状态
+   */
+  status: string;
+  /**
+   * 支付状态
+   */
+  payStatus: string;
+  /**
+   * 支付截止时间
+   */
+  expireAt?: object | null;
+}
+export interface MallOrderDetailVo {
+  /**
+   * 订单ID
+   */
+  id: number;
+  /**
+   * 订单号
+   */
+  orderNo: string;
+  /**
+   * 订单状态
+   */
+  status: string;
+  /**
+   * 支付状态
+   */
+  payStatus: string;
+  /**
+   * 发货状态
+   */
+  shipStatus: string;
+  /**
+   * 下单时间
+   */
+  orderDate: string;
+  /**
+   * 支付截止时间
+   */
+  expireAt: object | null;
+  /**
+   * 商品总额
+   */
+  totalAmount: number;
+  /**
+   * 应付金额
+   */
+  payable: number;
+  /**
+   * 已付金额
+   */
+  paid: number;
+  /**
+   * 商品件数
+   */
+  itemCount: number;
+  /**
+   * 订单商品
+   */
+  items: MallOrderItemVo[];
+  /**
+   * 收货人
+   */
+  receiverName: object | null;
+  /**
+   * 收货电话
+   */
+  receiverPhone: object | null;
+  /**
+   * 收货地址
+   */
+  receiverAddress: object | null;
+  /**
+   * 优惠金额
+   */
+  discount: number;
+  /**
+   * 运费
+   */
+  freight: number;
+  /**
+   * 支付时间
+   */
+  payDate: object | null;
+  /**
+   * 发货时间
+   */
+  shipDate: object | null;
+  /**
+   * 收货时间
+   */
+  receiveDate: object | null;
+  /**
+   * 支付方式
+   */
+  paymentMethod: object | null;
+}
+export interface MallBalanceLogVo {
+  /**
+   * 流水ID
+   */
+  id: number;
+  /**
+   * 流水类型
+   */
+  type: 'RECHARGE' | 'CONSUME' | 'REFUND' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE';
+  /**
+   * 流水类型文案
+   */
+  typeText: string;
+  /**
+   * 变动金额
+   */
+  changeAmount: string;
+  /**
+   * 变动前余额
+   */
+  balanceBefore: string;
+  /**
+   * 变动后余额
+   */
+  balanceAfter: string;
+  /**
+   * 业务单号
+   */
+  bizNo?: object | null;
+  /**
+   * 备注
+   */
+  remark?: object | null;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+}
+export interface MallBalanceLogListVo {
+  data: MallBalanceLogVo[];
+  /**
+   * 分页信息
+   */
+  meta: object;
+}
+export interface MallBalanceRechargeVo {
+  /**
+   * 账户ID
+   */
+  accountId: number;
+  /**
+   * 充值金额
+   */
+  amount: string;
+  /**
+   * 充值方式
+   */
+  method: 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT' | 'BALANCE';
+  /**
+   * 充值后余额
+   */
+  availableBalance: string;
+  /**
+   * 充值流水号
+   */
+  bizNo: string;
+  /**
+   * 充值时间
+   */
+  createdAt: string;
+}
+export interface FavoriteItemVo {
+  /**
+   * 商品ID
+   */
+  id: number;
+  /**
+   * 商品名称
+   */
+  name: string;
+  /**
+   * SPU编码
+   */
+  spuCode: string;
+  /**
+   * 分类ID
+   */
+  categoryId: number;
+  /**
+   * 品牌ID
+   */
+  brandId: object | null;
+  /**
+   * 单位ID
+   */
+  unitId: number;
+  /**
+   * 商品描述
+   */
+  description: object | null;
+  /**
+   * 商品详情（富文本HTML）
+   */
+  detail: object | null;
+  /**
+   * 商品主图
+   */
+  mainImage: object | null;
+  /**
+   * 商品图片列表
+   */
+  images: string[] | null;
+  /**
+   * 规格模板
+   */
+  specTemplate: Record<string, any> | null;
+  /**
+   * 是否启用
+   */
+  isEnabled: boolean;
+  /**
+   * 是否在商城上架
+   */
+  mallEnabled: boolean;
+  /**
+   * 总可用库存
+   */
+  totalAvailable?: number;
+  /**
+   * 是否有库存
+   */
+  hasStock?: boolean;
+  /**
+   * 商城扩展信息
+   */
+  mallInfo: Record<string, any> | null;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   */
+  updatedAt: string;
+  /**
+   * 分类信息
+   */
+  category: CategoryVo;
+  /**
+   * 品牌信息
+   */
+  brand: BrandVo;
+  /**
+   * 单位信息
+   */
+  unit: UnitVo;
+  /**
+   * SKU列表
+   */
+  skus?: Array<Record<string, any>>;
+  /**
+   * 当前用户是否已收藏
+   */
+  isFavorite?: boolean;
+  /**
+   * 最低价
+   */
+  minPrice: number;
+  /**
+   * 最高价
+   */
+  maxPrice: number;
+  /**
+   * 价格区间展示文本
+   */
+  priceRange: string;
+  /**
+   * 收藏ID
+   */
+  favoriteId: number;
+  /**
+   * 收藏时间
+   */
+  favoriteAt: string;
+}
+export interface FavoriteListVo {
+  data: FavoriteItemVo[];
+  meta: MallProductListMetaVo;
+}
+export interface FavoriteStatusVo {
+  /**
+   * 商品ID
+   */
+  productId: number;
+  /**
+   * 是否已收藏
+   */
+  isFavorite: boolean;
+}
+export interface BrowseHistoryItemVo {
+  /**
+   * 商品ID
+   */
+  id: number;
+  /**
+   * 商品名称
+   */
+  name: string;
+  /**
+   * SPU编码
+   */
+  spuCode: string;
+  /**
+   * 分类ID
+   */
+  categoryId: number;
+  /**
+   * 品牌ID
+   */
+  brandId: object | null;
+  /**
+   * 单位ID
+   */
+  unitId: number;
+  /**
+   * 商品描述
+   */
+  description: object | null;
+  /**
+   * 商品详情（富文本HTML）
+   */
+  detail: object | null;
+  /**
+   * 商品主图
+   */
+  mainImage: object | null;
+  /**
+   * 商品图片列表
+   */
+  images: string[] | null;
+  /**
+   * 规格模板
+   */
+  specTemplate: Record<string, any> | null;
+  /**
+   * 是否启用
+   */
+  isEnabled: boolean;
+  /**
+   * 是否在商城上架
+   */
+  mallEnabled: boolean;
+  /**
+   * 总可用库存
+   */
+  totalAvailable?: number;
+  /**
+   * 是否有库存
+   */
+  hasStock?: boolean;
+  /**
+   * 商城扩展信息
+   */
+  mallInfo: Record<string, any> | null;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   */
+  updatedAt: string;
+  /**
+   * 分类信息
+   */
+  category: CategoryVo;
+  /**
+   * 品牌信息
+   */
+  brand: BrandVo;
+  /**
+   * 单位信息
+   */
+  unit: UnitVo;
+  /**
+   * SKU列表
+   */
+  skus?: Array<Record<string, any>>;
+  /**
+   * 当前用户是否已收藏
+   */
+  isFavorite?: boolean;
+  /**
+   * 最低价
+   */
+  minPrice: number;
+  /**
+   * 最高价
+   */
+  maxPrice: number;
+  /**
+   * 价格区间展示文本
+   */
+  priceRange: string;
+  /**
+   * 浏览记录ID
+   */
+  historyId: number;
+  /**
+   * 浏览次数
+   */
+  viewCount: number;
+  /**
+   * 首次浏览时间
+   */
+  firstViewedAt: string;
+  /**
+   * 最近浏览时间
+   */
+  lastViewedAt: string;
+}
+export interface BrowseHistoryListVo {
+  data: BrowseHistoryItemVo[];
+  meta: MallProductListMetaVo;
+}
+export interface MallPayOrderVo {
+  /**
+   * 订单ID
+   */
+  id: number;
+  /**
+   * 订单号
+   */
+  orderNo: string;
+  /**
+   * 支付状态
+   */
+  payStatus: string;
+  /**
+   * 订单状态
+   */
+  status: string;
+  /**
+   * 已付金额
+   */
+  paid: number;
+  /**
+   * 支付完成时间
+   */
+  payDate: string;
 }
 declare global {
   interface Apis {
@@ -863,6 +1726,10 @@ declare global {
        *       level: number
        *       // 排序号
        *       sort: number
+       *       // 是否作为商城搜索推荐分类
+       *       mallRecommend: boolean
+       *       // 商城搜索推荐排序号
+       *       mallRecommendSort: number
        *       // 分类图标
        *       icon: object | null
        *       // 分类图标 URL
@@ -914,6 +1781,8 @@ declare global {
        *     // [items] start
        *     // [items] end
        *     skus?: Array<Record<string, any>>
+       *     // 当前用户是否已收藏
+       *     isFavorite?: boolean
        *     // 最低价
        *     minPrice: number
        *     // 最高价
@@ -1112,6 +1981,10 @@ declare global {
        *     level: number
        *     // 排序号
        *     sort: number
+       *     // 是否作为商城搜索推荐分类
+       *     mallRecommend: boolean
+       *     // 商城搜索推荐排序号
+       *     mallRecommendSort: number
        *     // 分类图标
        *     icon: object | null
        *     // 分类图标 URL
@@ -1163,6 +2036,8 @@ declare global {
        *   // [items] start
        *   // [items] end
        *   skus?: Array<Record<string, any>>
+       *   // 当前用户是否已收藏
+       *   isFavorite?: boolean
        *   // 规格选项
        *   // [items] start
        *   // [items] end
@@ -1226,6 +2101,10 @@ declare global {
        *   level: number
        *   // 排序号
        *   sort: number
+       *   // 是否作为商城搜索推荐分类
+       *   mallRecommend: boolean
+       *   // 商城搜索推荐排序号
+       *   mallRecommendSort: number
        *   // 分类图标
        *   icon: object | null
        *   // 分类图标 URL
@@ -1343,6 +2222,80 @@ declare global {
       /**
        * ---
        *
+       * [POST] 手机号密码登录
+       *
+       * **path:** /mall/auth/login
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 手机号
+       *   phone: string
+       *   // 登录密码
+       *   password: string
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // JWT token
+       *   token: string
+       *   // 刷新 token
+       *   refreshToken: string
+       * }
+       * ```
+       */
+      MallAuthController_login<
+        Config extends Alova2MethodConfig<MallTokenPairVo> & {
+          data: MallLoginDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallTokenPairVo, 'general.MallAuthController_login', Config>;
+      /**
+       * ---
+       *
+       * [POST] 刷新登录令牌
+       *
+       * **path:** /mall/auth/refresh
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 刷新令牌
+       *   refreshToken: string
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // JWT token
+       *   token: string
+       *   // 刷新 token
+       *   refreshToken: string
+       * }
+       * ```
+       */
+      MallAuthController_refresh<
+        Config extends Alova2MethodConfig<MallTokenPairVo> & {
+          data: MallRefreshTokenDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallTokenPairVo, 'general.MallAuthController_refresh', Config>;
+      /**
+       * ---
+       *
        * [POST] 微信授权登录
        *
        * **path:** /mall/auth/wechat-login
@@ -1366,6 +2319,8 @@ declare global {
        * type Response = {
        *   // JWT token
        *   token: string
+       *   // 刷新 token
+       *   refreshToken: string
        *   // 用户信息
        *   user: {
        *     // 用户ID
@@ -1391,6 +2346,53 @@ declare global {
       >(
         config: Config
       ): Alova2Method<MallWechatLoginVo, 'general.MallAuthController_wechatLogin', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取当前商城登录用户信息
+       *
+       * **path:** /mall/auth/me
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 用户ID
+       *   id: number
+       *   // 用户名
+       *   username: string
+       *   // 邮箱
+       *   email: object | null
+       *   // 姓名
+       *   name: object | null
+       *   // 创建时间
+       *   createdAt: string
+       *   // 更新时间
+       *   updatedAt: string
+       *   // 手机号
+       *   phone: object | null
+       *   // 关联客户信息
+       *   customer: {
+       *     // 客户ID
+       *     id: number
+       *     // 客户名称
+       *     name: string
+       *     // 手机号
+       *     phone: object | null
+       *     // 地址
+       *     address: object | null
+       *     // 余额账户ID
+       *     balanceAccountId: object | null
+       *     // 可用余额
+       *     availableBalance: string | null
+       *   }
+       * }
+       * ```
+       */
+      MallAuthController_getProfile<Config extends Alova2MethodConfig<MallCurrentUserVo>>(
+        config?: Config
+      ): Alova2Method<MallCurrentUserVo, 'general.MallAuthController_getProfile', Config>;
       /**
        * ---
        *
@@ -1457,6 +2459,1537 @@ declare global {
       MallCartController_findCurrentUserCart<Config extends Alova2MethodConfig<CartListVo>>(
         config?: Config
       ): Alova2Method<CartListVo, 'general.MallCartController_findCurrentUserCart', Config>;
+      /**
+       * ---
+       *
+       * [POST] 添加商品到购物车
+       *
+       * **path:** /mall/carts/add
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // SKU ID
+       *   skuId?: number
+       *   // 数量
+       *   quantity?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallCartController_addToCart<
+        Config extends Alova2MethodConfig<null> & {
+          data: AddToCartDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallCartController_addToCart', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 清空当前登录用户购物车
+       *
+       * **path:** /mall/carts/clear
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallCartController_clearCurrentUserCart<Config extends Alova2MethodConfig<null>>(
+        config?: Config
+      ): Alova2Method<null, 'general.MallCartController_clearCurrentUserCart', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 删除当前登录用户购物车项
+       *
+       * **path:** /mall/carts/{id}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallCartController_removeCurrentUserCart<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallCartController_removeCurrentUserCart', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取当前登录用户收货地址列表
+       *
+       * **path:** /mall/addresses
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = Array<{
+       *   // 地址ID
+       *   id: number
+       *   // 客户ID
+       *   customerId: number
+       *   // 收货人
+       *   receiverName: string
+       *   // 收货电话
+       *   receiverPhone: string
+       *   // 省
+       *   province?: object
+       *   // 市
+       *   city?: object
+       *   // 区/县
+       *   district?: object
+       *   // 详细地址
+       *   address: string
+       *   // 完整地址
+       *   fullAddress: string
+       *   // 邮编
+       *   postalCode?: object
+       *   // 标签
+       *   tag?: object
+       *   // 是否默认地址
+       *   isDefault: boolean
+       *   // 排序值
+       *   sort: number
+       *   // 备注
+       *   remark?: object
+       *   // 创建时间
+       *   createdAt: string
+       *   // 更新时间
+       *   updatedAt: string
+       * }>
+       * ```
+       */
+      MallAddressesController_findCurrentUserAddresses<Config extends Alova2MethodConfig<CustomerAddressVo[]>>(
+        config?: Config
+      ): Alova2Method<CustomerAddressVo[], 'general.MallAddressesController_findCurrentUserAddresses', Config>;
+      /**
+       * ---
+       *
+       * [POST] 新增当前登录用户收货地址
+       *
+       * **path:** /mall/addresses
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 收货人
+       *   receiverName: string
+       *   // 收货电话
+       *   receiverPhone: string
+       *   // 省
+       *   province?: string
+       *   // 市
+       *   city?: string
+       *   // 区/县
+       *   district?: string
+       *   // 详细地址
+       *   address: string
+       *   // 邮编
+       *   postalCode?: string
+       *   // 地址标签，如家/公司
+       *   tag?: string
+       *   // 是否默认地址
+       *   isDefault?: boolean
+       *   // 排序值
+       *   sort?: number
+       *   // 备注
+       *   remark?: string
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 地址ID
+       *   id: number
+       *   // 客户ID
+       *   customerId: number
+       *   // 收货人
+       *   receiverName: string
+       *   // 收货电话
+       *   receiverPhone: string
+       *   // 省
+       *   province?: object
+       *   // 市
+       *   city?: object
+       *   // 区/县
+       *   district?: object
+       *   // 详细地址
+       *   address: string
+       *   // 完整地址
+       *   fullAddress: string
+       *   // 邮编
+       *   postalCode?: object
+       *   // 标签
+       *   tag?: object
+       *   // 是否默认地址
+       *   isDefault: boolean
+       *   // 排序值
+       *   sort: number
+       *   // 备注
+       *   remark?: object
+       *   // 创建时间
+       *   createdAt: string
+       *   // 更新时间
+       *   updatedAt: string
+       * }
+       * ```
+       */
+      MallAddressesController_createCurrentUserAddress<
+        Config extends Alova2MethodConfig<CustomerAddressVo> & {
+          data: CreateCustomerAddressDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<CustomerAddressVo, 'general.MallAddressesController_createCurrentUserAddress', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取当前登录用户默认收货地址
+       *
+       * **path:** /mall/addresses/default
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 地址ID
+       *   id: number
+       *   // 客户ID
+       *   customerId: number
+       *   // 收货人
+       *   receiverName: string
+       *   // 收货电话
+       *   receiverPhone: string
+       *   // 省
+       *   province?: object
+       *   // 市
+       *   city?: object
+       *   // 区/县
+       *   district?: object
+       *   // 详细地址
+       *   address: string
+       *   // 完整地址
+       *   fullAddress: string
+       *   // 邮编
+       *   postalCode?: object
+       *   // 标签
+       *   tag?: object
+       *   // 是否默认地址
+       *   isDefault: boolean
+       *   // 排序值
+       *   sort: number
+       *   // 备注
+       *   remark?: object
+       *   // 创建时间
+       *   createdAt: string
+       *   // 更新时间
+       *   updatedAt: string
+       * }
+       * ```
+       */
+      MallAddressesController_findDefaultAddress<Config extends Alova2MethodConfig<CustomerAddressVo>>(
+        config?: Config
+      ): Alova2Method<CustomerAddressVo, 'general.MallAddressesController_findDefaultAddress', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取当前登录用户收货地址详情
+       *
+       * **path:** /mall/addresses/{id}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 地址ID
+       *   id: number
+       *   // 客户ID
+       *   customerId: number
+       *   // 收货人
+       *   receiverName: string
+       *   // 收货电话
+       *   receiverPhone: string
+       *   // 省
+       *   province?: object
+       *   // 市
+       *   city?: object
+       *   // 区/县
+       *   district?: object
+       *   // 详细地址
+       *   address: string
+       *   // 完整地址
+       *   fullAddress: string
+       *   // 邮编
+       *   postalCode?: object
+       *   // 标签
+       *   tag?: object
+       *   // 是否默认地址
+       *   isDefault: boolean
+       *   // 排序值
+       *   sort: number
+       *   // 备注
+       *   remark?: object
+       *   // 创建时间
+       *   createdAt: string
+       *   // 更新时间
+       *   updatedAt: string
+       * }
+       * ```
+       */
+      MallAddressesController_findCurrentUserAddress<
+        Config extends Alova2MethodConfig<CustomerAddressVo> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<CustomerAddressVo, 'general.MallAddressesController_findCurrentUserAddress', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 删除当前登录用户收货地址
+       *
+       * **path:** /mall/addresses/{id}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallAddressesController_removeCurrentUserAddress<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallAddressesController_removeCurrentUserAddress', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的订单列表
+       *
+       * **path:** /mall/orders
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = Array<{
+       *   // 订单ID
+       *   id: number
+       *   // 订单号
+       *   orderNo: string
+       *   // 订单状态
+       *   status: string
+       *   // 支付状态
+       *   payStatus: string
+       *   // 发货状态
+       *   shipStatus: string
+       *   // 下单时间
+       *   orderDate: string
+       *   // 支付截止时间
+       *   expireAt: object | null
+       *   // 商品总额
+       *   totalAmount: number
+       *   // 应付金额
+       *   payable: number
+       *   // 已付金额
+       *   paid: number
+       *   // 商品件数
+       *   itemCount: number
+       *   // 订单商品
+       *   // [items] start
+       *   // [items] end
+       *   items: Array<{
+       *     // 商品ID
+       *     productId: number
+       *     // SKU ID
+       *     skuId: number
+       *     // 商品名称
+       *     productName: string
+       *     // SKU 编码
+       *     skuCode: string
+       *     // 规格
+       *     specs: object
+       *     // 商品图片
+       *     image: object | null
+       *     // 单价
+       *     price: number
+       *     // 数量
+       *     quantity: number
+       *     // 金额
+       *     amount: number
+       *   }>
+       * }>
+       * ```
+       */
+      MallOrdersController_findOrders<Config extends Alova2MethodConfig<MallOrderListItemVo[]>>(
+        config?: Config
+      ): Alova2Method<MallOrderListItemVo[], 'general.MallOrdersController_findOrders', Config>;
+      /**
+       * ---
+       *
+       * [POST] 创建商城订单
+       *
+       * **path:** /mall/orders
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = object
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 订单ID
+       *   id: number
+       *   // 订单号
+       *   orderNo: string
+       *   // 订单来源
+       *   source: 'cart' | 'product-detail'
+       *   // 商品总金额
+       *   totalAmount: number
+       *   // 应付金额
+       *   payable: number
+       *   // 商品件数
+       *   itemCount: number
+       *   // 订单状态
+       *   status: string
+       *   // 支付状态
+       *   payStatus: string
+       *   // 支付截止时间
+       *   expireAt?: object | null
+       * }
+       * ```
+       */
+      MallOrdersController_createOrder<
+        Config extends Alova2MethodConfig<MallCreateOrderVo> & {
+          data: CreateMallOrderDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallCreateOrderVo, 'general.MallOrdersController_createOrder', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的订单详情
+       *
+       * **path:** /mall/orders/{id}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 订单ID
+       *   id: number
+       *   // 订单号
+       *   orderNo: string
+       *   // 订单状态
+       *   status: string
+       *   // 支付状态
+       *   payStatus: string
+       *   // 发货状态
+       *   shipStatus: string
+       *   // 下单时间
+       *   orderDate: string
+       *   // 支付截止时间
+       *   expireAt: object | null
+       *   // 商品总额
+       *   totalAmount: number
+       *   // 应付金额
+       *   payable: number
+       *   // 已付金额
+       *   paid: number
+       *   // 商品件数
+       *   itemCount: number
+       *   // 订单商品
+       *   // [items] start
+       *   // [items] end
+       *   items: Array<{
+       *     // 商品ID
+       *     productId: number
+       *     // SKU ID
+       *     skuId: number
+       *     // 商品名称
+       *     productName: string
+       *     // SKU 编码
+       *     skuCode: string
+       *     // 规格
+       *     specs: object
+       *     // 商品图片
+       *     image: object | null
+       *     // 单价
+       *     price: number
+       *     // 数量
+       *     quantity: number
+       *     // 金额
+       *     amount: number
+       *   }>
+       *   // 收货人
+       *   receiverName: object | null
+       *   // 收货电话
+       *   receiverPhone: object | null
+       *   // 收货地址
+       *   receiverAddress: object | null
+       *   // 优惠金额
+       *   discount: number
+       *   // 运费
+       *   freight: number
+       *   // 支付时间
+       *   payDate: object | null
+       *   // 发货时间
+       *   shipDate: object | null
+       *   // 收货时间
+       *   receiveDate: object | null
+       *   // 支付方式
+       *   paymentMethod: object | null
+       * }
+       * ```
+       */
+      MallOrdersController_findOrderDetail<
+        Config extends Alova2MethodConfig<MallOrderDetailVo> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallOrderDetailVo, 'general.MallOrdersController_findOrderDetail', Config>;
+      /**
+       * ---
+       *
+       * [POST] 支付商城订单
+       *
+       * **path:** /mall/orders/{id}/pay
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = object
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 订单ID
+       *   id: number
+       *   // 订单号
+       *   orderNo: string
+       *   // 支付状态
+       *   payStatus: string
+       *   // 订单状态
+       *   status: string
+       *   // 已付金额
+       *   paid: number
+       *   // 支付完成时间
+       *   payDate: string
+       * }
+       * ```
+       */
+      MallOrdersController_payOrder<
+        Config extends Alova2MethodConfig<MallPayOrderVo> & {
+          pathParams: {
+            id: number;
+          };
+          data: PayMallOrderDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallPayOrderVo, 'general.MallOrdersController_payOrder', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取商品评价列表
+       *
+       * **path:** /mall/products/{id}/reviews
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 评分筛选
+       *   rating?: number
+       *   // 是否只看有图评价
+       *   hasImage?: boolean
+       *   // 页码
+       *   page?: number
+       *   // 每页数量
+       *   pageSize?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallReviewsController_findProductReviews<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            id: number;
+          };
+          params: {
+            /**
+             * 评分筛选
+             */
+            rating?: number;
+            /**
+             * 是否只看有图评价
+             */
+            hasImage?: boolean;
+            /**
+             * 页码
+             */
+            page?: number;
+            /**
+             * 每页数量
+             */
+            pageSize?: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallReviewsController_findProductReviews', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取商品评价统计
+       *
+       * **path:** /mall/products/{id}/review-stats
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallReviewsController_getProductReviewStats<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallReviewsController_getProductReviewStats', Config>;
+      /**
+       * ---
+       *
+       * [POST] 提交评价
+       *
+       * **path:** /mall/reviews
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 订单明细ID
+       *   orderItemId: number
+       *   // 评分，1-5
+       *   rating: number
+       *   // 评价内容
+       *   content?: string
+       *   // 评价图片列表
+       *   // [items] start
+       *   // [items] end
+       *   images?: string[]
+       *   // 是否匿名
+       *   isAnonymous?: boolean
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallReviewsController_createReview<
+        Config extends Alova2MethodConfig<null> & {
+          data: CreateMallReviewDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallReviewsController_createReview', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的评价
+       *
+       * **path:** /mall/reviews/my
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   page: number
+       *   pageSize: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallReviewsController_findMyReviews<
+        Config extends Alova2MethodConfig<null> & {
+          params: {
+            page: number;
+            pageSize: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallReviewsController_findMyReviews', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取待评价订单商品
+       *
+       * **path:** /mall/reviews/pending
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallReviewsController_findPendingReviews<Config extends Alova2MethodConfig<null>>(
+        config?: Config
+      ): Alova2Method<null, 'general.MallReviewsController_findPendingReviews', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的余额概览
+       *
+       * **path:** /mall/balance
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 账户ID
+       *   id: number
+       *   // 客户ID
+       *   customerId: number
+       *   // 可用余额
+       *   availableBalance: string
+       *   // 冻结余额
+       *   frozenBalance: string
+       *   // 累计充值
+       *   totalRecharged: string
+       *   // 累计消费
+       *   totalConsumed: string
+       *   // 累计退款
+       *   totalRefunded: string
+       *   // 最近更新时间
+       *   updatedAt: string
+       * }
+       * ```
+       */
+      MallBalanceController_getSummary<Config extends Alova2MethodConfig<MallBalanceSummaryVo>>(
+        config?: Config
+      ): Alova2Method<MallBalanceSummaryVo, 'general.MallBalanceController_getSummary', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的余额流水
+       *
+       * **path:** /mall/balance/logs
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 流水类型
+       *   type?: 'RECHARGE' | 'CONSUME' | 'REFUND' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE'
+       *   // 页码
+       *   page?: number
+       *   // 每页条数
+       *   pageSize?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // [items] start
+       *   // [items] end
+       *   data: Array<{
+       *     // 流水ID
+       *     id: number
+       *     // 流水类型
+       *     type: 'RECHARGE' | 'CONSUME' | 'REFUND' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE'
+       *     // 流水类型文案
+       *     typeText: string
+       *     // 变动金额
+       *     changeAmount: string
+       *     // 变动前余额
+       *     balanceBefore: string
+       *     // 变动后余额
+       *     balanceAfter: string
+       *     // 业务单号
+       *     bizNo?: object | null
+       *     // 备注
+       *     remark?: object | null
+       *     // 创建时间
+       *     createdAt: string
+       *   }>
+       *   // 分页信息
+       *   meta: object
+       * }
+       * ```
+       */
+      MallBalanceController_getLogs<
+        Config extends Alova2MethodConfig<MallBalanceLogListVo> & {
+          params: {
+            /**
+             * 流水类型
+             */
+            type?: 'RECHARGE' | 'CONSUME' | 'REFUND' | 'ADJUST_INCREASE' | 'ADJUST_DECREASE';
+            /**
+             * 页码
+             */
+            page?: number;
+            /**
+             * 每页条数
+             */
+            pageSize?: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallBalanceLogListVo, 'general.MallBalanceController_getLogs', Config>;
+      /**
+       * ---
+       *
+       * [POST] 创建余额充值
+       *
+       * **path:** /mall/balance/recharge
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 充值金额
+       *   amount: number
+       *   // 充值方式
+       *   method: 'WECHAT' | 'ALIPAY' | 'BANK' | 'CASH'
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 账户ID
+       *   accountId: number
+       *   // 充值金额
+       *   amount: string
+       *   // 充值方式
+       *   method: 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT' | 'BALANCE'
+       *   // 充值后余额
+       *   availableBalance: string
+       *   // 充值流水号
+       *   bizNo: string
+       *   // 充值时间
+       *   createdAt: string
+       * }
+       * ```
+       */
+      MallBalanceController_recharge<
+        Config extends Alova2MethodConfig<MallBalanceRechargeVo> & {
+          data: CreateMallBalanceRechargeDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallBalanceRechargeVo, 'general.MallBalanceController_recharge', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的收藏列表
+       *
+       * **path:** /mall/favorites
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 关键词，支持商品名称
+       *   keyword?: string
+       *   // 页码
+       *   page?: number
+       *   // 每页条数
+       *   pageSize?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // [items] start
+       *   // [items] end
+       *   data: Array<{
+       *     // 商品ID
+       *     id: number
+       *     // 商品名称
+       *     name: string
+       *     // SPU编码
+       *     spuCode: string
+       *     // 分类ID
+       *     categoryId: number
+       *     // 品牌ID
+       *     brandId: object | null
+       *     // 单位ID
+       *     unitId: number
+       *     // 商品描述
+       *     description: object | null
+       *     // 商品详情（富文本HTML）
+       *     detail: object | null
+       *     // 商品主图
+       *     mainImage: object | null
+       *     // 商品图片列表
+       *     // [params1] start
+       *     // [items] start
+       *     // [items] end
+       *     // [params1] end
+       *     images: string[] | null
+       *     // 规格模板
+       *     specTemplate: Record<string, any> | null
+       *     // 是否启用
+       *     isEnabled: boolean
+       *     // 是否在商城上架
+       *     mallEnabled: boolean
+       *     // 总可用库存
+       *     totalAvailable?: number
+       *     // 是否有库存
+       *     hasStock?: boolean
+       *     // 商城扩展信息
+       *     mallInfo: Record<string, any> | null
+       *     // 创建时间
+       *     createdAt: string
+       *     // 更新时间
+       *     updatedAt: string
+       *     // 分类信息
+       *     category: {
+       *       // 分类ID
+       *       id: number
+       *       // 分类名称
+       *       name: string
+       *       // 分类编码
+       *       code: string
+       *       // 子标题
+       *       subtitle: object | null
+       *       // 备注
+       *       remark: object | null
+       *       // 父级ID
+       *       parentId: object | null
+       *       // 层级
+       *       level: number
+       *       // 排序号
+       *       sort: number
+       *       // 是否作为商城搜索推荐分类
+       *       mallRecommend: boolean
+       *       // 商城搜索推荐排序号
+       *       mallRecommendSort: number
+       *       // 分类图标
+       *       icon: object | null
+       *       // 分类图标 URL
+       *       iconUrl: object | null
+       *       // 分类图片
+       *       image: object | null
+       *       // 是否启用
+       *       isEnabled: boolean
+       *       // 创建时间
+       *       createdAt: string
+       *       // 更新时间
+       *       updatedAt: string
+       *     }
+       *     // 品牌信息
+       *     brand: {
+       *       // 品牌ID
+       *       id: number
+       *       // 品牌名称
+       *       name: string
+       *       // 品牌logo
+       *       logo: object | null
+       *       // 品牌描述
+       *       description: object | null
+       *       // 排序
+       *       sort: number
+       *       // 是否启用
+       *       isEnabled: boolean
+       *       // 创建时间
+       *       createdAt: string
+       *       // 更新时间
+       *       updatedAt: string
+       *     }
+       *     // 单位信息
+       *     unit: {
+       *       // 单位ID
+       *       id: number
+       *       // 单位名称
+       *       name: string
+       *       // 单位编码
+       *       code: string
+       *       // 排序
+       *       sort: number
+       *       // 创建时间
+       *       createdAt: string
+       *       // 更新时间
+       *       updatedAt: string
+       *     }
+       *     // SKU列表
+       *     // [items] start
+       *     // [items] end
+       *     skus?: Array<Record<string, any>>
+       *     // 当前用户是否已收藏
+       *     isFavorite?: boolean
+       *     // 最低价
+       *     minPrice: number
+       *     // 最高价
+       *     maxPrice: number
+       *     // 价格区间展示文本
+       *     priceRange: string
+       *     // 收藏ID
+       *     favoriteId: number
+       *     // 收藏时间
+       *     favoriteAt: string
+       *   }>
+       *   meta: {
+       *     // 当前页码
+       *     page: number
+       *     // 每页数量
+       *     pageSize: number
+       *     // 总记录数
+       *     total: number
+       *     // 总页数
+       *     totalPages: number
+       *   }
+       * }
+       * ```
+       */
+      MallFavoritesController_findFavorites<
+        Config extends Alova2MethodConfig<FavoriteListVo> & {
+          params: {
+            /**
+             * 关键词，支持商品名称
+             */
+            keyword?: string;
+            /**
+             * 页码
+             */
+            page?: number;
+            /**
+             * 每页条数
+             */
+            pageSize?: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<FavoriteListVo, 'general.MallFavoritesController_findFavorites', Config>;
+      /**
+       * ---
+       *
+       * [POST] 添加商品收藏
+       *
+       * **path:** /mall/favorites
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 商品ID
+       *   productId: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallFavoritesController_createFavorite<
+        Config extends Alova2MethodConfig<null> & {
+          data: CreateFavoriteDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallFavoritesController_createFavorite', Config>;
+      /**
+       * ---
+       *
+       * [GET] 批量检查商品收藏状态
+       *
+       * **path:** /mall/favorites/check
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 商品ID列表，支持逗号分隔字符串或数组
+       *   // [items] start
+       *   // [items] end
+       *   productIds?: number[]
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = Array<{
+       *   // 商品ID
+       *   productId: number
+       *   // 是否已收藏
+       *   isFavorite: boolean
+       * }>
+       * ```
+       */
+      MallFavoritesController_checkFavoriteStatus<
+        Config extends Alova2MethodConfig<FavoriteStatusVo[]> & {
+          params: {
+            /**
+             * 商品ID列表，支持逗号分隔字符串或数组
+             */
+            productIds?: number[];
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<FavoriteStatusVo[], 'general.MallFavoritesController_checkFavoriteStatus', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 取消商品收藏
+       *
+       * **path:** /mall/favorites/{productId}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   productId: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallFavoritesController_removeFavorite<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            productId: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallFavoritesController_removeFavorite', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的浏览历史
+       *
+       * **path:** /mall/histories
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 关键词，支持商品名称
+       *   keyword?: string
+       *   // 页码
+       *   page?: number
+       *   // 每页条数
+       *   pageSize?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // [items] start
+       *   // [items] end
+       *   data: Array<{
+       *     // 商品ID
+       *     id: number
+       *     // 商品名称
+       *     name: string
+       *     // SPU编码
+       *     spuCode: string
+       *     // 分类ID
+       *     categoryId: number
+       *     // 品牌ID
+       *     brandId: object | null
+       *     // 单位ID
+       *     unitId: number
+       *     // 商品描述
+       *     description: object | null
+       *     // 商品详情（富文本HTML）
+       *     detail: object | null
+       *     // 商品主图
+       *     mainImage: object | null
+       *     // 商品图片列表
+       *     // [params1] start
+       *     // [items] start
+       *     // [items] end
+       *     // [params1] end
+       *     images: string[] | null
+       *     // 规格模板
+       *     specTemplate: Record<string, any> | null
+       *     // 是否启用
+       *     isEnabled: boolean
+       *     // 是否在商城上架
+       *     mallEnabled: boolean
+       *     // 总可用库存
+       *     totalAvailable?: number
+       *     // 是否有库存
+       *     hasStock?: boolean
+       *     // 商城扩展信息
+       *     mallInfo: Record<string, any> | null
+       *     // 创建时间
+       *     createdAt: string
+       *     // 更新时间
+       *     updatedAt: string
+       *     // 分类信息
+       *     category: {
+       *       // 分类ID
+       *       id: number
+       *       // 分类名称
+       *       name: string
+       *       // 分类编码
+       *       code: string
+       *       // 子标题
+       *       subtitle: object | null
+       *       // 备注
+       *       remark: object | null
+       *       // 父级ID
+       *       parentId: object | null
+       *       // 层级
+       *       level: number
+       *       // 排序号
+       *       sort: number
+       *       // 是否作为商城搜索推荐分类
+       *       mallRecommend: boolean
+       *       // 商城搜索推荐排序号
+       *       mallRecommendSort: number
+       *       // 分类图标
+       *       icon: object | null
+       *       // 分类图标 URL
+       *       iconUrl: object | null
+       *       // 分类图片
+       *       image: object | null
+       *       // 是否启用
+       *       isEnabled: boolean
+       *       // 创建时间
+       *       createdAt: string
+       *       // 更新时间
+       *       updatedAt: string
+       *     }
+       *     // 品牌信息
+       *     brand: {
+       *       // 品牌ID
+       *       id: number
+       *       // 品牌名称
+       *       name: string
+       *       // 品牌logo
+       *       logo: object | null
+       *       // 品牌描述
+       *       description: object | null
+       *       // 排序
+       *       sort: number
+       *       // 是否启用
+       *       isEnabled: boolean
+       *       // 创建时间
+       *       createdAt: string
+       *       // 更新时间
+       *       updatedAt: string
+       *     }
+       *     // 单位信息
+       *     unit: {
+       *       // 单位ID
+       *       id: number
+       *       // 单位名称
+       *       name: string
+       *       // 单位编码
+       *       code: string
+       *       // 排序
+       *       sort: number
+       *       // 创建时间
+       *       createdAt: string
+       *       // 更新时间
+       *       updatedAt: string
+       *     }
+       *     // SKU列表
+       *     // [items] start
+       *     // [items] end
+       *     skus?: Array<Record<string, any>>
+       *     // 当前用户是否已收藏
+       *     isFavorite?: boolean
+       *     // 最低价
+       *     minPrice: number
+       *     // 最高价
+       *     maxPrice: number
+       *     // 价格区间展示文本
+       *     priceRange: string
+       *     // 浏览记录ID
+       *     historyId: number
+       *     // 浏览次数
+       *     viewCount: number
+       *     // 首次浏览时间
+       *     firstViewedAt: string
+       *     // 最近浏览时间
+       *     lastViewedAt: string
+       *   }>
+       *   meta: {
+       *     // 当前页码
+       *     page: number
+       *     // 每页数量
+       *     pageSize: number
+       *     // 总记录数
+       *     total: number
+       *     // 总页数
+       *     totalPages: number
+       *   }
+       * }
+       * ```
+       */
+      MallBrowseHistoriesController_findHistories<
+        Config extends Alova2MethodConfig<BrowseHistoryListVo> & {
+          params: {
+            /**
+             * 关键词，支持商品名称
+             */
+            keyword?: string;
+            /**
+             * 页码
+             */
+            page?: number;
+            /**
+             * 每页条数
+             */
+            pageSize?: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<BrowseHistoryListVo, 'general.MallBrowseHistoriesController_findHistories', Config>;
+      /**
+       * ---
+       *
+       * [POST] 记录商品浏览历史
+       *
+       * **path:** /mall/histories
+       *
+       * ---
+       *
+       * **RequestBody**
+       * ```ts
+       * type RequestBody = {
+       *   // 商品ID
+       *   productId: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallBrowseHistoriesController_createHistory<
+        Config extends Alova2MethodConfig<null> & {
+          data: CreateBrowseHistoryDto;
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallBrowseHistoriesController_createHistory', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 清空浏览历史
+       *
+       * **path:** /mall/histories/clear
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallBrowseHistoriesController_clearHistories<Config extends Alova2MethodConfig<null>>(
+        config?: Config
+      ): Alova2Method<null, 'general.MallBrowseHistoriesController_clearHistories', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 删除单条浏览历史
+       *
+       * **path:** /mall/histories/{productId}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   productId: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallBrowseHistoriesController_removeHistory<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            productId: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallBrowseHistoriesController_removeHistory', Config>;
     };
   }
 

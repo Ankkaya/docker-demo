@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Patch,
   Query,
@@ -37,6 +38,10 @@ import { BannerVo } from '@/domains/banners/vo/banner.vo';
 import { CartsService } from '@/domains/carts/carts.service';
 import { CartListVo } from '@/domains/carts/vo';
 import { AddToCartDto, UpdateCartDto } from '@/domains/carts/dto';
+import { CustomerAddressesService } from '@/domains/customer-addresses/customer-addresses.service';
+import { CreateCustomerAddressDto } from '@/domains/customer-addresses/dto/create-customer-address.dto';
+import { UpdateCustomerAddressDto } from '@/domains/customer-addresses/dto/update-customer-address.dto';
+import { CustomerAddressVo } from '@/domains/customer-addresses/vo/customer-address.vo';
 import { MallCurrentUserVo, MallTokenPairVo, MallWechatLoginVo } from './vo/mall-auth.vo';
 import { ReviewsService } from '@/domains/reviews/reviews.service';
 import {
@@ -48,12 +53,43 @@ import {
   ReviewStatsVo,
   ReviewVo,
 } from '@/domains/reviews/vo';
+import { MallOrdersService } from './mall-orders.service';
+import { CreateMallOrderDto } from './dto/create-mall-order.dto';
+import {
+  MallCreateOrderVo,
+  MallOrderDetailVo,
+  MallOrderListItemVo,
+  MallPayOrderVo,
+} from './vo/mall-order.vo';
+import { PayMallOrderDto } from './dto/pay-mall-order.dto';
+import { QueryMallOrderDto } from './dto/query-mall-order.dto';
+import { MallBalanceService } from './mall-balance.service';
+import { QueryMallBalanceLogDto } from './dto/query-mall-balance-log.dto';
+import { CreateMallBalanceRechargeDto } from './dto/create-mall-balance-recharge.dto';
+import { MallBalanceLogListVo, MallBalanceRechargeVo, MallBalanceSummaryVo } from './vo/mall-balance.vo';
+import { AuthService } from '@/domains/auth/auth.service';
+import { FavoritesService } from '@/domains/favorites/favorites.service';
+import { BrowseHistoriesService } from '@/domains/browse-histories/browse-histories.service';
+import {
+  CreateFavoriteDto,
+  QueryFavoriteDto,
+  QueryFavoriteStatusDto,
+} from '@/domains/favorites/dto';
+import { FavoriteListVo, FavoriteStatusVo } from '@/domains/favorites/vo';
+import {
+  CreateBrowseHistoryDto,
+  QueryBrowseHistoryDto,
+} from '@/domains/browse-histories/dto';
+import { BrowseHistoryListVo } from '@/domains/browse-histories/vo';
 
 @ApiTags('商城接口/商品')
 @ApiExtraModels(MallProductListResponseVo, MallHotProductListResponseVo, MallProductDetailVo)
 @Controller('mall')
 export class MallProductsController {
-  constructor(private readonly mallService: MallService) {}
+  constructor(
+    private readonly mallService: MallService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get('products')
   @ApiOperation({ summary: '获取商城商品列表' })
@@ -72,8 +108,26 @@ export class MallProductsController {
   @Get('products/:id')
   @ApiOperation({ summary: '获取商品详情（商城展示）' })
   @ApiOkResponse({ type: MallProductDetailVo })
-  findProductDetail(@Param('id', ParseIntPipe) id: number) {
-    return this.mallService.findProductDetail(id);
+  async findProductDetail(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const userId = await this.tryResolveUserId(authorization);
+    return this.mallService.findProductDetail(id, userId);
+  }
+
+  private async tryResolveUserId(authorization?: string) {
+    if (!authorization?.startsWith('Bearer ')) {
+      return undefined;
+    }
+
+    try {
+      const payload = await this.authService.verifyAccessToken(authorization.slice(7));
+      return payload.sub;
+    }
+    catch {
+      return undefined;
+    }
   }
 }
 
@@ -202,6 +256,125 @@ export class MallCartController {
   }
 }
 
+@ApiTags('商城接口/收货地址')
+@ApiExtraModels(CustomerAddressVo)
+@Controller('mall/addresses')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class MallAddressesController {
+  constructor(private readonly customerAddressesService: CustomerAddressesService) {}
+
+  @Get()
+  @ApiOperation({ summary: '获取当前登录用户收货地址列表' })
+  @ApiOkResponse({ type: [CustomerAddressVo] })
+  findCurrentUserAddresses(@Request() req) {
+    return this.customerAddressesService.findByUserId(req.user.sub);
+  }
+
+  @Get('default')
+  @ApiOperation({ summary: '获取当前登录用户默认收货地址' })
+  @ApiOkResponse({ type: CustomerAddressVo })
+  findDefaultAddress(@Request() req) {
+    return this.customerAddressesService.findDefaultByUserId(req.user.sub);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '获取当前登录用户收货地址详情' })
+  @ApiOkResponse({ type: CustomerAddressVo })
+  findCurrentUserAddress(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.customerAddressesService.findOneByUserId(req.user.sub, id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '新增当前登录用户收货地址' })
+  @ApiOkResponse({ type: CustomerAddressVo })
+  createCurrentUserAddress(@Request() req, @Body() dto: CreateCustomerAddressDto) {
+    return this.customerAddressesService.createForUser(req.user.sub, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: '更新当前登录用户收货地址' })
+  @ApiOkResponse({ type: CustomerAddressVo })
+  updateCurrentUserAddress(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateCustomerAddressDto,
+  ) {
+    return this.customerAddressesService.updateForUser(req.user.sub, id, dto);
+  }
+
+  @Patch(':id/default')
+  @ApiOperation({ summary: '设置当前登录用户默认收货地址' })
+  @ApiOkResponse({ type: CustomerAddressVo })
+  setDefaultAddress(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.customerAddressesService.setDefaultForUser(req.user.sub, id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除当前登录用户收货地址' })
+  removeCurrentUserAddress(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.customerAddressesService.removeForUser(req.user.sub, id);
+  }
+}
+
+@ApiTags('商城接口/订单')
+@ApiExtraModels(MallCreateOrderVo, MallPayOrderVo, MallOrderListItemVo, MallOrderDetailVo)
+@Controller('mall/orders')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class MallOrdersController {
+  constructor(private readonly mallOrdersService: MallOrdersService) {}
+
+  @Get()
+  @ApiOperation({ summary: '获取我的订单列表' })
+  @ApiOkResponse({ type: [MallOrderListItemVo] })
+  findOrders(@Request() req, @Query() query: QueryMallOrderDto) {
+    return this.mallOrdersService.findAllByUser(req.user.sub, query);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '获取我的订单详情' })
+  @ApiOkResponse({ type: MallOrderDetailVo })
+  findOrderDetail(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallOrdersService.findOneByUser(req.user.sub, id);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '创建商城订单' })
+  @ApiOkResponse({ type: MallCreateOrderVo })
+  createOrder(@Request() req, @Body() dto: CreateMallOrderDto) {
+    return this.mallOrdersService.create(req.user.sub, dto);
+  }
+
+  @Post(':id/pay')
+  @ApiOperation({ summary: '支付商城订单' })
+  @ApiOkResponse({ type: MallPayOrderVo })
+  payOrder(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PayMallOrderDto,
+  ) {
+    return this.mallOrdersService.pay(req.user.sub, id, dto);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: '取消商城订单' })
+  @ApiOkResponse({ type: MallOrderDetailVo })
+  cancelOrder(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallOrdersService.cancel(req.user.sub, id);
+  }
+
+  @Patch(':id/receive')
+  @ApiOperation({ summary: '确认收货' })
+  @ApiOkResponse({ type: MallOrderDetailVo })
+  receiveOrder(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallOrdersService.receive(req.user.sub, id);
+  }
+}
+
 @ApiTags('商城接口/评价')
 @ApiExtraModels(ReviewVo, ReviewStatsVo, PendingReviewVo)
 @Controller('mall')
@@ -253,5 +426,104 @@ export class MallReviewsController {
   @ApiOperation({ summary: '获取待评价订单商品' })
   findPendingReviews(@Request() req) {
     return this.reviewsService.findPendingReviews(req.user.sub);
+  }
+}
+
+@ApiTags('商城接口/余额')
+@ApiExtraModels(MallBalanceSummaryVo, MallBalanceLogListVo, MallBalanceRechargeVo)
+@Controller('mall/balance')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class MallBalanceController {
+  constructor(private readonly mallBalanceService: MallBalanceService) {}
+
+  @Get()
+  @ApiOperation({ summary: '获取我的余额概览' })
+  @ApiOkResponse({ type: MallBalanceSummaryVo })
+  getSummary(@Request() req) {
+    return this.mallBalanceService.getSummaryByUserId(req.user.sub);
+  }
+
+  @Get('logs')
+  @ApiOperation({ summary: '获取我的余额流水' })
+  @ApiOkResponse({ type: MallBalanceLogListVo })
+  getLogs(@Request() req, @Query() query: QueryMallBalanceLogDto) {
+    return this.mallBalanceService.getLogsByUserId(req.user.sub, query);
+  }
+
+  @Post('recharge')
+  @ApiOperation({ summary: '创建余额充值' })
+  @ApiOkResponse({ type: MallBalanceRechargeVo })
+  recharge(@Request() req, @Body() dto: CreateMallBalanceRechargeDto) {
+    return this.mallBalanceService.rechargeByUserId(req.user.sub, dto);
+  }
+}
+
+@ApiTags('商城接口/收藏')
+@ApiExtraModels(FavoriteListVo, FavoriteStatusVo)
+@Controller('mall/favorites')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class MallFavoritesController {
+  constructor(private readonly favoritesService: FavoritesService) {}
+
+  @Get()
+  @ApiOperation({ summary: '获取我的收藏列表' })
+  @ApiOkResponse({ type: FavoriteListVo })
+  findFavorites(@Request() req, @Query() query: QueryFavoriteDto) {
+    return this.favoritesService.findAllByUser(req.user.sub, query);
+  }
+
+  @Get('check')
+  @ApiOperation({ summary: '批量检查商品收藏状态' })
+  @ApiOkResponse({ type: [FavoriteStatusVo] })
+  checkFavoriteStatus(@Request() req, @Query() query: QueryFavoriteStatusDto) {
+    return this.favoritesService.checkStatus(req.user.sub, query.productIds || []);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '添加商品收藏' })
+  createFavorite(@Request() req, @Body() dto: CreateFavoriteDto) {
+    return this.favoritesService.create(req.user.sub, dto);
+  }
+
+  @Delete(':productId')
+  @ApiOperation({ summary: '取消商品收藏' })
+  removeFavorite(@Request() req, @Param('productId', ParseIntPipe) productId: number) {
+    return this.favoritesService.remove(req.user.sub, productId);
+  }
+}
+
+@ApiTags('商城接口/浏览历史')
+@ApiExtraModels(BrowseHistoryListVo)
+@Controller('mall/histories')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class MallBrowseHistoriesController {
+  constructor(private readonly browseHistoriesService: BrowseHistoriesService) {}
+
+  @Get()
+  @ApiOperation({ summary: '获取我的浏览历史' })
+  @ApiOkResponse({ type: BrowseHistoryListVo })
+  findHistories(@Request() req, @Query() query: QueryBrowseHistoryDto) {
+    return this.browseHistoriesService.findAllByUser(req.user.sub, query);
+  }
+
+  @Post()
+  @ApiOperation({ summary: '记录商品浏览历史' })
+  createHistory(@Request() req, @Body() dto: CreateBrowseHistoryDto) {
+    return this.browseHistoriesService.record(req.user.sub, dto);
+  }
+
+  @Delete('clear')
+  @ApiOperation({ summary: '清空浏览历史' })
+  clearHistories(@Request() req) {
+    return this.browseHistoriesService.clear(req.user.sub);
+  }
+
+  @Delete(':productId')
+  @ApiOperation({ summary: '删除单条浏览历史' })
+  removeHistory(@Request() req, @Param('productId', ParseIntPipe) productId: number) {
+    return this.browseHistoriesService.remove(req.user.sub, productId);
   }
 }

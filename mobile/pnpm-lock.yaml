@@ -68,6 +68,9 @@ importers:
       '@dcloudio/uni-quickapp-webview':
         specifier: 3.0.0-4080520251106001
         version: 3.0.0-4080520251106001(@vueuse/core@11.0.3(vue@3.4.38(typescript@5.5.4)))(postcss@8.5.6)(rollup@4.53.2)(vue@3.4.38(typescript@5.5.4))
+      '@vant/area-data':
+        specifier: ^2.1.0
+        version: 2.1.0
       '@vueuse/core':
         specifier: ^11.0.3
         version: 11.0.3(vue@3.4.38(typescript@5.5.4))
@@ -3193,6 +3196,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@vant/area-data@2.1.0':
+    resolution: {integrity: sha512-wx9PrUX7wSUJiFcz8UrcvZfTjV6sTc+7SHcbjGQQzEcv5y+EwOo5uV4ZKdfrR5Hzcw4MA08LQdvXPSEb4nWbug==}
+
   '@vitejs/plugin-legacy@5.3.2':
     resolution: {integrity: sha512-8moCOrIMaZ/Rjln0Q6GsH6s8fAt1JOI3k8nmfX4tXUxE5KAExVctSyOBk+A25GClsdSWqIk2yaUthH3KJ2X4tg==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -5042,11 +5048,12 @@ packages:
   glob@11.0.3:
     resolution: {integrity: sha512-2Nim7dha1KVkaiF4q6Dj+ngPPMdfvLJEOpZk/jKiUAkqKebpGAWQXAq9z1xu9HKu5lWfqw/FASuccEjyznjPaA==}
     engines: {node: 20 || >=22}
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
     hasBin: true
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
-    deprecated: Glob versions prior to v9 are no longer supported
+    deprecated: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
 
   global-directory@4.0.1:
     resolution: {integrity: sha512-wHTUcDUoZ1H5/0iVqEudYW4/kAlN5cZ3j/bXn0Dpbizl9iaUVeWSHqiOjsgk6OW2bkLclbBjzewBz6weQ1zA2Q==}
@@ -12243,6 +12250,8 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
+
+  '@vant/area-data@2.1.0': {}
 
   '@vitejs/plugin-legacy@5.3.2(terser@5.31.6)(vite@5.2.8(@types/node@20.19.25)(sass@1.78.0)(terser@5.31.6))':
     dependencies:

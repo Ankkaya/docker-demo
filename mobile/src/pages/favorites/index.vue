@@ -14,36 +14,54 @@ definePage({
 })
 
 const router = useRouter()
+type MallFavoriteItem = any
 
-const favorites = ref([
-  {
-    id: 1,
-    name: 'Honey Bear Organic Romper',
-    tag: '新品 · 7天退换',
-    variant: '米杏色 / 66cm',
-    price: 129,
-    oldPrice: 169,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAWaIaKjBwQgnbqplCXR4IQaNVbY0Vo3c9uUBVT5LuEItWSV28FTXuLsiVMUAXu4uWDGXv3F84NECLPsn39bFAXUvZ6jUyrUSdqJ5BtPa48qrrn7gXXImrZoCExrvk4xVDi8KwNVvsqPJbPXWOvEZ_mHxPN_PUG7mdRgJcVt_HJd3lDUveM9HUWBsRQY9UZbgBI6AAMQB4u8ahwd1Tegb07jThalGq4Em-KrAeilUgvtiW-1CwPsZsCcJ274YVJ0Y5CsRKXadyY_xA',
-  },
-  {
-    id: 2,
-    name: 'Linen Sun Suit Set',
-    tag: '热卖 · 限时8折',
-    variant: '浅橘色 / 73cm',
-    price: 158,
-    oldPrice: 198,
-    image: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=400&h=400&fit=crop',
-  },
-  {
-    id: 3,
-    name: 'Knit Comfort Sweater',
-    tag: '人气 · 轻薄透气',
-    variant: '奶油白 / 90cm',
-    price: 189,
-    oldPrice: 229,
-    image: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop',
-  },
-])
+const favorites = ref<MallFavoriteItem[]>([])
+const loading = ref(false)
+
+const favoriteCount = computed(() => favorites.value.length)
+
+function getDefaultSku(item: MallFavoriteItem) {
+  const skus = Array.isArray(item.skus) ? item.skus : []
+  return skus.find(sku => sku.isDefault) || skus[0] || null
+}
+
+function getVariantText(item: MallFavoriteItem) {
+  const sku = getDefaultSku(item)
+  const specs = sku?.specs && typeof sku.specs === 'object' ? Object.values(sku.specs) : []
+  return specs.length ? specs.join(' / ') : '默认规格'
+}
+
+function getPrice(item: MallFavoriteItem) {
+  const sku = getDefaultSku(item)
+  const price = Number(sku?.salePrice ?? item.minPrice ?? 0)
+  return Number.isFinite(price) ? price : 0
+}
+
+function getOldPrice(item: MallFavoriteItem) {
+  const sku = getDefaultSku(item)
+  const oldPrice = Number(sku?.marketPrice ?? 0)
+  return Number.isFinite(oldPrice) && oldPrice > 0 ? oldPrice : null
+}
+
+async function loadFavorites() {
+  loading.value = true
+  try {
+    const result = await (Apis.general as any).MallFavoritesController_findFavorites({
+      params: {
+        page: 1,
+        pageSize: 100,
+      },
+    }).send()
+    favorites.value = Array.isArray(result?.data) ? result.data : []
+  }
+  catch {
+    favorites.value = []
+  }
+  finally {
+    loading.value = false
+  }
+}
 
 function getFavoriteIconClass(name: string) {
   const map: Record<string, string> = {
@@ -63,7 +81,7 @@ function onSearch() {
   router.push({ name: 'search' })
 }
 
-function openProduct(item: typeof favorites.value[number]) {
+function openProduct(item: MallFavoriteItem) {
   router.push({
     name: 'product-detail',
     query: {
@@ -72,14 +90,39 @@ function openProduct(item: typeof favorites.value[number]) {
   })
 }
 
-function removeFavorite(item: typeof favorites.value[number]) {
-  favorites.value = favorites.value.filter(f => f.id !== item.id)
-  uni.showToast({ title: '已取消收藏', icon: 'none' })
+async function removeFavorite(item: MallFavoriteItem) {
+  try {
+    await (Apis.general as any).MallFavoritesController_removeFavorite({
+      pathParams: { productId: item.id },
+    }).send()
+    favorites.value = favorites.value.filter(f => f.id !== item.id)
+    uni.showToast({ title: '已取消收藏', icon: 'none' })
+  }
+  catch {}
 }
 
-function addToCart(item: typeof favorites.value[number]) {
-  uni.showToast({ title: `已加入：${item.name}`, icon: 'success' })
+async function addFavoriteToCart(item: MallFavoriteItem) {
+  const sku = getDefaultSku(item)
+  if (!sku) {
+    uni.showToast({ title: '当前商品暂无可用规格', icon: 'none' })
+    return
+  }
+
+  try {
+    await (Apis.general as any).MallCartController_addToCart({
+      data: {
+        skuId: sku.id,
+        quantity: 1,
+      },
+    }).send()
+    uni.showToast({ title: `已加入：${item.name}`, icon: 'success' })
+  }
+  catch {}
 }
+
+onShow(() => {
+  loadFavorites()
+})
 </script>
 
 <template>
@@ -106,8 +149,17 @@ function addToCart(item: typeof favorites.value[number]) {
       <view class="px-4 pt-4">
         <view class="px-1 text-center text-sm text-slate-400">
           你还有 <text class="text-[#efb239] font-bold">
-            {{ favorites.length }}
+            {{ favoriteCount }}
           </text> 件心动好物待带回家
+        </view>
+
+        <view v-if="loading" class="mt-8 text-center text-sm text-slate-400">
+          加载中...
+        </view>
+
+        <view v-else-if="favoriteCount === 0"
+          class="mt-8 rounded-3xl border border-[#efb239]/10 bg-white/80 px-6 py-12 text-center text-slate-400">
+          暂无收藏商品
         </view>
 
         <view v-for="item in favorites" :key="item.id"
@@ -126,26 +178,26 @@ function addToCart(item: typeof favorites.value[number]) {
             </view>
 
             <text class="mt-1 block text-xs text-slate-400">
-              {{ item.variant }}
+              {{ getVariantText(item) }}
             </text>
 
             <view
               class="mt-2 inline-flex rounded-full bg-[#efb239]/10 px-2.5 py-1 text-[11px] text-[#c98500] font-semibold">
-              {{ item.tag }}
+              已收藏
             </view>
 
             <view class="mt-3 flex items-center gap-2">
               <text class="text-base text-[#efb239] font-bold">
-                ￥{{ item.price.toFixed(2) }}
+                ￥{{ getPrice(item).toFixed(2) }}
               </text>
-              <text class="text-xs text-slate-400 line-through">
-                ￥{{ item.oldPrice.toFixed(2) }}
+              <text v-if="getOldPrice(item)" class="text-xs text-slate-400 line-through">
+                ￥{{ getOldPrice(item)?.toFixed(2) }}
               </text>
             </view>
 
             <view
               class="mt-3 h-9 flex items-center justify-center gap-1 rounded-xl bg-[#efb239] text-xs text-slate-900 font-bold"
-              @click.stop="addToCart(item)">
+              @click.stop="addFavoriteToCart(item)">
               <text class="text-[16px] text-slate-900 leading-none" :class="getFavoriteIconClass('cart')" />
               加入购物车
             </view>

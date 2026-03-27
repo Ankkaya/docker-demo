@@ -11,13 +11,13 @@ declare global {
   const EffectScope: typeof import('vue')['EffectScope']
   const TABBAR_ROUTE_NAMES: typeof import('./composables/useTabbar')['TABBAR_ROUTE_NAMES']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
-  const addToCart: typeof import('./api/cart')['addToCart']
   const alovaInstance: typeof import('./api/index')['alovaInstance']
   const api: typeof import('./api/index')['default']
   const apiDefinitions: typeof import('./api/apiDefinitions')['default']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
-  const clearCart: typeof import('./api/cart')['clearCart']
+  const buildFullRegion: typeof import('./utils/address-region')['buildFullRegion']
+  const buildRegionColumns: typeof import('./utils/address-region')['buildRegionColumns']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
   const computedEager: typeof import('@vueuse/core')['computedEager']
@@ -46,11 +46,17 @@ declare global {
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
   const extendRef: typeof import('@vueuse/core')['extendRef']
+  const findCityCodeByName: typeof import('./utils/address-region')['findCityCodeByName']
+  const findDistrictCodeByName: typeof import('./utils/address-region')['findDistrictCodeByName']
+  const findProvinceCodeByName: typeof import('./utils/address-region')['findProvinceCodeByName']
+  const findRegionCodesByNames: typeof import('./utils/address-region')['findRegionCodesByNames']
   const getActivePinia: typeof import('pinia')['getActivePinia']
-  const getCurrentCart: typeof import('./api/cart')['getCurrentCart']
+  const getCityOptions: typeof import('./utils/address-region')['getCityOptions']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentPath: typeof import('./utils/index')['getCurrentPath']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
+  const getDistrictOptions: typeof import('./utils/address-region')['getDistrictOptions']
+  const getProvinceOptions: typeof import('./utils/address-region')['getProvinceOptions']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
@@ -69,6 +75,7 @@ declare global {
   const markRaw: typeof import('vue')['markRaw']
   const mountApis: typeof import('./api/createApis')['mountApis']
   const nextTick: typeof import('vue')['nextTick']
+  const normalizeRegionNames: typeof import('./utils/address-region')['normalizeRegionNames']
   const onActivated: typeof import('vue')['onActivated']
   const onAddToFavorites: typeof import('@dcloudio/uni-app')['onAddToFavorites']
   const onBackPress: typeof import('@dcloudio/uni-app')['onBackPress']
@@ -128,7 +135,6 @@ declare global {
   const refDefault: typeof import('@vueuse/core')['refDefault']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
-  const removeCartItem: typeof import('./api/cart')['removeCartItem']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
@@ -149,8 +155,6 @@ declare global {
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toValue: typeof import('vue')['toValue']
-  const toggleCartSelect: typeof import('./api/cart')['toggleCartSelect']
-  const toggleCartSelectAll: typeof import('./api/cart')['toggleCartSelectAll']
   const triggerRef: typeof import('vue')['triggerRef']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
@@ -160,7 +164,6 @@ declare global {
   const unref: typeof import('vue')['unref']
   const unrefElement: typeof import('@vueuse/core')['unrefElement']
   const until: typeof import('@vueuse/core')['until']
-  const updateCart: typeof import('./api/cart')['updateCart']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
   const useAnimate: typeof import('@vueuse/core')['useAnimate']
   const useArrayDifference: typeof import('@vueuse/core')['useArrayDifference']
@@ -185,6 +188,7 @@ declare global {
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
   const useCached: typeof import('@vueuse/core')['useCached']
+  const useCheckoutStore: typeof import('./store/checkoutStore')['useCheckoutStore']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
   const useClipboardItems: typeof import('@vueuse/core')['useClipboardItems']
   const useCloned: typeof import('@vueuse/core')['useCloned']
@@ -374,13 +378,13 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly TABBAR_ROUTE_NAMES: UnwrapRef<typeof import('./composables/useTabbar')['TABBAR_ROUTE_NAMES']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
-    readonly addToCart: UnwrapRef<typeof import('./api/cart')['addToCart']>
     readonly alovaInstance: UnwrapRef<typeof import('./api/index')['alovaInstance']>
     readonly api: UnwrapRef<typeof import('./api/index')['default']>
     readonly apiDefinitions: UnwrapRef<typeof import('./api/apiDefinitions')['default']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
-    readonly clearCart: UnwrapRef<typeof import('./api/cart')['clearCart']>
+    readonly buildFullRegion: UnwrapRef<typeof import('./utils/address-region')['buildFullRegion']>
+    readonly buildRegionColumns: UnwrapRef<typeof import('./utils/address-region')['buildRegionColumns']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
@@ -409,11 +413,17 @@ declare module 'vue' {
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
+    readonly findCityCodeByName: UnwrapRef<typeof import('./utils/address-region')['findCityCodeByName']>
+    readonly findDistrictCodeByName: UnwrapRef<typeof import('./utils/address-region')['findDistrictCodeByName']>
+    readonly findProvinceCodeByName: UnwrapRef<typeof import('./utils/address-region')['findProvinceCodeByName']>
+    readonly findRegionCodesByNames: UnwrapRef<typeof import('./utils/address-region')['findRegionCodesByNames']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
-    readonly getCurrentCart: UnwrapRef<typeof import('./api/cart')['getCurrentCart']>
+    readonly getCityOptions: UnwrapRef<typeof import('./utils/address-region')['getCityOptions']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentPath: UnwrapRef<typeof import('./utils/index')['getCurrentPath']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
+    readonly getDistrictOptions: UnwrapRef<typeof import('./utils/address-region')['getDistrictOptions']>
+    readonly getProvinceOptions: UnwrapRef<typeof import('./utils/address-region')['getProvinceOptions']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -432,6 +442,7 @@ declare module 'vue' {
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly mountApis: UnwrapRef<typeof import('./api/createApis')['mountApis']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
+    readonly normalizeRegionNames: UnwrapRef<typeof import('./utils/address-region')['normalizeRegionNames']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onAddToFavorites: UnwrapRef<typeof import('@dcloudio/uni-app')['onAddToFavorites']>
     readonly onBackPress: UnwrapRef<typeof import('@dcloudio/uni-app')['onBackPress']>
@@ -490,7 +501,6 @@ declare module 'vue' {
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
-    readonly removeCartItem: UnwrapRef<typeof import('./api/cart')['removeCartItem']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
@@ -511,8 +521,6 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
-    readonly toggleCartSelect: UnwrapRef<typeof import('./api/cart')['toggleCartSelect']>
-    readonly toggleCartSelectAll: UnwrapRef<typeof import('./api/cart')['toggleCartSelectAll']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
@@ -522,7 +530,6 @@ declare module 'vue' {
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
-    readonly updateCart: UnwrapRef<typeof import('./api/cart')['updateCart']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
@@ -547,6 +554,7 @@ declare module 'vue' {
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
+    readonly useCheckoutStore: UnwrapRef<typeof import('./store/checkoutStore')['useCheckoutStore']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
     readonly useClipboardItems: UnwrapRef<typeof import('@vueuse/core')['useClipboardItems']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>

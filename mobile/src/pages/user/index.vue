@@ -15,12 +15,17 @@ definePage({
 const router = useRouter()
 const userStore = useUserStore()
 const isLoggedIn = computed(() => userStore.isLoggedIn)
+const balanceSummary = ref({
+  availableBalance: '0.00',
+})
 
 const userInfo = computed(() => ({
   name: userStore.displayName,
   level: userStore.isLoggedIn ? '商城会员' : '未登录',
   avatar: userStore.displayAvatar,
 }))
+
+const balanceAmountText = computed(() => `¥${Number(balanceSummary.value.availableBalance || 0).toFixed(2)}`)
 
 const orderMenus = ref([
   { key: 'pay', label: '待付款', icon: 'account_balance_wallet', badge: '' },
@@ -55,6 +60,24 @@ function checkIn() {
 
 function viewAllOrders() {
   router.push({ name: 'order-list', query: { status: 'all' } })
+}
+
+function openBalance() {
+  if (!isLoggedIn.value) {
+    openLogin()
+    return
+  }
+
+  router.push({ name: 'balance' })
+}
+
+function openRecharge() {
+  if (!isLoggedIn.value) {
+    openLogin()
+    return
+  }
+
+  router.push({ name: 'balance-recharge' })
 }
 
 function onOrderMenuClick(item: typeof orderMenus.value[number]) {
@@ -94,6 +117,63 @@ function handleLogout() {
   router.pushTab({ name: 'home' })
 }
 
+async function loadBalanceSummary() {
+  if (!isLoggedIn.value) {
+    balanceSummary.value.availableBalance = '0.00'
+    return
+  }
+
+  try {
+    const result = await (Apis.general as any).MallBalanceController_getSummary({}).send()
+    balanceSummary.value.availableBalance = result.availableBalance || '0.00'
+  }
+  catch {
+    balanceSummary.value.availableBalance = userStore.user?.customer?.availableBalance || '0.00'
+  }
+}
+
+async function loadServiceMenuStats() {
+  const favoriteMenu = serviceMenus.value.find(item => item.key === 'favorites')
+  const historyMenu = serviceMenus.value.find(item => item.key === 'history')
+
+  if (!isLoggedIn.value) {
+    if (favoriteMenu) {
+      favoriteMenu.extra = ''
+    }
+    if (historyMenu) {
+      historyMenu.extra = ''
+    }
+    return
+  }
+
+  try {
+    const [favoriteResult, historyResult] = await Promise.all([
+      (Apis.general as any).MallFavoritesController_findFavorites({
+        params: { page: 1, pageSize: 1 },
+      }).send(),
+      (Apis.general as any).MallBrowseHistoriesController_findHistories({
+        params: { page: 1, pageSize: 1 },
+      }).send(),
+    ])
+
+    if (favoriteMenu) {
+      favoriteMenu.extra = `${favoriteResult?.meta?.total || 0}件商品`
+    }
+    if (historyMenu) {
+      const total = Number(historyResult?.meta?.total || 0)
+      historyMenu.extra = total > 0 ? `${total}条记录` : ''
+    }
+  }
+  catch {
+    if (favoriteMenu) {
+      favoriteMenu.extra = ''
+    }
+    if (historyMenu) {
+      historyMenu.extra = ''
+    }
+  }
+}
+
 // 订单菜单图标: i-material-symbols:account-balance-wallet i-material-symbols:package-2 i-material-symbols:local-shipping i-material-symbols:chat-error
 // 服务菜单图标: i-material-symbols:favorite i-material-symbols:history i-material-symbols:location-on i-material-symbols:confirmation-number i-material-symbols:support-agent
 
@@ -117,6 +197,11 @@ function getServiceIconClass(key: string) {
   }
   return map[key] || ''
 }
+
+onShow(() => {
+  loadBalanceSummary()
+  loadServiceMenuStats()
+})
 </script>
 
 <template>
@@ -173,6 +258,30 @@ function getServiceIconClass(key: string) {
               立即登录
             </view>
           </template>
+        </view>
+      </view>
+
+      <view class="px-4 pb-2">
+        <view class="balance-card" @click="openBalance">
+          <view class="flex items-center gap-3">
+            <view class="balance-card__icon-wrap">
+              <text class="i-material-symbols:account-balance-wallet text-[24px] text-[#efb239] leading-none" />
+            </view>
+            <view class="min-w-0 flex-1">
+              <text class="block text-xs text-slate-400 font-medium">
+                我的余额
+              </text>
+              <text class="mt-2 block text-[30rpx] text-slate-900 font-bold">
+                {{ balanceAmountText }}
+              </text>
+            </view>
+          </view>
+          <view class="flex items-center gap-3">
+            <view class="balance-card__recharge" @click.stop="openRecharge">
+              去充值
+            </view>
+            <text class="i-material-symbols:chevron-right text-[18px] text-slate-300 leading-none" />
+          </view>
         </view>
       </view>
 
@@ -273,5 +382,40 @@ function getServiceIconClass(key: string) {
 
 .service-row:last-child {
   border-bottom: 0;
+}
+
+.balance-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  overflow: hidden;
+  border: 1px solid rgba(239, 178, 57, 0.08);
+  border-radius: 24rpx;
+  background:
+    radial-gradient(circle at top right, rgba(239, 178, 57, 0.16), transparent 30%),
+    linear-gradient(135deg, #fffdf8 0%, #fff 100%);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.04);
+  padding: 24rpx 28rpx;
+}
+
+.balance-card__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 24rpx;
+  background: rgba(239, 178, 57, 0.12);
+}
+
+.balance-card__recharge {
+  border-radius: 9999px;
+  background: #efb239;
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
+  line-height: 1;
+  padding: 16rpx 24rpx;
 }
 </style>

@@ -11,6 +11,120 @@ export class CartsService {
     private minioService: MinioService,
   ) {}
 
+  private normalizeSpecs(specs: unknown): Record<string, string> {
+    if (Array.isArray(specs)) {
+      return specs.reduce((result: Record<string, string>, item: any) => {
+        if (item?.name && item?.value) {
+          result[item.name] = item.value;
+        }
+        return result;
+      }, {});
+    }
+
+    if (specs && typeof specs === 'object') {
+      return Object.entries(specs as Record<string, unknown>).reduce((result: Record<string, string>, [key, value]) => {
+        if (typeof value === 'string' || typeof value === 'number') {
+          result[key] = String(value);
+        }
+        return result;
+      }, {});
+    }
+
+    return {};
+  }
+
+  private async lockSkuInventory(tx: any, skuId: number, quantity: number): Promise<void> {
+    if (quantity <= 0) {
+      return;
+    }
+
+    const inventories = await tx.inventory.findMany({
+      where: {
+        skuId,
+        available: { gt: 0 },
+      },
+      select: {
+        id: true,
+        available: true,
+      },
+      orderBy: [
+        { available: 'desc' },
+        { id: 'asc' },
+      ],
+    });
+
+    const totalAvailable = inventories.reduce((sum: number, item: { available: number }) => sum + item.available, 0);
+    if (totalAvailable < quantity) {
+      throw new BadRequestException('商品库存不足');
+    }
+
+    let remaining = quantity;
+    for (const inventory of inventories) {
+      if (remaining <= 0) {
+        break;
+      }
+
+      const lockCount = Math.min(inventory.available, remaining);
+      await tx.inventory.update({
+        where: { id: inventory.id },
+        data: {
+          available: { decrement: lockCount },
+          locked: { increment: lockCount },
+        },
+      });
+      remaining -= lockCount;
+    }
+  }
+
+  async lockSkuInventoryForOrder(tx: any, skuId: number, quantity: number): Promise<void> {
+    await this.lockSkuInventory(tx, skuId, quantity);
+  }
+
+  async releaseSkuInventoryForOrder(tx: any, skuId: number, quantity: number): Promise<void> {
+    await this.releaseSkuInventory(tx, skuId, quantity);
+  }
+
+  private async releaseSkuInventory(tx: any, skuId: number, quantity: number): Promise<void> {
+    if (quantity <= 0) {
+      return;
+    }
+
+    const inventories = await tx.inventory.findMany({
+      where: {
+        skuId,
+        locked: { gt: 0 },
+      },
+      select: {
+        id: true,
+        locked: true,
+      },
+      orderBy: [
+        { locked: 'desc' },
+        { id: 'asc' },
+      ],
+    });
+
+    let remaining = Math.min(
+      quantity,
+      inventories.reduce((sum: number, item: { locked: number }) => sum + item.locked, 0),
+    );
+    for (const inventory of inventories) {
+      if (remaining <= 0) {
+        break;
+      }
+
+      const releaseCount = Math.min(inventory.locked, remaining);
+      await tx.inventory.update({
+        where: { id: inventory.id },
+        data: {
+          available: { increment: releaseCount },
+          locked: { decrement: releaseCount },
+        },
+      });
+      remaining -= releaseCount;
+    }
+  }
+
   // 获取购物车列表（管理后台用）
   async findAll(query: QueryCartDto): Promise<{ data: CartItemVo[]; meta: any }> {
     const { userId, keyword, page = 1, pageSize = 10 } = query;
@@ -71,7 +185,7 @@ export class CartsService {
         username: item.user.username,
         skuId: item.skuId,
         skuCode: item.sku.skuCode,
-        specs: item.sku.specs as Record<string, string>,
+        specs: this.normalizeSpecs(item.sku.specs),
         productId: item.sku.product.id,
         productName: item.sku.product.name,
         mainImage: await this.minioService.resolveStoredFileUrl(item.sku.product.mainImage),
@@ -130,7 +244,7 @@ export class CartsService {
       username: cart.user.username,
       skuId: cart.skuId,
       skuCode: cart.sku.skuCode,
-      specs: cart.sku.specs as Record<string, string>,
+      specs: this.normalizeSpecs(cart.sku.specs),
       productId: cart.sku.product.id,
       productName: cart.sku.product.name,
       mainImage: await this.minioService.resolveStoredFileUrl(cart.sku.product.mainImage),
@@ -161,7 +275,7 @@ export class CartsService {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     let selectedCount = 0;
@@ -182,7 +296,7 @@ export class CartsService {
         username: '',
         skuId: item.skuId,
         skuCode: item.sku.skuCode,
-        specs: item.sku.specs as Record<string, string>,
+        specs: this.normalizeSpecs(item.sku.specs),
         productId: item.sku.product.id,
         productName: item.sku.product.name,
         mainImage: await this.minioService.resolveStoredFileUrl(item.sku.product.mainImage),
@@ -210,212 +324,129 @@ export class CartsService {
   async addToCart(userId: number, dto: AddToCartDto): Promise<CartItemVo> {
     const { skuId, quantity = 1 } = dto;
 
-    // 检查SKU是否存在且有效
-    const sku = await this.prisma.productSku.findFirst({
-      where: {
-        id: skuId,
-        status: 'ACTIVE',
-        deletedAt: null,
-        product: {
-          isEnabled: true,
+    const cartId = await this.prisma.$transaction(async (tx) => {
+      const sku = await tx.productSku.findFirst({
+        where: {
+          id: skuId,
+          status: 'ACTIVE',
           deletedAt: null,
+          product: {
+            isEnabled: true,
+            deletedAt: null,
+          },
         },
-      },
-      include: {
-        product: {
-          select: { id: true, name: true, mainImage: true },
-        },
-        inventories: {
-          select: { available: true },
-        },
-      },
-    });
+        select: { id: true },
+      });
 
-    if (!sku) {
-      throw new NotFoundException('商品不存在或已下架');
-    }
-
-    // 检查库存
-    const totalStock = sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
-    if (totalStock < quantity) {
-      throw new BadRequestException('商品库存不足');
-    }
-
-    // 检查购物车是否已有该商品
-    const existingCart = await this.prisma.cart.findUnique({
-      where: {
-        userId_skuId: {
-          userId,
-          skuId,
-        },
-      },
-    });
-
-    if (existingCart) {
-      // 更新数量
-      const newQuantity = existingCart.quantity + quantity;
-      if (totalStock < newQuantity) {
-        throw new BadRequestException('商品库存不足');
+      if (!sku) {
+        throw new NotFoundException('商品不存在或已下架');
       }
 
-      const updated = await this.prisma.cart.update({
-        where: { id: existingCart.id },
-        data: { quantity: newQuantity },
-        include: {
-          user: {
-            select: { id: true, username: true, name: true },
-          },
-          sku: {
-            include: {
-              product: {
-                select: { id: true, name: true, mainImage: true },
-              },
-              inventories: {
-                select: { available: true },
-              },
-            },
+      const existingCart = await tx.cart.findUnique({
+        where: {
+          userId_skuId: {
+            userId,
+            skuId,
           },
         },
       });
 
-      return this.toCartItemVo(updated);
-    }
+      await this.lockSkuInventory(tx, skuId, quantity);
 
-    // 创建新的购物车项
-    const cart = await this.prisma.cart.create({
-      data: {
-        userId,
-        skuId,
-        quantity,
-        selected: true,
-      },
-      include: {
-        user: {
-          select: { id: true, username: true, name: true },
+      if (existingCart) {
+        const updated = await tx.cart.update({
+          where: { id: existingCart.id },
+          data: { quantity: existingCart.quantity + quantity },
+          select: { id: true },
+        });
+        return updated.id;
+      }
+
+      const cart = await tx.cart.create({
+        data: {
+          userId,
+          skuId,
+          quantity,
+          selected: false,
         },
-        sku: {
-          include: {
-            product: {
-              select: { id: true, name: true, mainImage: true },
-            },
-            inventories: {
-              select: { available: true },
-            },
-          },
-        },
-      },
+        select: { id: true },
+      });
+
+      return cart.id;
     });
 
-    return this.toCartItemVo(cart);
+    return this.findOne(cartId);
   }
 
   // 创建购物车项（管理后台用）
   async create(dto: CreateCartDto): Promise<CartItemVo> {
-    // 检查SKU是否存在
-    const sku = await this.prisma.productSku.findFirst({
-      where: {
-        id: dto.skuId,
-        status: 'ACTIVE',
-        deletedAt: null,
-      },
-      include: {
-        product: {
-          select: { id: true, name: true, mainImage: true },
+    const cartId = await this.prisma.$transaction(async (tx) => {
+      const sku = await tx.productSku.findFirst({
+        where: {
+          id: dto.skuId,
+          status: 'ACTIVE',
+          deletedAt: null,
         },
-        inventories: {
-          select: { available: true },
+        select: { id: true },
+      });
+
+      if (!sku) {
+        throw new NotFoundException('SKU不存在');
+      }
+
+      await this.lockSkuInventory(tx, dto.skuId, dto.quantity);
+
+      const cart = await tx.cart.create({
+        data: {
+          userId: dto.userId || 1,
+          skuId: dto.skuId,
+          quantity: dto.quantity,
+          selected: dto.selected ?? false,
         },
-      },
+        select: { id: true },
+      });
+
+      return cart.id;
     });
 
-    if (!sku) {
-      throw new NotFoundException('SKU不存在');
-    }
-
-    // 检查库存
-    const totalStock = sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
-    if (totalStock < dto.quantity) {
-      throw new BadRequestException('商品库存不足');
-    }
-
-    const cart = await this.prisma.cart.create({
-      data: {
-        userId: dto.userId || 1, // 默认用户ID，实际应该传入
-        skuId: dto.skuId,
-        quantity: dto.quantity,
-        selected: dto.selected ?? true,
-      },
-      include: {
-        user: {
-          select: { id: true, username: true, name: true },
-        },
-        sku: {
-          include: {
-            product: {
-              select: { id: true, name: true, mainImage: true },
-            },
-            inventories: {
-              select: { available: true },
-            },
-          },
-        },
-      },
-    });
-
-    return this.toCartItemVo(cart);
+    return this.findOne(cartId);
   }
 
   // 更新购物车项
   async update(id: number, dto: UpdateCartDto): Promise<CartItemVo> {
-    const cart = await this.prisma.cart.findUnique({
-      where: { id },
-      include: {
-        sku: {
-          include: {
-            inventories: {
-              select: { available: true },
-            },
-          },
+    await this.prisma.$transaction(async (tx) => {
+      const cart = await tx.cart.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          skuId: true,
+          quantity: true,
         },
-      },
-    });
+      });
 
-    if (!cart) {
-      throw new NotFoundException('购物车项不存在');
-    }
-
-    // 如果更新数量，检查库存
-    if (dto.quantity !== undefined) {
-      const totalStock = cart.sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
-      if (totalStock < dto.quantity) {
-        throw new BadRequestException('商品库存不足');
+      if (!cart) {
+        throw new NotFoundException('购物车项不存在');
       }
-    }
 
-    const updated = await this.prisma.cart.update({
-      where: { id },
-      data: {
-        quantity: dto.quantity,
-        selected: dto.selected,
-      },
-      include: {
-        user: {
-          select: { id: true, username: true, name: true },
+      if (dto.quantity !== undefined) {
+        const diff = dto.quantity - cart.quantity;
+        if (diff > 0) {
+          await this.lockSkuInventory(tx, cart.skuId, diff);
+        } else if (diff < 0) {
+          await this.releaseSkuInventory(tx, cart.skuId, Math.abs(diff));
+        }
+      }
+
+      await tx.cart.update({
+        where: { id },
+        data: {
+          quantity: dto.quantity,
+          selected: dto.selected,
         },
-        sku: {
-          include: {
-            product: {
-              select: { id: true, name: true, mainImage: true },
-            },
-            inventories: {
-              select: { available: true },
-            },
-          },
-        },
-      },
+      });
     });
 
-    return this.toCartItemVo(updated);
+    return this.findOne(id);
   }
 
   async updateForUser(userId: number, id: number, dto: UpdateCartDto): Promise<CartItemVo> {
@@ -437,16 +468,24 @@ export class CartsService {
 
   // 删除购物车项
   async remove(id: number): Promise<void> {
-    const cart = await this.prisma.cart.findUnique({
-      where: { id },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      const cart = await tx.cart.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          skuId: true,
+          quantity: true,
+        },
+      });
 
-    if (!cart) {
-      throw new NotFoundException('购物车项不存在');
-    }
+      if (!cart) {
+        throw new NotFoundException('购物车项不存在');
+      }
 
-    await this.prisma.cart.delete({
-      where: { id },
+      await this.releaseSkuInventory(tx, cart.skuId, cart.quantity);
+      await tx.cart.delete({
+        where: { id },
+      });
     });
   }
 
@@ -469,8 +508,27 @@ export class CartsService {
 
   // 清空用户购物车
   async clearByUserId(userId: number): Promise<void> {
-    await this.prisma.cart.deleteMany({
-      where: { userId },
+    await this.prisma.$transaction(async (tx) => {
+      const carts = await tx.cart.findMany({
+        where: { userId },
+        select: {
+          skuId: true,
+          quantity: true,
+        },
+      });
+
+      const quantityBySku = new Map<number, number>();
+      for (const cart of carts) {
+        quantityBySku.set(cart.skuId, (quantityBySku.get(cart.skuId) || 0) + cart.quantity);
+      }
+
+      for (const [skuId, quantity] of quantityBySku) {
+        await this.releaseSkuInventory(tx, skuId, quantity);
+      }
+
+      await tx.cart.deleteMany({
+        where: { userId },
+      });
     });
   }
 
@@ -485,10 +543,32 @@ export class CartsService {
 
   // 批量删除购物车项
   async removeBatch(ids: number[]): Promise<void> {
-    await this.prisma.cart.deleteMany({
-      where: {
-        id: { in: ids },
-      },
+    await this.prisma.$transaction(async (tx) => {
+      const carts = await tx.cart.findMany({
+        where: {
+          id: { in: ids },
+        },
+        select: {
+          id: true,
+          skuId: true,
+          quantity: true,
+        },
+      });
+
+      const quantityBySku = new Map<number, number>();
+      for (const cart of carts) {
+        quantityBySku.set(cart.skuId, (quantityBySku.get(cart.skuId) || 0) + cart.quantity);
+      }
+
+      for (const [skuId, quantity] of quantityBySku) {
+        await this.releaseSkuInventory(tx, skuId, quantity);
+      }
+
+      await tx.cart.deleteMany({
+        where: {
+          id: { in: ids },
+        },
+      });
     });
   }
 
@@ -502,7 +582,7 @@ export class CartsService {
       username: cart.user?.username || '',
       skuId: cart.skuId,
       skuCode: cart.sku.skuCode,
-      specs: cart.sku.specs as Record<string, string>,
+      specs: this.normalizeSpecs(cart.sku.specs),
       productId: cart.sku.product.id,
       productName: cart.sku.product.name,
       mainImage: await this.minioService.resolveStoredFileUrl(cart.sku.product.mainImage),

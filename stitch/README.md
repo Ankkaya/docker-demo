@@ -21,3 +21,7 @@
 - 功能目录：`商品列表页 (Product List)`
 - 页面：`a4ee73ec800148c1ad15a75ce8ac4379`（商品评价列表）
 - 功能目录：`商品评价列表 (Product Review List)`
+- 页面：`96971fa2626c433eaa0241572828f02d`（订单支付页）
+- 功能目录：`订单支付页 (Order Payment)`
+- 页面：`7b46930573e64c02a36adb0fa5123da9`（新增收货地址 Add New Address）
+- 功能目录：`新增收货地址 (Add New Address)`
