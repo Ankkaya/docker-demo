@@ -28,6 +28,7 @@
         :columns="columns"
         :data="categories"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
         default-expand-all
       />
@@ -138,6 +139,7 @@ import AppIcon from '@/components/common/AppIcon.vue'
 import IconPicker from '@/components/common/IconPicker.vue'
 import type { Category, CreateCategoryDto } from '@/types/basic-data'
 import * as Ionicons from '@vicons/ionicons5'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -288,7 +290,7 @@ const imageUploadKey = computed(() => {
 const iconPreviewUrl = computed(() => getIconPreviewUrl(form.icon))
 
 const createColumns = (): DataTableColumns<Category> => {
-  return [
+  return autoFitTableColumns([
     { title: '分类名称', key: 'name' },
     { title: '分类编码', key: 'code' },
     {
@@ -299,7 +301,6 @@ const createColumns = (): DataTableColumns<Category> => {
     {
       title: '图片',
       key: 'image',
-      width: 80,
       render: (row) => {
         if (row.image) {
           return h('img', {
@@ -313,7 +314,6 @@ const createColumns = (): DataTableColumns<Category> => {
     {
       title: '图标',
       key: 'icon',
-      width: 110,
       render: (row) => {
         if (!row.icon) return '-'
         const legacyIcon = getIconComponent(row.icon)
@@ -333,13 +333,11 @@ const createColumns = (): DataTableColumns<Category> => {
     {
       title: '层级',
       key: 'level',
-      width: 80,
     },
-    { title: '排序号', key: 'sort', width: 100 },
+    { title: '排序号', key: 'sort' },
     {
       title: '状态',
       key: 'isEnabled',
-      width: 100,
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
@@ -354,10 +352,9 @@ const createColumns = (): DataTableColumns<Category> => {
       key: 'remark',
       render: (row) => row.remark || '-',
     },
-    {
+    createActionColumn<Category>({
       title: '操作',
       key: 'actions',
-      width: 200,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -379,11 +376,12 @@ const createColumns = (): DataTableColumns<Category> => {
           ]
         })
       }
-    }
-  ]
+    }, 3)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const filterCategoryTree = (list: Category[]): Category[] => {
   const name = searchForm.name.trim().toLowerCase()

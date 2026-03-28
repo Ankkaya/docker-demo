@@ -25,6 +25,7 @@
         :columns="columns"
         :data="brands"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
     </n-card>
@@ -89,6 +90,7 @@ import { getBrands, createBrand, updateBrand, deleteBrand } from '@/api/brand'
 import { uploadFile } from '@/api/file'
 import { resolveFileUrl } from '@/utils/file-url'
 import type { Brand, CreateBrandDto } from '@/types/basic-data'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -155,8 +157,8 @@ const rules: FormRules = {
 }
 
 const createColumns = (): DataTableColumns<Brand> => {
-  return [
-    { title: 'ID', key: 'id', width: 80 },
+  return autoFitTableColumns([
+    { title: 'ID', key: 'id' },
     { title: '品牌名称', key: 'name' },
     {
       title: 'Logo',
@@ -177,11 +179,10 @@ const createColumns = (): DataTableColumns<Brand> => {
       ellipsis: { tooltip: true },
       render: (row) => row.description || '-'
     },
-    { title: '排序号', key: 'sort', width: 100 },
+    { title: '排序号', key: 'sort' },
     {
       title: '状态',
       key: 'isEnabled',
-      width: 100,
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
@@ -189,10 +190,9 @@ const createColumns = (): DataTableColumns<Brand> => {
         })
       }
     },
-    {
+    createActionColumn<Brand>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -209,11 +209,12 @@ const createColumns = (): DataTableColumns<Brand> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const applyFilters = () => {
   const name = searchForm.name.trim().toLowerCase()

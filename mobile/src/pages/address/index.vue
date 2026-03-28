@@ -24,6 +24,11 @@ const addresses = ref<CustomerAddressItem[]>([])
 const source = ref('')
 const selectedAddressId = ref<number | null>(null)
 const isSelectingForOrderPayment = computed(() => source.value === 'order-payment')
+const activeSelectedAddressId = computed(() => {
+  if (selectedAddressId.value)
+    return selectedAddressId.value
+  return checkoutStore.selectedAddress?.id ?? null
+})
 
 function getAddressIcon(tag?: string | null) {
   if (tag === '家')
@@ -58,6 +63,12 @@ async function fetchAddresses() {
   try {
     const list = await (Apis.general as any).MallAddressesController_findCurrentUserAddresses({}).send()
     addresses.value = Array.isArray(list) ? list : []
+    if (!activeSelectedAddressId.value) {
+      const currentSelected = addresses.value.find(item => item.id === checkoutStore.selectedAddress?.id)
+      if (currentSelected) {
+        selectedAddressId.value = currentSelected.id
+      }
+    }
   }
   finally {
     loading.value = false
@@ -68,13 +79,14 @@ function selectAddress(item: CustomerAddressItem) {
   if (!isSelectingForOrderPayment.value)
     return
 
+  selectedAddressId.value = item.id
   checkoutStore.setSelectedAddress({
     id: item.id,
     receiverName: item.receiverName,
     receiverPhone: item.receiverPhone,
     fullAddress: item.fullAddress,
-      tag: item.tag || null,
-      isDefault: item.isDefault,
+    tag: item.tag || null,
+    isDefault: item.isDefault,
   })
   router.replace({
     name: 'order-payment',
@@ -135,6 +147,10 @@ async function setDefault(id: number) {
   actionId.value = id
   try {
     await alovaInstance.Patch(`/mall/addresses/${id}/default`, {}).send()
+    addresses.value = addresses.value.map(item => ({
+      ...item,
+      isDefault: item.id === id,
+    }))
     toast.show('已设为默认地址')
     await fetchAddresses()
   }
@@ -144,13 +160,18 @@ async function setDefault(id: number) {
 }
 
 onShow(() => {
+  if (checkoutStore.selectedAddress?.id) {
+    selectedAddressId.value = checkoutStore.selectedAddress.id
+  }
   fetchAddresses()
 })
 
 onLoad((options) => {
   source.value = String(options?.source || '')
   const addressId = Number(options?.addressId || 0)
-  selectedAddressId.value = Number.isNaN(addressId) || addressId <= 0 ? null : addressId
+  selectedAddressId.value = Number.isNaN(addressId) || addressId <= 0
+    ? checkoutStore.selectedAddress?.id ?? null
+    : addressId
 })
 </script>
 
@@ -172,11 +193,9 @@ onLoad((options) => {
         <view v-for="item in addresses" :key="item.id"
           class="address-card mb-4 overflow-hidden rounded-[30rpx] bg-white px-5 py-5"
           :class="[
-            isSelectingForOrderPayment && selectedAddressId === item.id
-              ? 'address-card-default'
-              : isSelectingForOrderPayment && item.isDefault
-                ? 'address-card-normal'
-                : 'address-card-normal',
+            isSelectingForOrderPayment && activeSelectedAddressId === item.id
+              ? 'address-card-selected'
+              : 'address-card-normal',
           ]"
           @click="selectAddress(item)">
           <view class="flex items-start justify-between gap-3">
@@ -197,7 +216,7 @@ onLoad((options) => {
                 <view class="mt-2 flex items-center gap-2">
                   <view v-if="item.isDefault"
                     class="rounded-full bg-[#efb239]/16 px-2.5 py-1 text-[10px] text-[#b3821d] font-700 tracking-[0.16em]">
-                    DEFAULT
+                    默认地址
                   </view>
                   <view v-if="item.tag" class="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-500 font-600">
                     {{ item.tag }}
@@ -255,15 +274,38 @@ onLoad((options) => {
 }
 
 .address-card {
+  position: relative;
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.address-card-default {
+.address-card-selected {
   border: 2px solid rgba(239, 178, 57, 0.74);
+  box-shadow: 0 18px 40px rgba(239, 178, 57, 0.18);
+  transform: translateY(-2px);
 }
 
 .address-card-normal {
   border: 1px solid rgba(239, 178, 57, 0.12);
+}
+
+.address-card-selected::after {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  height: 22px;
+  min-width: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #efb239;
+  color: #fff;
+  content: '✓';
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(239, 178, 57, 0.28);
 }
 
 .address-action {

@@ -24,7 +24,7 @@
     </n-card>
 
     <n-card>
-      <n-data-table :columns="columns" :data="shipmentList" :loading="loading" :pagination="pagination" remote />
+      <n-data-table :columns="columns" :data="shipmentList" :loading="loading" :pagination="pagination" :scroll-x="tableScrollX" remote />
     </n-card>
 
     <n-modal v-model:show="modalVisible" title="创建发货单" preset="card" style="width: 800px">
@@ -42,6 +42,7 @@ import { getShipments, shipShipment, receiveShipment } from '@/api/order';
 import { getPrintErrorMessage, printShipment } from '@/services/print/print-service';
 import ShipmentForm from './components/ShipmentForm.vue';
 import type { Shipment, ShipmentStatus } from '@/types/purchase';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -58,16 +59,15 @@ const printingIds = ref<number[]>([]);
 const pagination = reactive({ page: 1, pageSize: 10, itemCount: 0 });
 const modalVisible = ref(false);
 
-const columns: DataTableColumns<Shipment> = [
-  { title: '发货单号', key: 'shipmentNo', width: 160 },
-  { title: '订单号', key: 'orderNo', width: 160 },
-  { title: '仓库', key: 'warehouseName', width: 120 },
-  { title: '物流公司', key: 'logisticsCompany', width: 120 },
-  { title: '物流单号', key: 'trackingNo', width: 150 },
+const columns: DataTableColumns<Shipment> = autoFitTableColumns([
+  { title: '发货单号', key: 'shipmentNo' },
+  { title: '订单号', key: 'orderNo' },
+  { title: '仓库', key: 'warehouseName' },
+  { title: '物流公司', key: 'logisticsCompany' },
+  { title: '物流单号', key: 'trackingNo' },
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       const map: Record<ShipmentStatus, { type: any; label: string }> = {
         PENDING: { type: 'warning', label: '待发货' },
@@ -79,10 +79,9 @@ const columns: DataTableColumns<Shipment> = [
       return h(NTag, { type: s.type, size: 'small' }, { default: () => s.label });
     },
   },
-  {
+  createActionColumn<Shipment>({
     title: '操作',
     key: 'actions',
-    width: 320,
     render(row) {
       const buttons: any[] = [];
       buttons.push(
@@ -110,8 +109,9 @@ const columns: DataTableColumns<Shipment> = [
       }
       return h(NSpace, { size: 'small' }, { default: () => buttons });
     },
-  },
-];
+  }, 2),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 const loadData = async () => {
   loading.value = true;

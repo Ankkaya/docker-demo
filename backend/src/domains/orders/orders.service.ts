@@ -379,7 +379,10 @@ export class OrdersService {
 
     const updated = await this.prisma.order.update({
       where: { id },
-      data: { status: OrderStatus.CANCELLED },
+      data: {
+        status: OrderStatus.CANCELLED,
+        ...( { cancelDate: new Date() } as any ),
+      },
       include: {
         customer: { select: { id: true, name: true } },
         items: {

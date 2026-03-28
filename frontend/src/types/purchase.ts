@@ -372,6 +372,8 @@ export interface ShipmentItem {
   skuName: string;
   productName: string;
   specs: Record<string, string>;
+  warehouseId: number;
+  warehouseName: string;
   quantity: number;
 }
 
@@ -426,10 +428,10 @@ export interface QueryOrderParams {
 // 创建发货单DTO
 export interface CreateShipmentDto {
   orderId: number;
-  warehouseId: number;
   items: {
     skuId: number;
     quantity: number;
+    warehouseId: number;
   }[];
   logisticsCompany?: string;
   trackingNo?: string;

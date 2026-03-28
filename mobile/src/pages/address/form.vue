@@ -262,8 +262,8 @@ onLoad((options) => {
             手机号
           </text>
           <view class="field-shell">
-            <input v-model="form.receiverPhone" class="field-input" maxlength="11" type="number"
-              placeholder="13800000000" placeholder-class="field-placeholder">
+            <input v-model="form.receiverPhone" class="field-input" maxlength="11" type="number" placeholder="请输入电话号码"
+              placeholder-class="field-placeholder">
             <text class="field-icon" :class="getUiIcon('phone')" />
           </view>
         </view>

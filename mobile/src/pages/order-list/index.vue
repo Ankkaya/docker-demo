@@ -14,6 +14,7 @@ definePage({
 })
 
 const router = useRouter()
+const { confirm } = useGlobalMessage()
 
 const statusTabs = [
   { key: 'all', label: '全部' },
@@ -21,6 +22,7 @@ const statusTabs = [
   { key: 'shipping', label: '待发货' },
   { key: 'receiving', label: '待收货' },
   { key: 'completed', label: '已完成' },
+  { key: 'cancelled', label: '已取消' },
 ]
 
 const activeStatus = ref('all')
@@ -158,14 +160,22 @@ function payOrder(orderId: number) {
 }
 
 async function cancelOrder(orderId: number) {
-  try {
-    await alovaInstance.Patch(`/mall/orders/${orderId}/cancel`, {}).send()
-    uni.showToast({ title: '订单已取消', icon: 'none' })
-    loadOrders()
-  }
-  catch (error: any) {
-    uni.showToast({ title: error?.message || '取消订单失败', icon: 'none' })
-  }
+  confirm({
+    title: '确认取消订单',
+    msg: '取消后订单将关闭，是否继续？',
+    confirmButtonText: '确认取消',
+    cancelButtonText: '再想想',
+    success: async () => {
+      try {
+        await alovaInstance.Patch(`/mall/orders/${orderId}/cancel`, {}).send()
+        uni.showToast({ title: '订单已取消', icon: 'none' })
+        loadOrders()
+      }
+      catch (error: any) {
+        uni.showToast({ title: error?.message || '取消订单失败', icon: 'none' })
+      }
+    },
+  })
 }
 
 async function confirmReceive(orderId: number) {
@@ -186,7 +196,7 @@ function buyAgain(order: typeof orders.value[number]) {
 
   router.push({
     name: 'product-detail',
-    query: {
+    params: {
       id: String(firstItem.productId),
     },
   })

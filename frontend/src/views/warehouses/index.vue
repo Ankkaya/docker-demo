@@ -28,6 +28,7 @@
         :columns="columns"
         :data="warehouses"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
     </n-card>
@@ -89,6 +90,7 @@ import QueryForm from '@/components/common/QueryForm.vue'
 import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse } from '@/api/warehouse'
 import type { Warehouse, CreateWarehouseDto } from '@/types/basic-data'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -134,8 +136,8 @@ const rules: FormRules = {
 }
 
 const createColumns = (): DataTableColumns<Warehouse> => {
-  return [
-    { title: 'ID', key: 'id', width: 80 },
+  return autoFitTableColumns([
+    { title: 'ID', key: 'id' },
     { title: '仓库名称', key: 'name' },
     { title: '仓库编码', key: 'code' },
     {
@@ -157,7 +159,6 @@ const createColumns = (): DataTableColumns<Warehouse> => {
     {
       title: '默认',
       key: 'isDefault',
-      width: 80,
       render: (row) => {
         if (row.isDefault) {
           return h(NTag, { type: 'success', size: 'small' }, { default: () => '是' })
@@ -168,7 +169,6 @@ const createColumns = (): DataTableColumns<Warehouse> => {
     {
       title: '状态',
       key: 'isEnabled',
-      width: 100,
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
@@ -176,10 +176,9 @@ const createColumns = (): DataTableColumns<Warehouse> => {
         })
       }
     },
-    {
+    createActionColumn<Warehouse>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -196,11 +195,12 @@ const createColumns = (): DataTableColumns<Warehouse> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const applyFilters = () => {
   const name = searchForm.name.trim().toLowerCase()

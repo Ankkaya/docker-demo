@@ -50,7 +50,7 @@ async function loadFavorites() {
     const result = await (Apis.general as any).MallFavoritesController_findFavorites({
       params: {
         page: 1,
-        pageSize: 100,
+        pageSize: 50,
       },
     }).send()
     favorites.value = Array.isArray(result?.data) ? result.data : []

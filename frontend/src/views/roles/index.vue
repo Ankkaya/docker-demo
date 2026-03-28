@@ -8,6 +8,7 @@
         :columns="columns"
         :data="roles"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
     </n-card>
@@ -55,6 +56,7 @@ import { NButton, NSpace } from 'naive-ui'
 import dayjs from 'dayjs'
 import { getRoles, createRole, updateRole, deleteRole } from '@/api/roles'
 import type { Role } from '@/types'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -84,8 +86,8 @@ const rules: FormRules = {
 
 // 表格列定义
 const createColumns = (): DataTableColumns<Role> => {
-  return [
-    { title: 'ID', key: 'id', width: 80 },
+  return autoFitTableColumns([
+    { title: 'ID', key: 'id' },
     { title: '角色名称', key: 'name' },
     { title: '角色编码', key: 'code' },
     {
@@ -98,10 +100,9 @@ const createColumns = (): DataTableColumns<Role> => {
       key: 'createdAt',
       render: (row) => formatDate(row.createdAt)
     },
-    {
+    createActionColumn<Role>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -118,11 +119,12 @@ const createColumns = (): DataTableColumns<Role> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const fetchRoles = async () => {
   loading.value = true

@@ -63,7 +63,7 @@
         :data="inventoryList"
         :loading="loading"
         :pagination="pagination"
-        :scroll-x="1800"
+        :scroll-x="tableScrollX"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -136,6 +136,7 @@ import { getInventories, getInventoryStats, getInventoryWarnings, updateInventor
 import { getWarehouses } from '@/api/warehouse';
 import type { Inventory, QueryInventoryParams } from '@/types/product';
 import type { Warehouse } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 type InventoryRow = Inventory & {
@@ -217,11 +218,10 @@ const editForm = reactive({
 });
 
 // 表格列定义
-const columns: DataTableColumns<InventoryRow> = [
+const columns: DataTableColumns<InventoryRow> = autoFitTableColumns([
   {
     title: 'SPU编码',
     key: 'spuCode',
-    width: 150,
     render(row) {
       return row.sku?.product?.spuCode || '-';
     },
@@ -229,7 +229,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '商品名称',
     key: 'productName',
-    width: 180,
     render(row) {
       return row.sku?.product?.name || row.productName || '-';
     },
@@ -237,7 +236,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: 'SKU编码',
     key: 'skuCode',
-    width: 160,
     render(row) {
       return row.sku?.skuCode || row.skuCode || '-';
     },
@@ -245,7 +243,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '规格',
     key: 'specs',
-    width: 220,
     render(row) {
       return formatSpecs(row.sku?.specs ?? row.specs);
     },
@@ -253,7 +250,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '单位',
     key: 'unitName',
-    width: 90,
     render(row) {
       return row.sku?.product?.unit?.name || '-';
     },
@@ -261,7 +257,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '仓库编码',
     key: 'warehouseCode',
-    width: 140,
     render(row) {
       return row.warehouse?.code || '-';
     },
@@ -269,7 +264,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '仓库名称',
     key: 'warehouseName',
-    width: 140,
     render(row) {
       return row.warehouse?.name || row.warehouseName || '-';
     },
@@ -277,17 +271,14 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '实际库存',
     key: 'quantity',
-    width: 100,
   },
   {
     title: '锁定库存',
     key: 'locked',
-    width: 100,
   },
   {
     title: '可用库存',
     key: 'available',
-    width: 100,
     render(row) {
       return h(NTag, { type: row.available <= row.minStock ? 'error' : 'success', size: 'small' }, {
         default: () => row.available,
@@ -297,12 +288,10 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '安全库存',
     key: 'minStock',
-    width: 100,
   },
   {
     title: '库存上限',
     key: 'maxStock',
-    width: 100,
     render(row) {
       return row.maxStock ?? '-';
     },
@@ -310,7 +299,6 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '库位',
     key: 'location',
-    width: 120,
     render(row) {
       return row.location || '-';
     },
@@ -318,15 +306,13 @@ const columns: DataTableColumns<InventoryRow> = [
   {
     title: '更新时间',
     key: 'updatedAt',
-    width: 180,
     render(row) {
       return formatDateTime(row.updatedAt);
     },
   },
-  {
+  createActionColumn<InventoryRow>({
     title: '操作',
     key: 'actions',
-    width: 120,
     fixed: 'right',
     render(row) {
       return h(NSpace, null, {
@@ -335,8 +321,9 @@ const columns: DataTableColumns<InventoryRow> = [
         ],
       });
     },
-  },
-];
+  }, 1),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 const formatSpecs = (
   specs?: Record<string, string> | Array<{ name: string; value: string }> | null,

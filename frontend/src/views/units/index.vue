@@ -25,6 +25,7 @@
         :columns="columns"
         :data="units"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
     </n-card>
@@ -72,6 +73,7 @@ import { NButton, NSpace } from 'naive-ui'
 import QueryForm from '@/components/common/QueryForm.vue'
 import { getUnits, createUnit, updateUnit, deleteUnit } from '@/api/unit'
 import type { Unit, CreateUnitDto } from '@/types/basic-data'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -104,15 +106,14 @@ const rules: FormRules = {
 }
 
 const createColumns = (): DataTableColumns<Unit> => {
-  return [
-    { title: 'ID', key: 'id', width: 80 },
+  return autoFitTableColumns([
+    { title: 'ID', key: 'id' },
     { title: '单位名称', key: 'name' },
     { title: '单位编码', key: 'code' },
-    { title: '排序号', key: 'sort', width: 100 },
-    {
+    { title: '排序号', key: 'sort' },
+    createActionColumn<Unit>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -129,11 +130,12 @@ const createColumns = (): DataTableColumns<Unit> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const applyFilters = () => {
   const name = searchForm.name.trim().toLowerCase()

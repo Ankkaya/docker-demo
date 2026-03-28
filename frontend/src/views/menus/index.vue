@@ -8,6 +8,7 @@
         :columns="columns"
         :data="menus"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
         :row-key="(row: Menu) => row.id"
         default-expand-all
@@ -91,6 +92,7 @@ import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import AppIcon from '@/components/common/AppIcon.vue'
 import type { Menu, CreateMenuDto } from '@/types'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -162,18 +164,16 @@ const getTypeTagType = (type: string): 'default' | 'error' | 'primary' | 'info' 
 
 // 表格列定义
 const createColumns = (): DataTableColumns<Menu> => {
-  return [
-    { title: '菜单名称', key: 'name', minWidth: 150 },
+  return autoFitTableColumns([
+    { title: '菜单名称', key: 'name' },
     {
       title: '路由路径',
       key: 'path',
-      minWidth: 120,
       render: (row) => row.path || '-'
     },
     {
       title: '图标',
       key: 'icon',
-      width: 180,
       render: (row) => {
         if (!row.icon) return '-'
         return h('div', { class: 'flex items-center gap-2' }, [
@@ -182,25 +182,22 @@ const createColumns = (): DataTableColumns<Menu> => {
         ])
       }
     },
-    { title: '排序', key: 'order', width: 80, align: 'center' },
+    { title: '排序', key: 'order', align: 'center' },
     {
       title: '类型',
       key: 'type',
-      width: 100,
       align: 'center',
       render: (row) => h(NTag, { type: getTypeTagType(row.type) }, { default: () => getTypeLabel(row.type) })
     },
     {
       title: '隐藏',
       key: 'hidden',
-      width: 80,
       align: 'center',
       render: (row) => h(NTag, { type: row.hidden ? 'error' : 'success', size: 'small' }, { default: () => row.hidden ? '是' : '否' })
     },
-    {
+    createActionColumn<Menu>({
       title: '操作',
       key: 'actions',
-      width: 240,
       align: 'center',
       render: (row) => {
         return h(NSpace, { justify: 'center' }, {
@@ -223,11 +220,12 @@ const createColumns = (): DataTableColumns<Menu> => {
           ]
         })
       }
-    }
-  ]
+    }, 3)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const fetchMenus = async () => {
   loading.value = true

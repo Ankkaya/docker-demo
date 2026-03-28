@@ -7,22 +7,12 @@
           <n-input v-model:value="searchForm.keyword" placeholder="订单号" clearable />
         </n-form-item>
         <n-form-item label="客户">
-          <n-select
-            v-model:value="searchForm.customerId"
-            :options="customerOptions"
-            placeholder="选择客户"
-            clearable
-            style="width: 180px"
-          />
+          <n-select v-model:value="searchForm.customerId" :options="customerOptions" placeholder="选择客户" clearable
+            style="width: 180px" />
         </n-form-item>
         <n-form-item label="状态">
-          <n-select
-            v-model:value="searchForm.status"
-            :options="statusOptions"
-            placeholder="选择状态"
-            clearable
-            style="width: 150px"
-          />
+          <n-select v-model:value="searchForm.status" :options="statusOptions" placeholder="选择状态" clearable
+            style="width: 150px" />
         </n-form-item>
         <n-form-item>
           <n-space>
@@ -42,31 +32,15 @@
 
     <!-- 订单列表 -->
     <n-card>
-      <n-data-table
-        :columns="columns"
-        :data="orderList"
-        :loading="loading"
-        :pagination="pagination"
-        @update:page="handlePageChange"
-        @update:page-size="handlePageSizeChange"
-        remote
-      />
+      <n-data-table :columns="columns" :data="orderList" :loading="loading" :pagination="pagination" :scroll-x="tableScrollX"
+        @update:page="handlePageChange" @update:page-size="handlePageSizeChange" remote />
     </n-card>
 
     <!-- 创建/编辑弹窗 -->
-    <n-modal
-      v-model:show="modalVisible"
-      :title="modalTitle"
-      preset="card"
-      style="width: 900px; max-width: 95vw"
-      :mask-closable="false"
-    >
-      <OrderForm
-        v-if="modalVisible"
-        :initial-data="currentOrder"
-        @success="handleFormSuccess"
-        @cancel="modalVisible = false"
-      />
+    <n-modal v-model:show="modalVisible" :title="modalTitle" preset="card" style="width: 900px; max-width: 95vw"
+      :mask-closable="false">
+      <OrderForm v-if="modalVisible" :initial-data="currentOrder" @success="handleFormSuccess"
+        @cancel="modalVisible = false" />
     </n-modal>
 
     <!-- 详情抽屉 -->
@@ -90,6 +64,7 @@ import OrderForm from './components/OrderForm.vue';
 import OrderDetail from './components/OrderDetail.vue';
 import type { Order, OrderStatus } from '@/types/purchase';
 import type { Customer } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -132,21 +107,18 @@ const detailVisible = ref(false);
 const currentOrderId = ref<number>(0);
 
 // 表格列定义
-const columns: DataTableColumns<Order> = [
+const columns: DataTableColumns<Order> = autoFitTableColumns([
   {
     title: '订单号',
     key: 'orderNo',
-    width: 160,
   },
   {
     title: '客户',
     key: 'customerName',
-    width: 150,
   },
   {
     title: '订单金额',
     key: 'totalAmount',
-    width: 120,
     render(row) {
       return `¥${row.totalAmount.toFixed(2)}`;
     },
@@ -154,7 +126,6 @@ const columns: DataTableColumns<Order> = [
   {
     title: '应付金额',
     key: 'payable',
-    width: 120,
     render(row) {
       return `¥${row.payable.toFixed(2)}`;
     },
@@ -162,7 +133,6 @@ const columns: DataTableColumns<Order> = [
   {
     title: '已付金额',
     key: 'paid',
-    width: 120,
     render(row) {
       return `¥${row.paid.toFixed(2)}`;
     },
@@ -170,7 +140,6 @@ const columns: DataTableColumns<Order> = [
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       const statusMap: Record<OrderStatus, { type: 'default' | 'warning' | 'success' | 'error'; label: string }> = {
         PENDING: { type: 'warning', label: '待处理' },
@@ -189,19 +158,17 @@ const columns: DataTableColumns<Order> = [
   {
     title: '下单日期',
     key: 'orderDate',
-    width: 160,
     render(row) {
       return new Date(row.orderDate).toLocaleString();
     },
   },
-  {
+  createActionColumn<Order>({
     title: '操作',
     key: 'actions',
-    width: 380,
     fixed: 'right',
     render(row) {
       const buttons: any[] = [];
-      
+
       // 详情按钮
       buttons.push(
         h(NButton, { size: 'small', onClick: () => handleDetail(row) }, { default: () => '详情' })
@@ -219,7 +186,7 @@ const columns: DataTableColumns<Order> = [
           { default: () => '打印' },
         ),
       );
-      
+
       // 待处理状态的操作
       if (row.status === 'PENDING') {
         buttons.push(
@@ -235,18 +202,19 @@ const columns: DataTableColumns<Order> = [
           )
         );
       }
-      
+
       // 已确认/处理中状态的操作
       if (row.status === 'CONFIRMED' || row.status === 'PROCESSING') {
         buttons.push(
           h(NButton, { size: 'small', type: 'warning', onClick: () => handleCancel(row) }, { default: () => '取消' })
         );
       }
-      
+
       return h(NSpace, { size: 'small' }, { default: () => buttons });
     },
-  },
-];
+  }, 5),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 加载列表
 const loadData = async () => {

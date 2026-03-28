@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ShipmentsService } from './shipments.service';
-import { CreateShipmentDto, ConfirmShipmentDto } from './dto/create-shipment.dto';
+import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { QueryShipmentDto } from './dto/query-shipment.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
@@ -25,7 +25,7 @@ export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
 
   @Post()
-  @ApiOperation({ summary: '创建发货单（不指定仓库）' })
+  @ApiOperation({ summary: '创建发货单（为每个SKU指定发货仓库）' })
   create(@Body() createDto: CreateShipmentDto, @Req() req: any) {
     return this.shipmentsService.create(createDto, req.user.userId);
   }
@@ -43,13 +43,9 @@ export class ShipmentsController {
   }
 
   @Patch(':id/ship')
-  @ApiOperation({ summary: '确认发货（指定各商品出库仓库）' })
-  ship(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() confirmDto: ConfirmShipmentDto,
-    @Req() req: any,
-  ) {
-    return this.shipmentsService.ship(id, confirmDto.items, req.user.userId);
+  @ApiOperation({ summary: '确认发货' })
+  ship(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return this.shipmentsService.ship(id, req.user.userId);
   }
 
   @Patch(':id/receive')

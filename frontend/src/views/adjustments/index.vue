@@ -41,6 +41,7 @@
         :data="adjustmentList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="tableScrollX"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -252,6 +253,7 @@ import { getAdjustments, createAdjustment, auditAdjustment, completeAdjustment, 
 import { getWarehouses } from '@/api/warehouse';
 import { getInventories } from '@/api/inventory';
 import type { Warehouse } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -350,26 +352,24 @@ const detailModalVisible = ref(false);
 const currentAdjustment = ref<Adjustment | null>(null);
 
 // 表格列定义
-const columns: DataTableColumns<Adjustment> = [
-  { title: '调整单号', key: 'adjustNo', width: 180 },
-  { title: '仓库', key: 'warehouseName', width: 120 },
+const columns: DataTableColumns<Adjustment> = autoFitTableColumns([
+  { title: '调整单号', key: 'adjustNo' },
+  { title: '仓库', key: 'warehouseName' },
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       return h(NTag, { type: getStatusType(row.status), size: 'small' }, {
         default: () => getStatusText(row.status),
       });
     },
   },
-  { title: '商品种类', key: 'items', width: 100, render(row) { return row.items?.length || 0; } },
+  { title: '商品种类', key: 'items', render(row) { return row.items?.length || 0; } },
   { title: '备注', key: 'remark', ellipsis: { tooltip: true } },
-  { title: '创建时间', key: 'createdAt', width: 180 },
-  {
+  { title: '创建时间', key: 'createdAt' },
+  createActionColumn<Adjustment>({
     title: '操作',
     key: 'actions',
-    width: 250,
     fixed: 'right',
     render(row) {
       return h(NSpace, null, {
@@ -381,8 +381,9 @@ const columns: DataTableColumns<Adjustment> = [
         ],
       });
     },
-  },
-];
+  }, 4),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 获取差异标签类型
 function getDiffTagType(diffQty: number) {

@@ -50,6 +50,7 @@
         :data="transferList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="tableScrollX"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -228,6 +229,7 @@ import { getTransfers, createTransfer, confirmOut, confirmIn, cancelTransfer, ty
 import { getWarehouses } from '@/api/warehouse';
 import { getInventories } from '@/api/inventory';
 import type { Warehouse } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -323,14 +325,13 @@ const detailModalVisible = ref(false);
 const currentTransfer = ref<Transfer | null>(null);
 
 // 表格列定义
-const columns: DataTableColumns<Transfer> = [
-  { title: '调拨单号', key: 'transferNo', width: 180 },
-  { title: '出库仓库', key: 'fromName', width: 120 },
-  { title: '入库仓库', key: 'toName', width: 120 },
+const columns: DataTableColumns<Transfer> = autoFitTableColumns([
+  { title: '调拨单号', key: 'transferNo' },
+  { title: '出库仓库', key: 'fromName' },
+  { title: '入库仓库', key: 'toName' },
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       return h(NTag, { type: getStatusType(row.status), size: 'small' }, {
         default: () => getStatusText(row.status),
@@ -338,11 +339,10 @@ const columns: DataTableColumns<Transfer> = [
     },
   },
   { title: '备注', key: 'remark', ellipsis: { tooltip: true } },
-  { title: '创建时间', key: 'createdAt', width: 180 },
-  {
+  { title: '创建时间', key: 'createdAt' },
+  createActionColumn<Transfer>({
     title: '操作',
     key: 'actions',
-    width: 200,
     fixed: 'right',
     render(row) {
       return h(NSpace, null, {
@@ -354,8 +354,9 @@ const columns: DataTableColumns<Transfer> = [
         ],
       });
     },
-  },
-];
+  }, 4),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 获取状态类型
 function getStatusType(status: string) {

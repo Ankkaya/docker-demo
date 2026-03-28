@@ -31,6 +31,7 @@
         :columns="columns"
         :data="suppliers"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
     </n-card>
@@ -128,6 +129,7 @@ import QueryForm from '@/components/common/QueryForm.vue'
 import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/api/supplier'
 import type { Supplier, CreateSupplierDto } from '@/types/basic-data'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -181,7 +183,7 @@ const rules: FormRules = {
 }
 
 const createColumns = (): DataTableColumns<Supplier> => {
-  return [
+  return autoFitTableColumns([
     { title: '供应商名称', key: 'name' },
     { title: '供应商编码', key: 'code' },
     {
@@ -207,7 +209,6 @@ const createColumns = (): DataTableColumns<Supplier> => {
     {
       title: '状态',
       key: 'isEnabled',
-      width: 100,
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
@@ -215,10 +216,9 @@ const createColumns = (): DataTableColumns<Supplier> => {
         })
       }
     },
-    {
+    createActionColumn<Supplier>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -235,11 +235,12 @@ const createColumns = (): DataTableColumns<Supplier> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const applyFilters = () => {
   const name = searchForm.name.trim().toLowerCase()

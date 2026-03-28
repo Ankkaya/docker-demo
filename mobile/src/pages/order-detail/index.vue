@@ -41,7 +41,7 @@ interface OrderViewItem {
 }
 
 interface OrderViewTimelineItem {
-  time: string
+  time?: string
   text: string
 }
 
@@ -304,7 +304,6 @@ function resolveTimeline(detail: MallOrderDetail, statusLabel: OrderViewStatus):
 
   if (statusLabel === '待发货') {
     list.push({
-      time: formatDateTime(detail.payDate || detail.orderDate).slice(0, 16),
       text: '商家备货中',
     })
   }
@@ -325,7 +324,7 @@ function resolveTimeline(detail: MallOrderDetail, statusLabel: OrderViewStatus):
 
   if (statusLabel === '已取消') {
     list.push({
-      time: formatDateTime(detail.orderDate).slice(0, 16),
+      time: detail.cancelDate ? formatDateTime(detail.cancelDate).slice(0, 16) : undefined,
       text: '订单已取消',
     })
   }
@@ -388,7 +387,7 @@ function openProduct(item: OrderViewItem) {
 
   router.push({
     name: 'product-detail',
-    query: {
+    params: {
       id: String(item.productId),
     },
   })
@@ -533,6 +532,7 @@ const orderInfoRows = computed(() => {
     { label: '下单时间', value: formatDateTime(orderDetail.value.orderDate) || '-' },
     { label: '支付方式', value: resolvePaymentMethodLabel(orderDetail.value.paymentMethod) },
     { label: '支付时间', value: orderDetail.value.payDate ? formatDateTime(orderDetail.value.payDate) : '-' },
+    { label: '取消时间', value: orderDetail.value.cancelDate ? formatDateTime(orderDetail.value.cancelDate) : '-' },
     { label: '发货时间', value: orderDetail.value.shipDate ? formatDateTime(orderDetail.value.shipDate) : '-' },
     { label: '收货时间', value: orderDetail.value.receiveDate ? formatDateTime(orderDetail.value.receiveDate) : '-' },
     { label: '订单状态', value: orderStatusLabel.value },
@@ -603,7 +603,8 @@ onUnload(() => {
             </view>
 
             <view class="mt-5">
-              <view v-for="(item, index) in orderTimeline" :key="item.time" class="grid grid-cols-[26px_1fr] gap-x-3">
+              <view v-for="(item, index) in orderTimeline" :key="`${item.text}-${index}`"
+                class="grid grid-cols-[26px_1fr] gap-x-3">
                 <view class="flex flex-col items-center">
                   <view class="size-3 rounded-full border-2 border-[#efb239] bg-white" />
                   <view v-if="index !== orderTimeline.length - 1" class="mt-1 h-8 w-px bg-[#efb239]/30" />
@@ -612,7 +613,7 @@ onUnload(() => {
                   <text class="block text-sm font-semibold text-slate-800">
                     {{ item.text }}
                   </text>
-                  <text class="mt-1 block text-xs text-slate-500">
+                  <text v-if="item.time" class="mt-1 block text-xs text-slate-500">
                     {{ item.time }}
                   </text>
                 </view>
@@ -741,7 +742,8 @@ onUnload(() => {
 
     <view v-if="showBottomActions"
       class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-[#efb239]/8 bg-white/95 p-4 pb-6 backdrop-blur-md">
-      <view class="flex-1 rounded-full border border-solid border-slate-200 bg-white py-3 text-center text-sm text-slate-700 font-semibold"
+      <view
+        class="flex-1 rounded-full border border-solid border-slate-200 bg-white py-3 text-center text-sm text-slate-700 font-semibold"
         @click="cancelOrder">
         {{ secondaryActionLabel }}
       </view>

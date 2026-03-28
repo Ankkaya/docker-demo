@@ -47,6 +47,7 @@
         :data="purchaseList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="tableScrollX"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -89,6 +90,7 @@ import PurchaseForm from './components/PurchaseForm.vue';
 import PurchaseDetail from './components/PurchaseDetail.vue';
 import type { Purchase, PurchaseStatus } from '@/types/purchase';
 import type { Supplier } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -159,26 +161,22 @@ const unwrapList = <T>(payload: unknown): T[] => {
 };
 
 // 表格列定义
-const columns: DataTableColumns<Purchase> = [
+const columns: DataTableColumns<Purchase> = autoFitTableColumns([
   {
     title: '采购单号',
     key: 'orderNo',
-    width: 160,
   },
   {
     title: '供应商',
     key: 'supplierName',
-    width: 150,
   },
   {
     title: '入库仓库',
     key: 'warehouseName',
-    width: 120,
   },
   {
     title: '总金额',
     key: 'totalAmount',
-    width: 120,
     render(row) {
       return `¥${row.totalAmount.toFixed(2)}`;
     },
@@ -186,7 +184,6 @@ const columns: DataTableColumns<Purchase> = [
   {
     title: '应付金额',
     key: 'payable',
-    width: 120,
     render(row) {
       return `¥${row.payable.toFixed(2)}`;
     },
@@ -194,7 +191,6 @@ const columns: DataTableColumns<Purchase> = [
   {
     title: '已付金额',
     key: 'paid',
-    width: 120,
     render(row) {
       return `¥${row.paid.toFixed(2)}`;
     },
@@ -202,7 +198,6 @@ const columns: DataTableColumns<Purchase> = [
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       const statusMap: Record<PurchaseStatus, { type: 'default' | 'warning' | 'success' | 'error'; label: string }> = {
         PENDING: { type: 'warning', label: '待审核' },
@@ -218,15 +213,13 @@ const columns: DataTableColumns<Purchase> = [
   {
     title: '下单日期',
     key: 'orderDate',
-    width: 160,
     render(row) {
       return new Date(row.orderDate).toLocaleString();
     },
   },
-  {
+  createActionColumn<Purchase>({
     title: '操作',
     key: 'actions',
-    width: 280,
     fixed: 'right',
     render(row) {
       const buttons: any[] = [];
@@ -261,8 +254,9 @@ const columns: DataTableColumns<Purchase> = [
       
       return h(NSpace, { size: 'small' }, { default: () => buttons });
     },
-  },
-];
+  }, 4),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 加载列表
 const loadData = async () => {

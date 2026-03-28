@@ -6,6 +6,8 @@ export class ShipmentItemVo {
   skuName: string;
   productName: string;
   specs: Record<string, string>;
+  warehouseId: number;
+  warehouseName: string;
   quantity: number;
 
   static fromEntity(entity: any): ShipmentItemVo {
@@ -16,6 +18,8 @@ export class ShipmentItemVo {
     vo.skuName = entity.sku?.product?.name || '';
     vo.productName = entity.sku?.product?.name || '';
     vo.specs = (entity.sku?.specs as Record<string, string>) || {};
+    vo.warehouseId = entity.warehouseId;
+    vo.warehouseName = entity.warehouse?.name || '';
     vo.quantity = entity.quantity;
     return vo;
   }
@@ -43,12 +47,24 @@ export class ShipmentVo {
 
   static fromEntity(entity: any): ShipmentVo {
     const vo = new ShipmentVo();
+    const itemWarehouseNames = Array.isArray(entity.items)
+      ? Array.from(
+          new Set(
+            entity.items
+              .map((item: any) => item.warehouse?.name)
+              .filter(Boolean),
+          ),
+        )
+      : [];
+
     vo.id = entity.id;
     vo.shipmentNo = entity.shipmentNo;
     vo.orderId = entity.orderId;
     vo.orderNo = entity.order?.orderNo || '';
     vo.warehouseId = entity.warehouseId;
-    vo.warehouseName = entity.warehouse?.name || '';
+    vo.warehouseName = itemWarehouseNames.length > 1
+      ? '多仓发货'
+      : itemWarehouseNames[0] || entity.warehouse?.name || '';
     vo.logisticsCompany = entity.logisticsCompany || undefined;
     vo.trackingNo = entity.trackingNo || undefined;
     vo.status = entity.status;

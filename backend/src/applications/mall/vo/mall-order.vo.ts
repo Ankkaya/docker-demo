@@ -86,6 +86,9 @@ export class MallOrderDetailVo extends MallOrderListItemVo {
   @ApiProperty({ description: '支付时间', nullable: true })
   payDate?: Date | null;
 
+  @ApiProperty({ description: '取消时间', nullable: true })
+  cancelDate?: Date | null;
+
   @ApiProperty({ description: '发货时间', nullable: true })
   shipDate?: Date | null;
 

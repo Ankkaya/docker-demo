@@ -1,0 +1,2 @@
+ALTER TABLE "Order"
+ADD COLUMN "cancelDate" TIMESTAMP(3);

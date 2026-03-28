@@ -114,7 +114,7 @@ async function loadCategories() {
 
     syncActiveCategory()
   }
-  catch {}
+  catch { }
 }
 
 function syncActiveCategory() {
@@ -141,7 +141,7 @@ function onCategoryChange(index: number) {
 function onSubCategoryClick(subCategory: any) {
   router.push({
     name: 'product-list',
-    query: {
+    params: {
       title: subCategory.name.replace('\n', ' '),
       categoryId: String(subCategory.id),
     },
@@ -215,7 +215,7 @@ const currentSubCategories = computed(() => {
               <view class="from-black-30 via-black-20 absolute inset-0 to-transparent bg-gradient-to-br" />
               <!-- Content -->
               <view class="absolute inset-0 flex flex-col justify-between p-4">
-                <view>
+                <view class="break-all">
                   <text class="whitespace-pre-line text-lg text-white font-bold leading-tight">
                     {{ sub.name }}
                   </text>

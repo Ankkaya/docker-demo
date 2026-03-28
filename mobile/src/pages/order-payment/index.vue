@@ -168,13 +168,13 @@ async function loadDefaultAddress() {
 
     checkoutStore.setSelectedAddress(deliveryAddress.value
       ? {
-          id: deliveryAddress.value.id,
-          receiverName: deliveryAddress.value.receiverName,
-          receiverPhone: deliveryAddress.value.receiverPhone,
-          fullAddress: deliveryAddress.value.fullAddress,
-          tag: deliveryAddress.value.tag,
-          isDefault: deliveryAddress.value.isDefault,
-        }
+        id: deliveryAddress.value.id,
+        receiverName: deliveryAddress.value.receiverName,
+        receiverPhone: deliveryAddress.value.receiverPhone,
+        fullAddress: deliveryAddress.value.fullAddress,
+        tag: deliveryAddress.value.tag,
+        isDefault: deliveryAddress.value.isDefault,
+      }
       : null)
   }
   catch {
@@ -193,7 +193,7 @@ function openAddressList() {
 
   router.push({
     name: 'address',
-    query: {
+    params: {
       source: 'order-payment',
       addressId: deliveryAddress.value ? String(deliveryAddress.value.id) : '',
     },
@@ -295,9 +295,9 @@ async function openPaymentPopup() {
       items: orderSummary.value.source === 'cart'
         ? undefined
         : checkoutItems.value.map(item => ({
-            skuId: item.skuId,
-            quantity: item.quantity,
-          })),
+          skuId: item.skuId,
+          quantity: item.quantity,
+        })),
     }
 
     const order = await (Apis.general as any).MallOrdersController_createOrder({
@@ -395,7 +395,7 @@ onLoad((options) => {
   }
 
   if (orderSummary.value.source === 'order' && orderSummary.value.orderId) {
-    ;(Apis.general as any).MallOrdersController_findOrderDetail({
+    ; (Apis.general as any).MallOrdersController_findOrderDetail({
       pathParams: { id: orderSummary.value.orderId },
     }).send().then((detail: any) => {
       checkoutStore.setPayload({
@@ -420,26 +420,26 @@ onLoad((options) => {
       orderSummary.value.expireAt = String(detail.expireAt || '')
       deliveryAddress.value = detail.receiverAddress
         ? {
-            id: 0,
-            customerId: 0,
-            receiverName: detail.receiverName || '',
-            receiverPhone: detail.receiverPhone || '',
-            province: '',
-            city: '',
-            district: '',
-            address: detail.receiverAddress,
-            fullAddress: detail.receiverAddress,
-            postalCode: '',
-            tag: null,
-            isDefault: false,
-            sort: 0,
-            remark: '',
-            createdAt: '',
-            updatedAt: '',
-          }
+          id: 0,
+          customerId: 0,
+          receiverName: detail.receiverName || '',
+          receiverPhone: detail.receiverPhone || '',
+          province: '',
+          city: '',
+          district: '',
+          address: detail.receiverAddress,
+          fullAddress: detail.receiverAddress,
+          postalCode: '',
+          tag: null,
+          isDefault: false,
+          sort: 0,
+          remark: '',
+          createdAt: '',
+          updatedAt: '',
+        }
         : null
       syncCountdownByExpireAt(orderSummary.value.expireAt)
-    }).catch(() => {})
+    }).catch(() => { })
   }
 
   syncSelectedAddressFromStore()
@@ -608,8 +608,7 @@ onShow(() => {
       <view class="mx-auto max-w-[390px]">
         <view
           class="flex items-center justify-center gap-2 rounded-full bg-[#efb239] py-4 text-lg font-bold text-white shadow-lg shadow-orange-200 active:scale-[0.99]"
-          :class="creatingOrder ? 'opacity-75' : ''"
-          @click="openPaymentPopup">
+          :class="creatingOrder ? 'opacity-75' : ''" @click="openPaymentPopup">
           <text>{{ creatingOrder ? '创建订单中...' : '立即支付' }}</text>
           <text class="font-normal text-white/80">|</text>
           <text>¥{{ payableAmount.toFixed(2) }}</text>
@@ -617,15 +616,8 @@ onShow(() => {
       </view>
     </view>
 
-    <wd-popup
-      v-model="paymentPopupVisible"
-      position="bottom"
-      safe-area-inset-bottom
-      custom-class="order-payment-popup"
-      lock-scroll
-      root-portal
-      :z-index="2100"
-    >
+    <wd-popup v-model="paymentPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
+      lock-scroll root-portal :z-index="2100">
       <view class="order-payment-popup__panel">
         <view class="order-payment-popup__handle" />
         <view class="order-payment-popup__title">
@@ -649,13 +641,9 @@ onShow(() => {
         </view>
 
         <view class="order-payment-popup__methods">
-          <view
-            v-for="item in paymentMethods"
-            :key="item.key"
-            class="order-payment-popup__method"
+          <view v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="selectedPayment = item.key"
-          >
+            @click="selectedPayment = item.key">
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">
                 <text class="text-[22px] leading-none" :class="item.iconClass" />
@@ -677,10 +665,7 @@ onShow(() => {
           </view>
         </view>
 
-        <view
-          class="order-payment-popup__submit"
-          @click="payNow"
-        >
+        <view class="order-payment-popup__submit" @click="payNow">
           <text>立即支付</text>
           <text class="font-normal text-white/80">|</text>
           <text>¥{{ orderSummary.amount.toFixed(2) }}</text>

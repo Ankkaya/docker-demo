@@ -18,9 +18,13 @@ export class ShipmentItemDto {
   @IsInt()
   @Min(1)
   quantity: number;
+
+  @IsInt()
+  @IsNotEmpty()
+  warehouseId: number;
 }
 
-// 创建发货单DTO - 不需要指定仓库
+// 创建发货单DTO
 export class CreateShipmentDto {
   @IsInt()
   @IsNotEmpty()
@@ -42,27 +46,4 @@ export class CreateShipmentDto {
   @IsString()
   @IsOptional()
   remark?: string;
-}
-
-// 确认发货时的明细项 - 包含仓库信息
-export class ShipmentItemWithWarehouseDto {
-  @IsInt()
-  @IsNotEmpty()
-  skuId: number;
-
-  @IsInt()
-  @Min(1)
-  quantity: number;
-
-  @IsInt()
-  @IsNotEmpty()
-  warehouseId: number; // 确认发货时指定从哪个仓库出库
-}
-
-// 确认发货DTO
-export class ConfirmShipmentDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ShipmentItemWithWarehouseDto)
-  items: ShipmentItemWithWarehouseDto[];
 }

@@ -39,6 +39,7 @@
         :data="productList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="tableScrollX"
         remote
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
@@ -58,6 +59,7 @@ import { getBrands } from '@/api/brand'
 import { getCategories } from '@/api/category'
 import type { Brand, Category } from '@/types/basic-data'
 import type { Product } from '@/types/product'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const router = useRouter()
 const message = useMessage()
@@ -129,11 +131,10 @@ const getMallStatusTag = (status: NonNullable<Product['mallStatus']>) => {
   }
 }
 
-const columns: DataTableColumns<Product> = [
+const columns: DataTableColumns<Product> = autoFitTableColumns([
   {
     title: '商城商品',
     key: 'name',
-    minWidth: 220,
     render: (row) => h('div', { class: 'flex items-center gap-3' }, [
       h(NImage, {
         width: 56,
@@ -151,19 +152,16 @@ const columns: DataTableColumns<Product> = [
   {
     title: '分类/品牌',
     key: 'category',
-    width: 180,
     render: (row) => `${row.category?.name || '-'} / ${row.brand?.name || '-'}`,
   },
   {
     title: 'SKU',
     key: 'skus',
-    width: 90,
     render: (row) => h(NTag, { size: 'small' }, { default: () => String(row.skus?.length || 0) }),
   },
   {
     title: '可用库存',
     key: 'totalAvailable',
-    width: 110,
     render: (row) => h(NTag, { type: (row.totalAvailable || 0) > 0 ? 'success' : 'default', size: 'small' }, {
       default: () => String(row.totalAvailable || 0),
     }),
@@ -171,7 +169,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: '运营状态',
     key: 'mallStatus',
-    width: 110,
     render: (row) => {
       const status = getMallStatusTag(row.mallStatus || resolveMallStatus(row))
       return h(NTag, { type: status.type, size: 'small' }, {
@@ -182,7 +179,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: '商城上架',
     key: 'mallEnabled',
-    width: 150,
     render: (row) => h(NSpace, { align: 'center', size: 8 }, {
       default: () => [
         h(NSwitch, {
@@ -199,7 +195,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: '完善度',
     key: 'mallInfo',
-    width: 100,
     render: (row) => h(NTag, { type: isMallInfoComplete(row) ? 'success' : 'warning', size: 'small' }, {
       default: () => isMallInfoComplete(row) ? '已完善' : '待补全',
     }),
@@ -207,15 +202,13 @@ const columns: DataTableColumns<Product> = [
   {
     title: '商品状态',
     key: 'isEnabled',
-    width: 100,
     render: (row) => h(NTag, { type: row.isEnabled ? 'success' : 'warning', size: 'small' }, {
       default: () => row.isEnabled ? '启用' : '禁用',
     }),
   },
-  {
+  createActionColumn<Product>({
     title: '操作',
     key: 'actions',
-    width: 150,
     fixed: 'right',
     render: (row) => h(NSpace, null, {
       default: () => [
@@ -223,8 +216,9 @@ const columns: DataTableColumns<Product> = [
         h(NButton, { size: 'small', onClick: () => router.push(`/products/edit/${row.id}`) }, { default: () => '母体档案' }),
       ],
     }),
-  },
-]
+  }, 2),
+])
+const tableScrollX = getTableScrollX(columns)
 
 const loadOptions = async () => {
   const [categories, brands] = await Promise.all([getCategories(), getBrands()])

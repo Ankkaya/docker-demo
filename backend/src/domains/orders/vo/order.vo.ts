@@ -53,6 +53,7 @@ export class OrderVo {
   orderDate: Date;
   expireAt?: Date;
   payDate?: Date;
+  cancelDate?: Date;
   shipDate?: Date;
   receiveDate?: Date;
   remark?: string;
@@ -82,6 +83,7 @@ export class OrderVo {
     vo.orderDate = entity.orderDate;
     vo.expireAt = entity.expireAt || undefined;
     vo.payDate = entity.payDate || undefined;
+    vo.cancelDate = entity.cancelDate || undefined;
     vo.shipDate = entity.shipDate || undefined;
     vo.receiveDate = entity.receiveDate || undefined;
     vo.remark = entity.remark || undefined;

@@ -32,6 +32,7 @@
         :data="receiptList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="tableScrollX"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -102,6 +103,7 @@ import ReceiptDetail from './components/ReceiptDetail.vue';
 import { getPrintErrorMessage, printProductLabels } from '@/services/print/product-label-service';
 import { BizType, type PrinterConfig } from '@/types/print';
 import type { PurchaseReceipt, ReceiptStatus } from '@/types/purchase';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -163,31 +165,26 @@ const unwrapPaginatedReceiptList = (payload: unknown): { data: PurchaseReceipt[]
 };
 
 // 表格列定义
-const columns: DataTableColumns<PurchaseReceipt> = [
+const columns: DataTableColumns<PurchaseReceipt> = autoFitTableColumns([
   {
     title: '入库单号',
     key: 'receiptNo',
-    width: 160,
   },
   {
     title: '采购单号',
     key: 'purchaseNo',
-    width: 160,
   },
   {
     title: '供应商',
     key: 'supplierName',
-    width: 150,
   },
   {
     title: '入库仓库',
     key: 'warehouseName',
-    width: 120,
   },
   {
     title: '总金额',
     key: 'totalAmount',
-    width: 120,
     render(row) {
       return `¥${row.totalAmount.toFixed(2)}`;
     },
@@ -195,7 +192,6 @@ const columns: DataTableColumns<PurchaseReceipt> = [
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       const statusMap: Record<ReceiptStatus, { type: 'default' | 'warning' | 'success' | 'error'; label: string }> = {
         PENDING: { type: 'warning', label: '待入库' },
@@ -209,15 +205,13 @@ const columns: DataTableColumns<PurchaseReceipt> = [
   {
     title: '创建时间',
     key: 'createdAt',
-    width: 160,
     render(row) {
       return new Date(row.createdAt).toLocaleString();
     },
   },
-  {
+  createActionColumn<PurchaseReceipt>({
     title: '操作',
     key: 'actions',
-    width: 250,
     fixed: 'right',
     render(row) {
       const buttons: any[] = [];
@@ -245,8 +239,9 @@ const columns: DataTableColumns<PurchaseReceipt> = [
       
       return h(NSpace, { size: 'small' }, { default: () => buttons });
     },
-  },
-];
+  }, 4),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 加载列表
 const loadData = async () => {

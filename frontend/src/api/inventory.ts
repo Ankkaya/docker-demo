@@ -16,6 +16,20 @@ export interface Inventory {
   warehouseName: string;
 }
 
+export interface SkuInventoryDetail {
+  sku: {
+    id: number;
+    skuCode: string;
+    product: {
+      id: number;
+      name: string;
+      spuCode: string;
+      mainImage?: string;
+    };
+  };
+  inventories: Inventory[];
+}
+
 export interface InventoryLog {
   id: number;
   type: string;
@@ -111,4 +125,8 @@ export function updateInventory(
   }
 ) {
   return request.patch<Inventory>(`/inventories/${id}`, data);
+}
+
+export function getSkuInventories(skuId: number) {
+  return request.get<SkuInventoryDetail>(`/inventories/sku/${skuId}`);
 }

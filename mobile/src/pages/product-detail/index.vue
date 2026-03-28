@@ -538,7 +538,7 @@ async function addToCart() {
     }
     uni.showToast({ title: '已加入购物车', icon: 'success' })
   }
-  catch {}
+  catch { }
   finally {
     addingToCart.value = false
   }
@@ -671,18 +671,14 @@ function openReviewList() {
             </text>
             <view class="flex flex-wrap gap-2">
               <template v-for="value in group.values" :key="`${group.name}-${value}`">
-                <view
-                  class="border rounded-lg px-4 py-3 text-center text-sm font-medium"
-                  :class="[
-                    selectedSpecs[group.name] === value
-                      ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold'
-                      : 'border-slate-200 bg-white text-slate-700',
-                    !getOptionState(group.name, value).exists || !getOptionState(group.name, value).inStock
-                      ? 'cursor-not-allowed opacity-35'
-                      : '',
-                  ]"
-                  @click="selectSpec(group.name, value)"
-                >
+                <view class="border rounded-lg px-4 py-3 text-center text-sm font-medium" :class="[
+                  selectedSpecs[group.name] === value
+                    ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold'
+                    : 'border-slate-200 bg-white text-slate-700',
+                  !getOptionState(group.name, value).exists || !getOptionState(group.name, value).inStock
+                    ? 'cursor-not-allowed opacity-35'
+                    : '',
+                ]" @click="selectSpec(group.name, value)">
                   {{ value }}
                 </view>
               </template>
@@ -785,7 +781,7 @@ function openReviewList() {
           <text class="mb-4 block px-5 text-xl text-slate-900 font-bold">
             相关推荐
           </text>
-          <scroll-view scroll-x class="no-scrollbar w-full whitespace-nowrap px-5 pb-4">
+          <scroll-view scroll-x class="no-scrollbar whitespace-nowrap px-5 pb-4 box-border">
             <view v-for="item in relatedProducts" :key="item.id" class="mr-4 inline-block w-[280rpx]"
               @click="openRelated(item)">
               <image :src="item.image" mode="aspectFill" class="h-[280rpx] w-[280rpx] rounded-lg bg-slate-200" />

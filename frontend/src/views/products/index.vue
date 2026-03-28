@@ -33,7 +33,7 @@
         <n-button type="primary" @click="handleCreate">新增商品</n-button>
         <n-button @click="handleInventoryQuery">库存查询</n-button>
       </n-space>
-      <n-data-table :columns="columns" :data="productList" :loading="loading" :pagination="pagination"
+      <n-data-table :columns="columns" :data="productList" :loading="loading" :pagination="pagination" :scroll-x="tableScrollX"
         @update:page="handlePageChange" @update:page-size="handlePageSizeChange" remote />
     </n-card>
   </div>
@@ -51,6 +51,7 @@ import { getBrands } from '@/api/brand';
 import type { Product } from '@/types/product';
 import type { Category } from '@/types/basic-data';
 import type { Brand } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const router = useRouter();
 const message = useMessage();
@@ -83,7 +84,7 @@ const pagination = reactive({
 });
 
 // 表格列定义
-const columns: DataTableColumns<Product> = [
+const columns: DataTableColumns<Product> = autoFitTableColumns([
   {
     title: '商品名称',
     key: 'name',
@@ -107,12 +108,10 @@ const columns: DataTableColumns<Product> = [
   {
     title: 'SPU编码',
     key: 'spuCode',
-    width: 140,
   },
   {
     title: '分类',
     key: 'category',
-    width: 120,
     render(row) {
       return row.category?.name || '-';
     },
@@ -120,7 +119,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: '品牌',
     key: 'brand',
-    width: 100,
     render(row) {
       return row.brand?.name || '-';
     },
@@ -128,7 +126,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: '单位',
     key: 'unit',
-    width: 100,
     render(row) {
       return row.unit?.name || '-';
     },
@@ -136,7 +133,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: 'SKU数量',
     key: 'skus',
-    width: 90,
     render(row) {
       return h(NTag, { size: 'small' }, { default: () => row.skus?.length || 0 });
     },
@@ -144,7 +140,6 @@ const columns: DataTableColumns<Product> = [
   {
     title: '状态',
     key: 'isEnabled',
-    width: 120,
     render(row) {
       return h(NSpace, { align: 'center', size: 8 }, {
         default: () => [
@@ -159,10 +154,9 @@ const columns: DataTableColumns<Product> = [
       });
     },
   },
-  {
+  createActionColumn<Product>({
     title: '操作',
     key: 'actions',
-    width: 180,
     fixed: 'right',
     render(row) {
       return h(NSpace, null, {
@@ -179,8 +173,9 @@ const columns: DataTableColumns<Product> = [
         ],
       });
     },
-  },
-];
+  }, 2),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 加载数据
 const loadData = async () => {

@@ -233,6 +233,7 @@ model Warehouse {
   receipts    PurchaseReceipt[]
   returns     PurchaseReturn[] // 采购退货单
   shipments   Shipment[]       // 发货单
+  shipmentItems ShipmentItem[] // 发货单明细
   saleReturns SaleReturn[]     // 销售退货单
   transfersFrom Transfer[]     @relation("TransferFrom") // 调拨出库
   transfersTo   Transfer[]     @relation("TransferTo")   // 调拨入库
@@ -756,6 +757,7 @@ model Order {
   orderDate    DateTime    @default(now())
   expireAt     DateTime?
   payDate      DateTime?
+  cancelDate   DateTime?
   shipDate     DateTime?
   receiveDate  DateTime?
   
@@ -885,12 +887,15 @@ model ShipmentItem {
   shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   skuId      Int
   sku        ProductSku @relation(fields: [skuId], references: [id])
+  warehouseId Int
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
   quantity   Int
   
   createdAt  DateTime @default(now())
 
   @@index([shipmentId])
   @@index([skuId])
+  @@index([warehouseId])
 }
 
 // ==================== 销售退货模块 ====================

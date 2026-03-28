@@ -13,8 +13,6 @@ definePage({
 })
 
 const router = useRouter()
-const userStore = useUserStore()
-
 const pageTitle = ref('Onesies & Bodysuits')
 const activeFilter = ref('recommended')
 const priceSortDirection = ref<'asc' | 'desc'>('asc')
@@ -25,6 +23,7 @@ const loadingMore = ref(false)
 const page = ref(1)
 const pageSize = 20
 const hasMore = ref(true)
+const defaultPageTitle = '全部商品'
 
 const filters = [
   { key: 'recommended', label: 'Recommended', sort: true },
@@ -44,6 +43,43 @@ type ProductListItem = {
 }
 
 const products = ref<ProductListItem[]>([])
+const hasCategoryFilter = computed(() => categoryId.value !== null)
+const hasKeywordFilter = computed(() => Boolean(keyword.value))
+const hasActiveContext = computed(() => hasCategoryFilter.value || hasKeywordFilter.value)
+
+const contextTags = computed(() => {
+  const tags: { key: string, label: string, removable?: boolean }[] = []
+
+  if (hasCategoryFilter.value) {
+    tags.push({
+      key: 'category',
+      label: `分类: ${pageTitle.value || defaultPageTitle}`,
+      removable: true,
+    })
+  }
+
+  if (hasKeywordFilter.value) {
+    tags.push({
+      key: 'keyword',
+      label: `搜索: ${keyword.value}`,
+    })
+  }
+
+  return tags
+})
+
+function decodeRouteText(value: unknown) {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  try {
+    return decodeURIComponent(value)
+  }
+  catch {
+    return value
+  }
+}
 
 function getCardOffset(index: number) {
   const offsets = ['', 'pt-8', '-mt-4', '', '-mt-6', 'pt-6']
@@ -123,12 +159,20 @@ async function loadProducts(reset = false) {
 
 onLoad((options) => {
   if (options?.title) {
-    pageTitle.value = String(options.title)
+    pageTitle.value = decodeRouteText(options.title)
+  }
+  else {
+    pageTitle.value = defaultPageTitle
   }
 
   const nextCategoryId = Number(options?.categoryId || 0)
   categoryId.value = !Number.isNaN(nextCategoryId) && nextCategoryId > 0 ? nextCategoryId : null
-  keyword.value = typeof options?.keyword === 'string' ? options.keyword : ''
+  keyword.value = decodeRouteText(options?.keyword)
+
+  if (keyword.value && !options?.title) {
+    pageTitle.value = keyword.value
+  }
+
   loadProducts(true)
 })
 
@@ -155,43 +199,14 @@ function goSearch() {
 function onProductClick(product: ProductListItem) {
   router.push({
     name: 'product-detail',
-    query: {
+    params: {
       id: String(product.id),
     },
   })
 }
 
 async function addToCart(product: ProductListItem) {
-  if (!product.skuId) {
-    onProductClick(product)
-    return
-  }
-
-  if (!userStore.isLoggedIn) {
-    userStore.openAuthPopup({
-      name: 'product-list',
-      path: '/pages/product-list/index',
-      query: {
-        title: pageTitle.value,
-        categoryId: categoryId.value ? String(categoryId.value) : '',
-      },
-    })
-    return
-  }
-
-  try {
-    await (Apis.general as any).MallCartController_addToCart({
-      data: {
-        skuId: product.skuId,
-        quantity: 1,
-      },
-    }).send()
-    uni.showToast({
-      title: `已加入购物车: ${product.name}`,
-      icon: 'success',
-    })
-  }
-  catch {}
+  onProductClick(product)
 }
 
 function handleScrollToLower() {
@@ -200,44 +215,47 @@ function handleScrollToLower() {
   }
   loadProducts()
 }
+
+function clearCategoryFilter() {
+  if (!hasCategoryFilter.value) {
+    return
+  }
+
+  categoryId.value = null
+  pageTitle.value = keyword.value || defaultPageTitle
+  router.replace({
+    name: 'product-list',
+    params: {
+      title: pageTitle.value,
+      keyword: keyword.value || '',
+    },
+  })
+  loadProducts(true)
+}
 </script>
 
 <template>
-  <view class="h-screen flex flex-col bg-[#f8f7f6]">
-    <view class="sticky top-0 z-20 flex items-center justify-between bg-[#f8f7f6]/90 px-4 py-4 backdrop-blur-md">
-      <view class="size-10 flex items-center justify-center rounded-full bg-white shadow-sm" @click="goBack">
-        <wd-icon name="arrow-left" size="18" color="#334155" />
-      </view>
-      <text class="max-w-[220px] truncate text-lg text-slate-900 font-bold">
-        {{ pageTitle }}
-      </text>
-      <view class="size-10 flex items-center justify-center rounded-full bg-white shadow-sm" @click="goSearch">
-        <wd-icon name="search" size="18" color="#334155" />
-      </view>
-    </view>
-
+  <view class=" flex flex-col bg-[#f8f7f6]">
     <scroll-view scroll-y class="flex-1" @scrolltolower="handleScrollToLower">
       <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-3">
-        <view
-          v-for="item in filters"
-          :key="item.key"
-          class="h-9 flex shrink-0 items-center gap-1 border rounded-full px-4"
-          :class="activeFilter === item.key
+        <view v-for="item in filters" :key="item.key"
+          class="h-9 flex shrink-0 items-center gap-1 border rounded-full px-4" :class="activeFilter === item.key
             ? 'border-[#efb239] bg-[#efb239] text-white'
-            : 'border-slate-200 bg-white text-slate-600'"
-          @click="setFilter(item.key)"
-        >
+            : 'border-slate-200 bg-white text-slate-600'" @click="setFilter(item.key)">
           <text class="text-sm" :class="activeFilter === item.key ? 'font-semibold' : 'font-medium'">
             {{ item.label }}
           </text>
-          <wd-icon
-            v-if="item.sort"
-            :name="activeFilter === item.key && item.key === 'price'
-              ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
-              : 'switch-horizontal'"
-            size="14"
-            :color="activeFilter === item.key ? '#fff' : '#64748b'"
-          />
+          <wd-icon v-if="item.sort" :name="activeFilter === item.key && item.key === 'price'
+            ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
+            : 'switch-horizontal'" size="14" :color="activeFilter === item.key ? '#fff' : '#64748b'" />
+        </view>
+      </view>
+
+      <view v-if="hasActiveContext" class="flex flex-wrap items-center gap-2 px-4 pb-3">
+        <view v-for="tag in contextTags" :key="tag.key"
+          class="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm">
+          <text>{{ tag.label }}</text>
+          <wd-icon v-if="tag.removable" name="close" size="14" color="#94a3b8" @click.stop="clearCategoryFilter" />
         </view>
       </view>
 
@@ -248,22 +266,14 @@ function handleScrollToLower() {
         暂无商品
       </view>
       <view v-else class="grid grid-cols-2 gap-4 px-4 pb-24">
-        <view
-          v-for="product in products"
-          :key="product.id"
-          class="flex flex-col gap-2"
-          :class="product.offset"
-          @click="onProductClick(product)"
-        >
-          <view
-            class="relative overflow-hidden border border-slate-100 rounded-2xl bg-slate-200 shadow-sm"
-            :style="`aspect-ratio:${product.ratio}`"
-          >
+        <view v-for="product in products" :key="product.id" class="flex flex-col gap-2" :class="product.offset"
+          @click="onProductClick(product)">
+          <view class="relative overflow-hidden border border-slate-100 rounded-2xl bg-slate-200 shadow-sm"
+            :style="`aspect-ratio:${product.ratio}`">
             <image :src="product.image" mode="aspectFill" class="h-full w-full" />
             <view
               class="absolute bottom-3 right-3 size-10 flex items-center justify-center rounded-full bg-[#efb239] shadow-lg"
-              @click.stop="addToCart(product)"
-            >
+              @click.stop="addToCart(product)">
               <wd-icon name="cart" size="16" color="#fff" />
             </view>
           </view>

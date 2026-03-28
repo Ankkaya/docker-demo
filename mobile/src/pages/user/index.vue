@@ -54,10 +54,6 @@ function openLogin() {
   })
 }
 
-function checkIn() {
-  uni.showToast({ title: '签到成功', icon: 'success' })
-}
-
 function viewAllOrders() {
   router.push({ name: 'order-list', query: { status: 'all' } })
 }
@@ -245,13 +241,7 @@ onShow(() => {
             </view>
           </view>
 
-          <template v-if="isLoggedIn">
-            <view class="h-10 flex shrink-0 items-center rounded-full bg-[#efb239] px-5 text-sm text-white font-bold"
-              @click="checkIn">
-              签到
-            </view>
-          </template>
-          <template v-else>
+          <template v-if="!isLoggedIn">
             <view
               class="flex shrink-0 items-center rounded-full bg-[#efb239] px-5 py-3 text-sm text-white font-bold shadow-[0_10px_24px_rgba(239,178,57,0.28)]"
               @click="openLogin">

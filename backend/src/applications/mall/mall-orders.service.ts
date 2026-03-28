@@ -119,6 +119,7 @@ export class MallOrdersService {
       where: { id: orderId },
       data: {
         status: OrderStatus.CANCELLED,
+        cancelDate: new Date(),
       },
     });
   }
@@ -299,6 +300,7 @@ export class MallOrdersService {
       discount: Number(entity.discount),
       freight: Number(entity.freight),
       payDate: entity.payDate || null,
+      cancelDate: entity.cancelDate || null,
       shipDate: entity.shipDate || null,
       receiveDate: entity.receiveDate || null,
       paymentMethod: entity.payments?.[0]?.method || null,
@@ -639,6 +641,7 @@ export class MallOrdersService {
         where: { id: existing.id },
         data: {
           status: OrderStatus.CANCELLED,
+          ...( { cancelDate: new Date() } as any ),
         },
         include: this.getOrderBaseInclude(),
       });

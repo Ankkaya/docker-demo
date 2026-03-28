@@ -8,6 +8,7 @@
         :columns="columns"
         :data="users"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
       <div class="mt-4 flex justify-end">
@@ -69,6 +70,7 @@ import { NButton, NSpace } from 'naive-ui'
 import dayjs from 'dayjs'
 import { getUsers, createUser, deleteUser } from '@/api/user'
 import type { User, CreateUserDto } from '@/types'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -109,8 +111,8 @@ const rules: FormRules = {
 
 // 表格列定义
 const createColumns = (): DataTableColumns<User> => {
-  return [
-    { title: 'ID', key: 'id', width: 80 },
+  return autoFitTableColumns([
+    { title: 'ID', key: 'id' },
     { title: '用户名', key: 'username' },
     {
       title: '邮箱',
@@ -127,10 +129,9 @@ const createColumns = (): DataTableColumns<User> => {
       key: 'createdAt',
       render: (row) => formatDate(row.createdAt)
     },
-    {
+    createActionColumn<User>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -147,11 +148,12 @@ const createColumns = (): DataTableColumns<User> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const fetchUsers = async () => {
   loading.value = true

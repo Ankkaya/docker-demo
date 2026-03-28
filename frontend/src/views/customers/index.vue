@@ -31,6 +31,7 @@
         :columns="columns"
         :data="customers"
         :loading="loading"
+        :scroll-x="tableScrollX"
         striped
       />
     </n-card>
@@ -122,6 +123,7 @@ import QueryForm from '@/components/common/QueryForm.vue'
 import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/api/customer'
 import type { Customer, CreateCustomerDto, CustomerType } from '@/types/basic-data'
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
@@ -178,13 +180,12 @@ const rules: FormRules = {
 }
 
 const createColumns = (): DataTableColumns<Customer> => {
-  return [
+  return autoFitTableColumns([
     { title: '客户名称', key: 'name' },
     { title: '客户编码', key: 'code' },
     {
       title: '类型',
       key: 'type',
-      width: 100,
       render: (row) => {
         const typeMap = {
           INDIVIDUAL: { label: '个人', type: 'default' },
@@ -217,7 +218,6 @@ const createColumns = (): DataTableColumns<Customer> => {
     {
       title: '状态',
       key: 'isEnabled',
-      width: 100,
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
@@ -225,10 +225,9 @@ const createColumns = (): DataTableColumns<Customer> => {
         })
       }
     },
-    {
+    createActionColumn<Customer>({
       title: '操作',
       key: 'actions',
-      width: 150,
       render: (row) => {
         return h(NSpace, null, {
           default: () => [
@@ -245,11 +244,12 @@ const createColumns = (): DataTableColumns<Customer> => {
           ]
         })
       }
-    }
-  ]
+    }, 2)
+  ])
 }
 
 const columns = createColumns()
+const tableScrollX = getTableScrollX(columns)
 
 const applyFilters = () => {
   const name = searchForm.name.trim().toLowerCase()

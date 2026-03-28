@@ -47,6 +47,7 @@
         :data="returnList"
         :loading="loading"
         :pagination="pagination"
+        :scroll-x="tableScrollX"
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
         remote
@@ -95,6 +96,7 @@ import ReturnForm from './components/ReturnForm.vue';
 import ReturnDetail from './components/ReturnDetail.vue';
 import type { PurchaseReturn, ReturnStatus } from '@/types/purchase';
 import type { Supplier } from '@/types/basic-data';
+import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
 
@@ -134,31 +136,26 @@ const detailVisible = ref(false);
 const currentReturnId = ref<number>(0);
 
 // 表格列定义
-const columns: DataTableColumns<PurchaseReturn> = [
+const columns: DataTableColumns<PurchaseReturn> = autoFitTableColumns([
   {
     title: '退货单号',
     key: 'returnNo',
-    width: 160,
   },
   {
     title: '关联入库单',
     key: 'receiptNo',
-    width: 160,
   },
   {
     title: '供应商',
     key: 'supplierName',
-    width: 150,
   },
   {
     title: '退货仓库',
     key: 'warehouseName',
-    width: 120,
   },
   {
     title: '退货金额',
     key: 'totalAmount',
-    width: 120,
     render(row) {
       return `¥${row.totalAmount.toFixed(2)}`;
     },
@@ -166,7 +163,6 @@ const columns: DataTableColumns<PurchaseReturn> = [
   {
     title: '状态',
     key: 'status',
-    width: 100,
     render(row) {
       const statusMap: Record<ReturnStatus, { type: 'default' | 'warning' | 'success' | 'error'; label: string }> = {
         PENDING: { type: 'warning', label: '待审核' },
@@ -181,15 +177,13 @@ const columns: DataTableColumns<PurchaseReturn> = [
   {
     title: '创建时间',
     key: 'createdAt',
-    width: 160,
     render(row) {
       return new Date(row.createdAt).toLocaleString();
     },
   },
-  {
+  createActionColumn<PurchaseReturn>({
     title: '操作',
     key: 'actions',
-    width: 320,
     fixed: 'right',
     render(row) {
       const buttons: any[] = [];
@@ -225,8 +219,9 @@ const columns: DataTableColumns<PurchaseReturn> = [
       
       return h(NSpace, { size: 'small' }, { default: () => buttons });
     },
-  },
-];
+  }, 4),
+]);
+const tableScrollX = getTableScrollX(columns);
 
 // 加载列表
 const loadData = async () => {
