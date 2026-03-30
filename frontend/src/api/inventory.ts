@@ -40,6 +40,9 @@ export interface InventoryLog {
   specs: Record<string, string>;
   warehouseId: number;
   warehouseName: string;
+  warehouse?: {
+    name: string;
+  };
   quantity: number;
   before: number;
   after: number;

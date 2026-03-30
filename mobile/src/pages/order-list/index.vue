@@ -206,12 +206,13 @@ function buyAgain(order: typeof orders.value[number]) {
 <template>
   <view class="orders-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 px-4 pt-3 backdrop-blur-md">
-
       <scroll-view scroll-x class="no-scrollbar whitespace-nowrap">
         <view class="flex gap-7">
-          <view v-for="tab in statusTabs" :key="tab.key" class="border-b-[3px] px-0.5 pb-3 pt-1 text-sm font-semibold"
+          <view
+            v-for="tab in statusTabs" :key="tab.key" class="border-b-[3px] px-0.5 pb-3 pt-1 text-sm font-semibold"
             :class="activeStatus === tab.key ? 'border-[#efb239] text-[#efb239]' : 'border-transparent text-slate-500'"
-            @click="switchStatus(tab.key)">
+            @click="switchStatus(tab.key)"
+          >
             {{ tab.label }}
           </view>
         </view>
@@ -226,11 +227,15 @@ function buyAgain(order: typeof orders.value[number]) {
         <view v-else-if="!filteredOrders.length" class="py-12 text-center text-sm text-slate-400">
           暂无订单
         </view>
-        <view v-for="order in filteredOrders" :key="order.id"
-          class="order-card mb-4 overflow-hidden rounded-2xl border border-[#efb239]/8 bg-white"
-          @click="openDetail(order.id)">
-          <view class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5"
-            :class="headerTone(order.status)">
+        <view
+          v-for="order in filteredOrders" :key="order.id"
+          class="order-card mb-4 overflow-hidden border border-[#efb239]/8 rounded-2xl bg-white"
+          @click="openDetail(order.id)"
+        >
+          <view
+            class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5"
+            :class="headerTone(order.status)"
+          >
             <view class="flex flex-col gap-1">
               <text class="text-xs text-slate-400">
                 订单号 {{ order.no }}
@@ -274,40 +279,54 @@ function buyAgain(order: typeof orders.value[number]) {
             <view class="flex items-center justify-end text-xs text-slate-500">
               <text>
                 共 {{ order.count }} 件商品 合计
-                <text class="ml-1 text-base text-slate-900 font-bold">￥{{ order.total.toFixed(2) }}</text>
+                <text class="ml-1 text-base text-slate-900 font-bold">
+                  ￥{{ order.total.toFixed(2) }}
+                </text>
               </text>
             </view>
           </view>
 
           <view class="flex flex-wrap justify-end gap-2 border-t border-[#efb239]/8 bg-[#faf9f7] px-4 py-3">
-            <view v-if="order.status === 'pending'"
-              class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 font-bold"
-              @click.stop="cancelOrder(order.id)">
+            <view
+              v-if="order.status === 'pending'"
+              class="border border-slate-200 rounded-lg bg-white px-4 py-2 text-xs text-slate-600 font-bold"
+              @click.stop="cancelOrder(order.id)"
+            >
               取消订单
             </view>
-            <view v-if="order.status === 'pending'"
+            <view
+              v-if="order.status === 'pending'"
               class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
-              @click.stop="payOrder(order.id)">
+              @click.stop="payOrder(order.id)"
+            >
               去支付
             </view>
-            <view v-if="order.status === 'receiving'"
-              class="rounded-lg border border-[#efb239]/20 bg-[#efb239]/20 px-4 py-2 text-xs text-[#c98500] font-bold"
-              @click.stop>
+            <view
+              v-if="order.status === 'receiving'"
+              class="border border-[#efb239]/20 rounded-lg bg-[#efb239]/20 px-4 py-2 text-xs text-[#c98500] font-bold"
+              @click.stop
+            >
               查看物流
             </view>
-            <view v-if="order.status === 'receiving'"
+            <view
+              v-if="order.status === 'receiving'"
               class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
-              @click.stop="confirmReceive(order.id)">
+              @click.stop="confirmReceive(order.id)"
+            >
               确认收货
             </view>
-            <view v-if="order.status === 'completed'"
+            <view
+              v-if="order.status === 'completed'"
               class="rounded-lg bg-[#efb239]/10 px-4 py-2 text-xs text-[#c98500] font-bold"
-              @click.stop="buyAgain(order)">
+              @click.stop="buyAgain(order)"
+            >
               再次购买
             </view>
-            <view v-if="order.status === 'completed'"
-              class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs text-slate-600 font-bold"
-              @click.stop>
+            <view
+              v-if="order.status === 'completed'"
+              class="border border-slate-200 rounded-lg bg-white px-4 py-2 text-xs text-slate-600 font-bold"
+              @click.stop
+            >
               评价商品
             </view>
           </view>

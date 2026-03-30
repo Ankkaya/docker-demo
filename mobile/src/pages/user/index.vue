@@ -206,11 +206,15 @@ onShow(() => {
       <view class="p-6">
         <view class="flex items-center justify-between gap-3">
           <view class="min-w-0 flex items-center gap-4">
-            <view class="size-20 flex items-center justify-center border-4 rounded-full bg-white"
-              :class="isLoggedIn ? 'border-[#efb239]/20' : 'border-white/60 shadow-[0_8px_24px_rgba(15,23,42,0.08)]'">
+            <view
+              class="size-20 flex items-center justify-center border-4 rounded-full bg-white"
+              :class="isLoggedIn ? 'border-[#efb239]/20' : 'border-white/60 shadow-[0_8px_24px_rgba(15,23,42,0.08)]'"
+            >
               <image v-if="userInfo.avatar" :src="userInfo.avatar" class="size-full rounded-full" mode="aspectFill" />
-              <text v-else class="i-material-symbols:account-circle text-[64px] leading-none"
-                :class="isLoggedIn ? 'text-[#efb239]' : 'text-slate-300'" />
+              <text
+                v-else class="i-material-symbols:account-circle text-[64px] leading-none"
+                :class="isLoggedIn ? 'text-[#efb239]' : 'text-slate-300'"
+              />
             </view>
             <view class="min-w-0">
               <template v-if="isLoggedIn">
@@ -244,7 +248,8 @@ onShow(() => {
           <template v-if="!isLoggedIn">
             <view
               class="flex shrink-0 items-center rounded-full bg-[#efb239] px-5 py-3 text-sm text-white font-bold shadow-[0_10px_24px_rgba(239,178,57,0.28)]"
-              @click="openLogin">
+              @click="openLogin"
+            >
               立即登录
             </view>
           </template>
@@ -288,16 +293,20 @@ onShow(() => {
           </view>
 
           <view class="grid grid-cols-4 gap-2">
-            <view v-for="item in orderMenus" :key="item.key" class="relative flex flex-col items-center gap-2 py-2"
-              @click="onOrderMenuClick(item)">
+            <view
+              v-for="item in orderMenus" :key="item.key" class="relative flex flex-col items-center gap-2 py-2"
+              @click="onOrderMenuClick(item)"
+            >
               <view class="relative rounded-full bg-[#efb239]/10 p-3">
                 <text class="text-[20px] text-[#efb239] leading-none" :class="getOrderIconClass(item.key)" />
               </view>
               <text class="text-xs text-slate-600">
                 {{ item.label }}
               </text>
-              <view v-if="item.badge"
-                class="absolute right-3 top-0 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white font-bold">
+              <view
+                v-if="item.badge"
+                class="absolute right-3 top-0 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white font-bold"
+              >
                 {{ item.badge }}
               </view>
             </view>
@@ -310,16 +319,20 @@ onShow(() => {
           <view v-for="item in serviceMenus" :key="item.key" class="service-row" @click="onServiceMenuClick(item)">
             <view class="flex items-center gap-4">
               <view class="rounded-lg p-2" :class="item.iconBg">
-                <text class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
-                  :style="{ color: item.iconColor }" />
+                <text
+                  class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
+                  :style="{ color: item.iconColor }"
+                />
               </view>
               <text class="text-sm font-medium">
                 {{ item.label }}
               </text>
             </view>
             <view class="flex items-center gap-1">
-              <text v-if="item.extra" class="text-xs"
-                :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'">
+              <text
+                v-if="item.extra" class="text-xs"
+                :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'"
+              >
                 {{ item.extra }}
               </text>
               <text class="i-material-symbols:chevron-right text-[16px] text-slate-400 leading-none" />
@@ -330,7 +343,7 @@ onShow(() => {
 
       <view v-if="isLoggedIn" class="px-4 pb-4">
         <view
-          class="flex items-center justify-center rounded-xl border border-red-100 bg-white py-4 text-sm text-red-500 font-semibold shadow-sm"
+          class="flex items-center justify-center border border-red-100 rounded-xl bg-white py-4 text-sm text-red-500 font-semibold shadow-sm"
           @click="handleLogout"
         >
           退出登录

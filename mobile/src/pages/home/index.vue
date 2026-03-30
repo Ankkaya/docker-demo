@@ -21,7 +21,7 @@ const { setTabbarItem, setTabbarItemActive } = useTabbar()
 const { navigationBarHeight, statusBarHeight } = usePlatform()
 const { error: showError } = useGlobalToast()
 
-type HomeBannerItem = {
+interface HomeBannerItem {
   id: number
   tag?: string | null
   title: string
@@ -29,14 +29,14 @@ type HomeBannerItem = {
   image: string
 }
 
-type HomeCategoryItem = {
+interface HomeCategoryItem {
   id: number
   name: string
   icon?: string | null
   iconUrl?: string | null
 }
 
-type HomeHotProductItem = {
+interface HomeHotProductItem {
   id: number
   name: string
   hotLabel: string
@@ -234,15 +234,11 @@ function onProductClick(product: typeof hotProducts.value[0]) {
 </script>
 
 <template>
-  <view class="min-h-screen bg-[#f8f7f6]">
-    <view :style="{ height: `${statusBarHeight}px` }" width="w-full" />
-    <view class="flex items-center justify-center" :style="{ height: `${navigationBarHeight}px` }">
-      桃喜·童品
-    </view>
+  <view class="bg-[#f8f7f6]">
     <!-- Header & Search -->
     <view class="bg-[#f8f7f6]/80 backdrop-blur-md">
       <!-- Search Bar -->
-      <view class="flex items-center gap-2 px-4 pb-4">
+      <view class="flex items-center gap-2 px-4 py-4">
         <view class="h-11 flex flex-1 items-center border border-[#efb239]/10 rounded-xl bg-white shadow-sm"
           @click="onSearchClick">
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
@@ -255,66 +251,65 @@ function onProductClick(product: typeof hotProducts.value[0]) {
       </view>
     </view>
 
-    <scroll-view scroll-y class="pb-10">
-      <!-- Hero Banner Carousel -->
-      <view class="px-4 pb-2">
-        <swiper class="h-44 w-full overflow-hidden rounded-xl" :indicator-dots="false" :autoplay="true" :interval="3000"
-          :duration="500" :circular="true" @change="onBannerChange">
-          <swiper-item v-for="banner in banners" :key="banner.id">
-            <view class="relative h-full w-full">
-              <image :src="banner.image" class="absolute inset-0 h-full w-full" mode="aspectFill" />
-              <view
-                class="from-black-50 absolute inset-0 flex flex-col justify-center to-transparent bg-gradient-to-r p-6">
-                <text
-                  class="mb-2 w-fit rounded-full bg-[#efb239] px-3 py-1 text-[10px] text-white font-bold tracking-widest uppercase">
-                  {{ banner.tag }}
-                </text>
-                <text class="mb-1 text-2xl text-white font-bold leading-tight">
-                  {{ banner.title }}
-                </text>
-                <text class="mb-4 text-sm text-white/90">
-                  {{ banner.subtitle }}
-                </text>
-                <button class="w-fit border-0 rounded-lg bg-white px-4 py-2 text-xs text-[#efb239] font-bold">
-                  Shop Now
-                </button>
-              </view>
+    <!-- Hero Banner Carousel -->
+    <view class="px-4 pb-2">
+      <swiper class="h-44 w-full overflow-hidden rounded-xl" :indicator-dots="false" :autoplay="true" :interval="3000"
+        :duration="500" :circular="true" @change="onBannerChange">
+        <swiper-item v-for="banner in banners" :key="banner.id">
+          <view class="relative h-full w-full">
+            <image :src="banner.image" class="absolute inset-0 h-full w-full" mode="aspectFill" />
+            <view
+              class="from-black-50 absolute inset-0 flex flex-col justify-center to-transparent bg-gradient-to-r p-6">
+              <text
+                class="mb-2 w-fit rounded-full bg-[#efb239] px-3 py-1 text-[10px] text-white font-bold tracking-widest uppercase">
+                {{ banner.tag }}
+              </text>
+              <text class="mb-1 text-2xl text-white font-bold leading-tight">
+                {{ banner.title }}
+              </text>
+              <text class="mb-4 text-sm text-white/90">
+                {{ banner.subtitle }}
+              </text>
+              <button class="w-fit border-0 rounded-lg bg-white px-4 py-2 text-xs text-[#efb239] font-bold">
+                Shop Now
+              </button>
             </view>
-          </swiper-item>
-        </swiper>
-        <!-- Pagination Dots -->
-        <view class="mt-3 flex justify-center gap-1.5">
-          <view v-for="(banner, index) in banners" :key="banner.id"
-            class="h-1.5 rounded-full transition-all duration-300"
-            :class="currentBanner === index ? 'w-4 bg-[#efb239]' : 'w-1.5 bg-slate-300'" />
-        </view>
-      </view>
-
-      <!-- Categories Grid -->
-      <view class="px-4 pt-4">
-        <view class="mb-4 flex items-center justify-between">
-          <text class="text-base text-slate-900 font-bold">
-            Categories
-          </text>
-          <text class="text-xs text-[#efb239] font-medium" @click="onViewAllCategories">
-            View All
-          </text>
-        </view>
-        <view class="grid grid-cols-4 gap-4">
-          <view v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
-            @click="onCategoryClick(category)">
-            <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
-              <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28"
-                color="#efb239" />
-            </view>
-            <text class="text-[11px] text-slate-600 font-medium">
-              {{ category.name }}
-            </text>
           </view>
+        </swiper-item>
+      </swiper>
+      <!-- Pagination Dots -->
+      <view class="mt-3 flex justify-center gap-1.5">
+        <view v-for="(banner, index) in banners" :key="banner.id" class="h-1.5 rounded-full transition-all duration-300"
+          :class="currentBanner === index ? 'w-4 bg-[#efb239]' : 'w-1.5 bg-slate-300'" />
+      </view>
+    </view>
+
+    <!-- Categories Grid -->
+    <view class="px-4 pt-4">
+      <view class="mb-4 flex items-center justify-between">
+        <text class="text-base text-slate-900 font-bold">
+          Categories
+        </text>
+        <text class="text-xs text-[#efb239] font-medium" @click="onViewAllCategories">
+          View All
+        </text>
+      </view>
+      <view class="grid grid-cols-4 gap-4">
+        <view v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
+          @click="onCategoryClick(category)">
+          <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
+            <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28"
+              color="#efb239" />
+          </view>
+          <text class="text-[11px] text-slate-600 font-medium">
+            {{ category.name }}
+          </text>
         </view>
       </view>
+    </view>
 
-      <!-- Hot Picks Section -->
+    <!-- Hot Picks Section -->
+    <scroll-view scroll-y class="pb-10">
       <view class="px-4 pt-8">
         <view class="mb-4 flex items-center justify-between">
           <text class="text-base text-slate-900 font-bold">

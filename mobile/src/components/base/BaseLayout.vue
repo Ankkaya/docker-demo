@@ -1,6 +1,7 @@
 <script lang="ts">
 import InnerNavbar from '@/components/base/BaseInnerNavbar.vue'
 import BaseNavbar from '@/components/base/BaseNavbar.vue'
+import { TABBAR_ROUTE_NAMES } from '@/composables/useTabbar'
 
 export default {
   options: {
@@ -13,22 +14,28 @@ export default {
 
 <script setup lang="ts">
 const route = useRoute()
-const { navigationBarHeight, statusBarHeight } = usePlatform()
+const { navigationBarHeight, statusBarHeight, safeAreaInsetsBottom } = usePlatform()
+const navbarType = computed(() => route.baseNavbar?.type || 'default')
+const hasTabbar = computed(() => TABBAR_ROUTE_NAMES.includes(route.name as (typeof TABBAR_ROUTE_NAMES)[number]))
+const topOffset = computed(() => navbarType.value === 'default' ? navigationBarHeight + statusBarHeight : 0)
+const bottomOffset = computed(() => hasTabbar.value ? safeAreaInsetsBottom + 50 : 0)
 
 const spacerStyle = computed(() => ({
-  paddingTop: `${navigationBarHeight + statusBarHeight}px`,
+  paddingTop: `${topOffset.value}px`,
   position: 'relative' as const,
   zIndex: -2,
 }))
 
-const navbarType = computed(() => route.baseNavbar?.type || 'default')
+const comLayoutHeight = computed(() => {
+  return `calc(100vh - ${bottomOffset.value}px)`
+})
 </script>
 
 <template>
   <view class="page-layout">
     <view class="page-main">
       <base-navbar v-if="navbarType === 'default'" />
-      <view class="page-body">
+      <view class="page-body" :style="{ height: comLayoutHeight }">
         <inner-navbar v-if="navbarType === 'inner'" />
         <view :style="spacerStyle" class="page-spacer" />
         <slot />
@@ -40,7 +47,6 @@ const navbarType = computed(() => route.baseNavbar?.type || 'default')
 <style lang="scss" scoped>
 .page-layout {
   width: 100%;
-  height: calc(100vh - 84px);
 
   .page-main {
     display: flex;
@@ -51,8 +57,8 @@ const navbarType = computed(() => route.baseNavbar?.type || 'default')
 
   .page-body {
     position: relative;
+    overflow: auto;
     z-index: 1;
-    flex: 1;
     width: 100%;
   }
 

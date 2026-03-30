@@ -10,7 +10,7 @@ import {
 } from '@/utils/address-region'
 
 type AddressTag = '家' | '公司' | '学校' | '其他'
-type CustomerAddressPayload = {
+interface CustomerAddressPayload {
   receiverName: string
   receiverPhone: string
   province: string
@@ -251,8 +251,10 @@ onLoad((options) => {
             收货人
           </text>
           <view class="field-shell">
-            <input v-model="form.receiverName" class="field-input" maxlength="30" placeholder="请输入收货人姓名"
-              placeholder-class="field-placeholder">
+            <input
+              v-model="form.receiverName" class="field-input" maxlength="30" placeholder="请输入收货人姓名"
+              placeholder-class="field-placeholder"
+            >
             <text class="field-icon" :class="getUiIcon('person')" />
           </view>
         </view>
@@ -262,8 +264,10 @@ onLoad((options) => {
             手机号
           </text>
           <view class="field-shell">
-            <input v-model="form.receiverPhone" class="field-input" maxlength="11" type="number" placeholder="请输入电话号码"
-              placeholder-class="field-placeholder">
+            <input
+              v-model="form.receiverPhone" class="field-input" maxlength="11" type="number" placeholder="请输入电话号码"
+              placeholder-class="field-placeholder"
+            >
             <text class="field-icon" :class="getUiIcon('phone')" />
           </view>
         </view>
@@ -272,9 +276,11 @@ onLoad((options) => {
           <text class="field-label">
             省 / 市 / 区
           </text>
-          <wd-col-picker v-model="form.regionCodes" title="选择所在地区" :columns="regionColumns" :auto-complete="false"
+          <wd-col-picker
+            v-model="form.regionCodes" title="选择所在地区" :columns="regionColumns" :auto-complete="false"
             :column-change="regionColumnChange" :display-format="regionDisplayFormat" @close="closeRegionPicker"
-            @confirm="({ selectedItems }) => updateRegionFields(selectedItems)">
+            @confirm="({ selectedItems }) => updateRegionFields(selectedItems)"
+          >
             <view class="field-shell field-picker" @click="openRegionPicker">
               <text class="field-value" :class="regionText ? 'region-selected' : 'region-placeholder'">
                 {{ regionText || '请选择所在地区' }}
@@ -289,8 +295,10 @@ onLoad((options) => {
             详细地址
           </text>
           <view class="textarea-shell">
-            <textarea v-model="form.address" class="textarea-input" maxlength="120" placeholder="请输入街道、楼栋门牌、单元房号等"
-              placeholder-class="field-placeholder" />
+            <textarea
+              v-model="form.address" class="textarea-input" maxlength="120" placeholder="请输入街道、楼栋门牌、单元房号等"
+              placeholder-class="field-placeholder"
+            />
           </view>
         </view>
 
@@ -298,9 +306,11 @@ onLoad((options) => {
           <text class="field-label">
             地址标签
           </text>
-          <view class="mt-2 grid grid-cols-4 gap-3">
-            <view v-for="tag in tagOptions" :key="tag" class="tag-chip"
-              :class="form.tag === tag ? 'tag-chip-active' : 'tag-chip-idle'" @click="form.tag = tag">
+          <view class="grid grid-cols-4 mt-2 gap-3">
+            <view
+              v-for="tag in tagOptions" :key="tag" class="tag-chip"
+              :class="form.tag === tag ? 'tag-chip-active' : 'tag-chip-idle'" @click="form.tag = tag"
+            >
               {{ tag }}
             </view>
           </view>
@@ -330,8 +340,10 @@ onLoad((options) => {
     </view>
 
     <view class="bottom-bar">
-      <view class="submit-btn py-4 text-center text-sm text-white font-700" :class="submitting ? 'opacity-70' : ''"
-        @click="submitForm">
+      <view
+        class="submit-btn py-4 text-center text-sm text-white font-700" :class="submitting ? 'opacity-70' : ''"
+        @click="submitForm"
+      >
         <view class="flex items-center justify-center gap-2">
           <text class="text-[18px] text-white leading-none" :class="getUiIcon('submit')" />
           {{ submitting ? '提交中...' : submitText }}

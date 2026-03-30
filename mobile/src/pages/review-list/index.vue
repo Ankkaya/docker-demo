@@ -282,18 +282,20 @@ onLoad((options) => {
 </script>
 
 <template>
-  <view class=" bg-[#f8f7f6] text-slate-900">
+  <view class="bg-[#f8f7f6] text-slate-900">
     <scroll-view scroll-y class="h-[calc(100vh-112rpx)]" @scrolltolower="handleScrollToLower">
       <view class="px-4 pb-10 pt-4">
-        <view class="rounded-[28rpx] bg-gradient-to-b from-[#efb239]/8 to-transparent p-5">
+        <view class="rounded-[28rpx] from-[#efb239]/8 to-transparent bg-gradient-to-b p-5">
           <view class="flex items-center gap-5">
             <view class="w-[180rpx] shrink-0 text-center">
               <text class="block text-[54rpx] text-slate-900 font-extrabold leading-none">
                 {{ avgRating.toFixed(1) }}
               </text>
               <view class="mt-2 flex items-center justify-center gap-0.5">
-                <wd-icon v-for="n in 5" :key="n" name="star" size="14"
-                  :color="n <= Math.round(avgRating) ? '#efb239' : '#e5e7eb'" />
+                <wd-icon
+                  v-for="n in 5" :key="n" name="star" size="14"
+                  :color="n <= Math.round(avgRating) ? '#efb239' : '#e5e7eb'"
+                />
               </view>
               <text class="mt-2 block text-[22rpx] text-slate-500 font-medium">
                 {{ totalCount }} 条评价
@@ -332,15 +334,19 @@ onLoad((options) => {
 
         <scroll-view scroll-x class="no-scrollbar mt-4 whitespace-nowrap">
           <view class="flex gap-2 pb-1">
-            <view v-for="item in reviewFilters" :key="item.key"
-              class="inline-flex shrink-0 items-center gap-1 rounded-full border px-4 py-2" :class="activeFilter === item.key
+            <view
+              v-for="item in reviewFilters" :key="item.key"
+              class="inline-flex shrink-0 items-center gap-1 border rounded-full px-4 py-2" :class="activeFilter === item.key
                 ? 'border-[#efb239] bg-[#efb239] text-white'
-                : 'border-[#efb239]/20 bg-white text-slate-600'" @click="selectFilter(item.key)">
+                : 'border-[#efb239]/20 bg-white text-slate-600'" @click="selectFilter(item.key)"
+            >
               <text class="text-xs font-semibold">
                 {{ item.label }}
               </text>
-              <text v-if="getFilterCount(item) !== null" class="text-[20rpx]"
-                :class="activeFilter === item.key ? 'text-white/90' : 'text-slate-400'">
+              <text
+                v-if="getFilterCount(item) !== null" class="text-[20rpx]"
+                :class="activeFilter === item.key ? 'text-white/90' : 'text-slate-400'"
+              >
                 {{ getFilterCount(item) }}
               </text>
             </view>
@@ -364,12 +370,15 @@ onLoad((options) => {
         </view>
 
         <view v-else class="mt-4 space-y-4">
-          <view v-for="item in reviews" :key="item.id"
-            class="rounded-3xl border border-[#efb239]/6 bg-white p-4 shadow-sm">
+          <view
+            v-for="item in reviews" :key="item.id"
+            class="border border-[#efb239]/6 rounded-3xl bg-white p-4 shadow-sm"
+          >
             <view class="mb-3 flex items-center justify-between gap-3">
               <view class="min-w-0 flex items-center gap-3">
                 <view
-                  class="size-10 flex shrink-0 items-center justify-center rounded-full bg-[#efb239]/12 text-sm text-[#efb239] font-bold">
+                  class="size-10 flex shrink-0 items-center justify-center rounded-full bg-[#efb239]/12 text-sm text-[#efb239] font-bold"
+                >
                   {{ getReviewInitial(item.userName || '匿') }}
                 </view>
                 <view class="min-w-0">
@@ -377,8 +386,10 @@ onLoad((options) => {
                     {{ item.userName || '匿名用户' }}
                   </text>
                   <view class="mt-1 flex items-center gap-0.5">
-                    <wd-icon v-for="n in 5" :key="n" name="star" size="12"
-                      :color="n <= Number(item.rating || 0) ? '#efb239' : '#e2e8f0'" />
+                    <wd-icon
+                      v-for="n in 5" :key="n" name="star" size="12"
+                      :color="n <= Number(item.rating || 0) ? '#efb239' : '#e2e8f0'"
+                    />
                   </view>
                 </view>
               </view>
@@ -397,14 +408,18 @@ onLoad((options) => {
 
             <scroll-view v-if="item.images?.length" scroll-x class="no-scrollbar mt-4 whitespace-nowrap">
               <view class="flex gap-2 pb-1">
-                <image v-for="image in item.images" :key="image" :src="image" mode="aspectFill"
+                <image
+                  v-for="image in item.images" :key="image" :src="image" mode="aspectFill"
                   class="h-[180rpx] w-[180rpx] shrink-0 rounded-2xl bg-slate-100"
-                  @click="previewImages(item.images, image)" />
+                  @click="previewImages(item.images, image)"
+                />
               </view>
             </scroll-view>
 
-            <view v-if="item.replyContent"
-              class="mt-4 rounded-2xl border-l-4 border-[#efb239] bg-[#efb239]/6 px-4 py-3">
+            <view
+              v-if="item.replyContent"
+              class="mt-4 border-l-4 border-[#efb239] rounded-2xl bg-[#efb239]/6 px-4 py-3"
+            >
               <text class="block text-xs text-[#efb239] font-bold">
                 商家回复
               </text>

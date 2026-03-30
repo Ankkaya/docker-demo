@@ -4,22 +4,12 @@
     <n-card class="mb-4">
       <QueryForm :model="searchForm">
         <n-form-item label="仓库">
-          <n-select
-            v-model:value="searchForm.warehouseId"
-            :options="warehouseOptions"
-            placeholder="选择仓库"
-            clearable
-            style="width: 180px"
-          />
+          <n-select v-model:value="searchForm.warehouseId" :options="warehouseOptions" placeholder="选择仓库" clearable
+            style="width: 180px" />
         </n-form-item>
         <n-form-item label="类型">
-          <n-select
-            v-model:value="searchForm.type"
-            :options="typeOptions"
-            placeholder="选择类型"
-            clearable
-            style="width: 150px"
-          />
+          <n-select v-model:value="searchForm.type" :options="typeOptions" placeholder="选择类型" clearable
+            style="width: 150px" />
         </n-form-item>
         <n-form-item label="业务单号">
           <n-input v-model:value="searchForm.bizNo" placeholder="业务单号" clearable style="width: 180px" />
@@ -35,15 +25,8 @@
 
     <!-- 流水列表 -->
     <n-card title="库存流水记录">
-      <n-data-table
-        :columns="columns"
-        :data="logList"
-        :loading="loading"
-        :pagination="pagination"
-        @update:page="handlePageChange"
-        @update:page-size="handlePageSizeChange"
-        remote
-      />
+      <n-data-table :columns="columns" :data="logList" :loading="loading" :pagination="pagination"
+        @update:page="handlePageChange" @update:page-size="handlePageSizeChange" remote />
     </n-card>
   </div>
 </template>
@@ -94,6 +77,18 @@ const pagination = reactive({
   pageSizes: [10, 20, 50],
 });
 
+function formatSpecs(specs: unknown): string {
+  if (!specs || typeof specs !== 'object' || Array.isArray(specs)) {
+    return '-';
+  }
+
+  const entries = Object.entries(specs as Record<string, unknown>)
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => `${key}:${String(value)}`);
+
+  return entries.length > 0 ? entries.join('，') : '-';
+}
+
 // 表格列定义
 const columns: DataTableColumns<InventoryLog> = [
   {
@@ -112,17 +107,17 @@ const columns: DataTableColumns<InventoryLog> = [
   {
     title: '规格',
     key: 'specs',
+    width: 100,
     render(row: DataTableRowData) {
-      return Object.entries((row.specs || {}) as Record<string, unknown>).map(([k, v]) => `${k}:${v}`).join(', ') || '-';
+      return formatSpecs(row.specs);
     },
   },
-  { title: '仓库', key: 'warehouseName', width: 120 },
   {
     title: '变动数量',
     key: 'quantity',
     width: 100,
     render(row: DataTableRowData) {
-      return h('span', { style: { color: (row.quantity as number) > 0 ? '#18a058' : '#d03050' } }, 
+      return h('span', { style: { color: (row.quantity as number) > 0 ? '#18a058' : '#d03050' } },
         ((row.quantity as number) > 0 ? '+' : '') + row.quantity
       );
     },
@@ -150,8 +145,8 @@ async function loadData() {
 
 // 加载仓库选项
 async function loadWarehouses() {
-  const res: any = await getWarehouses();
-  warehouseOptions.value = res.data.data.map((w: Warehouse) => ({
+  const warehouses = await getWarehouses();
+  warehouseOptions.value = warehouses.map((w: Warehouse) => ({
     label: w.name,
     value: w.id,
   }));

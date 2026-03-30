@@ -99,7 +99,9 @@ onShow(() => {
             当前余额
           </text>
           <view class="mt-3 flex items-end gap-2">
-            <text class="text-xl text-slate-900 font-700">¥</text>
+            <text class="text-xl text-slate-900 font-700">
+              ¥
+            </text>
             <text class="text-[44rpx] text-slate-900 font-800 leading-none">
               {{ formatAmount(summary.availableBalance) }}
             </text>
@@ -110,18 +112,24 @@ onShow(() => {
           <text class="block text-base font-700">
             选择充值金额
           </text>
-          <view class="mt-4 grid grid-cols-3 gap-3">
-            <view v-for="amount in quickAmounts" :key="amount"
+          <view class="grid grid-cols-3 mt-4 gap-3">
+            <view
+              v-for="amount in quickAmounts" :key="amount"
               class="amount-card"
               :class="selectedAmount === amount && !customAmount ? 'amount-card--active' : 'amount-card--idle'"
-              @click="pickAmount(amount)">
-              <text class="text-base font-700">¥{{ amount }}</text>
+              @click="pickAmount(amount)"
+            >
+              <text class="text-base font-700">
+                ¥{{ amount }}
+              </text>
             </view>
           </view>
 
           <view class="mt-4 rounded-[24rpx] bg-[#f8f7f6] px-4 py-3">
-            <text class="mb-2 block text-xs text-slate-400">自定义金额</text>
-            <input v-model="customAmount" type="digit" class="text-sm text-slate-900 font-600" placeholder="输入充值金额" />
+            <text class="mb-2 block text-xs text-slate-400">
+              自定义金额
+            </text>
+            <input v-model="customAmount" type="digit" class="text-sm text-slate-900 font-600" placeholder="输入充值金额">
           </view>
         </view>
 
@@ -129,11 +137,13 @@ onShow(() => {
           <text class="block text-base font-700">
             支付方式
           </text>
-          <view class="mt-4 grid gap-3">
-            <view v-for="item in paymentMethods" :key="item.key"
+          <view class="grid mt-4 gap-3">
+            <view
+              v-for="item in paymentMethods" :key="item.key"
               class="payment-card"
               :class="selectedMethod === item.key ? 'payment-card--active' : 'payment-card--idle'"
-              @click="selectedMethod = item.key">
+              @click="selectedMethod = item.key"
+            >
               <view class="flex items-center gap-3">
                 <view class="size-10 flex items-center justify-center rounded-[20rpx]" :class="item.tone">
                   <text class="text-[22px] leading-none" :class="item.icon" />
@@ -147,8 +157,10 @@ onShow(() => {
                   </text>
                 </view>
               </view>
-              <view class="size-6 flex items-center justify-center rounded-full border"
-                :class="selectedMethod === item.key ? 'border-solid border-[#efb239] bg-[#efb239]' : 'border-solid border-[#d9d1bf] bg-white'">
+              <view
+                class="size-6 flex items-center justify-center border rounded-full"
+                :class="selectedMethod === item.key ? 'border-solid border-[#efb239] bg-[#efb239]' : 'border-solid border-[#d9d1bf] bg-white'"
+              >
                 <text v-if="selectedMethod === item.key" class="i-material-symbols:check text-[16px] text-white leading-none" />
               </view>
             </view>
@@ -158,9 +170,11 @@ onShow(() => {
     </scroll-view>
 
     <view class="fixed bottom-0 left-0 right-0 z-40 bg-[#f8f7f6]/92 p-4 pb-6 backdrop-blur-md">
-      <view class="rounded-[28rpx] bg-[#efb239] py-4 text-center text-sm text-slate-900 font-700 shadow-[0_18px_34px_rgba(239,178,57,0.26)]"
+      <view
+        class="rounded-[28rpx] bg-[#efb239] py-4 text-center text-sm text-slate-900 font-700 shadow-[0_18px_34px_rgba(239,178,57,0.26)]"
         :class="submitting ? 'opacity-75' : ''"
-        @click="submitRecharge">
+        @click="submitRecharge"
+      >
         立即充值 ¥{{ formatAmount(finalAmount) }}
       </view>
     </view>

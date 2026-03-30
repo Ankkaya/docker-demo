@@ -24,7 +24,7 @@ const apiBaseURL = import.meta.env.VITE_API_BASE_URL || ''
 const fallbackCategoryIcons = ['child_care', 'stroller', 'face', 'toys', 'eco', 'local_offer', 'new_releases', 'trending_up']
 const fallbackCategoryImage = 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=300&h=300&fit=crop'
 
-type RawCategory = {
+interface RawCategory {
   id: number
   name?: string | null
   subtitle?: string | null
@@ -32,7 +32,7 @@ type RawCategory = {
   image?: string | null
 }
 
-type CategoryCardItem = {
+interface CategoryCardItem {
   id: number
   name: string
   icon: string
@@ -168,24 +168,34 @@ const currentSubCategories = computed(() => {
 <template>
   <view class="flex flex-col bg-[#f8f7f6]">
     <!-- Category Content -->
-    <view class="flex overflow-hidden"
-      :style="{ height: `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px - 50px)` }">
+    <view
+      class="flex overflow-hidden"
+      :style="{ height: `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px - 50px)` }"
+    >
       <!-- Left Sidebar -->
-      <scroll-view scroll-y class="w-24 bg-white flex-shrink-0">
-        <view v-for="(category, index) in categories" :key="category.id"
+      <scroll-view scroll-y class="w-24 flex-shrink-0 bg-white">
+        <view
+          v-for="(category, index) in categories" :key="category.id"
           class="relative flex flex-col items-center justify-center px-2 py-4 transition-all duration-200"
-          :class="activeCategory === index ? 'bg-[#f8f7f6]' : 'bg-white'" @click="onCategoryChange(index)">
+          :class="activeCategory === index ? 'bg-[#f8f7f6]' : 'bg-white'" @click="onCategoryChange(index)"
+        >
           <!-- Active Indicator -->
-          <view v-if="activeCategory === index"
-            class="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-[#efb239] -translate-y-1/2" />
+          <view
+            v-if="activeCategory === index"
+            class="absolute left-0 top-1/2 h-8 w-1 rounded-r-full bg-[#efb239] -translate-y-1/2"
+          />
           <!-- Icon -->
-          <view class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
-            :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'">
+          <view
+            class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
+            :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'"
+          >
             <app-icon :icon="category.icon" :size="20" :color="activeCategory === index ? '#efb239' : '#94a3b8'" />
           </view>
           <!-- Name -->
-          <text class="text-center text-[11px] font-medium"
-            :class="activeCategory === index ? 'text-[#efb239]' : 'text-slate-600'">
+          <text
+            class="text-center text-[11px] font-medium"
+            :class="activeCategory === index ? 'text-[#efb239]' : 'text-slate-600'"
+          >
             {{ category.name }}
           </text>
         </view>
@@ -205,10 +215,12 @@ const currentSubCategories = computed(() => {
 
         <!-- Sub Categories Grid -->
         <view class="grid grid-cols-2 gap-3">
-          <view v-for="sub in currentSubCategories" :key="sub.id" class="relative overflow-hidden rounded-2xl"
+          <view
+            v-for="sub in currentSubCategories" :key="sub.id" class="relative overflow-hidden rounded-2xl"
             :class="sub.style === 'light' ? 'bg-[#f5e6c8]' : 'bg-slate-400'"
             :style="sub.style === 'dark' ? `background-image: url(${sub.image}); background-size: cover; background-position: center;` : ''"
-            @click="onSubCategoryClick(sub)">
+            @click="onSubCategoryClick(sub)"
+          >
             <!-- Dark Style Card -->
             <view v-if="sub.style === 'dark'" class="relative aspect-[4/5]">
               <!-- Gradient Overlay -->

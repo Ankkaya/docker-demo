@@ -82,12 +82,12 @@ const formattedTimer = computed(() => {
 })
 
 const statusIconMap: Record<string, string> = {
-  '待付款': 'i-material-symbols:account-balance-wallet',
-  '待发货': 'i-material-symbols:package-2',
-  '待收货': 'i-material-symbols:local-shipping',
-  '已完成': 'i-material-symbols:task-alt',
-  '已取消': 'i-material-symbols:cancel',
-  '已超时': 'i-material-symbols:timer-off',
+  待付款: 'i-material-symbols:account-balance-wallet',
+  待发货: 'i-material-symbols:package-2',
+  待收货: 'i-material-symbols:local-shipping',
+  已完成: 'i-material-symbols:task-alt',
+  已取消: 'i-material-symbols:cancel',
+  已超时: 'i-material-symbols:timer-off',
 }
 
 function getOrderDetailIconClass(name: string) {
@@ -127,7 +127,7 @@ function maskPhone(phone: string) {
 function formatSpecs(specs: Record<string, string> | Array<{ name?: string, value?: string }>) {
   if (Array.isArray(specs)) {
     const values = specs
-      .map(item => {
+      .map((item) => {
         if (!item?.name || !item?.value) {
           return ''
         }
@@ -579,8 +579,10 @@ onUnload(() => {
           <text class="block text-sm text-slate-500">
             {{ loadError }}
           </text>
-          <view class="mt-4 inline-flex rounded-full bg-[#efb239] px-5 py-2 text-sm font-semibold text-white"
-            @click="loadOrder">
+          <view
+            class="mt-4 inline-flex rounded-full bg-[#efb239] px-5 py-2 text-sm text-white font-semibold"
+            @click="loadOrder"
+          >
             重新加载
           </view>
         </view>
@@ -591,26 +593,31 @@ onUnload(() => {
                 <text class="text-[22px] text-slate-900 font-bold">
                   {{ orderStatusLabel }}
                 </text>
-                <text class="mt-2 block max-w-[480rpx] text-xs leading-5 text-slate-600">
+                <text class="mt-2 block max-w-[480rpx] text-xs text-slate-600 leading-5">
                   {{ orderStatusDesc }}
                 </text>
               </view>
               <view
-                class="size-14 flex items-center justify-center rounded-3xl bg-[#efb239] shadow-[0_10px_20px_rgba(239,178,57,0.24)]">
-                <text class="text-[26px] text-white leading-none"
-                  :class="statusIconMap[orderStatusLabel] || getOrderDetailIconClass('fallback')" />
+                class="size-14 flex items-center justify-center rounded-3xl bg-[#efb239] shadow-[0_10px_20px_rgba(239,178,57,0.24)]"
+              >
+                <text
+                  class="text-[26px] text-white leading-none"
+                  :class="statusIconMap[orderStatusLabel] || getOrderDetailIconClass('fallback')"
+                />
               </view>
             </view>
 
             <view class="mt-5">
-              <view v-for="(item, index) in orderTimeline" :key="`${item.text}-${index}`"
-                class="grid grid-cols-[26px_1fr] gap-x-3">
+              <view
+                v-for="(item, index) in orderTimeline" :key="`${item.text}-${index}`"
+                class="grid grid-cols-[26px_1fr] gap-x-3"
+              >
                 <view class="flex flex-col items-center">
-                  <view class="size-3 rounded-full border-2 border-[#efb239] bg-white" />
+                  <view class="size-3 border-2 border-[#efb239] rounded-full bg-white" />
                   <view v-if="index !== orderTimeline.length - 1" class="mt-1 h-8 w-px bg-[#efb239]/30" />
                 </view>
                 <view class="pb-4">
-                  <text class="block text-sm font-semibold text-slate-800">
+                  <text class="block text-sm text-slate-800 font-semibold">
                     {{ item.text }}
                   </text>
                   <text v-if="item.time" class="mt-1 block text-xs text-slate-500">
@@ -638,7 +645,7 @@ onUnload(() => {
                     {{ maskPhone(orderDetail.receiverPhone || '') }}
                   </text>
                 </view>
-                <text class="mt-2 block text-sm leading-6 text-slate-600">
+                <text class="mt-2 block text-sm text-slate-600 leading-6">
                   {{ orderDetail.receiverAddress || '-' }}
                 </text>
               </view>
@@ -740,22 +747,29 @@ onUnload(() => {
       </view>
     </scroll-view>
 
-    <view v-if="showBottomActions"
-      class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-[#efb239]/8 bg-white/95 p-4 pb-6 backdrop-blur-md">
+    <view
+      v-if="showBottomActions"
+      class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-[#efb239]/8 bg-white/95 p-4 pb-6 backdrop-blur-md"
+    >
       <view
-        class="flex-1 rounded-full border border-solid border-slate-200 bg-white py-3 text-center text-sm text-slate-700 font-semibold"
-        @click="cancelOrder">
+        class="flex-1 border border-slate-200 rounded-full border-solid bg-white py-3 text-center text-sm text-slate-700 font-semibold"
+        @click="cancelOrder"
+      >
         {{ secondaryActionLabel }}
       </view>
-      <view v-if="orderStatusLabel !== '已超时'"
+      <view
+        v-if="orderStatusLabel !== '已超时'"
         class="detail-action flex-[1.2] rounded-full bg-[#efb239] py-3 text-center text-sm text-slate-900 font-bold"
-        @click="orderStatusLabel === '待付款' ? openPaymentPopup() : payNow()">
+        @click="orderStatusLabel === '待付款' ? openPaymentPopup() : payNow()"
+      >
         {{ primaryActionLabel }}
       </view>
     </view>
 
-    <wd-popup v-model="paymentPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
-      lock-scroll root-portal :z-index="2100">
+    <wd-popup
+      v-model="paymentPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
+      lock-scroll root-portal :z-index="2100"
+    >
       <view class="order-payment-popup__panel">
         <view class="order-payment-popup__handle" />
         <view class="order-payment-popup__title">
@@ -771,23 +785,27 @@ onUnload(() => {
             支付金额
           </text>
           <view class="order-payment-popup__amount">
-            <text class="text-2xl font-bold text-slate-900">¥</text>
-            <text class="text-5xl font-extrabold tracking-tight text-slate-900">
+            <text class="text-2xl text-slate-900 font-bold">
+              ¥
+            </text>
+            <text class="text-5xl text-slate-900 font-extrabold tracking-tight">
               {{ orderSummary.total.toFixed(2) }}
             </text>
           </view>
         </view>
 
         <view class="order-payment-popup__methods">
-          <view v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
+          <view
+            v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="selectedPayment = item.key">
+            @click="selectedPayment = item.key"
+          >
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">
                 <text class="text-[22px] leading-none" :class="item.iconClass" />
               </view>
               <view>
-                <text class="block text-sm font-semibold text-slate-900">
+                <text class="block text-sm text-slate-900 font-semibold">
                   {{ item.name }}
                 </text>
                 <text class="block text-[10px] text-slate-400">
@@ -795,17 +813,23 @@ onUnload(() => {
                 </text>
               </view>
             </view>
-            <view class="size-6 flex items-center justify-center rounded-full border border-solid"
-              :class="selectedPayment === item.key ? 'border-[#efb239] bg-[#efb239]' : 'border-[#d6c7a1] bg-white'">
-              <text v-if="selectedPayment === item.key"
-                class="i-material-symbols:check text-[16px] text-white leading-none" />
+            <view
+              class="size-6 flex items-center justify-center border rounded-full border-solid"
+              :class="selectedPayment === item.key ? 'border-[#efb239] bg-[#efb239]' : 'border-[#d6c7a1] bg-white'"
+            >
+              <text
+                v-if="selectedPayment === item.key"
+                class="i-material-symbols:check text-[16px] text-white leading-none"
+              />
             </view>
           </view>
         </view>
 
         <view class="order-payment-popup__submit" :class="paying ? 'opacity-75' : ''" @click="payNow">
           <text>{{ paying ? '支付中...' : '立即支付' }}</text>
-          <text class="font-normal text-white/80">|</text>
+          <text class="text-white/80 font-normal">
+            |
+          </text>
           <text>¥{{ orderSummary.total.toFixed(2) }}</text>
         </view>
       </view>

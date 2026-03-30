@@ -168,13 +168,13 @@ async function loadDefaultAddress() {
 
     checkoutStore.setSelectedAddress(deliveryAddress.value
       ? {
-        id: deliveryAddress.value.id,
-        receiverName: deliveryAddress.value.receiverName,
-        receiverPhone: deliveryAddress.value.receiverPhone,
-        fullAddress: deliveryAddress.value.fullAddress,
-        tag: deliveryAddress.value.tag,
-        isDefault: deliveryAddress.value.isDefault,
-      }
+          id: deliveryAddress.value.id,
+          receiverName: deliveryAddress.value.receiverName,
+          receiverPhone: deliveryAddress.value.receiverPhone,
+          fullAddress: deliveryAddress.value.fullAddress,
+          tag: deliveryAddress.value.tag,
+          isDefault: deliveryAddress.value.isDefault,
+        }
       : null)
   }
   catch {
@@ -295,9 +295,9 @@ async function openPaymentPopup() {
       items: orderSummary.value.source === 'cart'
         ? undefined
         : checkoutItems.value.map(item => ({
-          skuId: item.skuId,
-          quantity: item.quantity,
-        })),
+            skuId: item.skuId,
+            quantity: item.quantity,
+          })),
     }
 
     const order = await (Apis.general as any).MallOrdersController_createOrder({
@@ -420,23 +420,23 @@ onLoad((options) => {
       orderSummary.value.expireAt = String(detail.expireAt || '')
       deliveryAddress.value = detail.receiverAddress
         ? {
-          id: 0,
-          customerId: 0,
-          receiverName: detail.receiverName || '',
-          receiverPhone: detail.receiverPhone || '',
-          province: '',
-          city: '',
-          district: '',
-          address: detail.receiverAddress,
-          fullAddress: detail.receiverAddress,
-          postalCode: '',
-          tag: null,
-          isDefault: false,
-          sort: 0,
-          remark: '',
-          createdAt: '',
-          updatedAt: '',
-        }
+            id: 0,
+            customerId: 0,
+            receiverName: detail.receiverName || '',
+            receiverPhone: detail.receiverPhone || '',
+            province: '',
+            city: '',
+            district: '',
+            address: detail.receiverAddress,
+            fullAddress: detail.receiverAddress,
+            postalCode: '',
+            tag: null,
+            isDefault: false,
+            sort: 0,
+            remark: '',
+            createdAt: '',
+            updatedAt: '',
+          }
         : null
       syncCountdownByExpireAt(orderSummary.value.expireAt)
     }).catch(() => { })
@@ -460,10 +460,10 @@ onShow(() => {
 </script>
 
 <template>
-  <view class=" bg-[#fdfaf5] text-slate-900">
+  <view class="bg-[#fdfaf5] text-slate-900">
     <scroll-view scroll-y class="pb-[220rpx]">
       <view class="mx-auto max-w-[390px] px-5 pb-10">
-        <view class="rounded-3xl border border-orange-50 bg-white p-5 shadow-sm mt-6" @click="openAddressList">
+        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm" @click="openAddressList">
           <view class="flex items-start justify-between gap-3">
             <view class="flex items-start gap-3">
               <view class="mt-1 size-10 flex items-center justify-center rounded-2xl bg-[#efb239]/10">
@@ -475,22 +475,24 @@ onShow(() => {
                 </view>
                 <template v-else-if="hasSelectedAddress && deliveryAddress">
                   <view class="flex items-center gap-2">
-                    <text class="text-sm font-semibold text-slate-900">
+                    <text class="text-sm text-slate-900 font-semibold">
                       {{ deliveryAddress.receiverName }}
                     </text>
-                    <text class="text-sm font-medium text-[#efb239]">
+                    <text class="text-sm text-[#efb239] font-medium">
                       {{ maskPhone(deliveryAddress.receiverPhone) }}
                     </text>
-                    <text v-if="deliveryAddress.tag"
-                      class="rounded-full bg-[#efb239]/10 px-2 py-0.5 text-[10px] font-bold text-[#c98500]">
+                    <text
+                      v-if="deliveryAddress.tag"
+                      class="rounded-full bg-[#efb239]/10 px-2 py-0.5 text-[10px] text-[#c98500] font-bold"
+                    >
                       {{ deliveryAddress.tag }}
                     </text>
                   </view>
-                  <text class="mt-2 block text-sm leading-6 text-slate-500">
+                  <text class="mt-2 block text-sm text-slate-500 leading-6">
                     {{ deliveryAddress.fullAddress }}
                   </text>
                 </template>
-                <text v-else class="block py-2 text-sm leading-6 text-slate-400">
+                <text v-else class="block py-2 text-sm text-slate-400 leading-6">
                   未选择收货地址
                 </text>
               </view>
@@ -499,17 +501,19 @@ onShow(() => {
           </view>
         </view>
 
-        <view class="mt-6 rounded-3xl border border-orange-50 bg-white p-5 shadow-sm">
+        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm">
           <view class="mb-4 flex items-center justify-between text-xs text-slate-400">
             <text>商品信息</text>
             <text>共 {{ itemCount }} 件商品</text>
           </view>
           <view class="space-y-4">
-            <view v-for="item in checkoutItems" :key="`${item.skuId}-${item.productId}`"
-              class="flex items-center gap-4">
+            <view
+              v-for="item in checkoutItems" :key="`${item.skuId}-${item.productId}`"
+              class="flex items-center gap-4"
+            >
               <image :src="item.image" mode="aspectFill" class="size-16 rounded-2xl bg-slate-100" />
               <view class="min-w-0 flex-1">
-                <text class="block truncate text-sm font-semibold text-slate-900">
+                <text class="block truncate text-sm text-slate-900 font-semibold">
                   {{ item.productName }}
                 </text>
                 <text class="mt-1 block text-xs text-slate-400">
@@ -519,21 +523,21 @@ onShow(() => {
                   x{{ item.quantity }}
                 </text>
               </view>
-              <text class="text-sm font-bold text-slate-900">
+              <text class="text-sm text-slate-900 font-bold">
                 ¥{{ (item.price * item.quantity).toFixed(2) }}
               </text>
             </view>
           </view>
         </view>
 
-        <view class="mt-6 rounded-3xl border border-orange-50 bg-white p-5 shadow-sm">
+        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm">
           <view class="flex items-center justify-between">
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl bg-sky-50">
                 <text class="i-material-symbols:local-shipping text-[22px] text-sky-500 leading-none" />
               </view>
               <view>
-                <text class="block text-sm font-semibold text-slate-900">
+                <text class="block text-sm text-slate-900 font-semibold">
                   {{ deliveryOption.label }}
                 </text>
                 <text class="block text-xs text-slate-400">
@@ -541,20 +545,20 @@ onShow(() => {
                 </text>
               </view>
             </view>
-            <text class="text-sm font-medium text-[#efb239]">
+            <text class="text-sm text-[#efb239] font-medium">
               包邮
             </text>
           </view>
         </view>
 
-        <view class="mt-6 rounded-3xl border border-orange-50 bg-white p-5 shadow-sm">
+        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm">
           <view class="flex items-center justify-between">
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl bg-emerald-50">
                 <text class="i-material-symbols:confirmation-number text-[22px] text-emerald-500 leading-none" />
               </view>
               <view>
-                <text class="block text-sm font-semibold text-slate-900">
+                <text class="block text-sm text-slate-900 font-semibold">
                   {{ discountInfo.title }}
                 </text>
                 <text class="block text-xs text-slate-400">
@@ -562,14 +566,14 @@ onShow(() => {
                 </text>
               </view>
             </view>
-            <text class="text-sm font-bold text-emerald-600">
+            <text class="text-sm text-emerald-600 font-bold">
               -¥{{ discountInfo.amount.toFixed(2) }}
             </text>
           </view>
         </view>
 
-        <view class="mt-6 rounded-3xl border border-orange-50 bg-white p-5 shadow-sm">
-          <view class="space-y-3 text-sm">
+        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm">
+          <view class="text-sm space-y-3">
             <view class="flex items-center justify-between text-slate-500">
               <text>商品金额</text>
               <text>¥{{ goodsAmount.toFixed(2) }}</text>
@@ -584,10 +588,10 @@ onShow(() => {
             </view>
             <view class="h-px bg-slate-50" />
             <view class="flex items-center justify-between">
-              <text class="font-semibold text-slate-900">
+              <text class="text-slate-900 font-semibold">
                 应付金额
               </text>
-              <text class="text-xl font-extrabold text-slate-900">
+              <text class="text-xl text-slate-900 font-extrabold">
                 ¥{{ payableAmount.toFixed(2) }}
               </text>
             </view>
@@ -596,7 +600,7 @@ onShow(() => {
 
         <view class="flex items-center justify-center gap-1.5 py-5">
           <text class="i-material-symbols:verified-user text-[18px] text-slate-400 leading-none" />
-          <text class="text-xs font-medium text-slate-400">
+          <text class="text-xs text-slate-400 font-medium">
             下单后进入支付确认
           </text>
         </view>
@@ -604,20 +608,26 @@ onShow(() => {
     </scroll-view>
 
     <view
-      class="fixed bottom-0 left-0 right-0 z-40 border-t border-orange-50 bg-white/80 p-6 backdrop-blur-lg shadow-[0_-10px_30px_rgba(239,178,57,0.08)]">
+      class="fixed bottom-0 left-0 right-0 z-40 border-t border-orange-50 bg-white/80 p-6 shadow-[0_-10px_30px_rgba(239,178,57,0.08)] backdrop-blur-lg"
+    >
       <view class="mx-auto max-w-[390px]">
         <view
-          class="flex items-center justify-center gap-2 rounded-full bg-[#efb239] py-4 text-lg font-bold text-white shadow-lg shadow-orange-200 active:scale-[0.99]"
-          :class="creatingOrder ? 'opacity-75' : ''" @click="openPaymentPopup">
+          class="flex items-center justify-center gap-2 rounded-full bg-[#efb239] py-4 text-lg text-white font-bold shadow-lg shadow-orange-200 active:scale-[0.99]"
+          :class="creatingOrder ? 'opacity-75' : ''" @click="openPaymentPopup"
+        >
           <text>{{ creatingOrder ? '创建订单中...' : '立即支付' }}</text>
-          <text class="font-normal text-white/80">|</text>
+          <text class="text-white/80 font-normal">
+            |
+          </text>
           <text>¥{{ payableAmount.toFixed(2) }}</text>
         </view>
       </view>
     </view>
 
-    <wd-popup v-model="paymentPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
-      lock-scroll root-portal :z-index="2100">
+    <wd-popup
+      v-model="paymentPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
+      lock-scroll root-portal :z-index="2100"
+    >
       <view class="order-payment-popup__panel">
         <view class="order-payment-popup__handle" />
         <view class="order-payment-popup__title">
@@ -633,23 +643,27 @@ onShow(() => {
             支付金额
           </text>
           <view class="order-payment-popup__amount">
-            <text class="text-2xl font-bold text-slate-900">¥</text>
-            <text class="text-5xl font-extrabold tracking-tight text-slate-900">
+            <text class="text-2xl text-slate-900 font-bold">
+              ¥
+            </text>
+            <text class="text-5xl text-slate-900 font-extrabold tracking-tight">
               {{ orderSummary.amount.toFixed(2) }}
             </text>
           </view>
         </view>
 
         <view class="order-payment-popup__methods">
-          <view v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
+          <view
+            v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="selectedPayment = item.key">
+            @click="selectedPayment = item.key"
+          >
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">
                 <text class="text-[22px] leading-none" :class="item.iconClass" />
               </view>
               <view>
-                <text class="block text-sm font-semibold text-slate-900">
+                <text class="block text-sm text-slate-900 font-semibold">
                   {{ item.name }}
                 </text>
                 <text class="block text-[10px] text-slate-400">
@@ -657,17 +671,23 @@ onShow(() => {
                 </text>
               </view>
             </view>
-            <view class="size-6 flex items-center justify-center rounded-full border border-solid"
-              :class="selectedPayment === item.key ? 'border-[#efb239] bg-[#efb239]' : 'border-[#d6c7a1] bg-white'">
-              <text v-if="selectedPayment === item.key"
-                class="i-material-symbols:check text-[16px] text-white leading-none" />
+            <view
+              class="size-6 flex items-center justify-center border rounded-full border-solid"
+              :class="selectedPayment === item.key ? 'border-[#efb239] bg-[#efb239]' : 'border-[#d6c7a1] bg-white'"
+            >
+              <text
+                v-if="selectedPayment === item.key"
+                class="i-material-symbols:check text-[16px] text-white leading-none"
+              />
             </view>
           </view>
         </view>
 
         <view class="order-payment-popup__submit" @click="payNow">
           <text>立即支付</text>
-          <text class="font-normal text-white/80">|</text>
+          <text class="text-white/80 font-normal">
+            |
+          </text>
           <text>¥{{ orderSummary.amount.toFixed(2) }}</text>
         </view>
       </view>

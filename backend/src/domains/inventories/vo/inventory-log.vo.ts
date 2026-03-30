@@ -18,6 +18,32 @@ export class InventoryLogVo {
   remark?: string;
   createdAt: Date;
 
+  private static normalizeSpecs(specs: unknown): Record<string, string> {
+    if (Array.isArray(specs)) {
+      return specs.reduce<Record<string, string>>((acc, item) => {
+        if (item && typeof item === 'object') {
+          const entry = item as { name?: unknown; value?: unknown };
+          if (typeof entry.name === 'string' && entry.name) {
+            acc[entry.name] = entry.value == null ? '' : String(entry.value);
+          }
+        }
+        return acc;
+      }, {});
+    }
+
+    if (specs && typeof specs === 'object') {
+      return Object.entries(specs as Record<string, unknown>).reduce<Record<string, string>>(
+        (acc, [key, value]) => {
+          acc[key] = value == null ? '' : String(value);
+          return acc;
+        },
+        {},
+      );
+    }
+
+    return {};
+  }
+
   static fromEntity(entity: InventoryLog & { 
     sku?: { 
       skuCode: string; 
@@ -33,7 +59,7 @@ export class InventoryLogVo {
     vo.skuId = entity.skuId;
     vo.skuCode = entity.sku?.skuCode || '';
     vo.productName = entity.sku?.product?.name || '';
-    vo.specs = (entity.sku?.specs as Record<string, string>) || {};
+    vo.specs = InventoryLogVo.normalizeSpecs(entity.sku?.specs);
     vo.warehouseId = entity.warehouseId;
     vo.warehouseName = entity.warehouse?.name || '';
     vo.quantity = entity.quantity;

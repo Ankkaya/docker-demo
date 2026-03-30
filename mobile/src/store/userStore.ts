@@ -28,10 +28,12 @@ export interface PendingRoute {
   isTabbar?: boolean
 }
 
-const createEmptyProfile = (): UserProfile => ({
-  nickname: '',
-  avatarUrl: '',
-})
+function createEmptyProfile(): UserProfile {
+  return {
+    nickname: '',
+    avatarUrl: '',
+  }
+}
 
 export const useUserStore = defineStore('user', {
   state: () => ({

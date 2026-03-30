@@ -13,7 +13,7 @@ definePage({
 })
 
 const router = useRouter()
-const pageTitle = ref('Onesies & Bodysuits')
+const pageTitle = ref('连体衣与包屁衣')
 const activeFilter = ref('recommended')
 const priceSortDirection = ref<'asc' | 'desc'>('asc')
 const categoryId = ref<number | null>(null)
@@ -26,13 +26,13 @@ const hasMore = ref(true)
 const defaultPageTitle = '全部商品'
 
 const filters = [
-  { key: 'recommended', label: 'Recommended', sort: true },
-  { key: 'sales', label: 'Sales', sort: false },
-  { key: 'price', label: 'Price', sort: true },
-  { key: 'new', label: 'New', sort: false },
+  { key: 'recommended', label: '推荐', sort: true },
+  { key: 'sales', label: '销量', sort: false },
+  { key: 'price', label: '价格', sort: true },
+  { key: 'new', label: '新品', sort: false },
 ]
 
-type ProductListItem = {
+interface ProductListItem {
   id: number
   name: string
   price: number
@@ -235,25 +235,31 @@ function clearCategoryFilter() {
 </script>
 
 <template>
-  <view class=" flex flex-col bg-[#f8f7f6]">
+  <view class="flex flex-col bg-[#f8f7f6]">
     <scroll-view scroll-y class="flex-1" @scrolltolower="handleScrollToLower">
       <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-3">
-        <view v-for="item in filters" :key="item.key"
+        <view
+          v-for="item in filters" :key="item.key"
           class="h-9 flex shrink-0 items-center gap-1 border rounded-full px-4" :class="activeFilter === item.key
             ? 'border-[#efb239] bg-[#efb239] text-white'
-            : 'border-slate-200 bg-white text-slate-600'" @click="setFilter(item.key)">
+            : 'border-slate-200 bg-white text-slate-600'" @click="setFilter(item.key)"
+        >
           <text class="text-sm" :class="activeFilter === item.key ? 'font-semibold' : 'font-medium'">
             {{ item.label }}
           </text>
-          <wd-icon v-if="item.sort" :name="activeFilter === item.key && item.key === 'price'
-            ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
-            : 'switch-horizontal'" size="14" :color="activeFilter === item.key ? '#fff' : '#64748b'" />
+          <wd-icon
+            v-if="item.sort" :name="activeFilter === item.key && item.key === 'price'
+              ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
+              : 'switch-horizontal'" size="14" :color="activeFilter === item.key ? '#fff' : '#64748b'"
+          />
         </view>
       </view>
 
       <view v-if="hasActiveContext" class="flex flex-wrap items-center gap-2 px-4 pb-3">
-        <view v-for="tag in contextTags" :key="tag.key"
-          class="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm">
+        <view
+          v-for="tag in contextTags" :key="tag.key"
+          class="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm"
+        >
           <text>{{ tag.label }}</text>
           <wd-icon v-if="tag.removable" name="close" size="14" color="#94a3b8" @click.stop="clearCategoryFilter" />
         </view>
@@ -266,14 +272,19 @@ function clearCategoryFilter() {
         暂无商品
       </view>
       <view v-else class="grid grid-cols-2 gap-4 px-4 pb-24">
-        <view v-for="product in products" :key="product.id" class="flex flex-col gap-2" :class="product.offset"
-          @click="onProductClick(product)">
-          <view class="relative overflow-hidden border border-slate-100 rounded-2xl bg-slate-200 shadow-sm"
-            :style="`aspect-ratio:${product.ratio}`">
+        <view
+          v-for="product in products" :key="product.id" class="flex flex-col gap-2" :class="product.offset"
+          @click="onProductClick(product)"
+        >
+          <view
+            class="relative overflow-hidden border border-slate-100 rounded-2xl bg-slate-200 shadow-sm"
+            :style="`aspect-ratio:${product.ratio}`"
+          >
             <image :src="product.image" mode="aspectFill" class="h-full w-full" />
             <view
               class="absolute bottom-3 right-3 size-10 flex items-center justify-center rounded-full bg-[#efb239] shadow-lg"
-              @click.stop="addToCart(product)">
+              @click.stop="addToCart(product)"
+            >
               <wd-icon name="cart" size="16" color="#fff" />
             </view>
           </view>

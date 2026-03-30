@@ -359,11 +359,11 @@ async function loadReviewPreview(productId: number) {
     const item = Array.isArray(response?.list) ? response.list[0] : null
     reviewPreview.value = item
       ? {
-        id: item.id,
-        userName: item.userName || '匿名用户',
-        rating: Number(item.rating || 5),
-        content: item.content || '用户暂无文字评价',
-      }
+          id: item.id,
+          userName: item.userName || '匿名用户',
+          rating: Number(item.rating || 5),
+          content: item.content || '用户暂无文字评价',
+        }
       : null
   }
   catch {
@@ -483,11 +483,11 @@ function toggleLike() {
 
   const request = nextLiked
     ? (Apis.general as any).MallFavoritesController_createFavorite({
-      data: { productId: routeProductId.value },
-    })
+        data: { productId: routeProductId.value },
+      })
     : (Apis.general as any).MallFavoritesController_removeFavorite({
-      pathParams: { productId: routeProductId.value },
-    })
+        pathParams: { productId: routeProductId.value },
+      })
 
   request.send()
     .then(() => {
@@ -605,25 +605,32 @@ function openReviewList() {
     <scroll-view scroll-y class="flex-1">
       <view class="pb-28">
         <view class="relative h-[640rpx] w-full overflow-hidden bg-[#efb239]/10">
-          <view v-if="loading"
-            class="absolute inset-0 z-10 flex items-center justify-center bg-white/40 text-sm text-slate-500 backdrop-blur-sm">
+          <view
+            v-if="loading"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-white/40 text-sm text-slate-500 backdrop-blur-sm"
+          >
             加载中...
           </view>
-          <swiper class="h-full w-full" :indicator-dots="false" :autoplay="false" :circular="true"
-            @change="onImageChange">
+          <swiper
+            class="h-full w-full" :indicator-dots="false" :autoplay="false" :circular="true"
+            @change="onImageChange"
+          >
             <swiper-item v-for="(img, idx) in gallery" :key="idx">
               <image :src="img" mode="aspectFill" class="h-full w-full" />
             </swiper-item>
           </swiper>
 
           <view class="absolute bottom-6 left-1/2 flex gap-2 -translate-x-1/2">
-            <view v-for="(_, idx) in gallery" :key="idx" class="size-2 rounded-full"
-              :class="idx === currentImage ? 'bg-[#efb239]' : 'bg-[#efb239]/30'" />
+            <view
+              v-for="(_, idx) in gallery" :key="idx" class="size-2 rounded-full"
+              :class="idx === currentImage ? 'bg-[#efb239]' : 'bg-[#efb239]/30'"
+            />
           </view>
 
           <view
             class="absolute right-4 top-6 size-10 flex items-center justify-center rounded-full bg-white/90 shadow-md"
-            @click="toggleLike">
+            @click="toggleLike"
+          >
             <wd-icon :name="liked ? 'heart-filled' : 'heart'" size="18" :color="liked ? '#f43f5e' : '#64748b'" />
           </view>
         </view>
@@ -649,7 +656,7 @@ function openReviewList() {
             </text>
           </view>
           <view v-if="displaySku" class="mt-3 flex items-center gap-3 text-xs">
-            <text v-if="canSelectSku" class="rounded-full bg-[#efb239]/10 px-3 py-1 font-semibold text-[#c98500]">
+            <text v-if="canSelectSku" class="rounded-full bg-[#efb239]/10 px-3 py-1 text-[#c98500] font-semibold">
               {{ specDisplayLabel }} {{ selectedSpecSummary }}
             </text>
             <text :class="totalStock > 0 ? 'text-emerald-600' : 'text-rose-500'">
@@ -671,14 +678,16 @@ function openReviewList() {
             </text>
             <view class="flex flex-wrap gap-2">
               <template v-for="value in group.values" :key="`${group.name}-${value}`">
-                <view class="border rounded-lg px-4 py-3 text-center text-sm font-medium" :class="[
-                  selectedSpecs[group.name] === value
-                    ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold'
-                    : 'border-slate-200 bg-white text-slate-700',
-                  !getOptionState(group.name, value).exists || !getOptionState(group.name, value).inStock
-                    ? 'cursor-not-allowed opacity-35'
-                    : '',
-                ]" @click="selectSpec(group.name, value)">
+                <view
+                  class="border rounded-lg px-4 py-3 text-center text-sm font-medium" :class="[
+                    selectedSpecs[group.name] === value
+                      ? 'border-2 border-[#efb239] bg-[#efb239]/10 text-slate-900 font-bold'
+                      : 'border-slate-200 bg-white text-slate-700',
+                    !getOptionState(group.name, value).exists || !getOptionState(group.name, value).inStock
+                      ? 'cursor-not-allowed opacity-35'
+                      : '',
+                  ]" @click="selectSpec(group.name, value)"
+                >
                   {{ value }}
                 </view>
               </template>
@@ -694,17 +703,20 @@ function openReviewList() {
             </text>
           </view>
           <view class="grid grid-cols-2 gap-3">
-            <view v-for="item in productHighlights" :key="item.key"
-              class="flex items-center gap-3 rounded-2xl p-4 shadow-sm">
+            <view
+              v-for="item in productHighlights" :key="item.key"
+              class="flex items-center gap-3 rounded-2xl p-4 shadow-sm"
+            >
               <view
-                class="size-10 flex shrink-0 items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
+                class="size-10 flex shrink-0 items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]"
+              >
                 <view class="text-[20px]" :class="getHighlightIconClass(item)" />
               </view>
               <view class="min-w-0 flex-1">
                 <text class="block text-xs text-slate-400 font-medium">
                   {{ item.label }}
                 </text>
-                <text class="mt-1 block text-sm leading-6 font-bold" :class="getHighlightValueClass(item)">
+                <text class="mt-1 block text-sm font-bold leading-6" :class="getHighlightValueClass(item)">
                   {{ item.value }}
                 </text>
               </view>
@@ -750,7 +762,8 @@ function openReviewList() {
             <view class="mb-2 flex items-center justify-between">
               <view class="flex items-center gap-2">
                 <view
-                  class="size-8 flex items-center justify-center rounded-full bg-[#efb239]/20 text-xs text-[#efb239] font-bold">
+                  class="size-8 flex items-center justify-center rounded-full bg-[#efb239]/20 text-xs text-[#efb239] font-bold"
+                >
                   {{ getReviewInitial(reviewPreview?.userName || '匿名用户') }}
                 </view>
                 <text class="text-sm text-slate-900 font-bold">
@@ -758,16 +771,20 @@ function openReviewList() {
                 </text>
               </view>
               <view class="flex">
-                <wd-icon v-for="n in 5" :key="n" name="star" size="14"
-                  :color="n <= Number(reviewPreview?.rating || 5) ? '#efb239' : '#e2e8f0'" />
+                <wd-icon
+                  v-for="n in 5" :key="n" name="star" size="14"
+                  :color="n <= Number(reviewPreview?.rating || 5) ? '#efb239' : '#e2e8f0'"
+                />
               </view>
             </view>
             <text class="text-sm text-slate-600 leading-6">
               {{ reviewPreview?.content || '当前商品还没有公开评价，欢迎成为第一位购买并评价的用户。' }}
             </text>
           </view>
-          <view v-else
-            class="rounded-xl border border-dashed border-[#efb239]/30 bg-white px-5 py-6 text-center shadow-sm">
+          <view
+            v-else
+            class="border border-[#efb239]/30 rounded-xl border-dashed bg-white px-5 py-6 text-center shadow-sm"
+          >
             <text class="block text-base text-slate-900 font-bold">
               暂无评价
             </text>
@@ -781,9 +798,11 @@ function openReviewList() {
           <text class="mb-4 block px-5 text-xl text-slate-900 font-bold">
             相关推荐
           </text>
-          <scroll-view scroll-x class="no-scrollbar whitespace-nowrap px-5 pb-4 box-border">
-            <view v-for="item in relatedProducts" :key="item.id" class="mr-4 inline-block w-[280rpx]"
-              @click="openRelated(item)">
+          <scroll-view scroll-x class="no-scrollbar box-border whitespace-nowrap px-5 pb-4">
+            <view
+              v-for="item in relatedProducts" :key="item.id" class="mr-4 inline-block w-[280rpx]"
+              @click="openRelated(item)"
+            >
               <image :src="item.image" mode="aspectFill" class="h-[280rpx] w-[280rpx] rounded-lg bg-slate-200" />
               <text class="line-clamp-1 mt-2 block text-xs text-slate-900 font-bold">
                 {{ item.name }}
@@ -798,16 +817,20 @@ function openReviewList() {
     </scroll-view>
 
     <view
-      class="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 border-t border-slate-100 bg-white/95 p-4 pb-6 backdrop-blur-md">
-
+      class="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 border-t border-slate-100 bg-white/95 p-4 pb-6 backdrop-blur-md"
+    >
       <view class="flex flex-1 gap-3">
-        <view v-if="hasStock" class="flex-1 rounded-xl py-3 text-center text-sm font-bold transition"
-          :class="'border-[3px] border-[#efb239] bg-white text-[#efb239] shadow-[inset_0_0_0_1px_rgba(239,178,57,0.24)]'"
-          @click="addToCart">
+        <view
+          v-if="hasStock" class="flex-1 border-[3px] border-[#efb239] rounded-xl bg-white py-3 text-center text-sm text-[#efb239] font-bold shadow-[inset_0_0_0_1px_rgba(239,178,57,0.24)] transition"
+
+          @click="addToCart"
+        >
           {{ addingToCart ? '加入中...' : '加入购物车' }}
         </view>
-        <view class="flex-[1.5] rounded-xl py-3 text-center text-sm font-bold transition"
-          :class="hasStock ? 'bg-[#efb239] text-white' : 'bg-slate-200 text-slate-400'" @click="buyNow">
+        <view
+          class="flex-[1.5] rounded-xl py-3 text-center text-sm font-bold transition"
+          :class="hasStock ? 'bg-[#efb239] text-white' : 'bg-slate-200 text-slate-400'" @click="buyNow"
+        >
           {{ hasStock ? '立即购买' : '暂无库存' }}
         </view>
       </view>

@@ -100,3 +100,62 @@ body {
   border: 2px solid transparent;
   background-clip: padding-box;
 }
+
+.app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+.app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body)::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body)::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(148, 163, 184, 0.72),
+    rgba(148, 163, 184, 0.42)
+  );
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: padding-box;
+}
+
+.app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body)::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(100, 116, 139, 0.78),
+    rgba(100, 116, 139, 0.52)
+  );
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark .app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body) {
+  scrollbar-color: rgba(100, 116, 139, 0.8) transparent;
+}
+
+.dark .app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body)::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(100, 116, 139, 0.82),
+    rgba(71, 85, 105, 0.56)
+  );
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark .app-data-table :is(.n-data-table-wrapper, .n-data-table-base-table-body)::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(148, 163, 184, 0.88),
+    rgba(100, 116, 139, 0.66)
+  );
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}

@@ -56,7 +56,7 @@ const allSelected = computed(() => hasCartItems.value && cartItems.value.every(i
 function formatSpecs(specs: CartItem['specs']) {
   if (Array.isArray(specs)) {
     const values = specs
-      .map(item => {
+      .map((item) => {
         if (!item?.name || !item?.value) {
           return ''
         }
@@ -255,12 +255,14 @@ onShow(() => {
 </script>
 
 <template>
-  <view :style="{ height: `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px - 50px)` }"
-    class="flex flex-col bg-[#f8f7f6] text-slate-900 overflow-auto">
+  <view
+    :style="{ height: `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px - 50px)` }"
+    class="flex flex-col overflow-auto bg-[#f8f7f6] text-slate-900"
+  >
     <scroll-view scroll-y class="flex-1">
       <view class="px-4 py-6">
         <view v-if="!isLoggedIn" class="overflow-hidden rounded-[32rpx] bg-white shadow-sm">
-          <view class="bg-gradient-to-r from-[#efb239]/14 to-[#f59e0b]/6 px-6 py-8">
+          <view class="from-[#efb239]/14 to-[#f59e0b]/6 bg-gradient-to-r px-6 py-8">
             <view class="size-14 flex items-center justify-center rounded-full bg-white/80 text-[#efb239]">
               <text class="i-material-symbols:shopping-cart-outline-rounded text-[30px]" />
             </view>
@@ -285,11 +287,11 @@ onShow(() => {
                 登录后可直接进入下单与结算流程
               </text>
             </view>
-            <view class="mt-2 grid gap-3">
+            <view class="grid mt-2 gap-3">
               <wd-button block type="primary" @click="openLogin">
                 立即登录
               </wd-button>
-              <wd-button block hairline @click="goShopping">
+              <wd-button hairline block @click="goShopping">
                 先去逛逛
               </wd-button>
             </view>
@@ -318,26 +320,34 @@ onShow(() => {
         </view>
 
         <view v-else class="space-y-4">
-          <view v-for="item in cartItems" :key="item.id"
-            class="rounded-[32rpx] border border-[#efb239]/6 bg-white px-4 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)]"
-            @click="toggleItem(item)">
+          <view
+            v-for="item in cartItems" :key="item.id"
+            class="border border-[#efb239]/6 rounded-[32rpx] bg-white px-4 py-4 shadow-[0_14px_32px_rgba(15,23,42,0.06)]"
+            @click="toggleItem(item)"
+          >
             <view class="flex gap-4">
               <view class="flex items-center" @click.stop="toggleItem(item)">
-                <view class="size-6 flex items-center justify-center rounded-full border border-solid text-xs"
-                  :class="item.selected ? 'border-[#efb239] bg-[#efb239] text-white' : 'border-[#d6c7a1] bg-white text-transparent'">
+                <view
+                  class="size-6 flex items-center justify-center border rounded-full border-solid text-xs"
+                  :class="item.selected ? 'border-[#efb239] bg-[#efb239] text-white' : 'border-[#d6c7a1] bg-white text-transparent'"
+                >
                   ✓
                 </view>
               </view>
-              <image :src="item.image" mode="aspectFill" class="size-24 rounded-[24rpx] bg-[#f4efe7]"
-                @click.stop="openProduct(item)" />
+              <image
+                :src="item.image" mode="aspectFill" class="size-24 rounded-[24rpx] bg-[#f4efe7]"
+                @click.stop="openProduct(item)"
+              />
               <view class="min-w-0 flex flex-1 flex-col justify-between">
                 <view>
                   <view class="flex items-start justify-between gap-2">
                     <text class="line-clamp-2 min-w-0 flex-1 text-[30rpx] text-slate-900 font-semibold leading-6">
                       {{ item.productName }}
                     </text>
-                    <view class="shrink-0 flex items-center justify-center rounded-full bg-slate-100 p-2"
-                      @click.stop="removeItem(item)">
+                    <view
+                      class="flex shrink-0 items-center justify-center rounded-full bg-slate-100 p-2"
+                      @click.stop="removeItem(item)"
+                    >
                       <text class="i-material-symbols:close text-[14px] text-slate-400 leading-none" />
                     </view>
                   </view>
@@ -351,17 +361,21 @@ onShow(() => {
                     ¥{{ item.salePrice.toFixed(2) }}
                   </text>
                   <view class="inline-flex items-center rounded-full bg-[#f8f7f6] px-2 py-2" @click.stop>
-                    <view class="size-8 flex items-center justify-center rounded-full bg-white text-slate-600 shadow-sm"
+                    <view
+                      class="size-8 flex items-center justify-center rounded-full bg-white text-slate-600 shadow-sm"
                       :class="item.quantity <= 1 || actionLoading ? 'opacity-40' : ''"
-                      @click="changeQuantity(item, -1)">
+                      @click="changeQuantity(item, -1)"
+                    >
                       -
                     </view>
                     <text class="min-w-[56rpx] px-2 text-center text-sm text-slate-900 font-semibold">
                       {{ item.quantity }}
                     </text>
-                    <view class="bg-primary size-8 flex items-center justify-center rounded-full text-white shadow-sm"
+                    <view
+                      class="size-8 flex items-center justify-center rounded-full bg-primary text-white shadow-sm"
                       :class="item.quantity >= item.stock || actionLoading ? 'opacity-40' : ''"
-                      @click="changeQuantity(item, 1)">
+                      @click="changeQuantity(item, 1)"
+                    >
                       +
                     </view>
                   </view>
@@ -373,13 +387,17 @@ onShow(() => {
       </view>
     </scroll-view>
 
-    <view v-if="isLoggedIn && hasCartItems"
-      class="shrink-0 border-t border-[#efb239]/8 bg-white px-4 pb-6 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+    <view
+      v-if="isLoggedIn && hasCartItems"
+      class="shrink-0 border-t border-[#efb239]/8 bg-white px-4 pb-6 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
+    >
       <view class="rounded-[28rpx] bg-[#fffaf0] px-4 py-4">
         <view class="flex items-center justify-between gap-3">
           <view class="flex shrink-0 items-center gap-3" @click="toggleAll">
-            <view class="size-6 flex items-center justify-center rounded-full border border-solid text-xs"
-              :class="allSelected ? 'border-[#efb239] bg-[#efb239] text-white' : 'border-[#d6c7a1] bg-white text-transparent'">
+            <view
+              class="size-6 flex items-center justify-center border rounded-full border-solid text-xs"
+              :class="allSelected ? 'border-[#efb239] bg-[#efb239] text-white' : 'border-[#d6c7a1] bg-white text-transparent'"
+            >
               ✓
             </view>
             <text class="text-sm text-slate-700 font-medium">
@@ -403,9 +421,11 @@ onShow(() => {
             <wd-button :disabled="!hasSelectedItems || actionLoading" type="primary" @click="checkout">
               去结算
             </wd-button>
-            <view class="cart-clear-button"
+            <view
+              class="cart-clear-button"
               :class="!hasSelectedItems || actionLoading ? 'cart-clear-button--disabled' : 'cart-clear-button--active'"
-              @click="clearAllItems">
+              @click="clearAllItems"
+            >
               清空
             </view>
           </view>

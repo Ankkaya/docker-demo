@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PendingRoute } from '@/store/userStore'
-import { useUserStore } from '@/store/userStore'
 import Apis from '@/api'
+import { useUserStore } from '@/store/userStore'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -140,15 +140,15 @@ export default {
 
       <view class="auth-login-sheet__benefits">
         <view class="auth-login-sheet__benefit">
-          <text class="i-material-symbols:shopping-cart-checkout-rounded auth-login-sheet__benefit-icon" />
+          <text class="auth-login-sheet__benefit-icon i-material-symbols:shopping-cart-checkout-rounded" />
           <text>同步购物车与结算信息</text>
         </view>
         <view class="auth-login-sheet__benefit">
-          <text class="i-material-symbols:receipt-long-rounded auth-login-sheet__benefit-icon" />
+          <text class="auth-login-sheet__benefit-icon i-material-symbols:receipt-long-rounded" />
           <text>查看订单与售后进度</text>
         </view>
         <view class="auth-login-sheet__benefit">
-          <text class="i-material-symbols:location-on-rounded auth-login-sheet__benefit-icon" />
+          <text class="auth-login-sheet__benefit-icon i-material-symbols:location-on-rounded" />
           <text>管理收货地址与常用资料</text>
         </view>
       </view>
@@ -180,7 +180,7 @@ export default {
       </view>
 
       <view class="auth-login-sheet__actions">
-        <wd-button block hairline @click="handleCancel">
+        <wd-button hairline block @click="handleCancel">
           暂不登录
         </wd-button>
         <wd-button block type="primary" :loading="isSubmitting" @click="handlePhoneLogin">

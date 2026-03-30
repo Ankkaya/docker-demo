@@ -27,7 +27,7 @@ const HOT_SEARCH_KEYWORDS = [
 ] as const
 const fallbackCategoryIcons = ['child_care', 'stroller', 'face', 'toys', 'eco', 'local_offer']
 
-type SearchResultItem = {
+interface SearchResultItem {
   id: number
   tag: string
   name: string
@@ -35,7 +35,7 @@ type SearchResultItem = {
   image: string
 }
 
-type RecommendCategoryItem = {
+interface RecommendCategoryItem {
   id: number
   name: string
   icon: string
@@ -256,16 +256,18 @@ onShow(() => {
 </script>
 
 <template>
-  <view class=" bg-[#f8f7f6]">
+  <view class="bg-[#f8f7f6]">
     <view class="sticky top-0 z-50 bg-[#f8f7f6]/80 backdrop-blur-md">
       <view class="flex items-center gap-3 bg-white px-4 py-3">
         <view class="h-11 flex flex-1 items-center border border-[#efb239]/10 rounded-xl bg-[#f1f5f9] shadow-sm">
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
             <wd-icon name="search" size="18" />
           </view>
-          <input v-model="searchKeyword"
+          <input
+            v-model="searchKeyword"
             class="h-full flex-1 border-none bg-transparent px-3 text-sm font-normal placeholder:text-slate-400 focus:outline-none"
-            placeholder="搜索商品名称..." confirm-type="search" focus @confirm="onSearch">
+            placeholder="搜索商品名称..." confirm-type="search" focus @confirm="onSearch"
+          >
           <view v-if="searchKeyword" class="pr-3 text-slate-400" @click="searchKeyword = ''">
             <wd-icon name="close" size="16" />
           </view>
@@ -289,9 +291,11 @@ onShow(() => {
         暂无相关商品
       </view>
       <view v-else class="grid grid-cols-2 gap-4">
-        <view v-for="product in searchResults" :key="product.id"
+        <view
+          v-for="product in searchResults" :key="product.id"
           class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm"
-          @click="onProductClick(product)">
+          @click="onProductClick(product)"
+        >
           <view class="aspect-square overflow-hidden">
             <image :src="product.image" class="h-full w-full" mode="aspectFill" />
           </view>
@@ -307,8 +311,9 @@ onShow(() => {
                 ¥{{ product.price.toFixed(2) }}
               </text>
               <button
-                class="size-7 flex items-center !mx-0 justify-center border-0 rounded-full bg-[#efb239] p-0 text-white"
-                @click.stop="addToCart(product)">
+                class="size-7 flex items-center justify-center border-0 rounded-full bg-[#efb239] p-0 text-white !mx-0"
+                @click.stop="addToCart(product)"
+              >
                 <wd-icon name="add" size="14" color="#fff" />
               </button>
             </view>
@@ -331,8 +336,10 @@ onShow(() => {
           </view>
         </view>
         <view v-if="searchHistory.length > 0" class="flex flex-wrap gap-2">
-          <view v-for="(item, index) in searchHistory" :key="`${item}-${index}`"
-            class="flex items-center gap-1 border border-slate-200 rounded-full bg-white px-3 py-2 text-sm text-slate-600 shadow-sm">
+          <view
+            v-for="(item, index) in searchHistory" :key="`${item}-${index}`"
+            class="flex items-center gap-1 border border-slate-200 rounded-full bg-white px-3 py-2 text-sm text-slate-600 shadow-sm"
+          >
             <text @click="onHistoryClick(item)">
               {{ item }}
             </text>
@@ -352,8 +359,10 @@ onShow(() => {
           <wd-icon name="fire" size="18" class="text-red-500" />
         </view>
         <view class="flex flex-wrap gap-3">
-          <view v-for="(item, index) in hotSearches" :key="item" class="rounded-full bg-white px-4 py-2 text-sm"
-            :class="index < 3 ? 'bg-[#efb239]/10 text-[#efb239]' : 'text-slate-600'" @click="onHotSearchClick(item)">
+          <view
+            v-for="(item, index) in hotSearches" :key="item" class="rounded-full bg-white px-4 py-2 text-sm"
+            :class="index < 3 ? 'bg-[#efb239]/10 text-[#efb239]' : 'text-slate-600'" @click="onHotSearchClick(item)"
+          >
             <text class="font-medium">
               {{ index + 1 }}.
             </text>
@@ -369,11 +378,15 @@ onShow(() => {
           推荐分类
         </text>
         <view v-if="recommendCategories.length > 0" class="grid grid-cols-4 gap-4">
-          <view v-for="category in recommendCategories" :key="category.id" class="flex flex-col items-center gap-2"
-            @click="onRecommendCategoryClick(category)">
+          <view
+            v-for="category in recommendCategories" :key="category.id" class="flex flex-col items-center gap-2"
+            @click="onRecommendCategoryClick(category)"
+          >
             <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
-              <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28"
-                color="#efb239" />
+              <app-icon
+                :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28"
+                color="#efb239"
+              />
             </view>
             <text class="text-center text-[11px] text-slate-600 font-medium leading-4">
               {{ category.name }}

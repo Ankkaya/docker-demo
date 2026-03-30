@@ -109,7 +109,9 @@ onShow(async () => {
                 当前可用余额
               </text>
               <view class="mt-3 flex items-end gap-2">
-                <text class="text-2xl text-white font-700">¥</text>
+                <text class="text-2xl text-white font-700">
+                  ¥
+                </text>
                 <text class="text-[42rpx] text-white font-800 leading-none">
                   {{ formatAmount(summary.availableBalance) }}
                 </text>
@@ -126,9 +128,11 @@ onShow(async () => {
           <view class="absolute bottom-[-60rpx] right-[70rpx] size-[200rpx] rounded-full bg-white/6" />
         </view>
 
-        <view class="mt-4 grid grid-cols-2 gap-3">
-          <view v-for="item in statCards" :key="item.label"
-            class="rounded-[26rpx] border border-[#efb239]/8 bg-white px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <view class="grid grid-cols-2 mt-4 gap-3">
+          <view
+            v-for="item in statCards" :key="item.label"
+            class="border border-[#efb239]/8 rounded-[26rpx] bg-white px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]"
+          >
             <text class="block text-xs text-slate-400">
               {{ item.label }}
             </text>
@@ -139,7 +143,8 @@ onShow(async () => {
         </view>
 
         <view
-          class="mt-6 rounded-[28rpx] border border-[#efb239]/8 bg-white px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+          class="mt-6 border border-[#efb239]/8 rounded-[28rpx] bg-white px-4 py-4 shadow-[0_10px_30px_rgba(15,23,42,0.04)]"
+        >
           <view class="mb-4 flex items-center justify-between">
             <text class="text-base font-700">
               余额流水

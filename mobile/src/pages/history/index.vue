@@ -142,9 +142,9 @@ onShow(() => {
         </view>
       </view>
 
-      <view class="overflow-x-auto px-4 whitespace-nowrap">
+      <view class="overflow-x-auto whitespace-nowrap px-4">
         <view class="flex gap-6 text-sm">
-          <text class="border-b-2 border-[#efb239] pyy-3 text-[#efb239] font-bold">
+          <text class="pyy-3 border-b-2 border-[#efb239] text-[#efb239] font-bold">
             全部商品
           </text>
           <text class="pb-3 text-slate-500">
@@ -166,8 +166,10 @@ onShow(() => {
           加载中...
         </view>
 
-        <view v-if="historyGroups.length === 0"
-          class="mt-10 rounded-3xl border border-[#efb239]/10 bg-white/70 px-6 py-12 text-center text-slate-400">
+        <view
+          v-if="historyGroups.length === 0"
+          class="mt-10 border border-[#efb239]/10 rounded-3xl bg-white/70 px-6 py-12 text-center text-slate-400"
+        >
           <text class="text-[40px] text-[#cbd5f5] leading-none" :class="getHistoryIconClass('empty')" />
           <text class="mt-3 text-sm">
             暂无浏览记录
@@ -177,18 +179,22 @@ onShow(() => {
         <view v-for="group in historyGroups" :key="group.label" class="mb-8">
           <view class="mb-4 flex items-center gap-2">
             <view class="size-2 rounded-full" :class="group.label === '今天' ? 'bg-[#efb239]' : 'bg-slate-300'" />
-            <text class="block text-sm font-bold text-slate-900">
+            <text class="block text-sm text-slate-900 font-bold">
               {{ group.label }}
             </text>
           </view>
 
           <view class="grid grid-cols-2 gap-4">
-            <view v-for="item in group.items" :key="item.id" class="history-card overflow-hidden"
-              @click="openProduct(item)">
+            <view
+              v-for="item in group.items" :key="item.id" class="history-card overflow-hidden"
+              @click="openProduct(item)"
+            >
               <view class="relative">
                 <image :src="item.image" class="history-image w-full rounded-2xl bg-[#f6efe0]" mode="aspectFill" />
-                <view class="absolute right-2 top-2 size-8 flex items-center justify-center rounded-full bg-white/92"
-                  @click.stop="removeItem(item.id)">
+                <view
+                  class="absolute right-2 top-2 size-8 flex items-center justify-center rounded-full bg-white/92"
+                  @click.stop="removeItem(item.id)"
+                >
                   <text class="text-[16px] text-slate-400 leading-none" :class="getHistoryIconClass('close')" />
                 </view>
               </view>
@@ -207,7 +213,7 @@ onShow(() => {
           </view>
         </view>
 
-        <view class="mt-2 rounded-3xl border border-[#efb239]/10 bg-[#efb239]/5 px-5 py-6 text-center">
+        <view class="mt-2 border border-[#efb239]/10 rounded-3xl bg-[#efb239]/5 px-5 py-6 text-center">
           <text class="text-sm text-slate-500 italic">
             把喜欢的风格留下，下次更快找到它
           </text>

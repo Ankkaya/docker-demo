@@ -128,7 +128,6 @@ onShow(() => {
 <template>
   <view class="favorites-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-[#f8f7f6]/92 px-4 py-3 backdrop-blur-md">
-
       <view class="mt-3 flex items-center gap-6 overflow-x-auto whitespace-nowrap text-sm">
         <text class="border-b-2 border-[#efb239] pb-2 text-slate-900 font-bold">
           全部宝贝 ({{ favorites.length }})
@@ -157,22 +156,28 @@ onShow(() => {
           加载中...
         </view>
 
-        <view v-else-if="favoriteCount === 0"
-          class="mt-8 rounded-3xl border border-[#efb239]/10 bg-white/80 px-6 py-12 text-center text-slate-400">
+        <view
+          v-else-if="favoriteCount === 0"
+          class="mt-8 border border-[#efb239]/10 rounded-3xl bg-white/80 px-6 py-12 text-center text-slate-400"
+        >
           暂无收藏商品
         </view>
 
-        <view v-for="item in favorites" :key="item.id"
+        <view
+          v-for="item in favorites" :key="item.id"
           class="favorite-card mt-4 flex gap-4 border border-[#efb239]/8 rounded-2xl bg-white p-3"
-          @click="openProduct(item)">
+          @click="openProduct(item)"
+        >
           <image :src="item.image" class="h-28 w-28 shrink-0 rounded-xl bg-[#f6efe0]" mode="aspectFill" />
           <view class="min-w-0 flex-1 py-1">
             <view class="flex items-start justify-between gap-3">
               <text class="line-clamp-2 block text-[30rpx] font-bold leading-[1.35]">
                 {{ item.name }}
               </text>
-              <view class="size-8 flex shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-400"
-                @click.stop="removeFavorite(item)">
+              <view
+                class="size-8 flex shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-400"
+                @click.stop="removeFavorite(item)"
+              >
                 <text class="text-[18px] text-slate-400 leading-none" :class="getFavoriteIconClass('close')" />
               </view>
             </view>
@@ -182,7 +187,8 @@ onShow(() => {
             </text>
 
             <view
-              class="mt-2 inline-flex rounded-full bg-[#efb239]/10 px-2.5 py-1 text-[11px] text-[#c98500] font-semibold">
+              class="mt-2 inline-flex rounded-full bg-[#efb239]/10 px-2.5 py-1 text-[11px] text-[#c98500] font-semibold"
+            >
               已收藏
             </view>
 
@@ -197,7 +203,8 @@ onShow(() => {
 
             <view
               class="mt-3 h-9 flex items-center justify-center gap-1 rounded-xl bg-[#efb239] text-xs text-slate-900 font-bold"
-              @click.stop="addFavoriteToCart(item)">
+              @click.stop="addFavoriteToCart(item)"
+            >
               <text class="text-[16px] text-slate-900 leading-none" :class="getFavoriteIconClass('cart')" />
               加入购物车
             </view>

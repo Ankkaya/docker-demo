@@ -497,8 +497,29 @@ export class InventoriesService {
       this.prisma.inventoryLog.count({ where }),
     ]);
 
+    const warehouseIds = [...new Set(data.map((item) => item.warehouseId))];
+    const warehouses = warehouseIds.length > 0
+      ? await this.prisma.warehouse.findMany({
+          where: {
+            id: { in: warehouseIds },
+            deletedAt: null,
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        })
+      : [];
+    const warehouseMap = new Map(warehouses.map((warehouse) => [warehouse.id, warehouse.name]));
+    const dataWithWarehouse = data.map((item) => ({
+      ...item,
+      warehouse: {
+        name: warehouseMap.get(item.warehouseId) || '',
+      },
+    }));
+
     return {
-      data: InventoryLogVo.fromEntities(data),
+      data: InventoryLogVo.fromEntities(dataWithWarehouse),
       meta: {
         page,
         pageSize,
