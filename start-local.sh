@@ -4,14 +4,20 @@ set -e
 echo "🚀 Starting local development environment..."
 
 # 清理旧容器
-docker-compose down
+echo "🧹 Cleaning up old containers..."
+docker-compose down -v
 
 # 构建并启动数据库
+echo "📦 Starting database..."
 docker-compose up -d db
 
 # 等待数据库就绪
 echo "⏳ Waiting for database..."
 sleep 5
+
+# 重新构建 backend（确保代码最新）
+echo "🔨 Building backend (no cache)..."
+docker-compose build --no-cache backend
 
 # 执行迁移
 echo "🔄 Running migrations..."
@@ -25,8 +31,8 @@ docker-compose run --rm backend npx prisma db seed
 echo "🔨 Building frontend (no cache)..."
 docker-compose build --no-cache frontend
 
-echo "🎉 Starting all services..."
-docker-compose up -d
+echo "🎉 Starting all services with build check..."
+docker-compose up -d --build
 
 echo ""
 echo "✅ All services are running!"
