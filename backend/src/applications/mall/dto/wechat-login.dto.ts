@@ -10,6 +10,15 @@ export class WechatLoginDto {
   code: string;
 
   @ApiProperty({
+    description: '微信手机号授权 code，可选',
+    required: false,
+    example: '1234567890abcdef',
+  })
+  @IsOptional()
+  @IsString()
+  phoneCode?: string;
+
+  @ApiProperty({
     description: '微信昵称，可选',
     required: false,
     example: '微信用户',
@@ -18,4 +27,13 @@ export class WechatLoginDto {
   @IsString()
   @MaxLength(50)
   nickname?: string;
+
+  @ApiProperty({
+    description: '微信头像地址，可选',
+    required: false,
+    example: 'https://thirdwx.qlogo.cn/mmopen/vi_32/xxx/132',
+  })
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 }

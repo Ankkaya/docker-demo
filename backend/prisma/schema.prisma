@@ -13,6 +13,7 @@ model User {
   email     String?   @unique
   password  String
   name      String?
+  avatarUrl String?
   wechatOpenId String? @unique
   wechatUnionId String? @unique
   createdAt DateTime  @default(now())
@@ -327,6 +328,19 @@ model CustomerAddress {
   @@index([customerId])
   @@index([customerId, isDefault])
   @@index([deletedAt])
+}
+
+model SystemSetting {
+  id          Int       @id @default(autoincrement())
+  key         String    @unique
+  category    String
+  name        String
+  value       Json
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([category])
 }
 
 // ==================== 商品管理模块 ====================

@@ -21,10 +21,11 @@ import { MallBalanceService } from './mall-balance.service';
 import { MallBalanceController } from './mall.controller';
 import { FavoritesModule } from '@/domains/favorites/favorites.module';
 import { BrowseHistoriesModule } from '@/domains/browse-histories/browse-histories.module';
+import { SystemSettingsModule } from '@/domains/system-settings/system-settings.module';
 import { MallBrowseHistoriesController, MallFavoritesController } from './mall.controller';
 
 @Module({
-  imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, CustomerAddressesModule, AuthModule, ReviewsModule, FavoritesModule, BrowseHistoriesModule],
+  imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, CustomerAddressesModule, AuthModule, ReviewsModule, FavoritesModule, BrowseHistoriesModule, SystemSettingsModule],
   controllers: [MallProductsController, MallHomeController, MallAuthController, MallCartController, MallAddressesController, MallOrdersController, MallReviewsController, MallBalanceController, MallFavoritesController, MallBrowseHistoriesController],
   providers: [MallService, MallOrdersService, MallBalanceService],
 })

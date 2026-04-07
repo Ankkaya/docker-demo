@@ -26,6 +26,7 @@ import { ReviewsModule } from './domains/reviews/reviews.module';
 import { SaleReturnsModule } from './domains/sale-returns/sale-returns.module';
 import { ShipmentsModule } from './domains/shipments/shipments.module';
 import { SuppliersModule } from './domains/suppliers/suppliers.module';
+import { SystemSettingsModule } from './domains/system-settings/system-settings.module';
 import { TransfersModule } from './domains/transfers/transfers.module';
 import { UnitsModule } from './domains/units/units.module';
 import { UsersModule } from './domains/users/users.module';
@@ -48,6 +49,7 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
     BalancesModule,
     WarehousesModule,
     SuppliersModule,
+    SystemSettingsModule,
     CustomersModule,
     CustomerAddressesModule,
     ProductsModule,

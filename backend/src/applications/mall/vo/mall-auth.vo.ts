@@ -9,11 +9,6 @@ export class MallTokenPairVo {
   refreshToken: string;
 }
 
-export class MallWechatLoginVo extends MallTokenPairVo {
-  @ApiProperty({ description: '用户信息', type: UserVo })
-  user: UserVo;
-}
-
 export class MallCurrentCustomerVo {
   @ApiProperty({ description: '客户ID' })
   id: number;
@@ -40,4 +35,12 @@ export class MallCurrentUserVo extends UserVo {
 
   @ApiProperty({ description: '关联客户信息', type: MallCurrentCustomerVo, nullable: true })
   customer: MallCurrentCustomerVo | null;
+}
+
+export class MallWechatLoginVo extends MallTokenPairVo {
+  @ApiProperty({ description: '用户信息', type: MallCurrentUserVo })
+  user: MallCurrentUserVo;
+
+  @ApiProperty({ description: '是否已完成资料设置' })
+  profileCompleted: boolean;
 }

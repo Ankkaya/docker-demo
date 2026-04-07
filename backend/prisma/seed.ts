@@ -141,6 +141,31 @@ async function main() {
     },
   });
 
+  await prisma.menu.upsert({
+    where: { id: 8 },
+    update: {
+      name: '系统设置',
+      path: '/system/settings',
+      icon: 'setting',
+      component: 'system-settings/index',
+      parentId: 1,
+      order: 7,
+      type: 'menu',
+      deletedAt: null,
+      hidden: false,
+    },
+    create: {
+      id: 8,
+      name: '系统设置',
+      path: '/system/settings',
+      icon: 'setting',
+      component: 'system-settings/index',
+      parentId: 1,
+      order: 7,
+      type: 'menu',
+    },
+  });
+
   // ==================== 3. 创建基础数据菜单 ====================
   // 【必需】基础数据菜单组 - 没有这些菜单无法访问基础数据模块
   const basicDataMenu = await prisma.menu.upsert({
@@ -652,7 +677,7 @@ async function main() {
     data: {
       menus: {
         set: [
-          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }, // 系统管理
+          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }, { id: 8 }, // 系统管理
           { id: 10 }, { id: 11 }, { id: 12 }, { id: 13 },       // 基础数据
           { id: 14 }, { id: 15 }, { id: 16 },
           { id: 21 }, { id: 22 },                               // 进销存-商品档案/库存查询
@@ -677,6 +702,62 @@ async function main() {
       name: '超级管理员',
       roles: {
         connect: [{ id: adminRole.id }],
+      },
+    },
+  });
+
+  await prisma.systemSetting.upsert({
+    where: { key: 'mini-program.auth' },
+    update: {
+      category: 'mini-program',
+      name: '小程序认证配置',
+      description: '微信小程序服务端配置',
+      value: {
+        wechatAppId: process.env.WECHAT_APP_ID || '',
+        wechatAppSecret: process.env.WECHAT_APP_SECRET || '',
+      },
+    },
+    create: {
+      key: 'mini-program.auth',
+      category: 'mini-program',
+      name: '小程序认证配置',
+      description: '微信小程序服务端配置',
+      value: {
+        wechatAppId: process.env.WECHAT_APP_ID || '',
+        wechatAppSecret: process.env.WECHAT_APP_SECRET || '',
+      },
+    },
+  });
+
+  await prisma.systemSetting.upsert({
+    where: { key: 'wechat.pay' },
+    update: {
+      category: 'wechat',
+      name: '微信支付配置',
+      description: '微信支付商户参数配置',
+      value: {
+        enabled: false,
+        mchId: '',
+        mchSerialNo: '',
+        apiV3Key: '',
+        notifyUrl: '',
+        privateKey: '',
+        platformCertPath: '',
+      },
+    },
+    create: {
+      key: 'wechat.pay',
+      category: 'wechat',
+      name: '微信支付配置',
+      description: '微信支付商户参数配置',
+      value: {
+        enabled: false,
+        mchId: '',
+        mchSerialNo: '',
+        apiV3Key: '',
+        notifyUrl: '',
+        privateKey: '',
+        platformCertPath: '',
       },
     },
   });
@@ -918,7 +999,7 @@ async function main() {
     code: adminRole.code,
   });
   console.log('-----------------------------------');
-  console.log('System Menus:', ['系统管理', '用户管理', '角色管理', '菜单管理']);
+  console.log('System Menus:', ['系统管理', '用户管理', '角色管理', '菜单管理', '系统设置']);
   console.log('-----------------------------------');
   console.log('Basic Data Menus:', ['基础数据', '计量单位', '商品分类', '品牌管理', '仓库管理', '供应商管理', '客户管理']);
   console.log('-----------------------------------');

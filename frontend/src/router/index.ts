@@ -64,6 +64,12 @@ const router = createRouter({
           name: 'system-printer-configs',
           component: () => import('@/views/printer-configs/index.vue'),
           meta: { title: '打印机配置' }
+        },
+        {
+          path: 'settings',
+          name: 'system-settings',
+          component: () => import('@/views/system-settings/index.vue'),
+          meta: { title: '系统设置' }
         }
       ]
     },

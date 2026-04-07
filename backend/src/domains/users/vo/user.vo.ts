@@ -14,6 +14,9 @@ export class UserVo {
   @ApiProperty({ description: '姓名', nullable: true })
   name: string | null;
 
+  @ApiProperty({ description: '头像地址', nullable: true })
+  avatarUrl: string | null;
+
   @ApiProperty({ description: '创建时间' })
   createdAt: Date;
 
@@ -26,6 +29,7 @@ export class UserVo {
       username: entity.username,
       email: entity.email,
       name: entity.name,
+      avatarUrl: entity.avatarUrl || null,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     };

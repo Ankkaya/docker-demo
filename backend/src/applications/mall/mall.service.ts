@@ -1,15 +1,16 @@
 import {
+  BadRequestException,
   BadGatewayException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { CustomerType, SkuStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { QueryMallProductDto } from './dto/query-mall-product.dto';
 import { QueryHotProductDto } from './dto/query-hot-product.dto';
 import { QueryMallCategoryDto } from './dto/query-mall-category.dto';
-import { SkuStatus, Prisma } from '@prisma/client';
 import { MinioService } from '@/infrastructure/minio/minio.service';
 import { IconAssetsService } from '@/infrastructure/icon-assets/icon-assets.service';
 import { AuthService } from '@/domains/auth/auth.service';
@@ -18,7 +19,9 @@ import { BrowseHistoriesService } from '@/domains/browse-histories/browse-histor
 import { WechatLoginDto } from './dto/wechat-login.dto';
 import { MallLoginDto } from './dto/mall-login.dto';
 import { MallRefreshTokenDto } from './dto/mall-refresh-token.dto';
+import { UpdateMallProfileDto } from './dto/update-mall-profile.dto';
 import { UserVo } from '@/users/vo';
+import { SystemSettingsService } from '@/domains/system-settings/system-settings.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -30,6 +33,7 @@ export class MallService {
     private authService: AuthService,
     private favoritesService: FavoritesService,
     private browseHistoriesService: BrowseHistoriesService,
+    private systemSettingsService: SystemSettingsService,
   ) {}
 
   async login(dto: MallLoginDto) {
@@ -96,8 +100,11 @@ export class MallService {
       throw new UnauthorizedException('用户不存在或已失效');
     }
 
+    const resolvedAvatarUrl = await this.minioService.resolveStoredFileUrl(user.avatarUrl);
+
     return {
       ...UserVo.fromEntity(user),
+      avatarUrl: resolvedAvatarUrl,
       phone: user.customer?.phone || null,
       customer: user.customer
         ? {
@@ -113,8 +120,9 @@ export class MallService {
   }
 
   async wechatLogin(dto: WechatLoginDto) {
-    const appId = process.env.WECHAT_APP_ID;
-    const appSecret = process.env.WECHAT_APP_SECRET;
+    const authSetting = await this.systemSettingsService.getMiniProgramAuthSetting();
+    const appId = authSetting.wechatAppId;
+    const appSecret = authSetting.wechatAppSecret;
 
     if (!appId || !appSecret) {
       throw new InternalServerErrorException('未配置微信登录参数');
@@ -145,11 +153,13 @@ export class MallService {
       });
 
       const username = await this.generateWechatUsername(openId);
+      const defaultNickname = this.buildDefaultNickname();
       user = await this.prisma.user.create({
         data: {
           username,
           password: await this.generateWechatPassword(openId),
-          name: dto.nickname?.trim() || '微信用户',
+          name: dto.nickname?.trim() || defaultNickname,
+          avatarUrl: this.normalizeOptionalFileReference(dto.avatarUrl) || null,
           wechatOpenId: openId,
           wechatUnionId: unionId || null,
           roles: role ? {
@@ -164,14 +174,68 @@ export class MallService {
           wechatOpenId: openId,
           wechatUnionId: unionId || user.wechatUnionId,
           name: user.name || dto.nickname?.trim() || undefined,
+          avatarUrl: user.avatarUrl || this.normalizeOptionalFileReference(dto.avatarUrl) || undefined,
         },
       });
     }
 
+    const phoneNumber = dto.phoneCode
+      ? await this.getWechatPhoneNumber(appId, appSecret, dto.phoneCode)
+      : undefined;
+
+    await this.ensureCustomerForWechatUser(user.id, {
+      phone: phoneNumber,
+      nickname: dto.nickname?.trim() || user.name || undefined,
+    });
+
+    const profile = await this.getCurrentUser(user.id);
+
     return {
       ...this.authService.generateAuthTokens(user.id),
-      user: UserVo.fromEntity(user),
+      user: profile,
+      profileCompleted: Boolean(profile.name && profile.avatarUrl),
     };
+  }
+
+  async updateMallProfile(userId: number, dto: UpdateMallProfileDto) {
+    const existing = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+      include: {
+        customer: true,
+      },
+    });
+
+    if (!existing) {
+      throw new UnauthorizedException('用户不存在或已失效');
+    }
+
+    const nickname = dto.nickname?.trim();
+    const avatarUrl = this.normalizeOptionalFileReference(dto.avatarUrl);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          ...(nickname ? { name: nickname } : {}),
+          ...(dto.avatarUrl !== undefined ? { avatarUrl: avatarUrl || null } : {}),
+        },
+      });
+
+      if (existing.customer) {
+        await tx.customer.update({
+          where: { id: existing.customer.id },
+          data: {
+            ...(nickname ? { name: nickname } : {}),
+            ...(nickname ? { contact: nickname } : {}),
+          },
+        });
+      }
+    });
+
+    return this.getCurrentUser(userId);
   }
 
   private buildMallProductInclude() {
@@ -662,6 +726,168 @@ export class MallService {
     }
 
     return data;
+  }
+
+  private async getWechatAccessToken(appId: string, appSecret: string) {
+    let response: Response;
+    try {
+      response = await fetch('https://api.weixin.qq.com/cgi-bin/stable_token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          grant_type: 'client_credential',
+          appid: appId,
+          secret: appSecret,
+          force_refresh: false,
+        }),
+      });
+    } catch {
+      throw new BadGatewayException('微信服务请求失败');
+    }
+
+    if (!response.ok) {
+      throw new BadGatewayException('微信服务响应异常');
+    }
+
+    const data = await response.json() as {
+      access_token?: string;
+      expires_in?: number;
+      errcode?: number;
+      errmsg?: string;
+    };
+
+    if (data.errcode || !data.access_token) {
+      throw new UnauthorizedException(`微信授权失败: ${data.errmsg || data.errcode || '未获取到 access_token'}`);
+    }
+
+    return data.access_token;
+  }
+
+  private async getWechatPhoneNumber(appId: string, appSecret: string, phoneCode: string) {
+    const accessToken = await this.getWechatAccessToken(appId, appSecret);
+
+    let response: Response;
+    try {
+      response = await fetch(`https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: phoneCode,
+        }),
+      });
+    } catch {
+      throw new BadGatewayException('微信服务请求失败');
+    }
+
+    if (!response.ok) {
+      throw new BadGatewayException('微信服务响应异常');
+    }
+
+    const data = await response.json() as {
+      errcode?: number;
+      errmsg?: string;
+      phone_info?: {
+        phoneNumber?: string;
+        purePhoneNumber?: string;
+        countryCode?: string;
+      };
+    };
+
+    if (data.errcode) {
+      throw new UnauthorizedException(`微信手机号获取失败: ${data.errmsg || data.errcode}`);
+    }
+
+    const phone = data.phone_info?.purePhoneNumber || data.phone_info?.phoneNumber;
+    if (!phone) {
+      throw new BadRequestException('未获取到微信手机号');
+    }
+
+    return phone;
+  }
+
+  private async ensureCustomerForWechatUser(
+    userId: number,
+    payload: {
+      phone?: string;
+      nickname?: string;
+    },
+  ) {
+    const existingByUser = await this.prisma.customer.findFirst({
+      where: {
+        userId,
+        deletedAt: null,
+      },
+    });
+
+    if (existingByUser) {
+      return existingByUser;
+    }
+
+    if (payload.phone) {
+      const existingByPhone = await this.prisma.customer.findFirst({
+        where: {
+          phone: payload.phone,
+          deletedAt: null,
+        },
+      });
+
+      if (existingByPhone) {
+        if (!existingByPhone.userId) {
+          return this.prisma.customer.update({
+            where: { id: existingByPhone.id },
+            data: { userId },
+          });
+        }
+
+        return existingByPhone;
+      }
+    }
+
+    const name = payload.nickname?.trim() || this.buildDefaultNickname();
+    const code = await this.generateCustomerCode();
+
+    return this.prisma.customer.create({
+      data: {
+        name,
+        code,
+        type: CustomerType.INDIVIDUAL,
+        contact: name,
+        phone: payload.phone || null,
+        userId,
+        isEnabled: true,
+      },
+    });
+  }
+
+  private async generateCustomerCode() {
+    const prefix = 'KH';
+
+    while (true) {
+      const code = `${prefix}${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 100).toString().padStart(2, '0')}`;
+      const exists = await this.prisma.customer.findFirst({
+        where: { code },
+        select: { id: true },
+      });
+
+      if (!exists) {
+        return code;
+      }
+    }
+  }
+
+  private buildDefaultNickname() {
+    return `微信用户${Math.random().toString(16).slice(2, 10).padEnd(8, '0')}`;
+  }
+
+  private normalizeOptionalFileReference(value?: string | null) {
+    if (!value) {
+      return null;
+    }
+    return this.minioService.normalizeStoredFileReference(value.trim());
   }
 
   private async generateWechatUsername(openId: string) {

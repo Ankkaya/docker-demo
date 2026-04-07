@@ -43,6 +43,7 @@ import { CreateCustomerAddressDto } from '@/domains/customer-addresses/dto/creat
 import { UpdateCustomerAddressDto } from '@/domains/customer-addresses/dto/update-customer-address.dto';
 import { CustomerAddressVo } from '@/domains/customer-addresses/vo/customer-address.vo';
 import { MallCurrentUserVo, MallTokenPairVo, MallWechatLoginVo } from './vo/mall-auth.vo';
+import { UpdateMallProfileDto } from './dto/update-mall-profile.dto';
 import { ReviewsService } from '@/domains/reviews/reviews.service';
 import {
   CreateMallReviewDto,
@@ -193,6 +194,15 @@ export class MallAuthController {
   @ApiOkResponse({ type: MallCurrentUserVo })
   getProfile(@Request() req) {
     return this.mallService.getCurrentUser(req.user.userId);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '更新当前商城登录用户资料' })
+  @ApiOkResponse({ type: MallCurrentUserVo })
+  updateProfile(@Request() req, @Body() dto: UpdateMallProfileDto) {
+    return this.mallService.updateMallProfile(req.user.userId, dto);
   }
 }
 

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { authEnvConfig } from '@/config/auth'
 
 export interface UserProfile {
   nickname: string
@@ -9,6 +10,7 @@ export interface LoginUser {
   id: number
   username?: string
   name?: string | null
+  avatarUrl?: string | null
   email?: string | null
   phone?: string | null
   customer?: {
@@ -47,7 +49,7 @@ export const useUserStore = defineStore('user', {
   }),
   getters: {
     displayName: state => state.user?.name || state.user?.username || state.profile.nickname || '未登录用户',
-    displayAvatar: state => state.profile.avatarUrl || '',
+    displayAvatar: state => state.user?.avatarUrl || state.profile.avatarUrl || authEnvConfig.defaultAvatarUrl || '',
   },
   actions: {
     openAuthPopup(target?: PendingRoute | null) {
@@ -76,7 +78,7 @@ export const useUserStore = defineStore('user', {
       this.user = user
       this.profile = {
         nickname: user.name || user.username || '',
-        avatarUrl: '',
+        avatarUrl: user.avatarUrl || authEnvConfig.defaultAvatarUrl || '',
       }
       this.isLoggedIn = true
       this.authPopupVisible = false
