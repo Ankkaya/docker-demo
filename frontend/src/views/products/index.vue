@@ -7,16 +7,13 @@
           <n-input v-model:value="searchForm.keyword" placeholder="商品名称/编码" clearable />
         </n-form-item>
         <n-form-item label="分类">
-          <n-select v-model:value="searchForm.categoryId" :options="categoryOptions" placeholder="选择分类" clearable
-            style="width: 180px" />
+          <n-select v-model:value="searchForm.categoryId" :options="categoryOptions" placeholder="选择分类" clearable />
         </n-form-item>
         <n-form-item label="品牌">
-          <n-select v-model:value="searchForm.brandId" :options="brandOptions" placeholder="选择品牌" clearable
-            style="width: 180px" />
+          <n-select v-model:value="searchForm.brandId" :options="brandOptions" placeholder="选择品牌" clearable />
         </n-form-item>
         <n-form-item label="商品状态">
-          <n-select v-model:value="searchForm.isEnabled" :options="enabledOptions" placeholder="选择状态" clearable
-            style="width: 140px" />
+          <n-select v-model:value="searchForm.isEnabled" :options="enabledOptions" placeholder="选择状态" clearable />
         </n-form-item>
         <n-form-item>
           <n-space>
@@ -29,7 +26,7 @@
 
     <!-- 商品列表 -->
     <n-card>
-      <n-space class="mb-4" justify="end">
+      <n-space class="page-toolbar mb-4">
         <n-button type="primary" @click="handleCreate">新增商品</n-button>
         <n-button @click="handleInventoryQuery">库存查询</n-button>
       </n-space>

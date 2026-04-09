@@ -258,7 +258,7 @@ onShow(() => {
 <template>
   <view class="bg-[#f8f7f6]">
     <view class="sticky top-0 z-50 bg-[#f8f7f6]/80 backdrop-blur-md">
-      <view class="flex items-center gap-3 bg-white px-4 py-3">
+      <view class="flex items-center gap-3 bg-white px-4 py-4">
         <view class="h-11 flex flex-1 items-center border border-[#efb239]/10 rounded-xl bg-[#f1f5f9] shadow-sm">
           <view class="flex items-center justify-center pl-4 text-[#efb239]/60">
             <wd-icon name="search" size="18" />

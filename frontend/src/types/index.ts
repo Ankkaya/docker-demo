@@ -161,13 +161,16 @@ export namespace PurchaseReceiptApi {
 // 收付款 API
 export namespace PaymentApi {
   export interface QueryParams {
+    keyword?: string
     type?: import('./purchase').PaymentType
     bizType?: string
+    method?: import('./purchase').PaymentMethod
     status?: import('./purchase').PaymentStatus
+    mallOnly?: boolean
     page?: number
     pageSize?: number
   }
-  export type List = import('./api').ApiResponse<import('./purchase').PaginatedResponse<import('./purchase').Payment>>
+  export type List = import('./purchase').PaginatedResponse<import('./purchase').Payment>
   export type Detail = import('./api').ApiResponse<import('./purchase').Payment>
   export type CreateParams = import('./purchase').CreatePaymentDto
   export type Create = import('./api').ApiResponse<import('./purchase').Payment>

@@ -8,6 +8,7 @@ import {
 import { Interval } from '@nestjs/schedule';
 import {
   OrderStatus,
+  PaymentMethod,
   PayStatus,
   PaymentStatus,
   PaymentType,
@@ -27,6 +28,7 @@ import {
 } from './vo/mall-order.vo';
 import { PayMallOrderDto } from './dto/pay-mall-order.dto';
 import { QueryMallOrderDto } from './dto/query-mall-order.dto';
+import { WechatMiniProgramPayParams, WechatPayService, WechatTransactionResource } from './wechat-pay.service';
 
 function generateMallOrderNo(): string {
   const date = new Date();
@@ -41,6 +43,7 @@ function generateMallOrderNo(): string {
 
 const MALL_ORDER_EXPIRE_MINUTES = 30;
 const EXPIRED_ORDER_SYNC_INTERVAL_MS = 60 * 1000;
+const PENDING_WECHAT_PAYMENT_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 @Injectable()
 export class MallOrdersService {
@@ -51,6 +54,7 @@ export class MallOrdersService {
     private readonly customerAddressesService: CustomerAddressesService,
     private readonly cartsService: CartsService,
     private readonly minioService: MinioService,
+    private readonly wechatPayService: WechatPayService,
   ) {}
 
   private normalizeSpecs(specs: unknown): Record<string, string> {
@@ -79,6 +83,11 @@ export class MallOrdersService {
     return new Date(Date.now() + MALL_ORDER_EXPIRE_MINUTES * 60 * 1000);
   }
 
+  private generateOutTradeNo(orderNo: string) {
+    const random = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    return `${orderNo}${random}`.slice(0, 32);
+  }
+
   private async getCustomerByUserId(userId: number) {
     const customer = await this.prisma.customer.findFirst({
       where: {
@@ -99,6 +108,147 @@ export class MallOrdersService {
     return customer;
   }
 
+  private async getWechatPayerInfo(userId: number) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        wechatOpenId: true,
+      },
+    });
+
+    if (!user?.wechatOpenId) {
+      throw new BadRequestException('当前账号未绑定微信 OpenID，请先使用微信登录');
+    }
+
+    return {
+      userId: user.id,
+      openId: user.wechatOpenId,
+    };
+  }
+
+  private getLatestPayment(order: any) {
+    if (!Array.isArray(order.payments) || !order.payments.length) {
+      return null;
+    }
+
+    return [...order.payments].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  }
+
+  private buildMallPayOrderVo(order: any, payment: any, paymentConfig?: WechatMiniProgramPayParams | null): MallPayOrderVo {
+    return {
+      paymentId: payment?.id || null,
+      id: order.id,
+      orderNo: order.orderNo,
+      payStatus: order.payStatus,
+      status: order.status,
+      paid: Number(order.paid),
+      paymentStatus: payment?.status || (order.payStatus === PayStatus.PAID ? PaymentStatus.COMPLETED : PaymentStatus.PENDING),
+      method: payment?.method || null,
+      outTradeNo: payment?.outTradeNo || null,
+      payDate: order.payDate || payment?.paidAt || null,
+      paymentConfig: paymentConfig || null,
+    };
+  }
+
+  private async markWechatPaymentSuccessByOutTradeNo(
+    outTradeNo: string,
+    resource: Partial<WechatTransactionResource>,
+    rawPayload?: unknown,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findFirst({
+        where: {
+          outTradeNo,
+          deletedAt: null,
+        },
+        include: {
+          order: true,
+        },
+      });
+
+      if (!payment?.order) {
+        throw new NotFoundException('支付单不存在');
+      }
+
+      const paidAt = resource.success_time ? new Date(resource.success_time) : new Date();
+      const nextPayment = await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.COMPLETED,
+          thirdTradeNo: resource.transaction_id || payment.thirdTradeNo,
+          tradeType: resource.trade_type || payment.tradeType,
+          thirdStatus: resource.trade_state || 'SUCCESS',
+          notifyAt: rawPayload !== undefined ? new Date() : payment.notifyAt,
+          paidAt,
+          failReason: null,
+          notifyPayload: rawPayload !== undefined ? (rawPayload as any) : payment.notifyPayload,
+        },
+      });
+
+      const shouldUpdateOrder = payment.order.payStatus !== PayStatus.PAID;
+      const nextOrder = shouldUpdateOrder
+        ? await tx.order.update({
+            where: { id: payment.order.id },
+            data: {
+              paid: Number(payment.order.paid) + Number(payment.amount),
+              payStatus: PayStatus.PAID,
+              status: OrderStatus.CONFIRMED,
+              payDate: paidAt,
+            },
+          })
+        : payment.order;
+
+      return {
+        order: nextOrder,
+        payment: nextPayment,
+      };
+    });
+  }
+
+  private async syncWechatPaymentByOrder(order: any) {
+    const latestPayment = this.getLatestPayment(order);
+    if (!latestPayment || latestPayment.method !== PaymentMethod.WECHAT || latestPayment.status === PaymentStatus.COMPLETED || !latestPayment.outTradeNo) {
+      return {
+        order,
+        payment: latestPayment,
+      };
+    }
+
+    const remote = await this.wechatPayService.queryOrder(latestPayment.outTradeNo);
+    await this.prisma.payment.update({
+      where: { id: latestPayment.id },
+      data: {
+        thirdStatus: remote.trade_state || latestPayment.thirdStatus,
+        thirdTradeNo: remote.transaction_id || latestPayment.thirdTradeNo,
+        lastQueryAt: new Date(),
+        queryCount: {
+          increment: 1,
+        },
+      },
+    });
+
+    if (remote.trade_state === 'SUCCESS') {
+      return this.markWechatPaymentSuccessByOutTradeNo(latestPayment.outTradeNo, {
+        out_trade_no: latestPayment.outTradeNo,
+        transaction_id: remote.transaction_id,
+        trade_state: remote.trade_state,
+      });
+    }
+
+    const refreshedPayment = await this.prisma.payment.findUnique({
+      where: { id: latestPayment.id },
+    });
+
+    return {
+      order,
+      payment: refreshedPayment,
+    };
+  }
+
   private async releaseOrderInventory(tx: any, orderId: number) {
     const items = await tx.orderItem.findMany({
       where: { orderId },
@@ -113,7 +263,68 @@ export class MallOrdersService {
     }
   }
 
+  private async closeWechatPaymentIfPending(tx: any, orderId: number) {
+    const payment = await tx.payment.findFirst({
+      where: {
+        orderId,
+        deletedAt: null,
+        method: PaymentMethod.WECHAT,
+        status: PaymentStatus.PENDING,
+        outTradeNo: {
+          not: null,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!payment?.outTradeNo) {
+      return;
+    }
+
+    try {
+      await this.wechatPayService.closeOrder(payment.outTradeNo);
+    } catch (error) {
+      this.logger.warn(`关闭微信支付单失败[${payment.outTradeNo}]: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.CANCELLED,
+        thirdStatus: 'CLOSED',
+        failReason: '订单取消或超时关闭',
+      },
+    });
+  }
+
   private async cancelExpiredOrder(tx: any, orderId: number) {
+    const existing = await tx.order.findUnique({
+      where: { id: orderId },
+      include: {
+        payments: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
+    });
+
+    if (existing) {
+      const latestPayment = this.getLatestPayment(existing);
+      if (latestPayment?.method === PaymentMethod.WECHAT && latestPayment.status === PaymentStatus.PENDING && latestPayment.outTradeNo) {
+        const synced = await this.syncWechatPaymentByOrder(existing);
+        if (synced.order.payStatus === PayStatus.PAID) {
+          return;
+        }
+      }
+    }
+
+    await this.closeWechatPaymentIfPending(tx, orderId);
     await this.releaseOrderInventory(tx, orderId);
     await tx.order.update({
       where: { id: orderId },
@@ -177,6 +388,45 @@ export class MallOrdersService {
       await this.syncExpiredOrders();
     } catch (error) {
       this.logger.error(`同步超时商城订单失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  @Interval(PENDING_WECHAT_PAYMENT_SYNC_INTERVAL_MS)
+  async handlePendingWechatPayments() {
+    try {
+      const pendingPayments = await this.prisma.payment.findMany({
+        where: {
+          deletedAt: null,
+          method: PaymentMethod.WECHAT,
+          status: PaymentStatus.PENDING,
+          outTradeNo: {
+            not: null,
+          },
+          order: {
+            is: {
+              deletedAt: null,
+              type: 'MALL',
+            },
+          },
+        },
+        include: {
+          order: {
+            include: {
+              payments: true,
+            },
+          },
+        },
+        take: 20,
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+
+      for (const payment of pendingPayments) {
+        await this.syncWechatPaymentByOrder(payment.order);
+      }
+    } catch (error) {
+      this.logger.error(`同步待确认微信支付失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -483,8 +733,8 @@ export class MallOrdersService {
   async pay(userId: number, id: number, dto: PayMallOrderDto): Promise<MallPayOrderVo> {
     const customer = await this.getCustomerByUserId(userId);
 
-    return this.prisma.$transaction(async (tx) => {
-      const order = await tx.order.findFirst({
+    const order = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.order.findFirst({
         where: {
           id,
           customerId: customer.id,
@@ -496,65 +746,153 @@ export class MallOrdersService {
             where: {
               deletedAt: null,
             },
+            orderBy: {
+              createdAt: 'desc',
+            },
           },
         },
       });
 
-      if (!order) {
+      if (!existing) {
         throw new NotFoundException('订单不存在');
       }
 
-      if (order.payStatus === PayStatus.PAID) {
+      if (existing.payStatus === PayStatus.PAID) {
         throw new BadRequestException('订单已支付');
       }
 
-      if (order.status === OrderStatus.CANCELLED) {
+      if (existing.status === OrderStatus.CANCELLED) {
         throw new BadRequestException('订单已取消');
       }
 
-      if (order.expireAt && order.expireAt.getTime() <= Date.now()) {
-        await this.cancelExpiredOrder(tx, order.id);
+      if (existing.expireAt && existing.expireAt.getTime() <= Date.now()) {
+        await this.cancelExpiredOrder(tx, existing.id);
         throw new BadRequestException('订单已超时取消');
       }
 
-      const remainingAmount = Math.max(0, Number(order.payable) - Number(order.paid));
-      if (remainingAmount <= 0) {
-        throw new BadRequestException('订单无需支付');
-      }
+      return existing;
+    });
 
-      await tx.payment.create({
+    const remainingAmount = Math.max(0, Number(order.payable) - Number(order.paid));
+    if (remainingAmount <= 0) {
+      throw new BadRequestException('订单无需支付');
+    }
+
+    if (dto.method !== PaymentMethod.WECHAT) {
+      throw new BadRequestException('当前阶段仅支持微信支付');
+    }
+
+    const payer = await this.getWechatPayerInfo(userId);
+    let payment = this.getLatestPayment(order);
+
+    if (!payment || payment.status !== PaymentStatus.PENDING || payment.method !== PaymentMethod.WECHAT) {
+      payment = await this.prisma.payment.create({
         data: {
           type: PaymentType.RECEIPT,
           bizType: 'SALE',
           orderId: order.id,
           amount: remainingAmount,
-          method: dto.method,
-          status: PaymentStatus.COMPLETED,
-          remark: '商城订单支付',
-          createdBy: userId,
+          method: PaymentMethod.WECHAT,
+          status: PaymentStatus.PENDING,
+          outTradeNo: this.generateOutTradeNo(order.orderNo),
+          remark: '商城订单微信支付',
+          createdBy: payer.userId,
         },
       });
+    }
 
-      const paidAt = new Date();
-      const updatedOrder = await tx.order.update({
-        where: { id: order.id },
+    let paymentConfig: WechatMiniProgramPayParams;
+    if (payment.prepayId) {
+      paymentConfig = await this.wechatPayService.buildClientPayParams(payment.prepayId);
+    } else {
+      const created = await this.wechatPayService.createMiniProgramOrder({
+        description: `商城订单${order.orderNo}`,
+        outTradeNo: payment.outTradeNo!,
+        amount: remainingAmount,
+        payerOpenId: payer.openId,
+      });
+      paymentConfig = created.payParams;
+      payment = await this.prisma.payment.update({
+        where: { id: payment.id },
         data: {
-          paid: Number(order.paid) + remainingAmount,
-          payStatus: PayStatus.PAID,
-          status: OrderStatus.CONFIRMED,
-          payDate: paidAt,
+          prepayId: created.prepayId,
+          tradeType: 'JSAPI',
+          thirdStatus: 'NOTPAY',
+          failReason: null,
         },
       });
+    }
 
-      return {
-        id: updatedOrder.id,
-        orderNo: updatedOrder.orderNo,
-        payStatus: updatedOrder.payStatus,
-        status: updatedOrder.status,
-        paid: Number(updatedOrder.paid),
-        payDate: paidAt,
-      };
+    return this.buildMallPayOrderVo(order, payment, paymentConfig);
+  }
+
+  async getPaymentStatusByUser(userId: number, id: number): Promise<MallPayOrderVo> {
+    const customer = await this.getCustomerByUserId(userId);
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id,
+        customerId: customer.id,
+        type: 'MALL',
+        deletedAt: null,
+      },
+      include: {
+        payments: {
+          where: {
+            deletedAt: null,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
     });
+
+    if (!order) {
+      throw new NotFoundException('订单不存在');
+    }
+
+    const synced = await this.syncWechatPaymentByOrder(order);
+    return this.buildMallPayOrderVo(synced.order, synced.payment);
+  }
+
+  async handleWechatPayNotify(rawBody: string, headers: { serial?: string; nonce?: string; signature?: string; timestamp?: string }) {
+    const resource = await this.wechatPayService.verifyAndDecryptNotify(rawBody, headers);
+    if (!resource.out_trade_no) {
+      throw new BadRequestException('微信支付回调缺少商户订单号');
+    }
+
+    const payment = await this.prisma.payment.findFirst({
+      where: {
+        outTradeNo: resource.out_trade_no,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!payment) {
+      return false;
+    }
+
+    if (resource.trade_state === 'SUCCESS') {
+      await this.markWechatPaymentSuccessByOutTradeNo(resource.out_trade_no, resource, JSON.parse(rawBody || '{}'));
+      return true;
+    }
+
+    await this.prisma.payment.updateMany({
+      where: {
+        outTradeNo: resource.out_trade_no,
+        deletedAt: null,
+      },
+      data: {
+        thirdTradeNo: resource.transaction_id || null,
+        thirdStatus: resource.trade_state || null,
+        notifyAt: new Date(),
+        notifyPayload: JSON.parse(rawBody || '{}'),
+      },
+    });
+    return true;
   }
 
   async findAllByUser(userId: number, query: QueryMallOrderDto): Promise<MallOrderListItemVo[]> {
@@ -636,6 +974,7 @@ export class MallOrdersService {
         throw new ForbiddenException('已发货订单不能取消');
       }
 
+      await this.closeWechatPaymentIfPending(tx, existing.id);
       await this.releaseOrderInventory(tx, existing.id);
       const updated = await tx.order.update({
         where: { id: existing.id },

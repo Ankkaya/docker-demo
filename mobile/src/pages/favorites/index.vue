@@ -127,7 +127,7 @@ onShow(() => {
 
 <template>
   <view class="favorites-page text-slate-900">
-    <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-[#f8f7f6]/92 px-4 py-3 backdrop-blur-md">
+    <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-[#f8f7f6]/92 px-4 py-4 backdrop-blur-md">
       <view class="mt-3 flex items-center gap-6 overflow-x-auto whitespace-nowrap text-sm">
         <text class="border-b-2 border-[#efb239] pb-2 text-slate-900 font-bold">
           全部宝贝 ({{ favorites.length }})

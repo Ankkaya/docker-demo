@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <n-card class="bg-container transition-theme">
-      <div class="mb-4 flex items-center justify-end">
+      <div class="page-toolbar mb-4">
         <n-button type="primary" @click="handleCreate">新增配置</n-button>
       </div>
       <n-data-table :columns="columns" :data="list" :loading="loading" striped />

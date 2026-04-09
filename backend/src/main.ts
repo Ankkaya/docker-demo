@@ -50,7 +50,9 @@ async function bootstrap() {
     logger.warn('⚠️ 未配置 DATABASE_URL 环境变量');
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
 
   // 启用 CORS
   app.enableCors();

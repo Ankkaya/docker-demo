@@ -52,6 +52,7 @@ const selectedPayment = ref('wechat')
 const timer = ref<ReturnType<typeof setInterval> | null>(null)
 const addressLoading = ref(false)
 const creatingOrder = ref(false)
+const paying = ref(false)
 const paymentPopupVisible = ref(false)
 const shouldHandlePaymentCancel = ref(false)
 
@@ -62,20 +63,6 @@ const paymentMethods: PaymentMethod[] = [
     desc: '快速安全支付',
     iconClass: 'i-material-symbols:account-balance-wallet',
     iconToneClass: 'bg-emerald-50 text-emerald-500',
-  },
-  {
-    key: 'balance',
-    name: '余额支付',
-    desc: '当前余额：¥1,250.00',
-    iconClass: 'i-material-symbols:savings',
-    iconToneClass: 'bg-orange-50 text-[#efb239]',
-  },
-  {
-    key: 'card',
-    name: '国际银行卡',
-    desc: '支持 Visa、Mastercard、JCB',
-    iconClass: 'i-material-symbols:credit-card',
-    iconToneClass: 'bg-blue-50 text-blue-500',
   },
 ]
 
@@ -228,9 +215,30 @@ function syncSelectedAddressFromStore() {
 function resolvePaymentMethod() {
   if (selectedPayment.value === 'wechat')
     return 'WECHAT'
-  if (selectedPayment.value === 'balance')
-    return 'CREDIT'
-  return 'BANK'
+  return 'WECHAT'
+}
+
+async function queryPaymentStatus(orderId: number) {
+  return alovaInstance.Get(`/mall/orders/${orderId}/payment-status`).send() as Promise<any>
+}
+
+async function requestWechatPayment(paymentConfig?: Record<string, string> | null) {
+  if (!paymentConfig?.timeStamp || !paymentConfig?.nonceStr || !paymentConfig?.package || !paymentConfig?.paySign) {
+    throw new Error('支付参数缺失')
+  }
+
+  return new Promise((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'wxpay',
+      timeStamp: paymentConfig.timeStamp,
+      nonceStr: paymentConfig.nonceStr,
+      package: paymentConfig.package,
+      signType: (paymentConfig.signType || 'RSA') as 'RSA',
+      paySign: paymentConfig.paySign,
+      success: resolve,
+      fail: reject,
+    })
+  })
 }
 
 async function payNow() {
@@ -240,11 +248,17 @@ async function payNow() {
   }
 
   shouldHandlePaymentCancel.value = false
+  paying.value = true
   try {
-    await (Apis.general as any).MallOrdersController_payOrder({
+    const payResult = await (Apis.general as any).MallOrdersController_payOrder({
       pathParams: { id: orderSummary.value.orderId },
       data: { method: resolvePaymentMethod() },
     }).send()
+    await requestWechatPayment(payResult?.paymentConfig || null)
+    const latestStatus = await queryPaymentStatus(orderSummary.value.orderId)
+    if (latestStatus?.payStatus !== 'PAID') {
+      throw new Error('支付结果确认中，请稍后在订单列表查看')
+    }
     uni.showToast({
       title: `${selectedPaymentMethod.value.name}支付成功`,
       icon: 'success',
@@ -257,10 +271,21 @@ async function payNow() {
     }, 500)
   }
   catch (error: any) {
+    const errMsg = String(error?.errMsg || error?.message || '')
+    if (errMsg.includes('cancel')) {
+      uni.showToast({
+        title: '已取消支付',
+        icon: 'none',
+      })
+      return
+    }
     uni.showToast({
-      title: error?.message || '支付失败',
+      title: error?.message || error?.errMsg || '支付失败',
       icon: 'none',
     })
+  }
+  finally {
+    paying.value = false
   }
 }
 
@@ -683,8 +708,8 @@ onShow(() => {
           </view>
         </view>
 
-        <view class="order-payment-popup__submit" @click="payNow">
-          <text>立即支付</text>
+        <view class="order-payment-popup__submit" :class="paying ? 'opacity-75' : ''" @click="payNow">
+          <text>{{ paying ? '支付中...' : '立即支付' }}</text>
           <text class="text-white/80 font-normal">
             |
           </text>

@@ -112,6 +112,9 @@ export class MallBalanceLogListVo {
 }
 
 export class MallBalanceRechargeVo {
+  @ApiProperty({ description: '充值单ID' })
+  id: number;
+
   @ApiProperty({ description: '账户ID' })
   accountId: number;
 
@@ -121,12 +124,35 @@ export class MallBalanceRechargeVo {
   @ApiProperty({ description: '充值方式', enum: PaymentMethod })
   method: PaymentMethod;
 
-  @ApiProperty({ description: '充值后余额', type: String })
+  @ApiProperty({ description: '当前可用余额', type: String })
   availableBalance: string;
 
-  @ApiProperty({ description: '充值流水号' })
-  bizNo: string;
+  @ApiProperty({ description: '充值单号' })
+  rechargeNo: string;
+
+  @ApiProperty({ description: '充值状态' })
+  status: string;
+
+  @ApiProperty({ description: '商户支付单号', nullable: true })
+  outTradeNo: string | null;
+
+  @ApiProperty({
+    description: '微信小程序支付参数',
+    required: false,
+    nullable: true,
+  })
+  paymentConfig?: {
+    appId: string;
+    timeStamp: string;
+    nonceStr: string;
+    package: string;
+    signType: string;
+    paySign: string;
+  } | null;
 
   @ApiProperty({ description: '充值时间' })
   createdAt: Date;
+
+  @ApiProperty({ description: '支付完成时间', nullable: true })
+  paidAt?: Date | null;
 }

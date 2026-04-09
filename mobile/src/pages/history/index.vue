@@ -136,7 +136,7 @@ onShow(() => {
 <template>
   <view class="history-page text-slate-900">
     <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 backdrop-blur-md">
-      <view class="flex items-center justify-end px-4 pb-2 pt-3">
+      <view class="flex items-center justify-end px-4 pb-2 pt-4">
         <view class="rounded-full bg-[#efb239]/10 px-3 py-1 text-xs text-[#c98500] font-semibold" @click="clearHistory">
           清空历史
         </view>

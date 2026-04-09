@@ -7,6 +7,7 @@ import {
   MallCartController,
   MallHomeController,
   MallOrdersController,
+  MallPaymentsController,
   MallProductsController,
   MallReviewsController,
 } from './mall.controller';
@@ -23,10 +24,11 @@ import { FavoritesModule } from '@/domains/favorites/favorites.module';
 import { BrowseHistoriesModule } from '@/domains/browse-histories/browse-histories.module';
 import { SystemSettingsModule } from '@/domains/system-settings/system-settings.module';
 import { MallBrowseHistoriesController, MallFavoritesController } from './mall.controller';
+import { WechatPayService } from './wechat-pay.service';
 
 @Module({
   imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, CustomerAddressesModule, AuthModule, ReviewsModule, FavoritesModule, BrowseHistoriesModule, SystemSettingsModule],
-  controllers: [MallProductsController, MallHomeController, MallAuthController, MallCartController, MallAddressesController, MallOrdersController, MallReviewsController, MallBalanceController, MallFavoritesController, MallBrowseHistoriesController],
-  providers: [MallService, MallOrdersService, MallBalanceService],
+  controllers: [MallProductsController, MallHomeController, MallAuthController, MallCartController, MallAddressesController, MallOrdersController, MallPaymentsController, MallReviewsController, MallBalanceController, MallFavoritesController, MallBrowseHistoriesController],
+  providers: [MallService, MallOrdersService, MallBalanceService, WechatPayService],
 })
 export class MallModule {}

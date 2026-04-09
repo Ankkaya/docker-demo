@@ -43,17 +43,21 @@
             :options="warehouseOptions"
             placeholder="选择仓库"
             clearable
-            style="width: 180px"
           />
         </n-form-item>
         <n-form-item>
           <n-space>
             <n-button type="primary" @click="handleSearch">搜索</n-button>
             <n-button @click="handleReset">重置</n-button>
-            <n-button type="warning" @click="showWarningList">库存预警</n-button>
           </n-space>
         </n-form-item>
       </QueryForm>
+    </n-card>
+
+    <n-card class="mb-3">
+      <n-space class="page-toolbar">
+        <n-button type="warning" @click="showWarningList">库存预警</n-button>
+      </n-space>
     </n-card>
 
     <!-- 库存列表 -->

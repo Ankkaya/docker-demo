@@ -101,7 +101,7 @@ onShow(async () => {
 <template>
   <view class="balance-page text-slate-900">
     <scroll-view scroll-y class="pb-24">
-      <view class="px-4 pb-10 pt-6">
+      <view class="px-4 pb-10 pt-4">
         <view class="balance-hero overflow-hidden rounded-[32rpx] px-5 py-5">
           <view class="relative z-10 flex items-start justify-between gap-4">
             <view>

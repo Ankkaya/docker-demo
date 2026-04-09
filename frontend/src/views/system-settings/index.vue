@@ -21,6 +21,10 @@
         </n-tab-pane>
 
         <n-tab-pane name="wechat-pay" tab="微信支付">
+          <n-alert type="info" class="mb-4" :show-icon="false">
+            支付通知地址需指向后端公开可访问的微信回调接口：
+            <code>/mall/payments/wechat/notify</code>。平台证书路径填写后端服务可读取到的证书文件绝对路径或相对项目根目录路径。
+          </n-alert>
           <n-form :model="wechatPayForm" label-width="120">
             <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi label="启用微信支付">

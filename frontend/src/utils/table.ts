@@ -20,6 +20,7 @@ export function createActionColumn<T>(
 ): DataTableBaseColumn<T> {
   return {
     ...column,
+    fixed: column.fixed ?? 'right',
     width: getActionColumnWidth(buttonCount, extraWidth),
   }
 }

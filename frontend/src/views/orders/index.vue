@@ -7,12 +7,10 @@
           <n-input v-model:value="searchForm.keyword" placeholder="订单号" clearable />
         </n-form-item>
         <n-form-item label="客户">
-          <n-select v-model:value="searchForm.customerId" :options="customerOptions" placeholder="选择客户" clearable
-            style="width: 180px" />
+          <n-select v-model:value="searchForm.customerId" :options="customerOptions" placeholder="选择客户" clearable />
         </n-form-item>
         <n-form-item label="状态">
-          <n-select v-model:value="searchForm.status" :options="statusOptions" placeholder="选择状态" clearable
-            style="width: 150px" />
+          <n-select v-model:value="searchForm.status" :options="statusOptions" placeholder="选择状态" clearable />
         </n-form-item>
         <n-form-item>
           <n-space>

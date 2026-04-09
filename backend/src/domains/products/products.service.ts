@@ -462,10 +462,60 @@ export class ProductsService {
   async remove(id: number) {
     const existing = await this.prisma.product.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        skus: {
+          where: { deletedAt: null },
+          select: { id: true },
+        },
+      },
     });
 
     if (!existing) {
       throw new NotFoundException('商品不存在');
+    }
+
+    const skuIds = existing.skus.map((sku) => sku.id);
+    if (skuIds.length > 0) {
+      const [
+        purchaseItemCount,
+        receiptItemCount,
+        purchaseReturnItemCount,
+        orderItemCount,
+        shipmentItemCount,
+        saleReturnItemCount,
+        inventoryCount,
+        inventoryLogCount,
+        transferItemCount,
+        adjustmentItemCount,
+      ] = await Promise.all([
+        this.prisma.purchaseItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.purchaseReceiptItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.purchaseReturnItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.orderItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.shipmentItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.saleReturnItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.inventory.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.inventoryLog.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.transferItem.count({ where: { skuId: { in: skuIds } } }),
+        this.prisma.adjustmentItem.count({ where: { skuId: { in: skuIds } } }),
+      ]);
+
+      const relatedCount = [
+        purchaseItemCount,
+        receiptItemCount,
+        purchaseReturnItemCount,
+        orderItemCount,
+        shipmentItemCount,
+        saleReturnItemCount,
+        inventoryCount,
+        inventoryLogCount,
+        transferItemCount,
+        adjustmentItemCount,
+      ].reduce((sum, count) => sum + count, 0);
+
+      if (relatedCount > 0) {
+        throw new BadRequestException('商品已关联业务单据或库存记录，不允许删除，请改为停用');
+      }
     }
 
     // 软删除：将所有SKU标记为已删除

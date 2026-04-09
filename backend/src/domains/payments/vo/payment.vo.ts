@@ -6,13 +6,18 @@ export class PaymentVo {
   type: PaymentType;
   typeText: string;
   bizType: string;
-  bizId: number;
+  bizId: number | null;
   orderNo?: string;
+  orderType?: string | null;
   amount: number;
   method: PaymentMethod;
   methodText: string;
   status: PaymentStatus;
   statusText: string;
+  outTradeNo?: string | null;
+  thirdTradeNo?: string | null;
+  thirdStatus?: string | null;
+  paidAt?: Date | null;
   remark?: string;
   createdBy: number;
   createdAt: Date;
@@ -24,13 +29,18 @@ export class PaymentVo {
     vo.type = entity.type;
     vo.typeText = entity.type === PaymentType.RECEIPT ? '收款' : '付款';
     vo.bizType = entity.bizType;
-    vo.bizId = entity.bizId;
+    vo.bizId = entity.purchaseId || entity.orderId || null;
     vo.orderNo = entity.purchase?.orderNo || entity.order?.orderNo || '';
+    vo.orderType = entity.order?.type || null;
     vo.amount = Number(entity.amount);
     vo.method = entity.method;
     vo.methodText = this.getMethodText(entity.method);
     vo.status = entity.status;
     vo.statusText = this.getStatusText(entity.status);
+    vo.outTradeNo = entity.outTradeNo || null;
+    vo.thirdTradeNo = entity.thirdTradeNo || null;
+    vo.thirdStatus = entity.thirdStatus || null;
+    vo.paidAt = entity.paidAt || null;
     vo.remark = entity.remark || undefined;
     vo.createdBy = entity.createdBy;
     vo.createdAt = entity.createdAt;
@@ -49,6 +59,7 @@ export class PaymentVo {
       ALIPAY: '支付宝',
       WECHAT: '微信支付',
       CREDIT: '挂账/赊销',
+      BALANCE: '余额支付',
     };
     return map[method] || method;
   }

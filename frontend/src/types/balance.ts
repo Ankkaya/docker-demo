@@ -94,3 +94,33 @@ export interface QueryBalanceLogParams {
   page?: number;
   pageSize?: number;
 }
+
+export interface BalanceRechargeOrder {
+  id: number;
+  rechargeNo: string;
+  accountId: number;
+  customerId: number;
+  customerName: string;
+  customerCode: string;
+  customerPhone?: string | null;
+  amount: string;
+  method: import('./purchase').PaymentMethod;
+  methodText: string;
+  status: import('./purchase').PaymentStatus;
+  statusText: string;
+  outTradeNo?: string | null;
+  thirdTradeNo?: string | null;
+  thirdStatus?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+export interface QueryBalanceRechargeParams {
+  keyword?: string;
+  status?: import('./purchase').PaymentStatus;
+  method?: import('./purchase').PaymentMethod;
+  accountId?: number;
+  customerId?: number;
+  page?: number;
+  pageSize?: number;
+}

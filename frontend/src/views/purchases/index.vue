@@ -12,7 +12,6 @@
             :options="supplierOptions"
             placeholder="选择供应商"
             clearable
-            style="width: 180px"
           />
         </n-form-item>
         <n-form-item label="状态">
@@ -21,7 +20,6 @@
             :options="statusOptions"
             placeholder="选择状态"
             clearable
-            style="width: 150px"
           />
         </n-form-item>
         <n-form-item>

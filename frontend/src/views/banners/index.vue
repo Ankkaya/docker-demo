@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 banner-list">
     <n-card class="bg-container transition-theme">
-      <div class="mb-4 flex items-center justify-end">
+      <div class="page-toolbar mb-4">
         <n-space>
           <n-button type="primary" @click="handleCreate">新增轮播图</n-button>
           <n-button @click="handleResetList">重置</n-button>

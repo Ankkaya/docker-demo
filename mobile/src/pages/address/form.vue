@@ -218,7 +218,7 @@ onLoad((options) => {
 <template>
   <page-meta :page-style="regionPickerVisible ? 'overflow:hidden;' : 'overflow:visible;'" />
 
-  <view class="address-form-page pt-5 text-slate-900">
+  <view class="address-form-page pt-4 text-slate-900">
     <view class="top-bar">
       <view class="top-bar-inner">
         <view class="top-bar-left" @click="goBack">

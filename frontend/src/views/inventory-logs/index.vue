@@ -4,15 +4,13 @@
     <n-card class="mb-4">
       <QueryForm :model="searchForm">
         <n-form-item label="仓库">
-          <n-select v-model:value="searchForm.warehouseId" :options="warehouseOptions" placeholder="选择仓库" clearable
-            style="width: 180px" />
+          <n-select v-model:value="searchForm.warehouseId" :options="warehouseOptions" placeholder="选择仓库" clearable />
         </n-form-item>
         <n-form-item label="类型">
-          <n-select v-model:value="searchForm.type" :options="typeOptions" placeholder="选择类型" clearable
-            style="width: 150px" />
+          <n-select v-model:value="searchForm.type" :options="typeOptions" placeholder="选择类型" clearable />
         </n-form-item>
         <n-form-item label="业务单号">
-          <n-input v-model:value="searchForm.bizNo" placeholder="业务单号" clearable style="width: 180px" />
+          <n-input v-model:value="searchForm.bizNo" placeholder="业务单号" clearable />
         </n-form-item>
         <n-form-item>
           <n-space>

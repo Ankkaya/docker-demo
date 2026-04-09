@@ -178,7 +178,7 @@ onLoad((options) => {
 <template>
   <view class="address-page text-slate-900">
     <scroll-view scroll-y class="pb-28">
-      <view class="px-4 pb-36 pt-6">
+      <view class="px-4 pb-36 pt-4">
         <view
           v-if="!loading && addresses.length === 0"
           class="border border-[#efb239]/25 rounded-[28rpx] border-dashed bg-white/72 px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.05)]"

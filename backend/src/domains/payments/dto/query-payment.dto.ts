@@ -1,6 +1,6 @@
-import { IsInt, IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentType, PaymentStatus } from '@prisma/client';
+import { PaymentType, PaymentStatus, PaymentMethod } from '@prisma/client';
 
 export class QueryPaymentDto {
   @IsEnum(PaymentType)
@@ -14,6 +14,19 @@ export class QueryPaymentDto {
   @IsEnum(PaymentStatus)
   @IsOptional()
   status?: PaymentStatus;
+
+  @IsEnum(PaymentMethod)
+  @IsOptional()
+  method?: PaymentMethod;
+
+  @IsString()
+  @IsOptional()
+  keyword?: string;
+
+  @IsBoolean()
+  @Type(() => Boolean)
+  @IsOptional()
+  mallOnly?: boolean;
 
   @IsInt()
   @IsOptional()

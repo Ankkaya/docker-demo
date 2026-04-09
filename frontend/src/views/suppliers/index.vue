@@ -12,7 +12,7 @@
           <n-input v-model:value="searchForm.contact" placeholder="请输入联系人" clearable />
         </n-form-item>
         <n-form-item label="启用状态">
-          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable style="width: 160px" />
+          <n-select v-model:value="searchForm.isEnabled" :options="statusOptions" placeholder="全部状态" clearable />
         </n-form-item>
         <n-form-item>
           <n-space>
@@ -24,7 +24,7 @@
     </n-card>
 
     <n-card class="bg-container transition-theme">
-      <div class="mb-4 flex items-center justify-end">
+      <div class="page-toolbar mb-4">
         <n-button type="primary" @click="handleCreate">新增供应商</n-button>
       </div>
       <n-data-table

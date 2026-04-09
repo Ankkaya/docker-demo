@@ -93,7 +93,7 @@ export class PaymentsService {
 
   // 查询收付款列表
   async findAll(query: QueryPaymentDto) {
-    const { type, bizType, status, page = 1, pageSize = 10 } = query;
+    const { type, bizType, status, method, keyword, mallOnly, page = 1, pageSize = 10 } = query;
 
     const where: Prisma.PaymentWhereInput = {
       deletedAt: null,
@@ -111,12 +111,34 @@ export class PaymentsService {
       where.status = status;
     }
 
+    if (method) {
+      where.method = method;
+    }
+
+    if (mallOnly) {
+      where.order = {
+        is: {
+          type: 'MALL',
+          deletedAt: null,
+        },
+      };
+    }
+
+    if (keyword) {
+      where.OR = [
+        { outTradeNo: { contains: keyword, mode: 'insensitive' } },
+        { thirdTradeNo: { contains: keyword, mode: 'insensitive' } },
+        { purchase: { is: { orderNo: { contains: keyword, mode: 'insensitive' } } } },
+        { order: { is: { orderNo: { contains: keyword, mode: 'insensitive' } } } },
+      ];
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.payment.findMany({
         where,
         include: {
           purchase: { select: { orderNo: true } },
-          order: { select: { orderNo: true } },
+          order: { select: { orderNo: true, type: true } },
         },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -142,7 +164,7 @@ export class PaymentsService {
       where: { id, deletedAt: null },
       include: {
         purchase: { select: { orderNo: true } },
-        order: { select: { orderNo: true } },
+        order: { select: { orderNo: true, type: true } },
       },
     });
 

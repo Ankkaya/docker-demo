@@ -16,6 +16,7 @@ import { AdjustBalanceDto } from './dto/adjust-balance.dto';
 import { CreateBalanceAccountDto } from './dto/create-balance-account.dto';
 import { QueryBalanceAccountDto } from './dto/query-balance-account.dto';
 import { QueryBalanceLogDto } from './dto/query-balance-log.dto';
+import { QueryBalanceRechargeDto } from './dto/query-balance-recharge.dto';
 
 @ApiTags('后台接口/余额管理')
 @Controller('balances')
@@ -56,5 +57,11 @@ export class BalancesController {
   @ApiOperation({ summary: '查询余额流水列表' })
   findLogs(@Query() query: QueryBalanceLogDto) {
     return this.balancesService.findLogs(query);
+  }
+
+  @Get('recharges')
+  @ApiOperation({ summary: '查询余额充值单列表' })
+  findRechargeOrders(@Query() query: QueryBalanceRechargeDto) {
+    return this.balancesService.findRechargeOrders(query);
   }
 }

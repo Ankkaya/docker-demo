@@ -100,33 +100,37 @@ const contextMenuOptions = ref<DropdownOption[]>([
     label: '关闭右侧',
     icon: renderIcon(ArrowForwardOutline),
     disabled: false
+  },
+  {
+    key: 'closeAll',
+    label: '关闭所有',
+    icon: renderIcon(CloseOutline),
+    disabled: false
   }
 ])
+
+const navigateToTab = (tab?: Tab | null) => {
+  if (!tab) return
+  router.push(tab.key).catch(() => undefined)
+}
 
 // 点击标签切换路由
 const handleClick = (tab: Tab) => {
   if (tab.key !== tabStore.activeTab) {
     tabStore.activateTab(tab.key)
-    router.push({
-      path: tab.key,
-      query: { ...tab.query, ...tab.params }
-    })
+    navigateToTab(tab)
   }
 }
 
 // 关闭标签
 const handleClose = (tab: Tab) => {
   if (tab.fixed) return
+  const wasActive = tab.key === tabStore.activeTab
   tabStore.removeTab(tab.key)
-  // 如果关闭后需要跳转
-  if (tab.key === tabStore.activeTab) {
+
+  if (wasActive) {
     const active = tabStore.tabs.find(t => t.key === tabStore.activeTab)
-    if (active) {
-      router.push({
-        path: active.key,
-        query: { ...active.query, ...active.params }
-      })
-    }
+    navigateToTab(active)
   }
 }
 
@@ -161,6 +165,12 @@ const handleContextMenu = (e: MouseEvent, tab: Tab) => {
       label: '关闭右侧',
       icon: renderIcon(ArrowForwardOutline),
       disabled: tabStore.tabs.findIndex(t => t.key === tab.key) >= tabStore.tabs.length - 1
+    },
+    {
+      key: 'closeAll',
+      label: '关闭所有',
+      icon: renderIcon(CloseOutline),
+      disabled: tabStore.unfixedTabs.length === 0
     }
   ]
   
@@ -198,22 +208,15 @@ const handleContextMenuSelect = (key: string) => {
       break
     case 'closeOthers':
       tabStore.closeOthers(contextTab.value.key)
-      if (contextTab.value.key !== tabStore.activeTab) {
-        router.push({
-          path: contextTab.value.key,
-          query: { ...contextTab.value.query, ...contextTab.value.params }
-        })
-      }
+      navigateToTab(contextTab.value)
       break
     case 'closeRight':
       tabStore.closeRight(contextTab.value.key)
-      // 如果当前激活的标签在右侧被关闭了，跳转到当前标签
-      if (!tabStore.tabs.find(t => t.key === tabStore.activeTab)) {
-        router.push({
-          path: contextTab.value.key,
-          query: { ...contextTab.value.query, ...contextTab.value.params }
-        })
-      }
+      navigateToTab(tabStore.tabs.find(t => t.key === tabStore.activeTab) || contextTab.value)
+      break
+    case 'closeAll':
+      tabStore.closeAll()
+      navigateToTab(tabStore.tabs.find(t => t.key === tabStore.activeTab))
       break
   }
 }

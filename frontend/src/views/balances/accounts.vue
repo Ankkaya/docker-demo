@@ -29,6 +29,7 @@
 
       <n-space class="toolbar">
         <n-button type="primary" @click="openCreateModal">开通余额账户</n-button>
+        <n-button @click="router.push('/balances/recharges')">充值单</n-button>
       </n-space>
 
       <n-data-table

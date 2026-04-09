@@ -2,17 +2,12 @@
   <div class="page-container">
     <n-card title="购物车管理" class="page-card">
       <!-- 搜索栏 -->
-      <n-form
-        inline
-        :model="searchForm"
-        class="search-form"
-      >
+      <QueryForm :model="searchForm" class="search-form">
         <n-form-item label="用户ID">
           <n-input-number
             v-model:value="searchForm.userId"
             placeholder="请输入用户ID"
             clearable
-            style="width: 150px"
           />
         </n-form-item>
         <n-form-item label="关键词">
@@ -20,7 +15,6 @@
             v-model:value="searchForm.keyword"
             placeholder="商品名称/SKU编码"
             clearable
-            style="width: 200px"
           />
         </n-form-item>
         <n-form-item>
@@ -34,10 +28,10 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
 
       <!-- 操作栏 -->
-      <n-space class="toolbar" style="margin-bottom: 16px">
+      <n-space class="page-toolbar toolbar" style="margin-bottom: 16px">
         <n-button type="error" @click="handleBatchDelete" :disabled="!checkedRowKeys.length">
           批量删除
         </n-button>
@@ -97,6 +91,7 @@ import { useMessage, useDialog, NButton, NSpace, NTag, NImage, NPopconfirm } fro
 import { SearchOutline, EyeOutline, TrashOutline } from '@vicons/ionicons5';
 import { getCartList, deleteCart, deleteCartBatch } from '@/api/cart';
 import type { DataTableColumns, DataTableRowData } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 
 const message = useMessage();
 const dialog = useDialog();

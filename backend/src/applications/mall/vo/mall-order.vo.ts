@@ -129,6 +129,9 @@ export class MallCreateOrderVo {
 }
 
 export class MallPayOrderVo {
+  @ApiProperty({ description: '支付单ID', nullable: true })
+  paymentId: number | null;
+
   @ApiProperty({ description: '订单ID' })
   id: number;
 
@@ -144,6 +147,37 @@ export class MallPayOrderVo {
   @ApiProperty({ description: '已付金额' })
   paid: number;
 
-  @ApiProperty({ description: '支付完成时间' })
-  payDate: Date;
+  @ApiProperty({ description: '支付单状态' })
+  paymentStatus: string;
+
+  @ApiProperty({ description: '支付方式', nullable: true })
+  method: string | null;
+
+  @ApiProperty({ description: '商户支付单号', nullable: true })
+  outTradeNo: string | null;
+
+  @ApiProperty({ description: '支付完成时间', nullable: true })
+  payDate: Date | null;
+
+  @ApiProperty({
+    description: '微信小程序支付参数',
+    required: false,
+    nullable: true,
+    example: {
+      appId: 'wx123',
+      timeStamp: '1712736000',
+      nonceStr: 'abc123',
+      package: 'prepay_id=wx201410272009395522657a690389285100',
+      signType: 'RSA',
+      paySign: 'xxxx',
+    },
+  })
+  paymentConfig?: {
+    appId: string;
+    timeStamp: string;
+    nonceStr: string;
+    package: string;
+    signType: string;
+    paySign: string;
+  } | null;
 }

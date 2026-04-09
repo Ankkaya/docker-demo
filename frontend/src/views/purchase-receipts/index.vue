@@ -12,17 +12,21 @@
             :options="statusOptions"
             placeholder="选择状态"
             clearable
-            style="width: 150px"
           />
         </n-form-item>
         <n-form-item>
           <n-space>
-            <n-button type="primary" @click="handleCreate">创建入库单</n-button>
             <n-button type="primary" @click="handleSearch">搜索</n-button>
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
       </QueryForm>
+    </n-card>
+
+    <n-card class="mb-4">
+      <n-space class="page-toolbar">
+        <n-button type="primary" @click="handleCreate">创建入库单</n-button>
+      </n-space>
     </n-card>
 
     <!-- 入库单列表 -->

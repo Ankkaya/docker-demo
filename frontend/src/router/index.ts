@@ -297,6 +297,19 @@ const router = createRouter({
       ]
     },
     {
+      path: '/payments',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '收款记录' },
+      children: [
+        {
+          path: '',
+          name: 'payment-list',
+          component: () => import('@/views/payments/index.vue'),
+          meta: { title: '收款记录' }
+        }
+      ]
+    },
+    {
       path: '/mall-products',
       component: () => import('@/views/layout/index.vue'),
       meta: { title: '商城商品' },
@@ -339,6 +352,12 @@ const router = createRouter({
           name: 'balance-logs',
           component: () => import('@/views/balances/logs.vue'),
           meta: { title: '余额流水' }
+        },
+        {
+          path: 'recharges',
+          name: 'balance-recharges',
+          component: () => import('@/views/balances/recharges.vue'),
+          meta: { title: '余额充值单' }
         }
       ]
     },

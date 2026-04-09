@@ -10,7 +10,7 @@ export type ReceiptStatus = 'PENDING' | 'RECEIVED' | 'CANCELLED';
 export type PaymentType = 'RECEIPT' | 'PAYMENT';
 
 // 支付方式
-export type PaymentMethod = 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT';
+export type PaymentMethod = 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT' | 'BALANCE';
 
 // 收付款状态
 export type PaymentStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED';
@@ -96,13 +96,18 @@ export interface Payment {
   type: PaymentType;
   typeText: string;
   bizType: string;
-  bizId: number;
+  bizId: number | null;
   orderNo?: string;
+  orderType?: string | null;
   amount: number;
   method: PaymentMethod;
   methodText: string;
   status: PaymentStatus;
   statusText: string;
+  outTradeNo?: string | null;
+  thirdTradeNo?: string | null;
+  thirdStatus?: string | null;
+  paidAt?: string | null;
   remark?: string;
   createdBy: number;
   createdAt: string;
@@ -173,9 +178,12 @@ export interface CreatePaymentDto {
 
 // 查询收付款参数
 export interface QueryPaymentParams {
+  keyword?: string;
   type?: PaymentType;
   bizType?: string;
+  method?: PaymentMethod;
   status?: PaymentStatus;
+  mallOnly?: boolean;
   page?: number;
   pageSize?: number;
 }

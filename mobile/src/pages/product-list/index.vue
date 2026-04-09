@@ -237,7 +237,7 @@ function clearCategoryFilter() {
 <template>
   <view class="flex flex-col bg-[#f8f7f6]">
     <scroll-view scroll-y class="flex-1" @scrolltolower="handleScrollToLower">
-      <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-3">
+      <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-4">
         <view
           v-for="item in filters" :key="item.key"
           class="h-9 flex shrink-0 items-center gap-1 border rounded-full px-4" :class="activeFilter === item.key

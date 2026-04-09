@@ -1,11 +1,14 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
 import {
   BalanceAccountStatus,
   BalanceLogType,
   PaymentMethod,
+  PaymentStatus,
   Prisma,
 } from '@prisma/client';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
@@ -16,6 +19,7 @@ import {
   MallBalanceRechargeVo,
   MallBalanceSummaryVo,
 } from './vo/mall-balance.vo';
+import { WechatMiniProgramPayParams, WechatPayService, WechatTransactionResource } from './wechat-pay.service';
 
 function generateRechargeBizNo() {
   const now = new Date();
@@ -33,9 +37,14 @@ function generateRechargeBizNo() {
   return `RC${dateStr}${timeStr}${random}`;
 }
 
+const PENDING_RECHARGE_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+
 @Injectable()
 export class MallBalanceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wechatPayService: WechatPayService,
+  ) {}
 
   private async getCustomerByUserId(userId: number) {
     const customer = await this.prisma.customer.findFirst({
@@ -118,51 +127,252 @@ export class MallBalanceService {
   async rechargeByUserId(userId: number, dto: CreateMallBalanceRechargeDto) {
     const account = await this.ensureAccountByUserId(userId);
     const amount = Number(dto.amount);
-    const bizNo = generateRechargeBizNo();
+    if (dto.method !== PaymentMethod.WECHAT) {
+      throw new BadRequestException('当前阶段仅支持微信充值');
+    }
 
-    return this.prisma.$transaction(async (tx) => {
-      const current = await tx.balanceAccount.findUnique({
-        where: { id: account.id },
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        deletedAt: null,
+      },
+      select: {
+        wechatOpenId: true,
+      },
+    });
+
+    if (!user?.wechatOpenId) {
+      throw new BadRequestException('当前账号未绑定微信 OpenID，请先使用微信登录');
+    }
+
+    const rechargeNo = generateRechargeBizNo();
+    let rechargeOrder = await this.prisma.balanceRechargeOrder.create({
+      data: {
+        rechargeNo,
+        accountId: account.id,
+        customerId: account.customerId,
+        amount,
+        method: dto.method,
+        outTradeNo: `${rechargeNo}${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`.slice(0, 32),
+        remark: `商城用户${this.getMethodText(dto.method)}充值`,
+        createdBy: userId,
+      },
+    });
+
+    const created = await this.wechatPayService.createMiniProgramOrder({
+      description: `余额充值${rechargeOrder.rechargeNo}`,
+      outTradeNo: rechargeOrder.outTradeNo!,
+      amount,
+      payerOpenId: user.wechatOpenId,
+    });
+
+    rechargeOrder = await this.prisma.balanceRechargeOrder.update({
+      where: { id: rechargeOrder.id },
+      data: {
+        prepayId: created.prepayId,
+        thirdStatus: 'NOTPAY',
+        failReason: null,
+      },
+    });
+
+    return this.toRechargeVo(rechargeOrder, account.availableBalance.toString(), created.payParams);
+  }
+
+  async getRechargeStatusByUserId(userId: number, id: number) {
+    const account = await this.ensureAccountByUserId(userId);
+    const rechargeOrder = await this.prisma.balanceRechargeOrder.findFirst({
+      where: {
+        id,
+        accountId: account.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!rechargeOrder) {
+      throw new NotFoundException('充值单不存在');
+    }
+
+    const synced = await this.syncRechargeOrder(rechargeOrder);
+    const latestAccount = await this.prisma.balanceAccount.findUnique({
+      where: { id: account.id },
+    });
+
+    return this.toRechargeVo(synced, latestAccount?.availableBalance?.toString() || account.availableBalance.toString());
+  }
+
+  async handleWechatPayNotify(rawBody: string, headers: { serial?: string; nonce?: string; signature?: string; timestamp?: string }) {
+    const resource = await this.wechatPayService.verifyAndDecryptNotify(rawBody, headers);
+    if (!resource.out_trade_no) {
+      throw new BadRequestException('微信支付回调缺少商户订单号');
+    }
+
+    const rechargeOrder = await this.prisma.balanceRechargeOrder.findFirst({
+      where: {
+        outTradeNo: resource.out_trade_no,
+        deletedAt: null,
+      },
+    });
+
+    if (!rechargeOrder) {
+      return false;
+    }
+
+    if (resource.trade_state === 'SUCCESS') {
+      await this.markRechargeSuccess(resource.out_trade_no, resource, JSON.parse(rawBody || '{}'));
+      return true;
+    }
+
+    await this.prisma.balanceRechargeOrder.update({
+      where: { id: rechargeOrder.id },
+      data: {
+        thirdTradeNo: resource.transaction_id || null,
+        thirdStatus: resource.trade_state || null,
+        notifyAt: new Date(),
+        notifyPayload: JSON.parse(rawBody || '{}'),
+      },
+    });
+
+    return true;
+  }
+
+  @Interval(PENDING_RECHARGE_SYNC_INTERVAL_MS)
+  async handlePendingRecharges() {
+    const recharges = await this.prisma.balanceRechargeOrder.findMany({
+      where: {
+        deletedAt: null,
+        method: PaymentMethod.WECHAT,
+        status: PaymentStatus.PENDING,
+        outTradeNo: {
+          not: null,
+        },
+      },
+      take: 20,
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+
+    for (const recharge of recharges) {
+      await this.syncRechargeOrder(recharge);
+    }
+  }
+
+  private async syncRechargeOrder(rechargeOrder: any) {
+    if (!rechargeOrder.outTradeNo || rechargeOrder.status === PaymentStatus.COMPLETED) {
+      return rechargeOrder;
+    }
+
+    const remote = await this.wechatPayService.queryOrder(rechargeOrder.outTradeNo);
+    const updated = await this.prisma.balanceRechargeOrder.update({
+      where: { id: rechargeOrder.id },
+      data: {
+        thirdStatus: remote.trade_state || rechargeOrder.thirdStatus,
+        thirdTradeNo: remote.transaction_id || rechargeOrder.thirdTradeNo,
+        lastQueryAt: new Date(),
+        queryCount: {
+          increment: 1,
+        },
+      },
+    });
+
+    if (remote.trade_state === 'SUCCESS') {
+      return this.markRechargeSuccess(rechargeOrder.outTradeNo, {
+        out_trade_no: rechargeOrder.outTradeNo,
+        transaction_id: remote.transaction_id,
+        trade_state: remote.trade_state,
       });
+    }
 
-      if (!current) {
-        throw new NotFoundException('余额账户不存在');
-      }
+    return updated;
+  }
 
-      const before = Number(current.availableBalance);
-      const after = before + amount;
-      const updated = await tx.balanceAccount.update({
-        where: { id: current.id },
-        data: {
-          availableBalance: after,
-          totalRecharged: Number(current.totalRecharged) + amount,
+  private async markRechargeSuccess(
+    outTradeNo: string,
+    resource: Partial<WechatTransactionResource>,
+    rawPayload?: unknown,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const rechargeOrder = await tx.balanceRechargeOrder.findFirst({
+        where: {
+          outTradeNo,
+          deletedAt: null,
         },
       });
 
-      const createdLog = await tx.balanceLog.create({
+      if (!rechargeOrder) {
+        throw new NotFoundException('充值单不存在');
+      }
+
+      if (rechargeOrder.status === PaymentStatus.COMPLETED) {
+        return rechargeOrder;
+      }
+
+      const account = await tx.balanceAccount.findUnique({
+        where: { id: rechargeOrder.accountId },
+      });
+
+      if (!account) {
+        throw new NotFoundException('余额账户不存在');
+      }
+
+      const paidAt = resource.success_time ? new Date(resource.success_time) : new Date();
+      const before = Number(account.availableBalance);
+      const amount = Number(rechargeOrder.amount);
+      const after = before + amount;
+
+      await tx.balanceAccount.update({
+        where: { id: account.id },
         data: {
-          accountId: current.id,
-          customerId: current.customerId,
+          availableBalance: after,
+          totalRecharged: Number(account.totalRecharged) + amount,
+        },
+      });
+
+      await tx.balanceLog.create({
+        data: {
+          accountId: account.id,
+          customerId: rechargeOrder.customerId,
           type: BalanceLogType.RECHARGE,
           changeAmount: amount,
           balanceBefore: before,
           balanceAfter: after,
           bizType: 'MALL_RECHARGE',
-          bizNo,
-          remark: `商城用户${this.getMethodText(dto.method)}充值`,
-          createdBy: userId,
+          bizId: rechargeOrder.id,
+          bizNo: rechargeOrder.rechargeNo,
+          remark: rechargeOrder.remark,
+          createdBy: rechargeOrder.createdBy,
         },
       });
 
-      return {
-        accountId: updated.id,
-        amount: amount.toFixed(2),
-        method: dto.method,
-        availableBalance: updated.availableBalance.toString(),
-        bizNo,
-        createdAt: createdLog.createdAt,
-      } satisfies MallBalanceRechargeVo;
+      return tx.balanceRechargeOrder.update({
+        where: { id: rechargeOrder.id },
+        data: {
+          status: PaymentStatus.COMPLETED,
+          thirdTradeNo: resource.transaction_id || rechargeOrder.thirdTradeNo,
+          thirdStatus: resource.trade_state || 'SUCCESS',
+          notifyAt: rawPayload !== undefined ? new Date() : rechargeOrder.notifyAt,
+          paidAt,
+          failReason: null,
+          notifyPayload: rawPayload !== undefined ? (rawPayload as any) : rechargeOrder.notifyPayload,
+        },
+      });
     });
+  }
+
+  private toRechargeVo(entity: any, availableBalance: string, paymentConfig?: WechatMiniProgramPayParams | null): MallBalanceRechargeVo {
+    return {
+      id: entity.id,
+      accountId: entity.accountId,
+      amount: Number(entity.amount).toFixed(2),
+      method: entity.method,
+      availableBalance,
+      rechargeNo: entity.rechargeNo,
+      status: entity.status,
+      outTradeNo: entity.outTradeNo || null,
+      paymentConfig: paymentConfig || null,
+      createdAt: entity.createdAt,
+      paidAt: entity.paidAt || null,
+    };
   }
 
   private getMethodText(method: PaymentMethod) {

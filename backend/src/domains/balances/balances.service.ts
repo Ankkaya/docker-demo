@@ -13,8 +13,10 @@ import { AdjustBalanceDto, BalanceAdjustDirection } from './dto/adjust-balance.d
 import { CreateBalanceAccountDto } from './dto/create-balance-account.dto';
 import { QueryBalanceAccountDto } from './dto/query-balance-account.dto';
 import { QueryBalanceLogDto } from './dto/query-balance-log.dto';
+import { QueryBalanceRechargeDto } from './dto/query-balance-recharge.dto';
 import { BalanceAccountVo } from './vo/balance-account.vo';
 import { BalanceLogVo } from './vo/balance-log.vo';
+import { BalanceRechargeOrderVo } from './vo/balance-recharge-order.vo';
 
 @Injectable()
 export class BalancesService {
@@ -268,6 +270,91 @@ export class BalancesService {
 
     return {
       data: BalanceLogVo.fromEntities(data),
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
+  async findRechargeOrders(query: QueryBalanceRechargeDto) {
+    const { keyword, status, method, accountId, customerId, page = 1, pageSize = 10 } = query;
+
+    const where: Prisma.BalanceRechargeOrderWhereInput = {
+      deletedAt: null,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (method) {
+      where.method = method;
+    }
+
+    if (accountId) {
+      where.accountId = accountId;
+    }
+
+    if (customerId) {
+      where.customerId = customerId;
+    }
+
+    if (keyword) {
+      where.OR = [
+        { rechargeNo: { contains: keyword, mode: 'insensitive' } },
+        { outTradeNo: { contains: keyword, mode: 'insensitive' } },
+        { thirdTradeNo: { contains: keyword, mode: 'insensitive' } },
+        {
+          customer: {
+            is: {
+              name: { contains: keyword, mode: 'insensitive' },
+            },
+          },
+        },
+        {
+          customer: {
+            is: {
+              code: { contains: keyword, mode: 'insensitive' },
+            },
+          },
+        },
+        {
+          customer: {
+            is: {
+              phone: { contains: keyword, mode: 'insensitive' },
+            },
+          },
+        },
+      ];
+    }
+
+    const include = {
+      customer: {
+        select: {
+          id: true,
+          name: true,
+          code: true,
+          phone: true,
+        },
+      },
+    } satisfies Prisma.BalanceRechargeOrderInclude;
+
+    const [data, total] = await Promise.all([
+      this.prisma.balanceRechargeOrder.findMany({
+        where,
+        include,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.balanceRechargeOrder.count({ where }),
+    ]);
+
+    return {
+      data: BalanceRechargeOrderVo.fromEntities(data),
       meta: {
         page,
         pageSize,

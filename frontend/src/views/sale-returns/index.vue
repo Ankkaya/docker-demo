@@ -12,7 +12,6 @@
             :options="customerOptions"
             placeholder="选择客户"
             clearable
-            style="width: 180px"
           />
         </n-form-item>
         <n-form-item label="状态">
@@ -21,7 +20,6 @@
             :options="statusOptions"
             placeholder="选择状态"
             clearable
-            style="width: 150px"
           />
         </n-form-item>
         <n-form-item>

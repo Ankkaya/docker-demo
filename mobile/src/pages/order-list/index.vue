@@ -205,7 +205,7 @@ function buyAgain(order: typeof orders.value[number]) {
 
 <template>
   <view class="orders-page text-slate-900">
-    <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 px-4 pt-3 backdrop-blur-md">
+    <view class="sticky top-0 z-40 border-b border-[#efb239]/10 bg-white/92 px-4 pt-4 backdrop-blur-md">
       <scroll-view scroll-x class="no-scrollbar whitespace-nowrap">
         <view class="flex gap-7">
           <view

@@ -9,6 +9,8 @@ import {
   Query,
   ParseIntPipe,
   Post,
+  Req,
+  Res,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -370,6 +372,13 @@ export class MallOrdersController {
     return this.mallOrdersService.pay(req.user.sub, id, dto);
   }
 
+  @Get(':id/payment-status')
+  @ApiOperation({ summary: '查询商城订单支付状态' })
+  @ApiOkResponse({ type: MallPayOrderVo })
+  getPaymentStatus(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallOrdersService.getPaymentStatusByUser(req.user.sub, id);
+  }
+
   @Patch(':id/cancel')
   @ApiOperation({ summary: '取消商城订单' })
   @ApiOkResponse({ type: MallOrderDetailVo })
@@ -466,6 +475,60 @@ export class MallBalanceController {
   @ApiOkResponse({ type: MallBalanceRechargeVo })
   recharge(@Request() req, @Body() dto: CreateMallBalanceRechargeDto) {
     return this.mallBalanceService.rechargeByUserId(req.user.sub, dto);
+  }
+
+  @Get('recharges/:id/status')
+  @ApiOperation({ summary: '查询余额充值状态' })
+  @ApiOkResponse({ type: MallBalanceRechargeVo })
+  getRechargeStatus(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallBalanceService.getRechargeStatusByUserId(req.user.sub, id);
+  }
+}
+
+@ApiTags('商城接口/支付')
+@Controller('mall/payments')
+export class MallPaymentsController {
+  constructor(
+    private readonly mallOrdersService: MallOrdersService,
+    private readonly mallBalanceService: MallBalanceService,
+  ) {}
+
+  @Post('wechat/notify')
+  @ApiOperation({ summary: '微信支付回调通知' })
+  async wechatNotify(
+    @Req() req,
+    @Res() res,
+    @Headers('wechatpay-serial') serial?: string,
+    @Headers('wechatpay-nonce') nonce?: string,
+    @Headers('wechatpay-signature') signature?: string,
+    @Headers('wechatpay-timestamp') timestamp?: string,
+    ) {
+    try {
+      const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody.toString('utf8') : JSON.stringify(req.body || {});
+      const orderHandled = await this.mallOrdersService.handleWechatPayNotify(rawBody, {
+        serial,
+        nonce,
+        signature,
+        timestamp,
+      });
+      if (!orderHandled) {
+        await this.mallBalanceService.handleWechatPayNotify(rawBody, {
+          serial,
+          nonce,
+          signature,
+          timestamp,
+        });
+      }
+      return res.status(200).json({
+        code: 'SUCCESS',
+        message: '成功',
+      });
+    } catch (error) {
+      return res.status(500).json({
+        code: 'FAIL',
+        message: error instanceof Error ? error.message : '处理失败',
+      });
+    }
   }
 }
 

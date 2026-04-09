@@ -315,7 +315,6 @@ export default {
     custom-class="auth-login-sheet"
     :close-on-click-modal="false"
     lock-scroll
-    root-portal
     :z-index="2000"
   >
     <view class="auth-login-sheet__panel">
@@ -434,7 +433,6 @@ export default {
     custom-class="auth-profile-sheet"
     :close-on-click-modal="false"
     lock-scroll
-    root-portal
     :z-index="2100"
   >
     <view class="auth-profile-sheet__panel">

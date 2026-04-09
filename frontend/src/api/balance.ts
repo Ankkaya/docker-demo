@@ -4,9 +4,11 @@ import type {
   BalanceAccount,
   BalanceListResponse,
   BalanceLog,
+  BalanceRechargeOrder,
   CreateBalanceAccountDto,
   QueryBalanceAccountParams,
   QueryBalanceLogParams,
+  QueryBalanceRechargeParams,
 } from '@/types/balance';
 
 export const getBalanceAccounts = (params?: QueryBalanceAccountParams) => {
@@ -27,4 +29,8 @@ export const adjustBalanceAccount = (id: number, data: AdjustBalanceDto) => {
 
 export const getBalanceLogs = (params?: QueryBalanceLogParams) => {
   return api.get<BalanceListResponse<BalanceLog>>('/balances/logs', { params });
+};
+
+export const getBalanceRechargeOrders = (params?: QueryBalanceRechargeParams) => {
+  return api.get<BalanceListResponse<BalanceRechargeOrder>>('/balances/recharges', { params });
 };

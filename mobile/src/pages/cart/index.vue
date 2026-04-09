@@ -260,7 +260,7 @@ onShow(() => {
     class="flex flex-col overflow-auto bg-[#f8f7f6] text-slate-900"
   >
     <scroll-view scroll-y class="flex-1">
-      <view class="px-4 py-6">
+      <view class="p-4">
         <view v-if="!isLoggedIn" class="overflow-hidden rounded-[32rpx] bg-white shadow-sm">
           <view class="from-[#efb239]/14 to-[#f59e0b]/6 bg-gradient-to-r px-6 py-8">
             <view class="size-14 flex items-center justify-center rounded-full bg-white/80 text-[#efb239]">

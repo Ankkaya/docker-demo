@@ -15,8 +15,6 @@ const toast = useToast()
 const quickAmounts = [50, 100, 200, 300, 500, 1000]
 const paymentMethods = [
   { key: 'WECHAT', name: '微信支付', desc: '推荐使用微信快速充值', icon: 'i-material-symbols:account-balance-wallet', tone: 'bg-emerald-50 text-emerald-500' },
-  { key: 'ALIPAY', name: '支付宝', desc: '适合支付宝用户', icon: 'i-material-symbols:savings', tone: 'bg-sky-50 text-sky-500' },
-  { key: 'BANK', name: '银行卡', desc: '支持银行卡支付', icon: 'i-material-symbols:credit-card', tone: 'bg-blue-50 text-blue-500' },
 ] as const
 
 const summary = ref({
@@ -24,7 +22,7 @@ const summary = ref({
 })
 const selectedAmount = ref(100)
 const customAmount = ref('')
-const selectedMethod = ref<'WECHAT' | 'ALIPAY' | 'BANK'>('WECHAT')
+const selectedMethod = ref<'WECHAT'>('WECHAT')
 const submitting = ref(false)
 
 const finalAmount = computed(() => {
@@ -46,6 +44,29 @@ async function loadSummary() {
   catch {}
 }
 
+async function queryRechargeStatus(rechargeId: number) {
+  return alovaInstance.Get(`/mall/balance/recharges/${rechargeId}/status`).send() as Promise<any>
+}
+
+async function requestWechatPayment(paymentConfig?: Record<string, string> | null) {
+  if (!paymentConfig?.timeStamp || !paymentConfig?.nonceStr || !paymentConfig?.package || !paymentConfig?.paySign) {
+    throw new Error('支付参数缺失')
+  }
+
+  return new Promise((resolve, reject) => {
+    uni.requestPayment({
+      provider: 'wxpay',
+      timeStamp: paymentConfig.timeStamp,
+      nonceStr: paymentConfig.nonceStr,
+      package: paymentConfig.package,
+      signType: (paymentConfig.signType || 'RSA') as 'RSA',
+      paySign: paymentConfig.paySign,
+      success: resolve,
+      fail: reject,
+    })
+  })
+}
+
 function pickAmount(amount: number) {
   selectedAmount.value = amount
   customAmount.value = ''
@@ -65,6 +86,11 @@ async function submitRecharge() {
         method: selectedMethod.value,
       },
     }).send()
+    await requestWechatPayment(result?.paymentConfig || null)
+    const latest = await queryRechargeStatus(Number(result?.id || 0))
+    if (latest?.status !== 'COMPLETED') {
+      throw new Error('充值结果确认中，请稍后刷新余额')
+    }
     uni.showToast({
       title: '充值成功',
       icon: 'success',
@@ -78,7 +104,12 @@ async function submitRecharge() {
     console.log('balance recharge result', result)
   }
   catch (error: any) {
-    toast.show(error?.message || '充值失败')
+    const errMsg = String(error?.errMsg || error?.message || '')
+    if (errMsg.includes('cancel')) {
+      toast.show('已取消支付')
+      return
+    }
+    toast.show(error?.message || error?.errMsg || '充值失败')
   }
   finally {
     submitting.value = false
@@ -91,9 +122,9 @@ onShow(() => {
 </script>
 
 <template>
-  <view class="recharge-page min-h-screen text-slate-900">
+  <view class="recharge-page text-slate-900">
     <scroll-view scroll-y class="pb-24">
-      <view class="px-4 pb-8 pt-6">
+      <view class="px-4 pb-8 pt-4">
         <view class="rounded-[30rpx] bg-white px-5 py-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
           <text class="block text-sm text-slate-400">
             当前余额

@@ -6,7 +6,7 @@
           <n-input v-model:value="searchForm.keyword" placeholder="发货单号" clearable />
         </n-form-item>
         <n-form-item label="状态">
-          <n-select v-model:value="searchForm.status" :options="statusOptions" placeholder="选择状态" clearable style="width: 150px" />
+          <n-select v-model:value="searchForm.status" :options="statusOptions" placeholder="选择状态" clearable />
         </n-form-item>
         <n-form-item>
           <n-space>

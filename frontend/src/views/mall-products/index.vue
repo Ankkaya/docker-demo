@@ -6,13 +6,13 @@
           <n-input v-model:value="searchForm.keyword" placeholder="商品名称/SPU编码" clearable />
         </n-form-item>
         <n-form-item label="分类">
-          <n-select v-model:value="searchForm.categoryId" :options="categoryOptions" placeholder="选择分类" clearable style="width: 180px" />
+          <n-select v-model:value="searchForm.categoryId" :options="categoryOptions" placeholder="选择分类" clearable />
         </n-form-item>
         <n-form-item label="品牌">
-          <n-select v-model:value="searchForm.brandId" :options="brandOptions" placeholder="选择品牌" clearable style="width: 180px" />
+          <n-select v-model:value="searchForm.brandId" :options="brandOptions" placeholder="选择品牌" clearable />
         </n-form-item>
         <n-form-item label="商城状态">
-          <n-select v-model:value="searchForm.mallStatus" :options="mallStatusOptions" placeholder="全部状态" clearable style="width: 160px" />
+          <n-select v-model:value="searchForm.mallStatus" :options="mallStatusOptions" placeholder="全部状态" clearable />
         </n-form-item>
         <n-form-item label="库存">
           <n-switch v-model:value="searchForm.hasStock" />
