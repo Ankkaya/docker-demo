@@ -38,6 +38,14 @@ const profileForm = reactive({
   avatarUrl: '',
 })
 
+function extractWechatProfile(source: any) {
+  const userInfo = source?.userInfo || source || {}
+  return {
+    nickname: userInfo.nickName || userInfo.nickname || '',
+    avatarUrl: userInfo.avatarUrl || userInfo.avatar || '',
+  }
+}
+
 function buildRandomNickname() {
   return `微信用户${Math.random().toString(16).slice(2, 10).padEnd(8, '0')}`
 }
@@ -169,22 +177,29 @@ async function handleWechatLogin(phoneCode?: string) {
 }
 
 async function handleWechatProfileFill() {
-  if (typeof uni.getUserProfile !== 'function') {
+  const getUserProfile = (uni as any).getUserProfile || (typeof wx !== 'undefined' ? wx.getUserProfile : undefined)
+  if (typeof getUserProfile !== 'function') {
     toast.show('当前环境暂不支持拉取微信资料')
     return
   }
 
   try {
-    const result = await new Promise<UniApp.GetUserProfileRes>((resolve, reject) => {
-      uni.getUserProfile({
+    const result = await new Promise<any>((resolve, reject) => {
+      getUserProfile({
         desc: '用于完善商城头像和昵称',
         success: resolve,
         fail: reject,
       })
     })
 
-    profileForm.nickname = result.userInfo?.nickName || profileForm.nickname
-    profileForm.avatarUrl = result.userInfo?.avatarUrl || profileForm.avatarUrl
+    const profile = extractWechatProfile(result)
+    if (!profile.nickname && !profile.avatarUrl) {
+      toast.show('未获取到微信头像昵称')
+      return
+    }
+
+    profileForm.nickname = profile.nickname || profileForm.nickname
+    profileForm.avatarUrl = profile.avatarUrl || profileForm.avatarUrl
   }
   catch {
     toast.show('未获取到微信资料')
@@ -209,7 +224,22 @@ async function handleChooseAvatar() {
     }
 
     const uploadResult = await uploadAvatar(selectedPath)
-    profileForm.avatarUrl = uploadResult.objectKey || uploadResult.url
+    profileForm.avatarUrl = uploadResult.url || uploadResult.objectKey
+  }
+  catch {
+    toast.show('头像上传失败')
+  }
+}
+
+async function handleWechatChooseAvatar(event: any) {
+  const selectedPath = event?.detail?.avatarUrl || ''
+  if (!selectedPath) {
+    return
+  }
+
+  try {
+    const uploadResult = await uploadAvatar(selectedPath)
+    profileForm.avatarUrl = uploadResult.url || uploadResult.objectKey
   }
   catch {
     toast.show('头像上传失败')
@@ -257,9 +287,9 @@ function handlePhoneNumberAuthorize(event: any) {
 
   if (!phoneCode) {
     if (errMsg.includes('fail')) {
-      toast.show('未授权手机号，将继续使用微信基础登录')
+      toast.show('已取消手机号授权')
+      handleCancel()
     }
-    handleWechatLogin().catch(() => {})
     return
   }
 
@@ -322,22 +352,6 @@ export default {
         <view class="auth-login-sheet__section-title">
           微信快捷登录
         </view>
-        <!-- #ifdef MP-WEIXIN -->
-        <button
-          class="auth-login-sheet__wechat-button"
-          open-type="getPhoneNumber"
-          :disabled="isSubmitting"
-          @getphonenumber="handlePhoneNumberAuthorize"
-        >
-          <text class="i-material-symbols:lock-open-right-rounded text-[20px]" />
-          <text>{{ isSubmitting ? '登录中...' : '微信一键登录' }}</text>
-        </button>
-        <!-- #endif -->
-        <!-- #ifndef MP-WEIXIN -->
-        <wd-button block type="primary" :loading="isSubmitting" @click="handleWechatLogin">
-          微信登录
-        </wd-button>
-        <!-- #endif -->
       </view>
 
       <view v-if="showPhoneLogin" class="auth-login-sheet__form">
@@ -373,8 +387,40 @@ export default {
         </wd-button>
       </view>
 
-      <view class="auth-login-sheet__actions">
-        <wd-button hairline block @click="handleCancel">
+      <view class="auth-login-sheet__actions" :class="{ 'auth-login-sheet__actions--inline': showWechatLogin }">
+        <!-- #ifdef MP-WEIXIN -->
+        <button
+          v-if="showWechatLogin"
+          class="auth-login-sheet__wechat-button auth-login-sheet__action-item"
+          :disabled="isSubmitting"
+          open-type="getPhoneNumber"
+          @getphonenumber="handlePhoneNumberAuthorize"
+        >
+          <text class="i-carbon:logo-wechat text-[20px]" />
+          <text>{{ isSubmitting ? '登录中...' : '一键登录' }}</text>
+        </button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <wd-button
+          v-if="showWechatLogin"
+          block
+          type="primary"
+          custom-class="auth-login-sheet__action-item"
+          :loading="isSubmitting"
+          @click="handleWechatLogin"
+        >
+          <view class="auth-login-sheet__button-content">
+            <text class="i-carbon:logo-wechat text-[20px]" />
+            <text>一键登录</text>
+          </view>
+        </wd-button>
+        <!-- #endif -->
+        <wd-button
+          block
+          type="info"
+          custom-class="auth-login-sheet__action-item"
+          @click="handleCancel"
+        >
           暂不登录
         </wd-button>
       </view>
@@ -397,37 +443,71 @@ export default {
         完善头像和昵称
       </view>
       <view class="auth-profile-sheet__desc">
-        你可以直接使用微信资料，也可以自己上传头像和填写昵称；跳过后会使用默认头像和随机昵称。
+        请选择头像并填写昵称；跳过后会使用默认头像和随机昵称。
       </view>
 
-      <view class="auth-profile-sheet__avatar-wrap">
+      <!-- #ifdef MP-WEIXIN -->
+      <button
+        class="auth-profile-sheet__avatar-button"
+        open-type="chooseAvatar"
+        @chooseavatar="handleWechatChooseAvatar"
+      >
+        <view class="auth-profile-sheet__avatar-wrap">
+          <image v-if="profileForm.avatarUrl" :src="profileForm.avatarUrl" class="auth-profile-sheet__avatar" mode="aspectFill" />
+          <view v-else class="auth-profile-sheet__avatar auth-profile-sheet__avatar--placeholder">
+            <text class="i-material-symbols:account-circle text-[72px] text-slate-300" />
+          </view>
+        </view>
+      </button>
+      <!-- #endif -->
+      <!-- #ifndef MP-WEIXIN -->
+      <view class="auth-profile-sheet__avatar-wrap" @click="handleChooseAvatar">
         <image v-if="profileForm.avatarUrl" :src="profileForm.avatarUrl" class="auth-profile-sheet__avatar" mode="aspectFill" />
         <view v-else class="auth-profile-sheet__avatar auth-profile-sheet__avatar--placeholder">
           <text class="i-material-symbols:account-circle text-[72px] text-slate-300" />
         </view>
       </view>
+      <!-- #endif -->
+      <view class="auth-profile-sheet__avatar-tip">
+        点击头像上传
+      </view>
 
+      <!-- #ifndef MP-WEIXIN -->
       <view class="auth-profile-sheet__avatar-actions">
-        <wd-button size="small" hairline @click="handleChooseAvatar">
-          上传头像
-        </wd-button>
         <wd-button size="small" type="primary" plain @click="handleWechatProfileFill">
           使用微信头像昵称
         </wd-button>
       </view>
+      <!-- #endif -->
 
       <view class="auth-profile-sheet__field">
         <view class="auth-profile-sheet__label">
           昵称
         </view>
+        <!-- #ifdef MP-WEIXIN -->
+        <input
+          v-model="profileForm.nickname"
+          class="auth-profile-sheet__nickname-input"
+          type="nickname"
+          placeholder="请输入昵称"
+        >
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <wd-input v-model="profileForm.nickname" clearable placeholder="请输入昵称" />
+        <!-- #endif -->
       </view>
 
-      <view class="auth-profile-sheet__actions">
-        <wd-button hairline block @click="handleSkipProfile">
-          跳过，使用默认资料
+      <view class="auth-profile-sheet__actions auth-profile-sheet__actions--inline">
+        <wd-button block type="info" custom-class="auth-profile-sheet__action-item" @click="handleSkipProfile">
+          跳过
         </wd-button>
-        <wd-button block type="primary" :loading="profileSubmitting" @click="handleSaveProfile">
+        <wd-button
+          block
+          type="primary"
+          custom-class="auth-profile-sheet__action-item"
+          :loading="profileSubmitting"
+          @click="handleSaveProfile"
+        >
           保存资料
         </wd-button>
       </view>
@@ -524,9 +604,11 @@ export default {
 
   &__wechat-button {
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     border: 0;
     border-radius: 24rpx;
-    background: linear-gradient(135deg, #19c37d 0%, #11a366 100%);
+    background: var(--wot-color-theme, #efb239);
     color: #fff;
     display: flex;
     align-items: center;
@@ -534,7 +616,6 @@ export default {
     gap: 12rpx;
     font-size: 28rpx;
     font-weight: 700;
-    padding: 24rpx 20rpx;
   }
 
   &__field {
@@ -553,12 +634,36 @@ export default {
     display: grid;
     gap: 16rpx;
   }
+
+  &__actions--inline {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  &__action-item {
+    min-width: 0;
+  }
+
+  &__button-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12rpx;
+  }
+
+  &__action-item--primary {
+    --wot-button-primary-color: #fff;
+  }
+}
+
+:deep(.auth-login-sheet__action-item) {
+  box-sizing: border-box;
 }
 
 .auth-profile-sheet {
+  background: linear-gradient(180deg, #ffffff 0%, #fff9ef 100%);
   &__panel {
     padding: 24rpx 28rpx 36rpx;
-    background: linear-gradient(180deg, #ffffff 0%, #fff9ef 100%);
   }
 
   &__handle {
@@ -586,6 +691,19 @@ export default {
     display: flex;
     justify-content: center;
     margin-top: 28rpx;
+    cursor: pointer;
+  }
+
+  &__avatar-button {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    line-height: 1;
+  }
+
+  &__avatar-button::after {
+    border: 0;
   }
 
   &__avatar {
@@ -601,6 +719,13 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  &__avatar-tip {
+    margin-top: 14rpx;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 22rpx;
   }
 
   &__avatar-actions {
@@ -621,10 +746,31 @@ export default {
     margin-bottom: 10rpx;
   }
 
+  &__nickname-input {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 24rpx;
+    background: #fff;
+    border: 2rpx solid rgba(148, 163, 184, 0.18);
+    color: #0f172a;
+    font-size: 28rpx;
+    padding: 22rpx 24rpx;
+    min-height: 88rpx;
+  }
+
   &__actions {
     margin-top: 28rpx;
     display: grid;
     gap: 16rpx;
+  }
+
+  &__actions--inline {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  &__action-item {
+    min-width: 0;
   }
 }
 </style>

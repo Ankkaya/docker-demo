@@ -350,7 +350,7 @@ onShow(() => {
         </view>
       </view>
 
-      <view class="px-4 pb-28">
+      <view class="px-4 pb-10">
         <view class="relative overflow-hidden border border-[#efb239]/20 rounded-xl bg-[#efb239]/20 p-4">
           <view class="relative z-10 flex items-center justify-between">
             <view>
