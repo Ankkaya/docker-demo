@@ -293,18 +293,18 @@ function handleNavigate(url: string) {
             基础用法
           </view>
           <view class="grid grid-cols-2 mb-3 gap-2">
-            <wd-button type="success" size="small" @click="demoToastSuccess">
+            <app-button type="success" size="small" @click="demoToastSuccess">
               成功提示
-            </wd-button>
-            <wd-button type="error" size="small" @click="demoToastError">
+            </app-button>
+            <app-button type="error" size="small" @click="demoToastError">
               错误提示
-            </wd-button>
-            <wd-button type="warning" size="small" @click="demoToastWarning">
+            </app-button>
+            <app-button type="warning" size="small" @click="demoToastWarning">
               警告提示
-            </wd-button>
-            <wd-button type="info" size="small" @click="demoToastInfo">
+            </app-button>
+            <app-button type="info" size="small" @click="demoToastInfo">
               信息提示
-            </wd-button>
+            </app-button>
           </view>
 
           <view
@@ -331,18 +331,18 @@ function handleNavigate(url: string) {
             <wd-input v-model="customMessage" placeholder="请输入自定义消息" />
           </view>
           <view class="grid grid-cols-2 mb-3 gap-2">
-            <wd-button type="primary" size="small" @click="demoCustomToast">
+            <app-button type="primary" size="small" @click="demoCustomToast">
               自定义消息
-            </wd-button>
-            <wd-button type="success" size="small" @click="demoToastPosition('top')">
+            </app-button>
+            <app-button type="success" size="small" @click="demoToastPosition('top')">
               顶部显示
-            </wd-button>
-            <wd-button type="warning" size="small" @click="demoToastPosition('middle')">
+            </app-button>
+            <app-button type="warning" size="small" @click="demoToastPosition('middle')">
               中间显示
-            </wd-button>
-            <wd-button type="info" size="small" @click="demoToastPosition('bottom')">
+            </app-button>
+            <app-button type="info" size="small" @click="demoToastPosition('bottom')">
               底部显示
-            </wd-button>
+            </app-button>
           </view>
 
           <view
@@ -372,18 +372,18 @@ function handleNavigate(url: string) {
             基础用法
           </view>
           <view class="grid grid-cols-2 mb-3 gap-2">
-            <wd-button type="primary" size="small" @click="demoBasicLoading">
+            <app-button type="primary" size="small" @click="demoBasicLoading">
               显示加载(3秒)
-            </wd-button>
-            <wd-button type="warning" size="small" @click="closeLoading">
+            </app-button>
+            <app-button type="warning" size="small" @click="closeLoading">
               手动关闭
-            </wd-button>
-            <wd-button type="success" size="small" @click="demoLoadingNoCover">
+            </app-button>
+            <app-button type="success" size="small" @click="demoLoadingNoCover">
               无遮罩加载
-            </wd-button>
-            <wd-button type="info" size="small" @click="demoComplex">
+            </app-button>
+            <app-button type="info" size="small" @click="demoComplex">
               组合演示
-            </wd-button>
+            </app-button>
           </view>
 
           <view
@@ -410,9 +410,9 @@ function handleNavigate(url: string) {
             <wd-input v-model="loadingText" placeholder="请输入加载文本" />
           </view>
           <view class="mb-3">
-            <wd-button type="primary" block @click="demoCustomLoading">
+            <app-button type="primary" block @click="demoCustomLoading">
               自定义加载文本
-            </wd-button>
+            </app-button>
           </view>
 
           <view
@@ -441,15 +441,15 @@ function handleNavigate(url: string) {
             基础用法
           </view>
           <view class="grid grid-cols-3 mb-3 gap-2">
-            <wd-button type="primary" size="small" @click="demoConfirm">
+            <app-button type="primary" size="small" @click="demoConfirm">
               确认弹窗
-            </wd-button>
-            <wd-button type="warning" size="small" @click="demoAlert">
+            </app-button>
+            <app-button type="warning" size="small" @click="demoAlert">
               警告弹窗
-            </wd-button>
-            <wd-button type="success" size="small" @click="demoPrompt">
+            </app-button>
+            <app-button type="success" size="small" @click="demoPrompt">
               输入弹窗
-            </wd-button>
+            </app-button>
           </view>
 
           <view
@@ -474,9 +474,9 @@ function handleNavigate(url: string) {
             自定义配置
           </view>
           <view class="mb-3">
-            <wd-button type="primary" block @click="demoCustomConfirm">
+            <app-button type="primary" block @click="demoCustomConfirm">
               自定义按钮文字
-            </wd-button>
+            </app-button>
           </view>
 
           <view

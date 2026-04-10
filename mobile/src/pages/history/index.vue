@@ -144,7 +144,7 @@ onShow(() => {
 
       <view class="overflow-x-auto whitespace-nowrap px-4">
         <view class="flex gap-6 text-sm">
-          <text class="pyy-3 border-b-2 border-[#efb239] text-[#efb239] font-bold">
+          <text class="pb-3 border-b-2 border-[#efb239] text-[#efb239] font-bold">
             全部商品
           </text>
           <text class="pb-3 text-slate-500">

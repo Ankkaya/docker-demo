@@ -181,14 +181,14 @@ function handleNavigate(url: string) {
           </view>
 
           <view class="mb-3">
-            <wd-button
+            <app-button
               type="primary"
               block
               :loading="petLoading"
               @click="demoLoadPets"
             >
               获取宠物列表
-            </wd-button>
+            </app-button>
           </view>
 
           <!-- 请求状态显示 -->
@@ -234,14 +234,14 @@ function handleNavigate(url: string) {
           </view>
 
           <view class="mb-3">
-            <wd-button
+            <app-button
               type="warning"
               block
               :loading="loginLoading"
               @click="demoLogin"
             >
               模拟用户登录
-            </wd-button>
+            </app-button>
           </view>
 
           <!-- 请求状态显示 -->

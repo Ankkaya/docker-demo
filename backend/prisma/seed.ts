@@ -598,6 +598,31 @@ async function main() {
     },
   });
 
+  await prisma.menu.upsert({
+    where: { id: 47 },
+    update: {
+      name: '优惠券管理',
+      path: '/coupons',
+      icon: 'coupon',
+      component: 'coupons/index',
+      parentId: 40,
+      order: 7,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 47,
+      name: '优惠券管理',
+      path: '/coupons',
+      icon: 'coupon',
+      component: 'coupons/index',
+      parentId: 40,
+      order: 7,
+      type: 'menu',
+    },
+  });
+
   const balanceMenu = await prisma.menu.upsert({
     where: { id: 44 },
     update: {
@@ -683,7 +708,7 @@ async function main() {
           { id: 21 }, { id: 22 },                               // 进销存-商品档案/库存查询
           { id: 30 }, { id: 31 }, { id: 32 }, { id: 33 },       // 进销存-采购
           { id: 37 }, { id: 38 }, { id: 39 },                   // 进销存-库存管理（调拨、调整、流水）
-          { id: 40 }, { id: 41 }, { id: 42 }, { id: 43 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
+          { id: 40 }, { id: 41 }, { id: 42 }, { id: 43 }, { id: 47 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
           { id: 44 }, { id: 45 }, { id: 46 },                   // 余额管理
         ],
       },
@@ -706,61 +731,48 @@ async function main() {
     },
   });
 
-  await prisma.systemSetting.upsert({
+  const miniProgramAuthSetting = await prisma.systemSetting.findUnique({
     where: { key: 'mini-program.auth' },
-    update: {
-      category: 'mini-program',
-      name: '小程序认证配置',
-      description: '微信小程序服务端配置',
-      value: {
-        wechatAppId: process.env.WECHAT_APP_ID || '',
-        wechatAppSecret: process.env.WECHAT_APP_SECRET || '',
-      },
-    },
-    create: {
-      key: 'mini-program.auth',
-      category: 'mini-program',
-      name: '小程序认证配置',
-      description: '微信小程序服务端配置',
-      value: {
-        wechatAppId: process.env.WECHAT_APP_ID || '',
-        wechatAppSecret: process.env.WECHAT_APP_SECRET || '',
-      },
-    },
   });
 
-  await prisma.systemSetting.upsert({
+  if (!miniProgramAuthSetting) {
+    await prisma.systemSetting.create({
+      data: {
+        key: 'mini-program.auth',
+        category: 'mini-program',
+        name: '小程序认证配置',
+        description: '微信小程序服务端配置',
+        value: {
+          wechatAppId: process.env.WECHAT_APP_ID || '',
+          wechatAppSecret: process.env.WECHAT_APP_SECRET || '',
+        },
+      },
+    });
+  }
+
+  const wechatPaySetting = await prisma.systemSetting.findUnique({
     where: { key: 'wechat.pay' },
-    update: {
-      category: 'wechat',
-      name: '微信支付配置',
-      description: '微信支付商户参数配置',
-      value: {
-        enabled: false,
-        mchId: '',
-        mchSerialNo: '',
-        apiV3Key: '',
-        notifyUrl: '',
-        privateKey: '',
-        platformCertPath: '',
-      },
-    },
-    create: {
-      key: 'wechat.pay',
-      category: 'wechat',
-      name: '微信支付配置',
-      description: '微信支付商户参数配置',
-      value: {
-        enabled: false,
-        mchId: '',
-        mchSerialNo: '',
-        apiV3Key: '',
-        notifyUrl: '',
-        privateKey: '',
-        platformCertPath: '',
-      },
-    },
   });
+
+  if (!wechatPaySetting) {
+    await prisma.systemSetting.create({
+      data: {
+        key: 'wechat.pay',
+        category: 'wechat',
+        name: '微信支付配置',
+        description: '微信支付商户参数配置',
+        value: {
+          mchId: '',
+          mchSerialNo: '',
+          apiV3Key: '',
+          notifyUrl: '',
+          privateKey: '',
+          platformPublicKey: '',
+          platformCertPath: '',
+        },
+      },
+    });
+  }
 
   // ==================== 6. 【必需】创建默认仓库 ====================
   // 进销存系统至少需要一个仓库才能进行入库操作

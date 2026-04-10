@@ -374,9 +374,9 @@ function handleNavigate(url: string) {
           <view class="mb-3 text-4 text-gray-800 font-bold dark:text-[var(--wot-dark-color)]">
             动画效果
           </view>
-          <wd-button type="primary" block @click="toggleAnimation">
+          <app-button type="primary" block @click="toggleAnimation">
             切换动画状态
-          </wd-button>
+          </app-button>
           <view class="mt-4 flex justify-center">
             <view
               class="rounded-2 p-6 text-center transition-all duration-500 ease-in-out"

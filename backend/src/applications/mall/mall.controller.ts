@@ -84,6 +84,9 @@ import {
   QueryBrowseHistoryDto,
 } from '@/domains/browse-histories/dto';
 import { BrowseHistoryListVo } from '@/domains/browse-histories/vo';
+import { MallCouponsService } from './mall-coupons.service';
+import { QueryMallCouponDto } from './dto/query-mall-coupon.dto';
+import { MallCouponCenterListVo, MallCouponClaimResultVo, MallCouponSummaryVo, MallCouponWalletListVo } from './vo/mall-coupon.vo';
 
 @ApiTags('商城接口/商品')
 @ApiExtraModels(MallProductListResponseVo, MallHotProductListResponseVo, MallProductDetailVo)
@@ -598,5 +601,42 @@ export class MallBrowseHistoriesController {
   @ApiOperation({ summary: '删除单条浏览历史' })
   removeHistory(@Request() req, @Param('productId', ParseIntPipe) productId: number) {
     return this.browseHistoriesService.remove(req.user.sub, productId);
+  }
+}
+
+@ApiTags('商城接口/优惠券')
+@ApiExtraModels(MallCouponSummaryVo, MallCouponWalletListVo, MallCouponCenterListVo, MallCouponClaimResultVo)
+@Controller('mall/coupons')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class MallCouponsController {
+  constructor(private readonly mallCouponsService: MallCouponsService) {}
+
+  @Get('summary')
+  @ApiOperation({ summary: '获取我的优惠券概览' })
+  @ApiOkResponse({ type: MallCouponSummaryVo })
+  getSummary(@Request() req) {
+    return this.mallCouponsService.getSummaryByUserId(req.user.sub);
+  }
+
+  @Get()
+  @ApiOperation({ summary: '获取我的优惠券列表' })
+  @ApiOkResponse({ type: MallCouponWalletListVo })
+  findWallet(@Request() req, @Query() query: QueryMallCouponDto) {
+    return this.mallCouponsService.findWalletByUserId(req.user.sub, query);
+  }
+
+  @Get('center')
+  @ApiOperation({ summary: '获取领券中心列表' })
+  @ApiOkResponse({ type: MallCouponCenterListVo })
+  findCenter(@Request() req, @Query() query: QueryMallCouponDto) {
+    return this.mallCouponsService.findCenterCouponsByUserId(req.user.sub, query);
+  }
+
+  @Post(':id/claim')
+  @ApiOperation({ summary: '领取优惠券' })
+  @ApiOkResponse({ type: MallCouponClaimResultVo })
+  claimCoupon(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallCouponsService.claimByUserId(req.user.sub, id);
   }
 }

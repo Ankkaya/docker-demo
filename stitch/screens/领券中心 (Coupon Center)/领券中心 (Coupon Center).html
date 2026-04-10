@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Rewards - Amber Organic</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#271900",
+              "background": "#f8f7f6",
+              "error-container": "#ffdad6",
+              "on-tertiary-container": "#005176",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-fixed-variant": "#004c6e",
+              "surface-tint": "#efb239",
+              "secondary-container": "#fedba1",
+              "on-error": "#ffffff",
+              "tertiary-fixed": "#c9e6ff",
+              "on-secondary-container": "#795e30",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#f8fafc",
+              "outline-variant": "#e2e8f0",
+              "on-surface": "#0f172a",
+              "surface-container": "#f8f7f6",
+              "on-primary-fixed": "#271900",
+              "on-tertiary": "#ffffff",
+              "primary-fixed": "#ffdea9",
+              "surface": "#f8f7f6",
+              "secondary": "#745a2c",
+              "primary-fixed-dim": "#fabc42",
+              "on-primary-fixed-variant": "#5f4100",
+              "error": "#ba1a1a",
+              "tertiary": "#006491",
+              "secondary-fixed": "#ffdea9",
+              "primary": "#efb239",
+              "on-primary": "#ffffff",
+              "secondary-fixed-dim": "#e4c28a",
+              "on-surface-variant": "#64748b",
+              "tertiary-container": "#6ec5ff",
+              "surface-container-low": "#ffffff",
+              "surface-bright": "#ffffff",
+              "on-primary-container": "#92400e",
+              "surface-container-high": "#f2e6d9",
+              "on-background": "#0f172a",
+              "inverse-surface": "#1e293b",
+              "on-secondary": "#ffffff",
+              "surface-container-highest": "#ece1d3",
+              "outline": "#efb239",
+              "surface-dim": "#e4d8cb",
+              "on-tertiary-fixed": "#001e2f"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8f7f6; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .coupon-mask {
+            mask-image: radial-gradient(circle at 0 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+            mask-composite: intersect;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface antialiased">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none">
+<nav class="flex items-center justify-between px-6 h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 p-2 rounded-full">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-lg">My Rewards</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-500 dark:text-amber-400">redeem</span>
+</div>
+</nav>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-7xl mx-auto">
+<!-- Hero Points Balance Card -->
+<section class="mb-10">
+<div class="relative overflow-hidden bg-primary-container rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+<div class="z-10 text-center md:text-left">
+<p class="text-[10px] font-bold tracking-widest uppercase text-on-primary-container/70 mb-1">Your Balance</p>
+<div class="flex items-baseline gap-2 justify-center md:justify-start">
+<span class="text-5xl font-extrabold tracking-tighter text-on-primary-container">2,450</span>
+<span class="text-lg font-bold text-on-primary-container/80">Amber Points</span>
+</div>
+<p class="mt-4 text-sm text-on-primary-container/60 max-w-xs">Earn points with every organic purchase. Redeem them for exclusive nursery essentials.</p>
+</div>
+<div class="relative z-10 grid grid-cols-2 gap-3">
+<div class="bg-surface-bright/40 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/20">
+<span class="material-symbols-outlined text-primary mb-1" style="font-variation-settings: 'FILL' 1;">stars</span>
+<p class="text-[10px] font-bold uppercase tracking-wider text-on-primary-container">Gold Tier</p>
+</div>
+<div class="bg-surface-bright/40 backdrop-blur-sm rounded-2xl p-4 text-center border border-white/20">
+<span class="material-symbols-outlined text-primary mb-1">history</span>
+<p class="text-[10px] font-bold uppercase tracking-wider text-on-primary-container">History</p>
+</div>
+</div>
+<!-- Decorative background blob -->
+<div class="absolute -right-10 -bottom-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+</div>
+</section>
+<!-- Claimable Coupons Section -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-xl font-bold tracking-tight">Available Offers</h2>
+<button class="text-[11px] font-bold tracking-widest uppercase text-primary hover:text-on-primary-container transition-colors">View All</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Coupon Item: Claimable -->
+<div class="group relative bg-surface-bright rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4 border border-primary/5">
+<div class="flex justify-between items-start">
+<div class="bg-primary/10 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-primary text-3xl">local_mall</span>
+</div>
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">New</span>
+</div>
+<div>
+<h3 class="text-lg font-bold text-on-surface mb-1">20% Off Apparel</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Valid on all organic cotton baby wear collection.</p>
+</div>
+<div class="pt-4 border-t border-dashed border-outline-variant flex items-center justify-between mt-auto">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Expires in</span>
+<span class="text-xs font-semibold text-on-surface">3 Days</span>
+</div>
+<button class="bg-primary text-white font-bold px-6 py-2.5 rounded-full active:scale-90 transition-all duration-300 shadow-sm hover:shadow-primary/20">
+                            Claim
+                        </button>
+</div>
+</div>
+<!-- Coupon Item: Claimable High Value -->
+<div class="group relative bg-surface-bright rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-4 border border-primary/5">
+<div class="flex justify-between items-start">
+<div class="bg-primary/10 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-primary text-3xl">spa</span>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-bold text-on-surface mb-1">$15 Store Credit</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Redeemable for any skincare or bath product.</p>
+</div>
+<div class="pt-4 border-t border-dashed border-outline-variant flex items-center justify-between mt-auto">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Cost</span>
+<span class="text-xs font-bold text-amber-600">500 pts</span>
+</div>
+<button class="bg-primary text-white font-bold px-6 py-2.5 rounded-full active:scale-90 transition-all duration-300 shadow-sm">
+                            Claim
+                        </button>
+</div>
+</div>
+<!-- Coupon Item: Already Claimed -->
+<div class="group relative bg-surface-variant/30 rounded-3xl p-6 flex flex-col gap-4 border border-transparent">
+<div class="flex justify-between items-start opacity-60">
+<div class="bg-slate-200 p-3 rounded-2xl">
+<span class="material-symbols-outlined text-slate-500 text-3xl">child_care</span>
+</div>
+</div>
+<div class="opacity-60">
+<h3 class="text-lg font-bold text-slate-500 mb-1">Free Bamboo Swaddle</h3>
+<p class="text-sm text-slate-400 leading-relaxed">Complimentary gift with any purchase over $50.</p>
+</div>
+<div class="pt-4 border-t border-dashed border-slate-300 flex items-center justify-between mt-auto">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
+<span class="text-xs font-semibold text-slate-500">In Wallet</span>
+</div>
+<div class="flex items-center gap-1.5 text-secondary font-bold text-sm bg-secondary-container/30 px-4 py-2 rounded-full">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            Claimed
+                        </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Magazine Style Featured Reward -->
+<section class="mt-16 mb-20">
+<div class="bg-surface-bright rounded-[2.5rem] overflow-hidden flex flex-col lg:flex-row shadow-sm">
+<div class="lg:w-1/2 h-64 lg:h-auto relative">
+<img alt="Nursery room" class="w-full h-full object-cover" data-alt="Modern minimalist nursery room with light wood crib, neutral earth tones, and warm natural sunlight through a window" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_Zd8LD5HPnInhpPV3TbAr8xZnwS1lksfsFyHQ_-2V8QxxxCT4k40HNq0la0yYG66jWiGob98qv4LhC8nfavwjHjyYGLXjCBo3ojjG-XG2PeVOrGNUz8npwxQSLCd1XuTae510TKozfrtW7ti1GveMZENmmnKwOlDiPJdMB-tSbDthgl_peLAcZ_NgENNJTdvZlUzXxtbHIkNQPrHIZInGRFWs9LzySaeyHUN9O2_9nNjaDnI30zYOmaZsCVtxInikxlh8NtVorm24"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/40 to-transparent"></div>
+<div class="absolute bottom-6 left-6">
+<span class="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-white/20">Monthly Spotlight</span>
+</div>
+</div>
+<div class="lg:w-1/2 p-8 lg:p-12 flex flex-col justify-center bg-surface-bright">
+<h2 class="text-3xl font-extrabold tracking-tighter text-on-surface mb-4 leading-tight">Ultimate Sleep Package</h2>
+<p class="text-on-surface-variant text-base leading-relaxed mb-8">Unlock a premium set of organic bedding, a white noise machine, and a sleep consultation with our nursery experts. Limited quantity available for Platinum members.</p>
+<div class="flex items-center gap-6">
+<div class="flex flex-col">
+<span class="text-[11px] font-bold text-primary uppercase tracking-widest">Requirement</span>
+<span class="text-lg font-extrabold">2,500 pts</span>
+</div>
+<button class="flex-1 bg-on-surface text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition-colors active:scale-95">
+                            Unlock Reward
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Secondary Coupons Bento Grid -->
+<section class="mb-12">
+<h2 class="text-xl font-bold tracking-tight mb-8">More Ways to Save</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-white p-6 rounded-3xl border border-primary/5 shadow-sm text-center flex flex-col items-center">
+<div class="size-12 rounded-full bg-tertiary-fixed flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-tertiary">local_shipping</span>
+</div>
+<h4 class="text-sm font-bold mb-1">Free Shipping</h4>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide">Silver Tier &amp; Up</p>
+</div>
+<div class="bg-white p-6 rounded-3xl border border-primary/5 shadow-sm text-center flex flex-col items-center">
+<div class="size-12 rounded-full bg-primary-fixed flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-on-primary-fixed-variant">celebration</span>
+</div>
+<h4 class="text-sm font-bold mb-1">Birthday Gift</h4>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide">Annual Special</p>
+</div>
+<div class="bg-white p-6 rounded-3xl border border-primary/5 shadow-sm text-center flex flex-col items-center">
+<div class="size-12 rounded-full bg-secondary-container flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-secondary">group</span>
+</div>
+<h4 class="text-sm font-bold mb-1">Refer a Friend</h4>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide">Get $20 Credit</p>
+</div>
+<div class="bg-white p-6 rounded-3xl border border-primary/5 shadow-sm text-center flex flex-col items-center">
+<div class="size-12 rounded-full bg-surface-dim flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-on-surface-variant">auto_awesome</span>
+</div>
+<h4 class="text-sm font-bold mb-1">Expert Chat</h4>
+<p class="text-[10px] text-on-surface-variant font-medium tracking-wide">Premium Access</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-t-3xl shadow-[0_-4px_12px_0_rgba(0,0,0,0.05)] z-50">
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 hover:text-amber-500">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase">Shop</span>
+</div>
+<div class="flex flex-col items-center justify-center text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 rounded-2xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase">Offers</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 hover:text-amber-500">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase">Cart</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 hover:text-amber-500">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase">Profile</span>
+</div>
+</nav>
+</body></html>

@@ -129,7 +129,10 @@ export class WechatPayService {
       throw new BadRequestException('微信支付回调头缺失');
     }
 
-    const isValid = await this.verifyCallbackSignature(rawBody, headers, config.platformCertPath);
+    const isValid = await this.verifyCallbackSignature(rawBody, headers, {
+      platformPublicKey: config.platformPublicKey,
+      platformCertPath: config.platformCertPath,
+    });
     if (!isValid) {
       throw new BadRequestException('微信支付回调验签失败');
     }
@@ -197,15 +200,18 @@ export class WechatPayService {
       this.systemSettingsService.getMiniProgramAuthSetting(),
     ]);
 
-    if (!paySetting.enabled) {
-      throw new BadRequestException('微信支付未启用');
-    }
-
     if (!miniProgramSetting.wechatAppId) {
       throw new InternalServerErrorException('未配置微信小程序 AppID');
     }
 
-    if (!paySetting.mchId || !paySetting.mchSerialNo || !paySetting.apiV3Key || !paySetting.notifyUrl || !paySetting.privateKey || !paySetting.platformCertPath) {
+    if (
+      !paySetting.mchId
+      || !paySetting.mchSerialNo
+      || !paySetting.apiV3Key
+      || !paySetting.notifyUrl
+      || !paySetting.privateKey
+      || (!paySetting.platformPublicKey && !paySetting.platformCertPath)
+    ) {
       throw new InternalServerErrorException('微信支付配置不完整');
     }
 
@@ -238,13 +244,30 @@ export class WechatPayService {
     };
   }
 
-  private async verifyCallbackSignature(rawBody: string, headers: WechatNotifyHeaders, platformCertPath: string) {
-    const certificateContent = await readFile(this.resolvePath(platformCertPath), 'utf8');
-    const certificate = new X509Certificate(certificateContent);
+  private async verifyCallbackSignature(
+    rawBody: string,
+    headers: WechatNotifyHeaders,
+    config: { platformPublicKey?: string; platformCertPath?: string },
+  ) {
+    const publicKey = await this.resolvePlatformPublicKey(config);
     const message = `${headers.timestamp}\n${headers.nonce}\n${rawBody}\n`;
     return createVerify('RSA-SHA256')
       .update(message)
-      .verify(certificate.publicKey, headers.signature!, 'base64');
+      .verify(publicKey, headers.signature!, 'base64');
+  }
+
+  private async resolvePlatformPublicKey(config: { platformPublicKey?: string; platformCertPath?: string }) {
+    if (config.platformPublicKey?.trim()) {
+      return config.platformPublicKey.replace(/\\n/g, '\n');
+    }
+
+    if (!config.platformCertPath?.trim()) {
+      throw new InternalServerErrorException('未配置微信支付平台公钥或平台证书路径');
+    }
+
+    const certificateContent = await readFile(this.resolvePath(config.platformCertPath), 'utf8');
+    const certificate = new X509Certificate(certificateContent);
+    return certificate.publicKey;
   }
 
   private decryptResource(params: { apiV3Key: string; associatedData?: string; nonce: string; ciphertext: string }) {

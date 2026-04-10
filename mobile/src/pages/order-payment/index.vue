@@ -41,6 +41,19 @@ interface DiscountInfo {
   title: string
   desc: string
   amount: number
+  couponReceiveId?: number | null
+  couponName?: string | null
+}
+
+interface CouponOption {
+  id: number
+  couponId: number
+  name: string
+  thresholdAmount: number
+  discountAmount: number
+  thresholdLabel: string
+  validPeriodText: string
+  statusText: string
 }
 
 const router = useRouter()
@@ -55,6 +68,9 @@ const creatingOrder = ref(false)
 const paying = ref(false)
 const paymentPopupVisible = ref(false)
 const shouldHandlePaymentCancel = ref(false)
+const couponPopupVisible = ref(false)
+const couponLoading = ref(false)
+const couponOptions = ref<CouponOption[]>([])
 
 const paymentMethods: PaymentMethod[] = [
   {
@@ -82,9 +98,11 @@ const deliveryOption = ref<DeliveryOption>({
 })
 
 const discountInfo = ref<DiscountInfo>({
-  title: '春日满减优惠',
-  desc: '已为你减免商品优惠',
-  amount: 20,
+  title: '暂无优惠券',
+  desc: '请选择可用优惠券',
+  amount: 0,
+  couponReceiveId: null,
+  couponName: null,
 })
 
 const checkoutItems = computed(() => checkoutStore.items)
@@ -92,9 +110,10 @@ const itemCount = computed(() => checkoutStore.itemCount)
 const goodsAmount = computed(() => {
   return checkoutItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
 })
-const payableAmount = computed(() => Math.max(0, goodsAmount.value - discountInfo.value.amount))
+const payableAmount = computed(() => isExistingOrder.value ? orderSummary.value.amount : Math.max(0, goodsAmount.value - discountInfo.value.amount))
 const hasSelectedAddress = computed(() => Boolean(deliveryAddress.value))
 const isExistingOrder = computed(() => orderSummary.value.source === 'order' && orderSummary.value.orderId > 0)
+const availableCouponOptions = computed(() => couponOptions.value.filter(item => goodsAmount.value >= Number(item.thresholdAmount || 0)))
 
 const selectedPaymentMethod = computed(() => {
   return paymentMethods.find(item => item.key === selectedPayment.value) || paymentMethods[0]
@@ -185,6 +204,85 @@ function openAddressList() {
       addressId: deliveryAddress.value ? String(deliveryAddress.value.id) : '',
     },
   })
+}
+
+function syncDiscountFromOrderDetail(detail: any) {
+  const discountAmount = Number(detail?.discount || 0)
+  discountInfo.value = {
+    title: detail?.couponName || (discountAmount > 0 ? '订单优惠' : '暂无优惠券'),
+    desc: detail?.couponName ? '已使用优惠券' : discountAmount > 0 ? '已为你减免商品优惠' : '请选择可用优惠券',
+    amount: discountAmount,
+    couponReceiveId: detail?.couponReceiveId ? Number(detail.couponReceiveId) : null,
+    couponName: detail?.couponName || null,
+  }
+}
+
+function resetDiscountSelection() {
+  discountInfo.value = {
+    title: '暂无优惠券',
+    desc: availableCouponOptions.value.length ? '请选择可用优惠券' : '当前无可用优惠券',
+    amount: 0,
+    couponReceiveId: null,
+    couponName: null,
+  }
+}
+
+function selectCoupon(option?: CouponOption | null) {
+  if (!option) {
+    resetDiscountSelection()
+    couponPopupVisible.value = false
+    return
+  }
+
+  discountInfo.value = {
+    title: option.name,
+    desc: option.thresholdLabel,
+    amount: Number(option.discountAmount || 0),
+    couponReceiveId: option.id,
+    couponName: option.name,
+  }
+  couponPopupVisible.value = false
+}
+
+async function loadCouponOptions() {
+  if (isExistingOrder.value) {
+    return
+  }
+
+  couponLoading.value = true
+  try {
+    const result = await alovaInstance.Get('/mall/coupons', {
+      params: {
+        status: 'UNUSED',
+        page: 1,
+        pageSize: 50,
+      },
+    }).send() as { data?: CouponOption[] }
+    couponOptions.value = Array.isArray(result?.data) ? result.data : []
+  }
+  catch {
+    couponOptions.value = []
+  }
+  finally {
+    couponLoading.value = false
+  }
+
+  if (discountInfo.value.couponReceiveId) {
+    const selected = couponOptions.value.find(item => item.id === discountInfo.value.couponReceiveId)
+    if (!selected || goodsAmount.value < Number(selected.thresholdAmount || 0)) {
+      resetDiscountSelection()
+    }
+    return
+  }
+
+  resetDiscountSelection()
+}
+
+function openCouponPopup() {
+  if (isExistingOrder.value) {
+    return
+  }
+  couponPopupVisible.value = true
 }
 
 function syncSelectedAddressFromStore() {
@@ -307,6 +405,7 @@ async function openPaymentPopup() {
       orderSummary.value.orderNo = detail.orderNo
       orderSummary.value.amount = Number(detail.payable || 0)
       orderSummary.value.expireAt = String(detail.expireAt || '')
+      syncDiscountFromOrderDetail(detail)
       syncCountdownByExpireAt(orderSummary.value.expireAt)
       startCountdown()
       shouldHandlePaymentCancel.value = true
@@ -323,6 +422,7 @@ async function openPaymentPopup() {
             skuId: item.skuId,
             quantity: item.quantity,
           })),
+      couponReceiveId: discountInfo.value.couponReceiveId || undefined,
     }
 
     const order = await (Apis.general as any).MallOrdersController_createOrder({
@@ -332,6 +432,11 @@ async function openPaymentPopup() {
     orderSummary.value.orderNo = String(order.orderNo || '')
     orderSummary.value.amount = Number(order.payable || 0)
     orderSummary.value.expireAt = String(order.expireAt || '')
+    discountInfo.value.amount = Number(order.discount || 0)
+    discountInfo.value.couponReceiveId = order.couponReceiveId ? Number(order.couponReceiveId) : null
+    discountInfo.value.couponName = order.couponName || null
+    discountInfo.value.title = order.couponName || (Number(order.discount || 0) > 0 ? '订单优惠' : '暂无优惠券')
+    discountInfo.value.desc = order.couponName ? '已使用优惠券' : Number(order.discount || 0) > 0 ? '已为你减免商品优惠' : '请选择可用优惠券'
     checkoutStore.orderId = orderSummary.value.orderId
     checkoutStore.orderNo = orderSummary.value.orderNo
     checkoutStore.expireAt = orderSummary.value.expireAt
@@ -443,6 +548,7 @@ onLoad((options) => {
       orderSummary.value.orderNo = detail.orderNo
       orderSummary.value.amount = Number(detail.payable || 0)
       orderSummary.value.expireAt = String(detail.expireAt || '')
+      syncDiscountFromOrderDetail(detail)
       deliveryAddress.value = detail.receiverAddress
         ? {
             id: 0,
@@ -470,6 +576,7 @@ onLoad((options) => {
   syncSelectedAddressFromStore()
   if (!isExistingOrder.value) {
     loadDefaultAddress()
+    loadCouponOptions()
   }
 })
 
@@ -481,6 +588,9 @@ onUnload(() => {
 
 onShow(() => {
   syncSelectedAddressFromStore()
+  if (!isExistingOrder.value) {
+    loadCouponOptions()
+  }
 })
 </script>
 
@@ -576,7 +686,7 @@ onShow(() => {
           </view>
         </view>
 
-        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm">
+        <view class="mt-6 border border-orange-50 rounded-3xl bg-white p-5 shadow-sm" @click="openCouponPopup">
           <view class="flex items-center justify-between">
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl bg-emerald-50">
@@ -591,9 +701,12 @@ onShow(() => {
                 </text>
               </view>
             </view>
-            <text class="text-sm text-emerald-600 font-bold">
-              -¥{{ discountInfo.amount.toFixed(2) }}
-            </text>
+            <view class="flex items-center gap-2">
+              <text class="text-sm text-emerald-600 font-bold">
+                -¥{{ discountInfo.amount.toFixed(2) }}
+              </text>
+              <text v-if="!isExistingOrder" class="i-material-symbols:chevron-right text-[18px] text-slate-300 leading-none" />
+            </view>
           </view>
         </view>
 
@@ -648,6 +761,68 @@ onShow(() => {
         </view>
       </view>
     </view>
+
+    <wd-popup
+      v-model="couponPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
+      lock-scroll root-portal :z-index="2090"
+    >
+      <view class="order-payment-popup__panel">
+        <view class="order-payment-popup__handle" />
+        <view class="order-payment-popup__title">
+          选择优惠券
+        </view>
+
+        <scroll-view scroll-y class="max-h-[60vh] py-3">
+          <view class="coupon-select-card coupon-select-card--none" @click="selectCoupon(null)">
+            <view>
+              <text class="block text-sm text-slate-900 font-semibold">
+                不使用优惠券
+              </text>
+              <text class="mt-1 block text-xs text-slate-400">
+                当前商品金额 ¥{{ goodsAmount.toFixed(2) }}
+              </text>
+            </view>
+            <text v-if="!discountInfo.couponReceiveId" class="i-material-symbols:check-circle text-[20px] text-[#efb239] leading-none" />
+          </view>
+
+          <view v-if="couponLoading" class="py-8 text-center text-sm text-slate-400">
+            正在加载优惠券...
+          </view>
+
+          <view v-else-if="availableCouponOptions.length === 0" class="py-8 text-center text-sm text-slate-400">
+            当前没有满足门槛的优惠券
+          </view>
+
+          <view
+            v-for="item in availableCouponOptions"
+            :key="item.id"
+            class="coupon-select-card"
+            :class="discountInfo.couponReceiveId === item.id ? 'coupon-select-card--active' : ''"
+            @click="selectCoupon(item)"
+          >
+            <view class="coupon-select-card__amount">
+              <text class="text-sm font-bold">¥</text>
+              <text class="text-[40rpx] font-extrabold leading-none">{{ Number(item.discountAmount || 0).toFixed(Number(item.discountAmount || 0) % 1 === 0 ? 0 : 2) }}</text>
+            </view>
+            <view class="min-w-0 flex-1">
+              <text class="block text-sm text-slate-900 font-semibold">
+                {{ item.name }}
+              </text>
+              <text class="mt-1 block text-xs text-slate-500">
+                {{ item.thresholdLabel }}
+              </text>
+              <text class="mt-1 block text-[22rpx] text-slate-400">
+                {{ item.validPeriodText }}
+              </text>
+            </view>
+            <text
+              class="text-[20px] leading-none"
+              :class="discountInfo.couponReceiveId === item.id ? 'i-material-symbols:check-circle text-[#efb239]' : 'i-material-symbols:radio-button-unchecked text-slate-300'"
+            />
+          </view>
+        </scroll-view>
+      </view>
+    </wd-popup>
 
     <wd-popup
       v-model="paymentPopupVisible" position="bottom" safe-area-inset-bottom custom-class="order-payment-popup"
@@ -819,5 +994,33 @@ onShow(() => {
   font-weight: 700;
   color: #fff;
   box-shadow: 0 18px 28px rgba(239, 178, 57, 0.24);
+}
+
+.coupon-select-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(239, 178, 57, 0.1);
+  border-radius: 24rpx;
+  background: #fff;
+  padding: 16px;
+}
+
+.coupon-select-card--active {
+  border-color: rgba(239, 178, 57, 0.55);
+  background: #fffaf0;
+}
+
+.coupon-select-card--none {
+  justify-content: space-between;
+}
+
+.coupon-select-card__amount {
+  display: flex;
+  min-width: 92rpx;
+  align-items: end;
+  gap: 4rpx;
+  color: #efb239;
 }
 </style>

@@ -67,9 +67,9 @@ function openUrl(url: string) {
           <wd-switch v-model="isDark" size="18px" />
         </wd-cell>
         <wd-cell title="跟随系统">
-          <wd-button size="small" @click="setFollowSystem">
+          <app-button size="small" @click="setFollowSystem">
             跟随系统
-          </wd-button>
+          </app-button>
         </wd-cell>
         <wd-cell title="选择主题色" is-link @click="openThemeColorPicker">
           <view class="flex items-center justify-end gap-2">

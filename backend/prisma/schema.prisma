@@ -300,6 +300,7 @@ model Customer {
   balanceAccount BalanceAccount?
   balanceLogs  BalanceLog[]
   rechargeOrders BalanceRechargeOrder[]
+  couponReceives CouponReceive[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -342,6 +343,68 @@ model SystemSetting {
   updatedAt   DateTime  @updatedAt
 
   @@index([category])
+}
+
+enum CouponType {
+  CASH
+}
+
+enum CouponReceiveStatus {
+  UNUSED
+  USED
+  EXPIRED
+  INVALID
+}
+
+model Coupon {
+  id              Int        @id @default(autoincrement())
+  name            String
+  code            String     @unique
+  type            CouponType @default(CASH)
+  thresholdAmount Decimal    @default(0) @db.Decimal(12, 2)
+  discountAmount  Decimal    @db.Decimal(12, 2)
+  totalCount      Int?
+  perLimit        Int        @default(1)
+  receivedCount   Int        @default(0)
+  usedCount       Int        @default(0)
+  startTime       DateTime
+  endTime         DateTime
+  description     String?
+  sort            Int        @default(0)
+  isEnabled       Boolean    @default(true)
+  deletedAt       DateTime?
+  receives        CouponReceive[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([deletedAt])
+  @@index([isEnabled, sort])
+  @@index([startTime, endTime])
+}
+
+model CouponReceive {
+  id         Int                 @id @default(autoincrement())
+  couponId   Int
+  coupon     Coupon              @relation(fields: [couponId], references: [id])
+  customerId Int
+  customer   Customer            @relation(fields: [customerId], references: [id])
+  usedOrder  Order?
+  status     CouponReceiveStatus @default(UNUSED)
+  source     String?             @default("ADMIN")
+  validFrom  DateTime
+  validTo    DateTime
+  receivedAt DateTime            @default(now())
+  usedAt     DateTime?
+  remark     String?
+  deletedAt  DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@index([couponId])
+  @@index([customerId])
+  @@index([status])
+  @@index([validTo])
+  @@index([deletedAt])
 }
 
 // ==================== 商品管理模块 ====================
@@ -750,6 +813,8 @@ model Order {
   customer     Customer    @relation(fields: [customerId], references: [id])
   addressId    Int?
   address      CustomerAddress? @relation(fields: [addressId], references: [id])
+  couponReceiveId Int? @unique
+  couponReceive CouponReceive? @relation(fields: [couponReceiveId], references: [id])
   
   // 收货信息
   receiverName    String?
@@ -792,6 +857,7 @@ model Order {
   @@index([status])
   @@index([customerId])
   @@index([addressId])
+  @@index([couponReceiveId])
   @@index([orderNo])
 }
 

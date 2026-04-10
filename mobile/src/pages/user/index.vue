@@ -94,6 +94,7 @@ function onServiceMenuClick(item: typeof serviceMenus.value[number]) {
     favorites: 'favorites',
     history: 'history',
     address: 'address',
+    coupon: 'coupons',
   }
   const routeName = routeMap[item.key]
   if (routeName) {
@@ -131,6 +132,7 @@ async function loadBalanceSummary() {
 async function loadServiceMenuStats() {
   const favoriteMenu = serviceMenus.value.find(item => item.key === 'favorites')
   const historyMenu = serviceMenus.value.find(item => item.key === 'history')
+  const couponMenu = serviceMenus.value.find(item => item.key === 'coupon')
 
   if (!isLoggedIn.value) {
     if (favoriteMenu) {
@@ -139,17 +141,21 @@ async function loadServiceMenuStats() {
     if (historyMenu) {
       historyMenu.extra = ''
     }
+    if (couponMenu) {
+      couponMenu.extra = ''
+    }
     return
   }
 
   try {
-    const [favoriteResult, historyResult] = await Promise.all([
+    const [favoriteResult, historyResult, couponSummary] = await Promise.all([
       (Apis.general as any).MallFavoritesController_findFavorites({
         params: { page: 1, pageSize: 1 },
       }).send(),
       (Apis.general as any).MallBrowseHistoriesController_findHistories({
         params: { page: 1, pageSize: 1 },
       }).send(),
+      alovaInstance.Get('/mall/coupons/summary').send() as Promise<any>,
     ])
 
     if (favoriteMenu) {
@@ -159,6 +165,11 @@ async function loadServiceMenuStats() {
       const total = Number(historyResult?.meta?.total || 0)
       historyMenu.extra = total > 0 ? `${total}条记录` : ''
     }
+    if (couponMenu) {
+      const claimableCount = Number(couponSummary?.claimableCount || 0)
+      const unusedCount = Number(couponSummary?.unusedCount || 0)
+      couponMenu.extra = claimableCount > 0 ? `${claimableCount}张可领` : unusedCount > 0 ? `${unusedCount}张待用` : ''
+    }
   }
   catch {
     if (favoriteMenu) {
@@ -166,6 +177,9 @@ async function loadServiceMenuStats() {
     }
     if (historyMenu) {
       historyMenu.extra = ''
+    }
+    if (couponMenu) {
+      couponMenu.extra = ''
     }
   }
 }
@@ -238,7 +252,7 @@ onShow(() => {
                 </text>
                 <view class="mt-2 inline-flex items-center gap-1 rounded-full bg-slate-100 py-1">
                   <text class="text-xs text-slate-500 font-medium">
-                    登陆后同步购物车，收藏等信息
+                    登录后可同步购物车、收藏等信息
                   </text>
                 </view>
               </template>
@@ -358,7 +372,7 @@ onShow(() => {
                 需要帮助？
               </text>
               <text class="mt-1 block text-xs text-slate-600">
-                我们的穿搭顾问 24/7 在线
+                我们的穿搭顾问全天在线
               </text>
             </view>
             <view class="rounded-lg bg-white px-4 py-2 text-xs font-bold" @click="contactSupport">

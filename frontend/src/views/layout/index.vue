@@ -27,7 +27,7 @@
     <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- 左侧菜单 -->
       <aside
-        class="layout-scrollbar w-64 shrink-0 overflow-y-auto bg-container border-r border-gray-200 dark:border-gray-700 shadow-sider transition-theme">
+        class="layout-scrollbar w-52 shrink-0 overflow-y-auto bg-container border-r border-gray-200 dark:border-gray-700 shadow-sider transition-theme">
         <div class="min-h-full py-3">
           <n-menu :value="activeMenu" :options="menuOptions" @update:value="handleMenuSelect" />
         </div>
@@ -59,32 +59,7 @@ import { useThemeStore } from '@/store/modules/theme'
 import {
   PersonOutline,
   ChevronDownOutline,
-  HomeOutline,
   MenuOutline,
-  SettingsOutline,
-  PeopleOutline,
-  CubeOutline,
-  ScaleOutline,
-  GridOutline,
-  RibbonOutline,
-  BusinessOutline,
-  BriefcaseOutline,
-  PeopleCircleOutline,
-  BagOutline,
-  BagCheckOutline,
-  BarcodeOutline,
-  AppsOutline,
-  LayersOutline,
-  // 进销存模块图标
-  CartOutline,          // 采购订单
-  DownloadOutline,      // 采购入库
-  ReturnUpBackOutline,  // 采购退货
-  DocumentTextOutline,  // 进销存父菜单
-  // 库存管理模块图标
-  RepeatOutline,        // 调拨
-  OptionsOutline,       // 调整
-  TimeOutline,          // 流水
-  PrintOutline          // 打印
 } from '@vicons/ionicons5'
 import { NIcon, useMessage } from 'naive-ui'
 import type { MenuOption } from 'naive-ui'
@@ -116,49 +91,18 @@ watch(
 const user = computed(() => authStore.user)
 const activeMenu = computed(() => route.path)
 
-// 图标映射
-const iconMap: Record<string, any> = {
-  'home': HomeOutline,
-  'setting': SettingsOutline,
-  'user': PersonOutline,
-  'peoples': PeopleOutline,
-  'menu': MenuOutline,
-  'database': CubeOutline,
-  'measurement': ScaleOutline,
-  'category': GridOutline,
-  'brand': RibbonOutline,
-  'warehouse': BusinessOutline,
-  'supplier': BriefcaseOutline,
-  'customer': PeopleCircleOutline,
-  // 商品管理模块图标
-  'shopping': BagOutline,           // 购物袋 - 商品管理主菜单
-  'goods': BagCheckOutline,         // 带勾选购物袋 - 商品列表
-  'inventory': LayersOutline,       // 层叠 - 库存查询
-  'sku': BarcodeOutline,            // 条形码 - SKU管理
-  'product': AppsOutline,           // 应用网格 - 商品分类
-  // 进销存模块图标
-  'purchase': DocumentTextOutline,  // 进销存父菜单
-  'inventory-2': LayersOutline,     // 进销存主菜单（使用与库存相同的图标）
-  'order': CartOutline,             // 购物车 - 采购订单
-  'inbound': DownloadOutline,       // 下载 - 采购入库
-  'return': ReturnUpBackOutline,    // 返回 - 采购退货
-  // 库存管理模块图标
-  'transfer': RepeatOutline,        // 循环 - 调拨
-  'adjust': OptionsOutline,         // 选项 - 调整
-  'log': TimeOutline,               // 时间 - 流水
-  'print-template': PrintOutline,   // 打印模板
-  'printer': PrintOutline,          // 打印机
-  'printer-config': SettingsOutline // 打印机配置
-}
-
 // 图标渲染函数
 const renderIcon = (menu?: Pick<Menu, 'icon' | 'iconUrl'>) => {
-  if (menu?.iconUrl) {
-    return () => h(AppIcon, { iconUrl: menu.iconUrl, size: 18, alt: menu.icon })
+  if (menu?.iconUrl || menu?.icon) {
+    return () => h(AppIcon, {
+      icon: menu.icon,
+      iconUrl: menu.iconUrl,
+      size: 18,
+      alt: menu.icon,
+      useMask: true,
+    })
   }
-  if (!menu?.icon) return undefined
-  const icon = iconMap[menu.icon] || MenuOutline
-  return () => h(NIcon, null, { default: () => h(icon) })
+  return () => h(NIcon, null, { default: () => h(MenuOutline) })
 }
 
 // 将后端菜单转换为 Naive UI 菜单选项

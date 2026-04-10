@@ -10,7 +10,7 @@ definePage({
   layout: 'default',
   type: 'home',
   style: {
-    navigationBarTitleText: 'BabyWhale',
+    navigationBarTitleText: '商城首页',
     navigationStyle: 'custom',
   },
 })
@@ -47,72 +47,16 @@ interface HomeHotProductItem {
 const fallbackCategoryIcons = ['child_care', 'stroller', 'face', 'toys']
 
 // 轮播图数据
-const banners = ref<HomeBannerItem[]>([
-  {
-    id: 1,
-    tag: 'New Arrival',
-    title: 'Summer Sparkle',
-    subtitle: 'Up to 40% off on all rompers',
-    image: 'https://images.unsplash.com/photo-1560506840-ec148e82a604?w=800&h=450&fit=crop',
-  },
-  {
-    id: 2,
-    tag: 'Hot Sale',
-    title: 'Organic Cotton',
-    subtitle: 'Soft & safe for your baby',
-    image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&h=450&fit=crop',
-  },
-  {
-    id: 3,
-    tag: 'Limited',
-    title: 'Newborn Essentials',
-    subtitle: 'Everything you need',
-    image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=800&h=450&fit=crop',
-  },
-])
+const banners = ref<HomeBannerItem[]>([])
 
 // 当前轮播索引
 const currentBanner = ref(0)
 
 // 分类数据
-const categories = ref<HomeCategoryItem[]>([
-  { id: 1, name: 'Newborn', icon: 'child_care' },
-  { id: 2, name: 'Toddler', icon: 'stroller' },
-  { id: 3, name: 'Kids', icon: 'face' },
-  { id: 4, name: 'Accessory', icon: 'toys' },
-])
+const categories = ref<HomeCategoryItem[]>([])
 
 // 热销商品数据
-const hotProducts = ref<HomeHotProductItem[]>([
-  {
-    id: 1,
-    name: 'Linen Sun Suit Set',
-    hotLabel: 'Organic Collection',
-    minPrice: 24.00,
-    mainImage: 'https://images.unsplash.com/photo-1542384701-c0e46e0eda04?w=400&h=400&fit=crop',
-  },
-  {
-    id: 2,
-    name: 'Petal Floral Dress',
-    hotLabel: 'Spring Sale',
-    minPrice: 18.50,
-    mainImage: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=400&fit=crop',
-  },
-  {
-    id: 3,
-    name: 'Knit Comfort Sweater',
-    hotLabel: 'Cozy Wear',
-    minPrice: 32.00,
-    mainImage: 'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?w=400&h=400&fit=crop',
-  },
-  {
-    id: 4,
-    name: 'Cotton Bib Set (3pc)',
-    hotLabel: 'Essentials',
-    minPrice: 12.99,
-    mainImage: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=400&fit=crop',
-  },
-])
+const hotProducts = ref<HomeHotProductItem[]>([])
 
 function mapBanners(list: BannerVo[]) {
   if (!list.length) {
@@ -245,14 +189,14 @@ function onProductClick(product: typeof hotProducts.value[0]) {
             <wd-icon name="search" size="18" />
           </view>
           <view class="h-full w-full flex items-center px-3 text-sm text-slate-400">
-            Search for organic cotton onesies...
+            搜索婴童服饰、用品和精选好物
           </view>
         </view>
       </view>
     </view>
 
     <!-- Hero Banner Carousel -->
-    <view class="px-4 pb-2">
+    <view v-if="banners.length" class="px-4 pb-2">
       <swiper class="h-44 w-full overflow-hidden rounded-xl" :indicator-dots="false" :autoplay="true" :interval="3000"
         :duration="500" :circular="true" @change="onBannerChange">
         <swiper-item v-for="banner in banners" :key="banner.id">
@@ -270,9 +214,9 @@ function onProductClick(product: typeof hotProducts.value[0]) {
               <text class="mb-4 text-sm text-white/90">
                 {{ banner.subtitle }}
               </text>
-              <button class="w-fit border-0 rounded-lg bg-white px-4 py-2 text-xs text-[#efb239] font-bold">
-                Shop Now
-              </button>
+              <app-button custom-class="home-banner__action" custom-style="padding:0 32rpx;height:64rpx;">
+                立即选购
+              </app-button>
             </view>
           </view>
         </swiper-item>
@@ -285,13 +229,13 @@ function onProductClick(product: typeof hotProducts.value[0]) {
     </view>
 
     <!-- Categories Grid -->
-    <view class="px-4 pt-4">
+    <view v-if="categories.length" class="px-4 pt-4">
       <view class="mb-4 flex items-center justify-between">
         <text class="text-base text-slate-900 font-bold">
-          Categories
+          分类精选
         </text>
         <text class="text-xs text-[#efb239] font-medium" @click="onViewAllCategories">
-          View All
+          查看全部
         </text>
       </view>
       <view class="grid grid-cols-4 gap-4">
@@ -308,16 +252,16 @@ function onProductClick(product: typeof hotProducts.value[0]) {
       </view>
     </view>
 
-    <!-- Hot Picks Section -->
+    <!-- 热门推荐 -->
     <scroll-view scroll-y class="pb-10">
       <view class="px-4 pt-8">
         <view class="mb-4 flex items-center justify-between">
           <text class="text-base text-slate-900 font-bold">
-            Hot Picks
+            热门推荐
           </text>
           <wd-icon name="fire" size="18" class="text-red-500" />
         </view>
-        <view class="grid grid-cols-2 gap-4">
+        <view v-if="hotProducts.length" class="grid grid-cols-2 gap-4">
           <!-- Product Card -->
           <view v-for="product in hotProducts" :key="product.id"
             class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm"
@@ -336,14 +280,18 @@ function onProductClick(product: typeof hotProducts.value[0]) {
                 <text class="text-[#efb239] font-bold">
                   ${{ product.minPrice.toFixed(2) }}
                 </text>
-                <button
-                  class="size-7 flex items-center justify-center border-0 rounded-full bg-[#efb239] p-0 text-white !m-0"
+                <app-button
+                  custom-class="home-product-card__action"
+                  custom-style="padding:0;min-width:0;width:56rpx;height:56rpx;"
                   @click.stop="addToCart(product)">
                   <wd-icon name="add" size="14" color="#fff" />
-                </button>
+                </app-button>
               </view>
             </view>
           </view>
+        </view>
+        <view v-else class="rounded-xl bg-white px-4 py-8 text-center text-sm text-slate-400 shadow-sm">
+          暂无热门商品
         </view>
       </view>
     </scroll-view>
@@ -371,5 +319,23 @@ function onProductClick(product: typeof hotProducts.value[0]) {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+:deep(.home-banner__action) {
+  width: fit-content;
+  border: 0;
+  border-radius: 16rpx;
+  background: #fff;
+  color: #efb239;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+
+:deep(.home-product-card__action) {
+  margin: 0 !important;
+  border: 0;
+  border-radius: 9999px;
+  background: #efb239;
+  color: #fff;
 }
 </style>

@@ -336,6 +336,19 @@ const router = createRouter({
       ]
     },
     {
+      path: '/coupons',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '优惠券管理' },
+      children: [
+        {
+          path: '',
+          name: 'coupon-list',
+          component: () => import('@/views/coupons/index.vue'),
+          meta: { title: '优惠券管理' }
+        }
+      ]
+    },
+    {
       path: '/balances',
       component: () => import('@/views/layout/index.vue'),
       redirect: '/balances/accounts',

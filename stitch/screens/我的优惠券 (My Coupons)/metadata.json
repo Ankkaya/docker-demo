@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "26c165d346124ecdbefa0fae2fb130dd",
+    "title": "我的优惠券",
+    "width": "780",
+    "height": "2758",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/ADBb0ujChrZSPAzsEE_9RYDNs2luZvBFlPwqtwtBvba1kgCwXUjQKUavY8ikcWhHQXI5bAjvSOYZi8qOGifRy1ka_zx54je7EmPywYziCOAQLNrzWj5LzeXKKsxFtZ6iu-ZGdM6wHEEX6KA-OBHMNmau-Fp86no70zNdgsmpuDmLlSJ12iVIfZwpXfiGMr4sfKQuqqkLOlMy5bYPUYh4KaT94trZ85vstL5cxJ8AXqHJHXIm_L_OiNIml5DW2DkV",
+      "contentType": "image/png",
+      "file": "stitch/screens/我的优惠券 (My Coupons)/我的优惠券 (My Coupons).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzlhMjIzZWZkZTA4MDQ0ZmZhYjRhOTc2NzRkYTQ3MWUxEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/我的优惠券 (My Coupons)/我的优惠券 (My Coupons).html"
+    }
+  }
+}

@@ -166,3 +166,13 @@ body {
   justify-content: flex-start;
   gap: 12px;
 }
+
+.page-container {
+  min-height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.page-card {
+  min-height: 100%;
+}

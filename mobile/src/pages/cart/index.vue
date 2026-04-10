@@ -288,12 +288,12 @@ onShow(() => {
               </text>
             </view>
             <view class="grid mt-2 gap-3">
-              <wd-button block type="primary" @click="openLogin">
+              <app-button block type="primary" @click="openLogin">
                 立即登录
-              </wd-button>
-              <wd-button hairline block @click="goShopping">
+              </app-button>
+              <app-button hairline block @click="goShopping">
                 先去逛逛
-              </wd-button>
+              </app-button>
             </view>
           </view>
         </view>
@@ -313,9 +313,9 @@ onShow(() => {
             去首页挑选一些宝宝好物吧
           </text>
           <view class="mt-6">
-            <wd-button block type="primary" @click="goShopping">
+            <app-button block type="primary" @click="goShopping">
               去逛逛
-            </wd-button>
+            </app-button>
           </view>
         </view>
 
@@ -418,16 +418,19 @@ onShow(() => {
             </text>
           </view>
           <view class="flex shrink-0 items-center gap-2">
-            <wd-button :disabled="!hasSelectedItems || actionLoading" type="primary" @click="checkout">
+            <app-button :disabled="!hasSelectedItems || actionLoading" type="primary" @click="checkout">
               去结算
-            </wd-button>
-            <view
+            </app-button>
+            <app-button
+              plain
               class="cart-clear-button"
-              :class="!hasSelectedItems || actionLoading ? 'cart-clear-button--disabled' : 'cart-clear-button--active'"
+              custom-class="cart-clear-button"
+              :disabled="!hasSelectedItems || actionLoading"
+              :loading="actionLoading"
               @click="clearAllItems"
             >
               清空
-            </view>
+            </app-button>
           </view>
         </view>
       </view>
@@ -447,21 +450,22 @@ onShow(() => {
   width: auto;
   min-width: 0;
   flex: none;
+}
+
+:deep(.cart-clear-button) {
   border-radius: 9999px;
-  border-width: 1px;
-  border-style: solid;
-  padding: 10px 14px;
-  font-size: 14px;
+  padding: 0 28rpx;
+  font-size: 28rpx;
   line-height: 1;
 }
 
-.cart-clear-button--active {
+:deep(.cart-clear-button.is-plain) {
   border-color: #cbd5e1;
   background: #fff;
   color: #334155;
 }
 
-.cart-clear-button--disabled {
+:deep(.cart-clear-button.is-disabled) {
   border-color: #e2e8f0;
   background: #f8fafc;
   color: #94a3b8;

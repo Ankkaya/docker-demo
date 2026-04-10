@@ -343,14 +343,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.page-container {
-  padding: 16px;
-}
-
-.page-card {
-  min-height: calc(100vh - 140px);
-}
-
 .search-form {
   margin-bottom: 16px;
 }

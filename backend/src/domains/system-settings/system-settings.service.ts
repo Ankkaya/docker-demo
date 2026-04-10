@@ -9,12 +9,12 @@ export interface MiniProgramAuthSetting {
 }
 
 export interface WechatPaySetting {
-  enabled: boolean;
   mchId: string;
   mchSerialNo: string;
   apiV3Key: string;
   notifyUrl: string;
   privateKey: string;
+  platformPublicKey: string;
   platformCertPath: string;
 }
 
@@ -24,12 +24,12 @@ const DEFAULT_MINI_PROGRAM_AUTH_SETTING: MiniProgramAuthSetting = {
 };
 
 const DEFAULT_WECHAT_PAY_SETTING: WechatPaySetting = {
-  enabled: false,
   mchId: '',
   mchSerialNo: '',
   apiV3Key: '',
   notifyUrl: '',
   privateKey: '',
+  platformPublicKey: '',
   platformCertPath: '',
 };
 
@@ -92,13 +92,13 @@ export class SystemSettingsService {
     const value = (setting?.value || {}) as Record<string, any>;
 
     return {
-      enabled: value.enabled ?? DEFAULT_WECHAT_PAY_SETTING.enabled,
-      mchId: String(value.mchId ?? ''),
-      mchSerialNo: String(value.mchSerialNo ?? ''),
-      apiV3Key: String(value.apiV3Key ?? ''),
-      notifyUrl: String(value.notifyUrl ?? ''),
-      privateKey: String(value.privateKey ?? ''),
-      platformCertPath: String(value.platformCertPath ?? ''),
+      mchId: String(value.mchId ?? DEFAULT_WECHAT_PAY_SETTING.mchId),
+      mchSerialNo: String(value.mchSerialNo ?? DEFAULT_WECHAT_PAY_SETTING.mchSerialNo),
+      apiV3Key: String(value.apiV3Key ?? DEFAULT_WECHAT_PAY_SETTING.apiV3Key),
+      notifyUrl: String(value.notifyUrl ?? DEFAULT_WECHAT_PAY_SETTING.notifyUrl),
+      privateKey: String(value.privateKey ?? DEFAULT_WECHAT_PAY_SETTING.privateKey),
+      platformPublicKey: String(value.platformPublicKey ?? DEFAULT_WECHAT_PAY_SETTING.platformPublicKey),
+      platformCertPath: String(value.platformCertPath ?? DEFAULT_WECHAT_PAY_SETTING.platformCertPath),
     };
   }
 }

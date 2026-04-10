@@ -293,7 +293,7 @@ function clearCategoryFilter() {
               {{ product.name }}
             </text>
             <text class="text-base text-[#efb239] font-bold">
-              ${{ product.price.toFixed(2) }}
+              ¥{{ product.price.toFixed(2) }}
             </text>
           </view>
         </view>

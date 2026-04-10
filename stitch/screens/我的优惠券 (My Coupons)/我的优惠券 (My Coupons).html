@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Rewards - BabyWhale</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-secondary-fixed": "#271900",
+                        "background": "#f8f7f6",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#005176",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#004c6e",
+                        "surface-tint": "#efb239",
+                        "secondary-container": "#fedba1",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed": "#c9e6ff",
+                        "on-secondary-container": "#795e30",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f8fafc",
+                        "outline-variant": "#e2e8f0",
+                        "on-surface": "#0f172a",
+                        "surface-container": "#f8f7f6",
+                        "on-primary-fixed": "#271900",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#ffdea9",
+                        "surface": "#f8f7f6",
+                        "secondary": "#745a2c",
+                        "primary-fixed-dim": "#fabc42",
+                        "on-primary-fixed-variant": "#5f4100",
+                        "error": "#ba1a1a",
+                        "tertiary": "#006491",
+                        "secondary-fixed": "#ffdea9",
+                        "primary": "#efb239",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#e4c28a",
+                        "on-surface-variant": "#64748b",
+                        "tertiary-container": "#6ec5ff",
+                        "surface-container-low": "#ffffff",
+                        "surface-bright": "#ffffff",
+                        "on-primary-container": "#92400e",
+                        "surface-container-high": "#f2e6d9",
+                        "on-background": "#0f172a",
+                        "inverse-surface": "#1e293b",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#ece1d3",
+                        "outline": "#efb239",
+                        "surface-variant": "#ece1d3",
+                        "primary-container": "#fef3c7",
+                        "inverse-primary": "#fabc42",
+                        "tertiary-fixed-dim": "#8aceff",
+                        "on-secondary-fixed-variant": "#5a4317",
+                        "surface-dim": "#e4d8cb",
+                        "on-tertiary-fixed": "#001e2f"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .coupon-mask {
+            mask-image: radial-gradient(circle at 0 50%, transparent 12px, black 13px),
+                        radial-gradient(circle at 100% 50%, transparent 12px, black 13px);
+            mask-composite: intersect;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container font-body text-on-surface antialiased">
+<!-- TopAppBar Navigation Shell -->
+<header class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 dark:text-slate-100 text-xl">My Rewards</h1>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-amber-500 dark:text-amber-400" data-icon="redeem">redeem</span>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 max-w-2xl mx-auto">
+<!-- Segmented Control / Tabs -->
+<nav class="flex p-1.5 bg-surface-container-highest rounded-full mb-8 sticky top-20 z-40">
+<button class="flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 bg-primary text-on-primary shadow-sm">
+                Available
+            </button>
+<button class="flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 text-on-surface-variant hover:text-on-surface">
+                Used
+            </button>
+<button class="flex-1 py-2 text-sm font-bold rounded-full transition-all duration-300 text-on-surface-variant hover:text-on-surface">
+                Expired
+            </button>
+</nav>
+<!-- Summary Banner (Editorial Feel) -->
+<section class="mb-8 p-6 rounded-3xl bg-primary-container relative overflow-hidden">
+<div class="relative z-10">
+<p class="text-[10px] font-bold tracking-widest uppercase text-on-primary-container opacity-70 mb-1">Loyalty Points</p>
+<h2 class="text-3xl font-extrabold text-on-primary-container leading-none">2,450 <span class="text-sm font-medium">Points</span></h2>
+<button class="mt-4 px-4 py-2 bg-primary text-white text-xs font-bold rounded-full shadow-sm hover:opacity-90 transition-all">Redeem Points</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+</section>
+<!-- Coupon List -->
+<div class="space-y-6">
+<!-- Coupon 1: Active -->
+<div class="relative bg-surface-bright rounded-3xl shadow-sm border border-primary/5 group transition-all duration-300 hover:shadow-md">
+<div class="flex h-36">
+<!-- Left: Brand/Icon -->
+<div class="w-32 bg-primary/5 flex flex-col items-center justify-center border-r border-dashed border-outline-variant rounded-l-3xl">
+<span class="material-symbols-outlined text-primary text-3xl mb-2" data-icon="confirmation_number">confirmation_number</span>
+<p class="text-2xl font-extrabold text-on-surface">$10</p>
+<p class="text-[10px] font-bold uppercase tracking-widest text-primary">OFF</p>
+</div>
+<!-- Right: Content -->
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-lg text-on-surface leading-tight">New Member Welcome</h3>
+<p class="text-xs text-on-surface-variant mt-1">Min. spend $50. Storewide application.</p>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center text-[10px] font-bold text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="schedule">schedule</span>
+                                Exp: Oct 24, 2023
+                            </div>
+<button class="px-5 py-2 bg-primary text-on-primary text-xs font-bold rounded-full transition-transform active:scale-95 group-hover:shadow-lg group-hover:shadow-primary/20">Redeem Now</button>
+</div>
+</div>
+</div>
+<!-- Punch Holes (Visual treatment for coupon style) -->
+<div class="absolute left-32 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-surface-container rounded-full"></div>
+</div>
+<!-- Coupon 2: Active -->
+<div class="relative bg-surface-bright rounded-3xl shadow-sm border border-primary/5 group transition-all duration-300 hover:shadow-md">
+<div class="flex h-36">
+<div class="w-32 bg-primary/5 flex flex-col items-center justify-center border-r border-dashed border-outline-variant rounded-l-3xl">
+<span class="material-symbols-outlined text-primary text-3xl mb-2" data-icon="child_care">child_care</span>
+<p class="text-2xl font-extrabold text-on-surface">15%</p>
+<p class="text-[10px] font-bold uppercase tracking-widest text-primary">OFF</p>
+</div>
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-lg text-on-surface leading-tight">Baby Essentials Sale</h3>
+<p class="text-xs text-on-surface-variant mt-1">Valid on all organic cotton wear.</p>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center text-[10px] font-bold text-on-surface-variant opacity-60">
+<span class="material-symbols-outlined text-xs mr-1" data-icon="schedule">schedule</span>
+                                Exp: Nov 02, 2023
+                            </div>
+<button class="px-5 py-2 bg-primary text-on-primary text-xs font-bold rounded-full transition-transform active:scale-95 group-hover:shadow-lg group-hover:shadow-primary/20">Redeem Now</button>
+</div>
+</div>
+</div>
+<div class="absolute left-32 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-surface-container rounded-full"></div>
+</div>
+<!-- Promotion Bento Piece -->
+<div class="grid grid-cols-2 gap-4 pt-4">
+<div class="bg-surface-bright p-4 rounded-3xl border border-primary/5 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-amber-500" data-icon="share">share</span>
+</div>
+<p class="text-xs font-bold text-on-surface">Refer a Friend</p>
+<p class="text-[10px] text-on-surface-variant mt-1">Get $20 when they buy</p>
+</div>
+<div class="bg-surface-bright p-4 rounded-3xl border border-primary/5 flex flex-col items-center text-center">
+<div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-blue-500" data-icon="check_circle">check_circle</span>
+</div>
+<p class="text-xs font-bold text-on-surface">Daily Check-in</p>
+<p class="text-[10px] text-on-surface-variant mt-1">+10 Points today</p>
+</div>
+</div>
+<!-- Header for 'Recently Inactive' feel -->
+<div class="pt-8 flex items-center justify-between">
+<h4 class="text-xs font-extrabold uppercase tracking-widest text-on-surface-variant opacity-60">Inactive Rewards</h4>
+</div>
+<!-- Coupon 3: Used (Grayscale/Faded) -->
+<div class="relative bg-surface-dim opacity-60 grayscale rounded-3xl shadow-none border border-transparent">
+<div class="flex h-36">
+<div class="w-32 flex flex-col items-center justify-center border-r border-dashed border-outline-variant rounded-l-3xl">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl mb-2" data-icon="shopping_bag">shopping_bag</span>
+<p class="text-2xl font-extrabold text-on-surface-variant">$5</p>
+<p class="text-[10px] font-bold uppercase tracking-widest">OFF</p>
+</div>
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-bold text-lg text-on-surface leading-tight">Flash Friday Offer</h3>
+<span class="bg-on-surface-variant/20 text-on-surface-variant text-[8px] px-2 py-0.5 rounded-full font-black uppercase">USED</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1">Applied on Order #8829</p>
+</div>
+<div class="flex items-center text-[10px] font-bold text-on-surface-variant opacity-60">
+                            Used on Sept 15, 2023
+                        </div>
+</div>
+</div>
+<div class="absolute left-32 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-surface-container rounded-full"></div>
+</div>
+<!-- Coupon 4: Expired -->
+<div class="relative bg-surface-dim opacity-40 grayscale rounded-3xl shadow-none border border-transparent">
+<div class="flex h-36">
+<div class="w-32 flex flex-col items-center justify-center border-r border-dashed border-outline-variant rounded-l-3xl">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl mb-2" data-icon="event_busy">event_busy</span>
+<p class="text-2xl font-extrabold text-on-surface-variant">$25</p>
+<p class="text-[10px] font-bold uppercase tracking-widest">OFF</p>
+</div>
+<div class="flex-1 p-5 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-lg text-on-surface leading-tight">Summer Finale</h3>
+<p class="text-xs text-on-surface-variant mt-1">Min. spend $150. Seasonal clearance.</p>
+</div>
+<div class="flex items-center text-[10px] font-bold text-on-surface-variant">
+                            Expired Aug 31, 2023
+                        </div>
+</div>
+</div>
+<div class="absolute left-32 top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 bg-surface-container rounded-full"></div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Navigation Shell -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-[0_-4px_12px_0_rgba(0,0,0,0.05)] rounded-t-3xl z-50">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 hover:text-amber-500" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase mt-1">Shop</span>
+</a>
+<a class="flex flex-col items-center justify-center text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 rounded-2xl px-4 py-1.5 transition-all duration-300 ease-out active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="confirmation_number" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase mt-1">Offers</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 hover:text-amber-500" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase mt-1">Cart</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1.5 transition-all duration-300 ease-out active:scale-90 hover:text-amber-500" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] font-bold tracking-widest uppercase mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

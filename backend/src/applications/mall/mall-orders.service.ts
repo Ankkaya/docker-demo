@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import {
+  CouponReceiveStatus,
   OrderStatus,
   PaymentMethod,
   PayStatus,
@@ -202,6 +203,38 @@ export class MallOrdersService {
           })
         : payment.order;
 
+      if (shouldUpdateOrder && payment.order.couponReceiveId) {
+        const couponReceive = await tx.couponReceive.findUnique({
+          where: { id: payment.order.couponReceiveId },
+          select: {
+            id: true,
+            couponId: true,
+            status: true,
+          },
+        });
+
+        if (couponReceive) {
+          await tx.couponReceive.update({
+            where: { id: couponReceive.id },
+            data: {
+              status: CouponReceiveStatus.USED,
+              usedAt: paidAt,
+            },
+          });
+
+          if (couponReceive.status !== CouponReceiveStatus.USED) {
+            await tx.coupon.update({
+              where: { id: couponReceive.couponId },
+              data: {
+                usedCount: {
+                  increment: 1,
+                },
+              },
+            });
+          }
+        }
+      }
+
       return {
         order: nextOrder,
         payment: nextPayment,
@@ -326,11 +359,33 @@ export class MallOrdersService {
 
     await this.closeWechatPaymentIfPending(tx, orderId);
     await this.releaseOrderInventory(tx, orderId);
+    await this.releaseOrderCoupon(tx, orderId);
     await tx.order.update({
       where: { id: orderId },
       data: {
         status: OrderStatus.CANCELLED,
         cancelDate: new Date(),
+      },
+    });
+  }
+
+  private async releaseOrderCoupon(tx: any, orderId: number) {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      select: {
+        couponReceiveId: true,
+        payStatus: true,
+      },
+    });
+
+    if (!order?.couponReceiveId || order.payStatus === PayStatus.PAID) {
+      return;
+    }
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        couponReceiveId: null,
       },
     });
   }
@@ -475,6 +530,16 @@ export class MallOrdersService {
 
   private getOrderBaseInclude() {
     return {
+      couponReceive: {
+        include: {
+          coupon: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
       items: {
         include: {
           sku: {
@@ -554,6 +619,63 @@ export class MallOrdersService {
       shipDate: entity.shipDate || null,
       receiveDate: entity.receiveDate || null,
       paymentMethod: entity.payments?.[0]?.method || null,
+      couponReceiveId: entity.couponReceiveId || null,
+      couponName: entity.couponReceive?.coupon?.name || null,
+    };
+  }
+
+  private async resolveCouponDiscount(tx: any, customerId: number, couponReceiveId: number | undefined, totalAmount: number) {
+    if (!couponReceiveId) {
+      return {
+        discount: 0,
+        couponReceiveId: null,
+        couponName: null,
+      };
+    }
+
+    const receive = await tx.couponReceive.findFirst({
+      where: {
+        id: couponReceiveId,
+        customerId,
+        deletedAt: null,
+      },
+      include: {
+        coupon: true,
+        usedOrder: {
+          select: {
+            id: true,
+            status: true,
+            deletedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!receive?.coupon) {
+      throw new BadRequestException('优惠券不存在');
+    }
+
+    const now = new Date();
+    if (receive.status !== CouponReceiveStatus.UNUSED) {
+      throw new BadRequestException('该优惠券当前不可使用');
+    }
+    if (receive.validFrom > now || receive.validTo < now) {
+      throw new BadRequestException('优惠券不在可用时间内');
+    }
+
+    const thresholdAmount = Number(receive.coupon.thresholdAmount || 0);
+    const discountAmount = Number(receive.coupon.discountAmount || 0);
+    if (totalAmount < thresholdAmount) {
+      throw new BadRequestException(`订单金额未达到优惠券使用门槛：满${thresholdAmount.toFixed(2)}元可用`);
+    }
+    if (receive.usedOrder?.id && receive.usedOrder.status !== OrderStatus.CANCELLED && !receive.usedOrder.deletedAt) {
+      throw new BadRequestException('该优惠券已被其他订单占用');
+    }
+
+    return {
+      discount: Math.min(totalAmount, discountAmount),
+      couponReceiveId: receive.id,
+      couponName: receive.coupon.name,
     };
   }
 
@@ -665,6 +787,8 @@ export class MallOrdersService {
 
       const totalAmount = orderItems.reduce((sum, item) => sum + item.amount, 0);
       const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+      const couponDiscount = await this.resolveCouponDiscount(tx, customer.id, dto.couponReceiveId, totalAmount);
+      const payable = Math.max(0, totalAmount - couponDiscount.discount);
 
       const order = await tx.order.create({
         data: {
@@ -672,6 +796,7 @@ export class MallOrdersService {
           type: 'MALL',
           customerId: customer.id,
           addressId: selectedAddress.id,
+          couponReceiveId: couponDiscount.couponReceiveId,
           receiverName: selectedAddress.receiverName,
           receiverPhone: selectedAddress.receiverPhone,
           receiverAddress: [
@@ -683,9 +808,9 @@ export class MallOrdersService {
             .filter(Boolean)
             .join(''),
           totalAmount,
-          discount: 0,
+          discount: couponDiscount.discount,
           freight: 0,
-          payable: totalAmount,
+          payable,
           paid: 0,
           status: OrderStatus.PENDING,
           payStatus: PayStatus.UNPAID,
@@ -719,7 +844,10 @@ export class MallOrdersService {
         orderNo: order.orderNo,
         source: dto.source,
         totalAmount: Number(order.totalAmount),
+        discount: Number(order.discount),
         payable: Number(order.payable),
+        couponReceiveId: order.couponReceiveId || null,
+        couponName: couponDiscount.couponName,
         itemCount,
         status: order.status,
         payStatus: order.payStatus,
@@ -976,6 +1104,7 @@ export class MallOrdersService {
 
       await this.closeWechatPaymentIfPending(tx, existing.id);
       await this.releaseOrderInventory(tx, existing.id);
+      await this.releaseOrderCoupon(tx, existing.id);
       const updated = await tx.order.update({
         where: { id: existing.id },
         data: {

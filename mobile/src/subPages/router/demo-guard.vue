@@ -52,9 +52,9 @@ function demoAfterEachPage() {
           <view class="mb-3 text-3.5 text-gray-600 dark:text-[var(--wot-dark-color2)]">
             跳转前交互，可以拦截导航
           </view>
-          <wd-button type="error" block @click="handleBeforeEach">
+          <app-button type="error" block @click="handleBeforeEach">
             📊 beforeEach 演示
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -64,9 +64,9 @@ function demoAfterEachPage() {
           <view class="mb-3 text-3.5 text-gray-600 dark:text-[var(--wot-dark-color2)]">
             跳转到专门的 afterEach 演示页面，体验页面统计、埋点上报等功能
           </view>
-          <wd-button type="success" block @click="demoAfterEachPage">
+          <app-button type="success" block @click="demoAfterEachPage">
             📊 afterEach 演示
-          </wd-button>
+          </app-button>
         </view>
       </view>
     </demo-block>
@@ -74,9 +74,9 @@ function demoAfterEachPage() {
     <!-- 操作按钮 -->
     <demo-block title="导航" transparent>
       <view class="px-3">
-        <wd-button type="warning" block @click="goBack">
+        <app-button type="warning" block @click="goBack">
           返回上一页
-        </wd-button>
+        </app-button>
       </view>
     </demo-block>
   </view>

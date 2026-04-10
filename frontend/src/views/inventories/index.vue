@@ -29,7 +29,7 @@
     </n-row>
 
     <!-- 搜索栏 -->
-    <n-card class="mb-3">
+    <n-card class="mb-3" content-style="padding-bottom: 0;">
       <QueryForm :model="searchForm">
         <n-form-item label="商品名称">
           <n-input v-model:value="searchForm.productName" placeholder="商品名称" clearable />

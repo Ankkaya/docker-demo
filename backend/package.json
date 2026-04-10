@@ -12,6 +12,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "pnpm prisma:generate && ts-node prisma/seed.ts",
+    "config:export": "bash scripts/export-system-settings.sh",
+    "config:import": "bash scripts/import-system-settings.sh",
     "db:setup": "prisma migrate dev --name init && pnpm prisma:seed",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",

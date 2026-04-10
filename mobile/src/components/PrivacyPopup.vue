@@ -106,24 +106,33 @@ export default {
         <text>{{ subDesc }}</text>
       </view>
       <view class="wd-privacy-popup__footer">
-        <button id="disagree-btn" class="is-block is-round is-medium is-plain wd-privacy-popup__footer-disagree wd-button" @click="handleDisagree">
+        <app-button
+          button-id="disagree-btn"
+          block
+          round
+          plain
+          custom-class="wd-privacy-popup__footer-disagree"
+          @click="handleDisagree"
+        >
           拒绝
-        </button>
-        <button
-          id="agree-btn"
-          class="wd-button is-block is-round is-medium is-primary wd-privacy-popup__footer-agree"
+        </app-button>
+        <app-button
+          button-id="agree-btn"
+          block
+          round
+          type="primary"
+          custom-class="wd-privacy-popup__footer-agree"
           open-type="agreePrivacyAuthorization"
           @agreeprivacyauthorization="handleAgree"
         >
           同意
-        </button>
+        </app-button>
       </view>
     </wd-popup>
   </view>
 </template>
 
 <style lang="scss" scoped>
-@import 'wot-design-uni/components/wd-button/index.scss';
 :deep(.wd-privacy-popup) {
   width: 600rpx;
   padding: 0 24rpx;
@@ -164,7 +173,7 @@ export default {
     justify-content: space-between;
     padding-bottom: 36rpx;
 
-    button {
+    :deep(.app-button) {
       border: none;
       outline: none;
     }

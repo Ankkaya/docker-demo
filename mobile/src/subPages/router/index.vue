@@ -225,15 +225,15 @@ function handleNavigate(url: string) {
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
           <view class="grid grid-cols-1 gap-2">
-            <wd-button type="primary" size="small" @click="pushByString">
+            <app-button type="primary" size="small" @click="pushByString">
               字符串路径跳转
-            </wd-button>
-            <wd-button type="success" size="small" @click="pushByPath">
+            </app-button>
+            <app-button type="success" size="small" @click="pushByPath">
               对象路径跳转
-            </wd-button>
-            <wd-button type="warning" size="small" @click="pushByName">
+            </app-button>
+            <app-button type="warning" size="small" @click="pushByName">
               命名路由跳转
-            </wd-button>
+            </app-button>
           </view>
         </view>
       </view>
@@ -255,9 +255,9 @@ function handleNavigate(url: string) {
             </text>
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
-          <wd-button type="primary" block @click="demoPush">
+          <app-button type="primary" block @click="demoPush">
             演示 push 方法
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -273,9 +273,9 @@ function handleNavigate(url: string) {
             </text>
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
-          <wd-button type="success" block @click="demoPushTab">
+          <app-button type="success" block @click="demoPushTab">
             演示 pushTab 方法
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -291,9 +291,9 @@ function handleNavigate(url: string) {
             </text>
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
-          <wd-button type="warning" block @click="demoReplace">
+          <app-button type="warning" block @click="demoReplace">
             演示 replace 方法
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -309,9 +309,9 @@ function handleNavigate(url: string) {
             </text>
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
-          <wd-button type="error" block @click="demoReplaceAll">
+          <app-button type="error" block @click="demoReplaceAll">
             演示 replaceAll 方法
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -335,9 +335,9 @@ function handleNavigate(url: string) {
               <wd-icon name="copy" size="16px" color="#666" />
             </view>
           </view>
-          <wd-button type="info" block @click="demoBack">
+          <app-button type="info" block @click="demoBack">
             返回上一页
-          </wd-button>
+          </app-button>
         </view>
       </view>
     </demo-block>
@@ -369,9 +369,9 @@ function handleNavigate(url: string) {
             </text>
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
-          <wd-button type="primary" block @click="pushWithParams">
+          <app-button type="primary" block @click="pushWithParams">
             传递 params 参数
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -390,9 +390,9 @@ function handleNavigate(url: string) {
             </text>
             <wd-icon name="copy" size="16px" color="#666" />
           </view>
-          <wd-button type="success" block @click="pushWithQuery">
+          <app-button type="success" block @click="pushWithQuery">
             传递 query 参数
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -407,12 +407,12 @@ function handleNavigate(url: string) {
             <wd-input v-model="userLabel" placeholder="标签" />
           </view>
           <view class="grid grid-cols-2 gap-2">
-            <wd-button type="primary" size="small" @click="pushWithObjectParams">
+            <app-button type="primary" size="small" @click="pushWithObjectParams">
               对象 params
-            </wd-button>
-            <wd-button type="success" size="small" @click="pushWithObjectQuery">
+            </app-button>
+            <app-button type="success" size="small" @click="pushWithObjectQuery">
               对象 query
-            </wd-button>
+            </app-button>
           </view>
         </view>
       </view>
@@ -450,9 +450,9 @@ function handleNavigate(url: string) {
               <wd-icon name="copy" size="16px" color="#666" />
             </view>
           </view>
-          <wd-button type="primary" block @click="demoNavigationGuards">
+          <app-button type="primary" block @click="demoNavigationGuards">
             🛡️ 进入完整守卫演示
-          </wd-button>
+          </app-button>
         </view>
       </view>
     </demo-block>

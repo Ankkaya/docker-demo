@@ -46,7 +46,24 @@
           <n-input v-model:value="form.component" placeholder="如: layout/System/index" />
         </n-form-item>
         <n-form-item label="图标" path="icon" v-if="form.type !== 'button'">
-          <n-input v-model:value="form.icon" placeholder="请输入 Iconify ID，例如 material-symbols:home-rounded" />
+          <n-space vertical style="width: 100%">
+            <div class="flex items-start gap-3">
+              <n-input
+                v-model:value="form.icon"
+                placeholder="可直接输入 Iconify ID，或点击右侧选择图标"
+              />
+              <n-button @click="iconPickerVisible = true">选择图标</n-button>
+            </div>
+            <div v-if="form.icon" class="flex items-center gap-2 text-sm text-gray-500">
+              <span class="inline-flex items-center justify-center rounded-md border border-gray-200 p-1">
+                <AppIcon :icon="form.icon" :icon-url="currentIconUrl" size="18" :alt="form.icon" />
+              </span>
+              <span>{{ form.icon }}</span>
+            </div>
+            <div v-else class="text-xs text-gray-500">
+              统一保存菜单图标标识；左侧导航和菜单列表将使用同一套图标解析逻辑。
+            </div>
+          </n-space>
         </n-form-item>
         <n-form-item label="重定向" path="redirect" v-if="form.type === 'menu'">
           <n-input v-model:value="form.redirect" placeholder="重定向路径" />
@@ -80,6 +97,16 @@
         </n-space>
       </template>
     </SmartFormContainer>
+
+    <n-modal
+      v-model:show="iconPickerVisible"
+      preset="card"
+      title="选择菜单图标"
+      style="width: 720px"
+      :mask-closable="true"
+    >
+      <IconPicker :model-value="form.icon" @update:model-value="handleIconSelect" />
+    </n-modal>
   </div>
 </template>
 
@@ -91,6 +118,7 @@ import { NButton, NSpace, NTag } from 'naive-ui'
 import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import AppIcon from '@/components/common/AppIcon.vue'
+import IconPicker from '@/components/common/IconPicker.vue'
 import type { Menu, CreateMenuDto } from '@/types'
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
@@ -99,8 +127,10 @@ const dialog = useDialog()
 const loading = ref(false)
 const submitLoading = ref(false)
 const dialogVisible = ref(false)
+const iconPickerVisible = ref(false)
 const isEdit = ref(false)
 const menus = ref<Menu[]>([])
+const currentIconUrl = ref('')
 const formRef = ref<FormInst>()
 const currentMenuId = ref<number>()
 
@@ -177,7 +207,7 @@ const createColumns = (): DataTableColumns<Menu> => {
       render: (row) => {
         if (!row.icon) return '-'
         return h('div', { class: 'flex items-center gap-2' }, [
-          row.iconUrl ? h(AppIcon, { iconUrl: row.iconUrl, size: 16, alt: row.icon }) : null,
+          h(AppIcon, { icon: row.icon, iconUrl: row.iconUrl, size: 16, alt: row.icon }),
           h('span', row.icon),
         ])
       }
@@ -251,6 +281,8 @@ const handleCreate = (row: Menu | null) => {
   form.hidden = false
   form.alwaysShow = false
   form.type = 'menu'
+  currentIconUrl.value = ''
+  iconPickerVisible.value = false
   dialogVisible.value = true
 }
 
@@ -267,7 +299,15 @@ const handleEdit = (menu: Menu) => {
   form.hidden = menu.hidden
   form.alwaysShow = menu.alwaysShow
   form.type = menu.type as 'menu' | 'button' | 'iframe'
+  currentIconUrl.value = menu.iconUrl || ''
+  iconPickerVisible.value = false
   dialogVisible.value = true
+}
+
+const handleIconSelect = (value: string) => {
+  form.icon = value
+  currentIconUrl.value = ''
+  iconPickerVisible.value = false
 }
 
 const handleDelete = (menu: Menu) => {

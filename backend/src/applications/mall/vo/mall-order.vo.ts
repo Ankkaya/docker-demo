@@ -97,6 +97,12 @@ export class MallOrderDetailVo extends MallOrderListItemVo {
 
   @ApiProperty({ description: '支付方式', nullable: true })
   paymentMethod?: string | null;
+
+  @ApiProperty({ description: '优惠券领取记录 ID', nullable: true })
+  couponReceiveId?: number | null;
+
+  @ApiProperty({ description: '优惠券名称', nullable: true })
+  couponName?: string | null;
 }
 
 export class MallCreateOrderVo {
@@ -114,6 +120,15 @@ export class MallCreateOrderVo {
 
   @ApiProperty({ description: '应付金额' })
   payable: number;
+
+  @ApiProperty({ description: '优惠金额' })
+  discount: number;
+
+  @ApiProperty({ description: '优惠券领取记录 ID', nullable: true })
+  couponReceiveId: number | null;
+
+  @ApiProperty({ description: '优惠券名称', nullable: true })
+  couponName: string | null;
 
   @ApiProperty({ description: '商品件数' })
   itemCount: number;

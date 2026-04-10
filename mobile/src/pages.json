@@ -98,6 +98,28 @@
       }
     },
     {
+      "path": "pages/coupon-center/index",
+      "type": "page",
+      "name": "coupon-center",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "领券中心",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
+    },
+    {
+      "path": "pages/coupons/index",
+      "type": "page",
+      "name": "coupons",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "我的优惠券",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
+    },
+    {
       "path": "pages/favorites/index",
       "type": "page",
       "name": "favorites",

@@ -232,7 +232,8 @@ async function handleChooseAvatar() {
 }
 
 async function handleWechatChooseAvatar(event: any) {
-  const selectedPath = event?.detail?.avatarUrl || ''
+  const detail = unwrapButtonDetail<{ avatarUrl?: string }>(event)
+  const selectedPath = detail?.avatarUrl || ''
   if (!selectedPath) {
     return
   }
@@ -281,9 +282,18 @@ function handleCancel() {
   userStore.closeAuthPopup()
 }
 
+function unwrapButtonDetail<T extends Record<string, any>>(event: T | { detail?: T } | undefined | null) {
+  if (event && typeof event === 'object' && 'detail' in event) {
+    return event.detail as T | undefined
+  }
+
+  return (event || undefined) as T | undefined
+}
+
 function handlePhoneNumberAuthorize(event: any) {
-  const phoneCode = event?.detail?.code
-  const errMsg = event?.detail?.errMsg || ''
+  const detail = unwrapButtonDetail<{ code?: string, errMsg?: string }>(event)
+  const phoneCode = detail?.code
+  const errMsg = detail?.errMsg || ''
 
   if (!phoneCode) {
     if (errMsg.includes('fail')) {
@@ -381,26 +391,30 @@ export default {
           />
         </view>
 
-        <wd-button block type="primary" :loading="isSubmitting" @click="handlePhoneLogin">
+        <app-button block type="primary" :loading="isSubmitting" @click="handlePhoneLogin">
           登录
-        </wd-button>
+        </app-button>
       </view>
 
       <view class="auth-login-sheet__actions" :class="{ 'auth-login-sheet__actions--inline': showWechatLogin }">
         <!-- #ifdef MP-WEIXIN -->
-        <button
+        <app-button
           v-if="showWechatLogin"
-          class="auth-login-sheet__wechat-button auth-login-sheet__action-item"
-          :disabled="isSubmitting"
+          block
+          type="primary"
+          custom-class="auth-login-sheet__wechat-button auth-login-sheet__action-item"
+          :loading="isSubmitting"
           open-type="getPhoneNumber"
           @getphonenumber="handlePhoneNumberAuthorize"
         >
-          <text class="i-carbon:logo-wechat text-[20px]" />
-          <text>{{ isSubmitting ? '登录中...' : '一键登录' }}</text>
-        </button>
+          <view class="auth-login-sheet__button-content">
+            <text class="i-carbon:logo-wechat text-[20px]" />
+            <text>一键登录</text>
+          </view>
+        </app-button>
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <wd-button
+        <app-button
           v-if="showWechatLogin"
           block
           type="primary"
@@ -412,16 +426,16 @@ export default {
             <text class="i-carbon:logo-wechat text-[20px]" />
             <text>一键登录</text>
           </view>
-        </wd-button>
+        </app-button>
         <!-- #endif -->
-        <wd-button
+        <app-button
           block
           type="info"
           custom-class="auth-login-sheet__action-item"
           @click="handleCancel"
         >
           暂不登录
-        </wd-button>
+        </app-button>
       </view>
     </view>
   </wd-popup>
@@ -445,8 +459,9 @@ export default {
       </view>
 
       <!-- #ifdef MP-WEIXIN -->
-      <button
-        class="auth-profile-sheet__avatar-button"
+      <app-button
+        custom-class="auth-profile-sheet__avatar-button"
+        custom-style="padding:0;border:0;background:transparent;min-width:0;height:auto;line-height:1;"
         open-type="chooseAvatar"
         @chooseavatar="handleWechatChooseAvatar"
       >
@@ -456,7 +471,7 @@ export default {
             <text class="i-material-symbols:account-circle text-[72px] text-slate-300" />
           </view>
         </view>
-      </button>
+      </app-button>
       <!-- #endif -->
       <!-- #ifndef MP-WEIXIN -->
       <view class="auth-profile-sheet__avatar-wrap" @click="handleChooseAvatar">
@@ -472,9 +487,9 @@ export default {
 
       <!-- #ifndef MP-WEIXIN -->
       <view class="auth-profile-sheet__avatar-actions">
-        <wd-button size="small" type="primary" plain @click="handleWechatProfileFill">
+        <app-button size="small" type="primary" plain @click="handleWechatProfileFill">
           使用微信头像昵称
-        </wd-button>
+        </app-button>
       </view>
       <!-- #endif -->
 
@@ -496,10 +511,10 @@ export default {
       </view>
 
       <view class="auth-profile-sheet__actions auth-profile-sheet__actions--inline">
-        <wd-button block type="info" custom-class="auth-profile-sheet__action-item" @click="handleSkipProfile">
+        <app-button block type="info" custom-class="auth-profile-sheet__action-item" @click="handleSkipProfile">
           跳过
-        </wd-button>
-        <wd-button
+        </app-button>
+        <app-button
           block
           type="primary"
           custom-class="auth-profile-sheet__action-item"
@@ -507,7 +522,7 @@ export default {
           @click="handleSaveProfile"
         >
           保存资料
-        </wd-button>
+        </app-button>
       </view>
     </view>
   </wd-popup>
@@ -656,6 +671,37 @@ export default {
 
 :deep(.auth-login-sheet__action-item) {
   box-sizing: border-box;
+}
+
+:deep(.auth-login-sheet__wechat-button .wd-button__content) {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.auth-login-sheet__wechat-button .wd-button__text) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:deep(.auth-profile-sheet__avatar-button) {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+:deep(.auth-profile-sheet__avatar-button .wd-button__content) {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+:deep(.auth-profile-sheet__avatar-button .wd-button__text) {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .auth-profile-sheet {

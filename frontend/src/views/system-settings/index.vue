@@ -23,13 +23,10 @@
         <n-tab-pane name="wechat-pay" tab="微信支付">
           <n-alert type="info" class="mb-4" :show-icon="false">
             支付通知地址需指向后端公开可访问的微信回调接口：
-            <code>/mall/payments/wechat/notify</code>。平台证书路径填写后端服务可读取到的证书文件绝对路径或相对项目根目录路径。
+            <code>/mall/payments/wechat/notify</code>。平台公钥与平台证书路径二选一即可；若填写平台证书路径，需保证后端服务可读取到该证书文件。
           </n-alert>
           <n-form :model="wechatPayForm" label-width="120">
             <n-grid :cols="2" :x-gap="16">
-              <n-form-item-gi label="启用微信支付">
-                <n-switch v-model:value="wechatPayForm.enabled" />
-              </n-form-item-gi>
               <n-form-item-gi label="商户号">
                 <n-input v-model:value="wechatPayForm.mchId" placeholder="请输入商户号" />
               </n-form-item-gi>
@@ -45,8 +42,16 @@
               <n-form-item-gi span="2" label="商户私钥">
                 <n-input v-model:value="wechatPayForm.privateKey" type="textarea" :autosize="{ minRows: 4, maxRows: 8 }" placeholder="请输入商户私钥内容" />
               </n-form-item-gi>
+              <n-form-item-gi span="2" label="平台公钥">
+                <n-input
+                  v-model:value="wechatPayForm.platformPublicKey"
+                  type="textarea"
+                  :autosize="{ minRows: 4, maxRows: 8 }"
+                  placeholder="请输入微信支付平台公钥内容"
+                />
+              </n-form-item-gi>
               <n-form-item-gi span="2" label="平台证书路径">
-                <n-input v-model:value="wechatPayForm.platformCertPath" placeholder="如 certs/wechat/platform.pem" />
+                <n-input v-model:value="wechatPayForm.platformCertPath" placeholder="未填写平台公钥时，如 certs/wechat/platform.pem" />
               </n-form-item-gi>
             </n-grid>
           </n-form>
@@ -77,12 +82,12 @@ const miniProgramForm = reactive({
 });
 
 const wechatPayForm = reactive({
-  enabled: false,
   mchId: '',
   mchSerialNo: '',
   apiV3Key: '',
   notifyUrl: '',
   privateKey: '',
+  platformPublicKey: '',
   platformCertPath: '',
 });
 

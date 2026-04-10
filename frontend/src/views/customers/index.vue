@@ -1,6 +1,6 @@
 <template>
   <div class="p-4 customer-list">
-    <n-card class="mb-4 bg-container transition-theme">
+    <n-card class="mb-4 bg-container transition-theme" content-style="padding-bottom: 0;">
       <QueryForm :model="searchForm" class="mb-4">
         <n-form-item label="客户名称">
           <n-input v-model:value="searchForm.name" placeholder="请输入客户名称" clearable />

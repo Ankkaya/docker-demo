@@ -1,5 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
+import { IconAssetsService } from '@/infrastructure/icon-assets/icon-assets.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserVo, UserWithRolesVo } from '@/users/vo';
@@ -7,7 +8,10 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly iconAssetsService: IconAssetsService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     // 检查用户名是否存在（排除已删除的用户）
@@ -278,14 +282,16 @@ export class UsersService {
 
     // 根据格式返回
     if (format === 'flat') {
-      return menus.map(menu => {
+      const flatMenus = menus.map(menu => {
         const { children, ...rest } = menu;
         return rest;
       });
+      return Promise.all(flatMenus.map(menu => this.attachIconUrl(menu)));
     }
 
     // 默认返回树形结构
-    return this.buildTree(menus);
+    const treeMenus = this.buildTree(menus);
+    return Promise.all(treeMenus.map(menu => this.attachIconUrl(menu)));
   }
 
   // 构建树形结构
@@ -324,5 +330,17 @@ export class UsersService {
     roots.forEach(cleanMenu);
 
     return roots;
+  }
+
+  private async attachIconUrl(menu: any): Promise<any> {
+    const children = menu.children?.length
+      ? await Promise.all(menu.children.map((child: any) => this.attachIconUrl(child)))
+      : undefined;
+
+    return {
+      ...menu,
+      iconUrl: await this.iconAssetsService.resolveIconUrl(menu.icon),
+      ...(children ? { children } : {}),
+    };
   }
 }

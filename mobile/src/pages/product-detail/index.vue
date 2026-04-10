@@ -641,7 +641,7 @@ function openReviewList() {
               <wd-icon v-for="n in 5" :key="n" name="star" size="14" color="#efb239" />
             </view>
             <text class="text-xs text-slate-500 font-medium">
-              ({{ reviewCount }} Reviews · {{ avgRating.toFixed(1) }})
+              （{{ reviewCount }} 条评价 · {{ avgRating.toFixed(1) }} 分）
             </text>
           </view>
           <text class="mb-2 block text-2xl text-slate-900 font-bold leading-tight">

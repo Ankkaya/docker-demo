@@ -35,4 +35,8 @@ export class CreateMallOrderDto {
   @Type(() => CreateMallOrderItemDto)
   @IsOptional()
   items?: CreateMallOrderItemDto[];
+
+  @IsInt()
+  @IsOptional()
+  couponReceiveId?: number;
 }

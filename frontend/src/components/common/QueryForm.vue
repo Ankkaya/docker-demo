@@ -19,7 +19,6 @@ defineOptions({
 
   .n-form-item {
     width: 100%;
-    margin-bottom: 0 !important;
   }
 
   .n-form-item:last-child {
@@ -37,11 +36,6 @@ defineOptions({
   .n-cascader,
   .n-tree-select {
     width: 100% !important;
-  }
-
-  .n-form-item-feedback-wrapper {
-    height: 0 !important;
-    min-height: 0 !important
   }
 }
 

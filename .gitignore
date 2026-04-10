@@ -11,3 +11,4 @@ backend/dist/
 frontend/dist/
 package-lock.json
 yarn.lock
+backend/prisma/exports/*.sql

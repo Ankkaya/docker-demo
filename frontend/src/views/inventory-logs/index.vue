@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <!-- 搜索栏 -->
-    <n-card class="mb-4">
+    <n-card class="mb-4" content-style="padding-bottom: 0;">
       <QueryForm :model="searchForm">
         <n-form-item label="仓库">
           <n-select v-model:value="searchForm.warehouseId" :options="warehouseOptions" placeholder="选择仓库" clearable />

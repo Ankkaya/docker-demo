@@ -1,12 +1,12 @@
 <template>
   <div class="tab-bar bg-container border-b border-gray-200 dark:border-gray-700 transition-theme">
-    <div ref="tabListRef" class="tab-list layout-scrollbar flex items-center px-2 h-10 overflow-x-auto overflow-y-hidden">
+    <div ref="tabListRef" class="tab-list layout-scrollbar flex items-center px-2 py-1 h-10 overflow-x-auto overflow-y-hidden">
       <div
         v-for="tab in tabStore.tabs"
         :key="tab.key"
         :data-tab-key="tab.key"
         :class="[
-          'tab-item flex items-center gap-2 px-3 py-1.5 mr-1 rounded cursor-pointer text-sm select-none whitespace-nowrap transition-all',
+          'tab-item flex items-center gap-2 px-3 py-0.5 mr-1 rounded cursor-pointer text-sm select-none whitespace-nowrap transition-all',
           tab.fixed ? 'tab-item--fixed' : 'tab-item--draggable',
           getDropTargetClass(tab.key),
           tab.key === tabStore.activeTab
@@ -320,16 +320,22 @@ onBeforeUnmount(() => {
 <style scoped>
 .tab-bar {
   flex-shrink: 0;
+  box-sizing: border-box;
   height: 40px; /* 固定高度 */
   min-height: 40px;
   max-height: 40px;
+  overflow: hidden;
 }
 
 .tab-list {
+  height: 100%;
+  min-height: 0;
   flex-wrap: nowrap;
   align-items: center;
   overflow-y: hidden;
   position: relative;
+  box-sizing: border-box;
+  scrollbar-gutter: auto;
 }
 
 .tab-list::-webkit-scrollbar {
@@ -353,7 +359,7 @@ onBeforeUnmount(() => {
 .tab-item {
   position: relative;
   flex-shrink: 0; /* 防止标签被压缩 */
-  min-height: 28px;
+  min-height: 24px;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,

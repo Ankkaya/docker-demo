@@ -12,6 +12,8 @@ type _LocationUrl =
   "/pages/balance-recharge/index" |
   "/pages/cart/index" |
   "/pages/category/index" |
+  "/pages/coupon-center/index" |
+  "/pages/coupons/index" |
   "/pages/favorites/index" |
   "/pages/history/index" |
   "/pages/index/index" |

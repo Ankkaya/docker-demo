@@ -46,9 +46,9 @@ function goBack() {
 
     <!-- 操作按钮 -->
     <demo-block title="导航" transparent>
-      <wd-button type="warning" block @click="goBack">
+      <app-button type="warning" block @click="goBack">
         返回上一页
-      </wd-button>
+      </app-button>
     </demo-block>
   </view>
 </template>

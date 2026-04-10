@@ -210,15 +210,15 @@ function handleNavigate(url: string) {
         </view>
 
         <view class="grid grid-cols-3 mb-4 gap-2">
-          <wd-button type="success" size="small" @click="counterStore.increment">
+          <app-button type="success" size="small" @click="counterStore.increment">
             +1
-          </wd-button>
-          <wd-button type="warning" size="small" @click="counterStore.decrement">
+          </app-button>
+          <app-button type="warning" size="small" @click="counterStore.decrement">
             -1
-          </wd-button>
-          <wd-button type="info" size="small" @click="counterStore.reset">
+          </app-button>
+          <app-button type="info" size="small" @click="counterStore.reset">
             重置
-          </wd-button>
+          </app-button>
         </view>
 
         <!-- 代码示例 -->
@@ -327,12 +327,12 @@ console.log(counterStore.count)`)"
             </view>
 
             <view class="grid grid-cols-2 gap-2">
-              <wd-button type="primary" @click="saveUserInfo">
+              <app-button type="primary" @click="saveUserInfo">
                 保存信息
-              </wd-button>
-              <wd-button type="error" @click="userStore.clearUserInfo">
+              </app-button>
+              <app-button type="error" @click="userStore.clearUserInfo">
                 清除信息
-              </wd-button>
+              </app-button>
             </view>
           </view>
         </view>
@@ -371,12 +371,12 @@ console.log(counterStore.count)`)"
         <view class="space-y-3">
           <wd-input v-model="tempMessage" placeholder="请输入临时消息" />
           <view class="grid grid-cols-2 gap-2">
-            <wd-button type="primary" size="small" @click="setTempMessage">
+            <app-button type="primary" size="small" @click="setTempMessage">
               设置消息
-            </wd-button>
-            <wd-button type="warning" size="small" @click="tempStore.clearMessage">
+            </app-button>
+            <app-button type="warning" size="small" @click="tempStore.clearMessage">
               清除消息
-            </wd-button>
+            </app-button>
           </view>
         </view>
       </view>

@@ -1,0 +1,25 @@
+{
+  "project": {
+    "id": "11131971736005700711",
+    "title": "首页 (Home)"
+  },
+  "screen": {
+    "id": "0959491ef33c4ff8a3d64c0b3f88ef5d",
+    "title": "领券中心",
+    "width": "780",
+    "height": "5460",
+    "deviceType": "MOBILE"
+  },
+  "downloads": {
+    "screenshot": {
+      "url": "https://lh3.googleusercontent.com/aida/ADBb0ugXXIqP_jcpwe1L8WmN-A5QQJV6q37KH_vI_KH3jH6eBLxp-2VIWFwfrWDGlJzd00aqxQ2uYnXlLnBH-1yGiAvyEVnDXYrJaedaLgfJvkY-NPzyS3QYuUUV_PpwZBHA7U_b2fNmWpWvfipDPyN_CzqseFzpJAUENMfRZTElZGoB2H6H7X0Giug_JQ-YMZOGT3O3ouUWH50FeEVH85eUEGqVMclEi1dJQqdbBYQvkfy7nFcTWqttTCGf0vRl",
+      "contentType": "image/png",
+      "file": "stitch/screens/领券中心 (Coupon Center)/领券中心 (Coupon Center).png"
+    },
+    "code": {
+      "url": "https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzhlZTU5OTlhNjQ5MzRmZjBiMDM2OTNjMTExNWUyMDcxEgsSBxDf2dWQsBQYAZIBJAoKcHJvamVjdF9pZBIWQhQxMTEzMTk3MTczNjAwNTcwMDcxMQ&filename=&opi=89354086",
+      "contentType": "text/html",
+      "file": "stitch/screens/领券中心 (Coupon Center)/领券中心 (Coupon Center).html"
+    }
+  }
+}

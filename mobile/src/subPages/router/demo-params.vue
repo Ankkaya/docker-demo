@@ -170,12 +170,12 @@ function pushToGuard() {
     <!-- 操作按钮 -->
     <demo-block title="继续演示" transparent>
       <view class="space-y-3">
-        <wd-button type="primary" block @click="pushToGuard">
+        <app-button type="primary" block @click="pushToGuard">
           跳转到导航守卫演示
-        </wd-button>
-        <wd-button type="warning" block @click="goBack">
+        </app-button>
+        <app-button type="warning" block @click="goBack">
           返回上一页
-        </wd-button>
+        </app-button>
       </view>
     </demo-block>
   </view>

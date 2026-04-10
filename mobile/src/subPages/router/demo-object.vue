@@ -89,9 +89,9 @@ function pushToQuery() {
               router.push({ name: 'demo-params', params: { username: 'eduardo' } })
             </text>
           </view>
-          <wd-button type="primary" block @click="pushToParams">
+          <app-button type="primary" block @click="pushToParams">
             跳转并传递 params
-          </wd-button>
+          </app-button>
         </view>
 
         <view class="rounded-2 bg-white p-4 dark:bg-[var(--wot-dark-background2)]">
@@ -106,18 +106,18 @@ function pushToQuery() {
               router.push({ path: '/demo-query', query: { keyword: 'vue' } })
             </text>
           </view>
-          <wd-button type="success" block @click="pushToQuery">
+          <app-button type="success" block @click="pushToQuery">
             跳转并传递 query
-          </wd-button>
+          </app-button>
         </view>
       </view>
     </demo-block>
 
     <!-- 操作按钮 -->
     <demo-block title="导航" transparent>
-      <wd-button type="warning" block @click="goBack">
+      <app-button type="warning" block @click="goBack">
         返回上一页
-      </wd-button>
+      </app-button>
     </demo-block>
   </view>
 </template>

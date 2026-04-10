@@ -10,6 +10,7 @@ import { CartsModule } from './domains/carts/carts.module';
 import { CategoriesModule } from './domains/categories/categories.module';
 import { CustomersModule } from './domains/customers/customers.module';
 import { CustomerAddressesModule } from './domains/customer-addresses/customer-addresses.module';
+import { CouponsModule } from './domains/coupons/coupons.module';
 import { InventoriesModule } from './domains/inventories/inventories.module';
 import { MenusModule } from './domains/menus/menus.module';
 import { OrdersModule } from './domains/orders/orders.module';
@@ -52,6 +53,7 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
     SystemSettingsModule,
     CustomersModule,
     CustomerAddressesModule,
+    CouponsModule,
     ProductsModule,
     InventoriesModule,
     MallModule,

@@ -228,7 +228,7 @@ function goBack() {
 
 function addToCart(product: SearchResultItem) {
   uni.showToast({
-    title: `已添加: ${product.name}`,
+    title: `已加入：${product.name}`,
     icon: 'success',
   })
 }
@@ -310,12 +310,13 @@ onShow(() => {
               <text class="text-[#efb239] font-bold">
                 ¥{{ product.price.toFixed(2) }}
               </text>
-              <button
-                class="size-7 flex items-center justify-center border-0 rounded-full bg-[#efb239] p-0 text-white !mx-0"
+              <app-button
+                custom-class="search-result__action"
+                custom-style="padding:0;min-width:0;width:56rpx;height:56rpx;"
                 @click.stop="addToCart(product)"
               >
                 <wd-icon name="add" size="14" color="#fff" />
-              </button>
+              </app-button>
             </view>
           </view>
         </view>
@@ -407,5 +408,13 @@ onShow(() => {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+:deep(.search-result__action) {
+  margin: 0 !important;
+  border: 0;
+  border-radius: 9999px;
+  background: #efb239;
+  color: #fff;
 }
 </style>

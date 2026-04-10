@@ -234,7 +234,7 @@ const currentSubCategories = computed(() => {
                 </view>
                 <view>
                   <text class="text-xs text-white/80">
-                    {{ sub.count }} items
+                    {{ sub.count }} 件商品
                   </text>
                 </view>
               </view>
@@ -258,7 +258,7 @@ const currentSubCategories = computed(() => {
         <view v-if="currentSubCategories.length === 0" class="flex flex-col items-center justify-center py-20">
           <wd-icon name="inventory_2" size="48" class="mb-4 text-slate-300" />
           <text class="text-sm text-slate-400">
-            No sub categories found
+            暂无子分类
           </text>
         </view>
       </scroll-view>
