@@ -1,9 +1,10 @@
-name: CI & Deploy
+name: CI
 
 on:
   push:
-    branches: [master]
-  workflow_dispatch:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
 
 jobs:
   build-and-test:
@@ -11,7 +12,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
@@ -70,46 +71,3 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: pnpm build
-
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1
-        env:
-          TARGET_DIR: ${{ secrets.SSH_TARGET_DIR }}
-          REPO_URL: git@github.com:${{ github.repository }}.git
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: TARGET_DIR,REPO_URL
-          script: |
-            if [ ! -d "$TARGET_DIR/.git" ]; then
-              mkdir -p "$TARGET_DIR"
-              git clone "$REPO_URL" "$TARGET_DIR"
-            fi
-            cd "$TARGET_DIR"
-            git pull
-            
-            # 1. 确保镜像最新
-            docker compose build
-
-            # 2. 启动数据库 (如果尚未启动)
-            docker compose up -d db
-            
-            # 3. 等待数据库准备就绪 (简单的延时，生产环境建议用 healthcheck)
-            echo "Waiting for database..."
-            sleep 10
-
-            # 4. 执行数据库迁移 (Prisma 会自动跳过已应用的迁移)
-            docker compose run --rm backend npx prisma migrate deploy
-
-            # 5. 执行数据填充 (Seed 脚本通常是幂等的)
-            docker compose run --rm backend npx prisma db seed
-
-            # 6. 启动/更新所有服务
-            docker compose up -d

@@ -1,3 +1,9 @@
+# 基础服务定义 — 所有环境共用
+# 使用方式：
+#   本地开发: docker compose up -d
+#   测试环境: docker compose -f docker-compose.yaml -f docker-compose.staging.yaml up -d
+#   正式环境: docker compose -f docker-compose.yaml -f docker-compose.production.yaml up -d
+
 services:
   minio:
     image: minio/minio:latest

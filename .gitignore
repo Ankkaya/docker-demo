@@ -1,8 +1,6 @@
 node_modules/
 dist/
 coverage/
-.env
-.env.*
 .DS_Store
 .idea/
 .vscode/
@@ -12,3 +10,9 @@ frontend/dist/
 package-lock.json
 yarn.lock
 backend/prisma/exports/*.sql
+
+# 环境变量文件 — 仅保留 .env.development/.env.staging/.env.production 作为模板提交
+# 个人本地配置不提交
+.env
+.env.local
+.env.*.local

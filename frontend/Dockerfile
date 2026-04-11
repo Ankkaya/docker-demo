@@ -3,8 +3,9 @@ WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
+ARG VITE_MODE=production
 COPY . .
-RUN pnpm build
+RUN pnpm build --mode ${VITE_MODE}
 
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html

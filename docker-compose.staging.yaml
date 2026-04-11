@@ -1,0 +1,45 @@
+# 测试环境覆盖配置
+# 使用方式: docker compose -f docker-compose.yaml -f docker-compose.staging.yaml up -d
+#
+# 同一台服务器部署测试+正式时，端口必须错开：
+#   测试环境: DB 5433, MinIO 9002/9003, Backend 3002, Frontend 8081
+#   正式环境: DB 不暴露, MinIO 9000, Backend 3001, Frontend 8080
+
+services:
+  db:
+    container_name: staging-db
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-staging_password}
+    ports: !override
+      - "5433:5432"
+
+  backend:
+    container_name: staging-backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:staging_password@db:5432/docker_demo?schema=public}
+      FILE_BASE_URL: ${FILE_BASE_URL:-http://staging.example.com}
+      JWT_SECRET: ${JWT_SECRET:-staging-jwt-secret}
+      NODE_ENV: staging
+    ports: !override
+      - "3002:3001"
+    restart: unless-stopped
+
+  frontend:
+    container_name: staging-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_MODE: staging
+    ports: !override
+      - "8081:8080"
+    restart: unless-stopped
+
+  minio:
+    container_name: staging-minio
+    environment:
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    ports: !override
+      - "9002:9000"
+      - "9003:9001"
+    restart: unless-stopped
