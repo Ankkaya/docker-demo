@@ -19,6 +19,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:staging_password@db:5432/docker_demo?schema=public}
       FILE_BASE_URL: ${FILE_BASE_URL:-http://staging.example.com}
       JWT_SECRET: ${JWT_SECRET:-staging-jwt-secret}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
       NODE_ENV: staging
     ports: !override
       - "3002:3001"
