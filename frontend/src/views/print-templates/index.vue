@@ -291,6 +291,7 @@ const isEdit = ref(false);
 const currentId = ref<number>();
 const formRef = ref<FormInst>();
 const list = ref<PrintTemplate[]>([]);
+const statusUpdatingIds = ref<number[]>([]);
 const blocks = ref<TemplateBlock[]>([]);
 const canvasRef = ref<HTMLElement | null>(null);
 const selectedBlockId = ref<string>('');
@@ -339,7 +340,16 @@ const columns: DataTableColumns<PrintTemplate> = [
     }
   },
   { title: '纸张', key: 'paperSize', width: 130, render: (row) => `${row.paperWidth} x ${row.paperHeight} mm` },
-  { title: '启用', key: 'isEnabled', width: 90, render: (row) => h(NSwitch, { value: row.isEnabled, disabled: true }) },
+  {
+    title: '启用',
+    key: 'isEnabled',
+    width: 90,
+    render: (row) => h(NSwitch, {
+      value: row.isEnabled,
+      loading: statusUpdatingIds.value.includes(row.id),
+      onUpdateValue: (value: boolean) => handleToggleStatus(row, value),
+    }),
+  },
   {
     title: '操作',
     key: 'actions',
@@ -361,6 +371,19 @@ const scale = computed(() => {
   const sy = maxH / Math.max(form.paperHeight || 50, 1);
   return Math.min(sx, sy) * (zoomPercent.value / 100);
 });
+
+const handleToggleStatus = async (row: PrintTemplate, isEnabled: boolean) => {
+  statusUpdatingIds.value = [...statusUpdatingIds.value, row.id];
+  try {
+    await updatePrintTemplate(row.id, { isEnabled });
+    message.success(`${row.name}已${isEnabled ? '启用' : '禁用'}`);
+    await fetchList();
+  } catch (error: any) {
+    message.error(error.message || '状态更新失败');
+  } finally {
+    statusUpdatingIds.value = statusUpdatingIds.value.filter(id => id !== row.id);
+  }
+};
 
 // 纸张像素尺寸
 const paperWidthPx = computed(() => (form.paperWidth || 50) * scale.value);

@@ -149,6 +149,7 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const categories = ref<Category[]>([])
 const allCategories = ref<Category[]>([])
+const statusUpdatingIds = ref<number[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
 const searchForm = reactive<{
@@ -341,7 +342,8 @@ const createColumns = (): DataTableColumns<Category> => {
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
-          disabled: true,
+          loading: statusUpdatingIds.value.includes(row.id),
+          onUpdateValue: (value: boolean) => handleToggleStatus(row, value),
           checkedValue: true,
           uncheckedValue: false
         })
@@ -489,6 +491,19 @@ const handleReset = async () => {
   searchForm.code = ''
   searchForm.isEnabled = null
   await fetchCategories()
+}
+
+const handleToggleStatus = async (category: Category, isEnabled: boolean) => {
+  statusUpdatingIds.value = [...statusUpdatingIds.value, category.id]
+  try {
+    await updateCategory(category.id, { isEnabled })
+    message.success(`${category.name}已${isEnabled ? '启用' : '禁用'}`)
+    await fetchCategories()
+  } catch (error: any) {
+    message.error(error.message || '状态更新失败')
+  } finally {
+    statusUpdatingIds.value = statusUpdatingIds.value.filter(id => id !== category.id)
+  }
 }
 
 const handleDelete = (category: Category) => {

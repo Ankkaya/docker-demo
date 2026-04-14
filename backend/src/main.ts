@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../load-env';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -47,7 +47,7 @@ async function bootstrap() {
     const maskedUrl = dbUrl.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
     logger.log(`📡 数据库地址: ${maskedUrl}`);
   } else {
-    logger.warn('⚠️ 未配置 DATABASE_URL 环境变量');
+    logger.error('❌ 未配置 DATABASE_URL 环境变量，请检查 backend/.env、.env.development 或系统环境变量');
   }
 
   const app = await NestFactory.create(AppModule, {

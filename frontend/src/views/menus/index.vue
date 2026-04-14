@@ -56,7 +56,14 @@
             </div>
             <div v-if="form.icon" class="flex items-center gap-2 text-sm text-gray-500">
               <span class="inline-flex items-center justify-center rounded-md border border-gray-200 p-1">
-                <AppIcon :icon="form.icon" :icon-url="currentIconUrl" size="18" :alt="form.icon" />
+                <AppIcon
+                  :icon="form.icon"
+                  :icon-url="currentIconUrl"
+                  size="18"
+                  :alt="form.icon"
+                  :color="menuIconColor"
+                  use-mask
+                />
               </span>
               <span>{{ form.icon }}</span>
             </div>
@@ -119,11 +126,13 @@ import SmartFormContainer from '@/components/common/SmartFormContainer.vue'
 import { getMenus, createMenu, updateMenu, deleteMenu } from '@/api/menu'
 import AppIcon from '@/components/common/AppIcon.vue'
 import IconPicker from '@/components/common/IconPicker.vue'
+import { useThemeStore } from '@/store/modules/theme'
 import type { Menu, CreateMenuDto } from '@/types'
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
+const themeStore = useThemeStore()
 const loading = ref(false)
 const submitLoading = ref(false)
 const dialogVisible = ref(false)
@@ -171,6 +180,9 @@ const convertToTreeOptions = (list: Menu[], level = 0): TreeSelectOption[] => {
 const menuOptions = computed<TreeSelectOption[]>(() => {
   return convertToTreeOptions(menus.value)
 })
+const menuIconColor = computed(() => (
+  themeStore.darkMode ? themeStore.themeColors.primary : undefined
+))
 
 // 获取类型标签
 const getTypeLabel = (type: string) => {
@@ -207,7 +219,14 @@ const createColumns = (): DataTableColumns<Menu> => {
       render: (row) => {
         if (!row.icon) return '-'
         return h('div', { class: 'flex items-center gap-2' }, [
-          h(AppIcon, { icon: row.icon, iconUrl: row.iconUrl, size: 16, alt: row.icon }),
+          h(AppIcon, {
+            icon: row.icon,
+            iconUrl: row.iconUrl,
+            size: 16,
+            alt: row.icon,
+            color: menuIconColor.value,
+            useMask: true,
+          }),
           h('span', row.icon),
         ])
       }

@@ -100,6 +100,7 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const warehouses = ref<Warehouse[]>([])
 const allWarehouses = ref<Warehouse[]>([])
+const statusUpdatingIds = ref<number[]>([])
 const formRef = ref<FormInst>()
 const currentId = ref<number>()
 const searchForm = reactive<{
@@ -172,7 +173,8 @@ const createColumns = (): DataTableColumns<Warehouse> => {
       render: (row) => {
         return h(NSwitch, {
           value: row.isEnabled,
-          disabled: true
+          loading: statusUpdatingIds.value.includes(row.id),
+          onUpdateValue: (value: boolean) => handleToggleStatus(row, value)
         })
       }
     },
@@ -236,6 +238,19 @@ const handleReset = async () => {
   searchForm.code = ''
   searchForm.isEnabled = null
   await fetchWarehouses()
+}
+
+const handleToggleStatus = async (warehouse: Warehouse, isEnabled: boolean) => {
+  statusUpdatingIds.value = [...statusUpdatingIds.value, warehouse.id]
+  try {
+    await updateWarehouse(warehouse.id, { isEnabled })
+    message.success(`${warehouse.name}已${isEnabled ? '启用' : '禁用'}`)
+    await fetchWarehouses()
+  } catch (error: any) {
+    message.error(error.message || '状态更新失败')
+  } finally {
+    statusUpdatingIds.value = statusUpdatingIds.value.filter(id => id !== warehouse.id)
+  }
 }
 
 const handleCreate = () => {

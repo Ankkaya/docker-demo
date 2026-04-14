@@ -20,7 +20,7 @@
       "name": "home",
       "layout": "default",
       "style": {
-        "navigationBarTitleText": "BabyWhale",
+        "navigationBarTitleText": "商城首页",
         "navigationStyle": "custom"
       }
     },

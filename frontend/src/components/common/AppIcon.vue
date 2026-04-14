@@ -2,6 +2,7 @@
   <n-icon
     v-if="iconComponent"
     :size="size"
+    :color="color"
     class="align-middle"
   >
     <component :is="iconComponent" />
@@ -55,7 +56,7 @@ const legacyIconAliasMap: Record<string, string> = {
   measurement: 'material-symbols:straighten-outline',
   category: 'material-symbols:category-outline',
   brand: 'material-symbols:bookmark-outline',
-  warehouse: 'mdi:warehouse-outline',
+  warehouse: 'mdi:warehouse',
   supplier: 'material-symbols:local-shipping-outline',
   customer: 'material-symbols:person-pin-circle-outline',
   shopping: 'material-symbols:shopping-bag-outline',
@@ -66,8 +67,9 @@ const legacyIconAliasMap: Record<string, string> = {
   inbound: 'material-symbols:move-to-inbox-outline',
   return: 'material-symbols:assignment-return-outline',
   shipment: 'material-symbols:local-shipping-outline',
-  transfer: 'material-symbols:swap-horiz-outline',
-  adjust: 'material-symbols:tune-outline',
+  transfer: 'mdi:swap-horizontal-bold',
+  adjust: 'material-symbols:tune',
+  wallet: 'material-symbols:account-balance-wallet-outline',
   log: 'material-symbols:history-rounded',
   'shopping-cart': 'material-symbols:shopping-cart-outline',
   cart: 'material-symbols:shopping-cart-outline',

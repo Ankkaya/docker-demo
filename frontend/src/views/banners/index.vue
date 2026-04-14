@@ -91,6 +91,7 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const currentId = ref<number>()
 const banners = ref<Banner[]>([])
+const statusUpdatingIds = ref<number[]>([])
 const formRef = ref<FormInst>()
 const imageFileList = ref<any[]>([])
 const imageSourceType = ref<'upload' | 'url'>('upload')
@@ -200,7 +201,11 @@ const columns = computed<DataTableColumns<Banner>>(() => [
     title: '状态',
     key: 'isEnabled',
     width: 90,
-    render: (row) => h(NSwitch, { value: row.isEnabled, disabled: true }),
+    render: (row) => h(NSwitch, {
+      value: row.isEnabled,
+      loading: statusUpdatingIds.value.includes(row.id),
+      onUpdateValue: (value: boolean) => handleToggleStatus(row, value),
+    }),
   },
   {
     title: '备注',
@@ -272,6 +277,19 @@ const handleEdit = (banner: Banner) => {
 
 const handleResetList = () => {
   fetchBanners()
+}
+
+const handleToggleStatus = async (banner: Banner, isEnabled: boolean) => {
+  statusUpdatingIds.value = [...statusUpdatingIds.value, banner.id]
+  try {
+    await updateBanner(banner.id, { isEnabled })
+    message.success(`${banner.title}已${isEnabled ? '启用' : '禁用'}`)
+    await fetchBanners()
+  } catch (error: any) {
+    message.error(error.message || '状态更新失败')
+  } finally {
+    statusUpdatingIds.value = statusUpdatingIds.value.filter(id => id !== banner.id)
+  }
 }
 
 const handleDelete = (banner: Banner) => {

@@ -221,6 +221,7 @@ const couponOptions = computed(() => couponList.value.map(item => ({
 })))
 
 const issueCouponTitle = computed(() => couponList.value.find(item => item.id === issueCouponId.value)?.name || '')
+const statusUpdatingIds = ref<number[]>([])
 
 const receivePagination = reactive({
   page: 1,
@@ -300,7 +301,11 @@ const couponColumns: DataTableColumns<CouponItem> = [
     title: '启用',
     key: 'isEnabled',
     width: 80,
-    render: row => h(NSwitch, { value: row.isEnabled, disabled: true }),
+    render: row => h(NSwitch, {
+      value: row.isEnabled,
+      loading: statusUpdatingIds.value.includes(row.id),
+      onUpdateValue: (value: boolean) => handleToggleStatus(row, value),
+    }),
   },
   {
     title: '操作',
@@ -385,6 +390,19 @@ async function loadCustomers() {
     }))
   } catch (error: any) {
     message.error(error.message || '加载客户列表失败')
+  }
+}
+
+async function handleToggleStatus(row: CouponItem, isEnabled: boolean) {
+  statusUpdatingIds.value = [...statusUpdatingIds.value, row.id]
+  try {
+    await updateCoupon(row.id, { isEnabled })
+    message.success(`${row.name}已${isEnabled ? '启用' : '禁用'}`)
+    await loadCoupons()
+  } catch (error: any) {
+    message.error(error.message || '状态更新失败')
+  } finally {
+    statusUpdatingIds.value = statusUpdatingIds.value.filter(id => id !== row.id)
   }
 }
 

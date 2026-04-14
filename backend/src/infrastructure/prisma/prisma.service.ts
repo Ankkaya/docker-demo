@@ -9,8 +9,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private pool: Pool;
 
   constructor() {
+    const connectionString = process.env.DATABASE_URL;
+    if (typeof connectionString !== 'string' || connectionString.trim().length === 0) {
+      throw new Error('DATABASE_URL 未配置或不是有效字符串，请检查 backend/.env、.env.development 或系统环境变量');
+    }
+
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
     });
     super({ adapter: new PrismaPg(pool) });
     this.pool = pool;
