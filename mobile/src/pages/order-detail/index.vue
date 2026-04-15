@@ -3,9 +3,11 @@
  * 订单详情页面 - 参考 Stitch 设计稿
  */
 
+import { useUserStore } from '@/store/userStore'
+
 type MallOrderDetail = any
 type MallOrderItem = any
-type MallPaymentMethod = 'WECHAT' | 'CREDIT' | 'BANK'
+type MallPaymentMethod = 'WECHAT' | 'BALANCE' | 'BANK'
 
 definePage({
   name: 'order-detail',
@@ -17,6 +19,7 @@ definePage({
 })
 
 const router = useRouter()
+const userStore = useUserStore()
 const routeOrderId = ref(0)
 const loading = ref(false)
 const loadError = ref('')
@@ -26,6 +29,9 @@ const remainingSeconds = ref(0)
 const timer = ref<ReturnType<typeof setInterval> | null>(null)
 const selectedPayment = ref('wechat')
 const orderDetail = ref<MallOrderDetail | null>(null)
+const balanceSummary = ref({
+  availableBalance: '0.00',
+})
 
 type OrderViewStatus = '待付款' | '待发货' | '待收货' | '已完成' | '已取消' | '已超时'
 
@@ -51,21 +57,12 @@ interface OrderViewLogistics {
   status: string
 }
 
-const paymentMethods = [
-  {
-    key: 'wechat',
-    name: '微信支付',
-    desc: '快速安全支付',
-    iconClass: 'i-material-symbols:account-balance-wallet',
-    iconToneClass: 'bg-emerald-50 text-emerald-500',
-  },
-]
-
 const formattedTimer = computed(() => {
   const minutes = Math.floor(remainingSeconds.value / 60)
   const seconds = remainingSeconds.value % 60
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 })
+const availableBalanceAmount = computed(() => Number(balanceSummary.value.availableBalance || 0))
 
 const statusIconMap: Record<string, string> = {
   待付款: 'i-material-symbols:account-balance-wallet',
@@ -110,6 +107,10 @@ function maskPhone(phone: string) {
   return `${phone.slice(0, 3)}****${phone.slice(-4)}`
 }
 
+function formatAmount(value?: string | number | null) {
+  return Number(value || 0).toFixed(2)
+}
+
 function formatSpecs(specs: Record<string, string> | Array<{ name?: string, value?: string }>) {
   if (Array.isArray(specs)) {
     const values = specs
@@ -137,11 +138,54 @@ function resolvePaymentMethodLabel(value?: string | null) {
     return '支付宝'
   if (value === 'BANK')
     return '银行卡'
-  if (value === 'CREDIT')
+  if (value === 'BALANCE' || value === 'CREDIT')
     return '余额支付'
   if (value === 'CASH')
     return '现金支付'
   return '待支付'
+}
+
+const balancePayEnabled = computed(() => availableBalanceAmount.value >= Number(orderDetail.value?.payable || 0))
+
+const paymentMethods = computed(() => [
+  {
+    key: 'wechat',
+    name: '微信支付',
+    desc: '快速安全支付',
+    iconClass: 'i-material-symbols:account-balance-wallet',
+    iconToneClass: 'bg-emerald-50 text-emerald-500',
+  },
+  {
+    key: 'balance',
+    name: '余额支付',
+    desc: balancePayEnabled.value
+      ? `可用余额 ¥${formatAmount(balanceSummary.value.availableBalance)}`
+      : `余额不足，当前 ¥${formatAmount(balanceSummary.value.availableBalance)}`,
+    iconClass: 'i-material-symbols:wallet',
+    iconToneClass: 'bg-amber-50 text-amber-500',
+  },
+])
+
+function updateUserBalanceCache(availableBalance: string) {
+  if (userStore.user?.customer) {
+    userStore.user.customer.availableBalance = availableBalance
+  }
+}
+
+async function loadBalanceSummary() {
+  if (!userStore.isLoggedIn) {
+    balanceSummary.value.availableBalance = '0.00'
+    return
+  }
+
+  try {
+    const data = await (Apis.general as any).MallBalanceController_getSummary({}).send()
+    balanceSummary.value.availableBalance = data.availableBalance || '0.00'
+    updateUserBalanceCache(balanceSummary.value.availableBalance)
+  }
+  catch {
+    balanceSummary.value.availableBalance = userStore.user?.customer?.availableBalance || '0.00'
+  }
 }
 
 function isExpiredUnpaidOrder(detail: MallOrderDetail) {
@@ -339,6 +383,7 @@ async function loadOrder() {
       pathParams: { id: routeOrderId.value },
     }).send()
     normalizeOrder(detail)
+    await loadBalanceSummary()
   }
   catch (error: any) {
     orderDetail.value = null
@@ -379,10 +424,14 @@ function openProduct(item: OrderViewItem) {
   })
 }
 
-function openPaymentPopup() {
+async function openPaymentPopup() {
   if (orderStatusLabel.value !== '待付款')
     return
 
+  await loadBalanceSummary()
+  if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
+    selectedPayment.value = 'wechat'
+  }
   syncCountdownByExpireAt(orderDetail.value?.expireAt)
   startCountdown()
   paymentPopupVisible.value = true
@@ -391,6 +440,8 @@ function openPaymentPopup() {
 function resolvePaymentMethod(): MallPaymentMethod {
   if (selectedPayment.value === 'wechat')
     return 'WECHAT'
+  if (selectedPayment.value === 'balance')
+    return 'BALANCE'
   return 'WECHAT'
 }
 
@@ -438,19 +489,32 @@ async function payNow() {
   if (!routeOrderId.value)
     return
 
+  if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
+    uni.showToast({ title: '余额不足，请先充值', icon: 'none' })
+    return
+  }
+
   paying.value = true
   try {
     const payResult = await (Apis.general as any).MallOrdersController_payOrder({
       pathParams: { id: routeOrderId.value },
       data: { method: resolvePaymentMethod() },
     }).send()
-    await requestWechatPayment(payResult?.paymentConfig || null)
-    const latestStatus = await queryPaymentStatus(routeOrderId.value)
-    if (latestStatus?.payStatus !== 'PAID') {
-      throw new Error('支付结果确认中，请稍后刷新订单')
+
+    if (selectedPayment.value === 'wechat') {
+      await requestWechatPayment(payResult?.paymentConfig || null)
+      const latestStatus = await queryPaymentStatus(routeOrderId.value)
+      if (latestStatus?.payStatus !== 'PAID') {
+        throw new Error('支付结果确认中，请稍后刷新订单')
+      }
     }
+    else if (payResult?.payStatus !== 'PAID') {
+      throw new Error('余额支付结果确认中，请稍后刷新订单')
+    }
+
     paymentPopupVisible.value = false
-    uni.showToast({ title: '支付成功', icon: 'success' })
+    await loadBalanceSummary()
+    uni.showToast({ title: `${selectedPayment.value === 'balance' ? '余额' : '微信'}支付成功`, icon: 'success' })
     await loadOrder()
   }
   catch (error: any) {
@@ -589,10 +653,7 @@ onUnload(() => {
   <view class="order-detail-page text-slate-900">
     <scroll-view scroll-y class="pb-28">
       <view class="px-4 pt-4">
-        <view v-if="loading" class="py-12 text-center text-sm text-slate-400">
-          正在加载订单...
-        </view>
-        <view v-else-if="loadError" class="card-shell rounded-[28px] bg-white px-5 py-10 text-center">
+        <view v-if="loadError" class="card-shell rounded-[28px] bg-white px-5 py-10 text-center">
           <text class="block text-sm text-slate-500">
             {{ loadError }}
           </text>
@@ -815,7 +876,7 @@ onUnload(() => {
           <view
             v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="selectedPayment = item.key"
+            @click="item.key === 'balance' && !balancePayEnabled ? uni.showToast({ title: '余额不足，请先充值', icon: 'none' }) : selectedPayment = item.key"
           >
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">
@@ -840,6 +901,10 @@ onUnload(() => {
               />
             </view>
           </view>
+        </view>
+
+        <view v-if="selectedPayment === 'balance'" class="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
+          支付后剩余余额 ¥{{ formatAmount(Math.max(0, availableBalanceAmount - orderSummary.total)) }}
         </view>
 
         <view class="order-payment-popup__submit" :class="paying ? 'opacity-75' : ''" @click="payNow">

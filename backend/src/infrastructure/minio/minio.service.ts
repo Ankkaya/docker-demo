@@ -9,6 +9,7 @@ export class MinioService implements OnModuleInit {
   private minioClient: Minio.Client;
   private bucketName: string;
   private readonly fileBaseUrl: string;
+  private readonly shouldSkipInitCheck: boolean;
 
   constructor() {
     this.minioClient = new Minio.Client({
@@ -20,6 +21,8 @@ export class MinioService implements OnModuleInit {
     });
     this.bucketName = process.env.MINIO_BUCKET_NAME || 'docker-demo';
     this.fileBaseUrl = this.resolveFileBaseUrl();
+    this.shouldSkipInitCheck =
+      process.env.MINIO_SKIP_INIT === 'true' || process.env.NODE_ENV === 'test';
   }
 
   async onModuleInit() {
@@ -39,6 +42,12 @@ export class MinioService implements OnModuleInit {
     this.logger.log(`🔑 访问密钥: ${maskedAccessKey}`);
     this.logger.log(`📁 存储桶名: ${this.bucketName}`);
     this.logger.log(`🖼️ 文件访问基地址: ${this.fileBaseUrl}`);
+
+    if (this.shouldSkipInitCheck) {
+      this.logger.warn('⏭️  已跳过 MinIO 启动连通性检查');
+      this.logger.log('----------------------------------------');
+      return;
+    }
 
     try {
       // 检查 bucket 是否存在，不存在则创建

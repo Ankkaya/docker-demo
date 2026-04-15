@@ -353,11 +353,7 @@ onLoad((options) => {
           </view>
         </scroll-view>
 
-        <view v-if="loading" class="flex items-center justify-center py-16 text-sm text-slate-400">
-          正在加载评价...
-        </view>
-
-        <view v-else-if="!reviews.length" class="rounded-3xl bg-white px-6 py-14 text-center shadow-sm">
+        <view v-if="!reviews.length" class="rounded-3xl bg-white px-6 py-14 text-center shadow-sm">
           <view class="mx-auto size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#c98500]">
             <text class="i-material-symbols:chat-bubble-outline-rounded text-[28px]" />
           </view>

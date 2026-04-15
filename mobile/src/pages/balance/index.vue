@@ -194,37 +194,36 @@ onShow(async () => {
             </text>
           </view>
 
-          <view v-if="loading" class="py-8 text-center text-sm text-slate-400">
-            正在加载流水...
-          </view>
-          <view v-else-if="!logs.length" class="py-8 text-center text-sm text-slate-400">
+          <view v-if="!logs.length" class="py-8 text-center text-sm text-slate-400">
             暂无余额流水
           </view>
-          <view v-for="item in logs" :key="item.id" class="balance-log-row">
-            <view class="min-w-0 flex-1">
-              <view class="flex items-center justify-between gap-3">
-                <text class="truncate text-sm text-slate-900 font-700">
-                  {{ item.typeText }}
+          <template v-else>
+            <view v-for="item in logs" :key="item.id" class="balance-log-row">
+              <view class="min-w-0 flex-1">
+                <view class="flex items-center justify-between gap-3">
+                  <text class="truncate text-sm text-slate-900 font-700">
+                    {{ item.typeText }}
+                  </text>
+                  <text class="shrink-0 text-sm font-700" :class="resolveLogTone(item.type)">
+                    {{ resolveLogPrefix(item.type) }}¥{{ formatAmount(item.changeAmount) }}
+                  </text>
+                </view>
+                <text class="mt-1 block text-xs text-slate-400">
+                  余额：¥{{ formatAmount(item.balanceBefore) }} → ¥{{ formatAmount(item.balanceAfter) }}
                 </text>
-                <text class="shrink-0 text-sm font-700" :class="resolveLogTone(item.type)">
-                  {{ resolveLogPrefix(item.type) }}¥{{ formatAmount(item.changeAmount) }}
+                <text v-if="item.bizNo || item.remark" class="mt-1 block text-xs text-slate-400">
+                  {{ item.bizNo || item.remark }}
                 </text>
-              </view>
-              <text class="mt-1 block text-xs text-slate-400">
-                余额：¥{{ formatAmount(item.balanceBefore) }} → ¥{{ formatAmount(item.balanceAfter) }}
-              </text>
-              <text v-if="item.bizNo || item.remark" class="mt-1 block text-xs text-slate-400">
-                {{ item.bizNo || item.remark }}
-              </text>
-              <view class="balance-log-time mt-2">
-                <text>{{ formatLogDateMeta(item.createdAt).date }}</text>
-                <text class="balance-log-time-dot" />
-                <text>{{ formatLogDateMeta(item.createdAt).period }}</text>
-                <text class="balance-log-time-dot" />
-                <text>{{ formatLogDateMeta(item.createdAt).time }}</text>
+                <view class="balance-log-time mt-2">
+                  <text>{{ formatLogDateMeta(item.createdAt).date }}</text>
+                  <text class="balance-log-time-dot" />
+                  <text>{{ formatLogDateMeta(item.createdAt).period }}</text>
+                  <text class="balance-log-time-dot" />
+                  <text>{{ formatLogDateMeta(item.createdAt).time }}</text>
+                </view>
               </view>
             </view>
-          </view>
+          </template>
         </view>
       </view>
     </scroll-view>

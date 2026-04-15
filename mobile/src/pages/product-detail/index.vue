@@ -605,12 +605,6 @@ function openReviewList() {
     <scroll-view scroll-y class="flex-1">
       <view class="pb-28">
         <view class="relative h-[640rpx] w-full overflow-hidden bg-[#efb239]/10">
-          <view
-            v-if="loading"
-            class="absolute inset-0 z-10 flex items-center justify-center bg-white/40 text-sm text-slate-500 backdrop-blur-sm"
-          >
-            加载中...
-          </view>
           <swiper
             class="h-full w-full" :indicator-dots="false" :autoplay="false" :circular="true"
             @change="onImageChange"

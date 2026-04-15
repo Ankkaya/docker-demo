@@ -221,33 +221,31 @@ function buyAgain(order: typeof orders.value[number]) {
 
     <scroll-view scroll-y class="pb-24">
       <view class="px-4 pt-4">
-        <view v-if="loading" class="py-12 text-center text-sm text-slate-400">
-          正在加载订单...
-        </view>
-        <view v-else-if="!filteredOrders.length" class="py-12 text-center text-sm text-slate-400">
+        <view v-if="!filteredOrders.length" class="py-12 text-center text-sm text-slate-400">
           暂无订单
         </view>
-        <view
-          v-for="order in filteredOrders" :key="order.id"
-          class="order-card mb-4 overflow-hidden border border-[#efb239]/8 rounded-2xl bg-white"
-          @click="openDetail(order.id)"
-        >
+        <template v-else>
           <view
-            class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5"
-            :class="headerTone(order.status)"
+            v-for="order in filteredOrders" :key="order.id"
+            class="order-card mb-4 overflow-hidden border border-[#efb239]/8 rounded-2xl bg-white"
+            @click="openDetail(order.id)"
           >
-            <view class="flex flex-col gap-1">
-              <text class="text-xs text-slate-400">
-                订单号 {{ order.no }}
-              </text>
-              <text v-if="order.status === 'pending' && order.expireAt" class="text-[11px] text-orange-400 font-medium">
-                支付剩余 {{ formatCountdown(order.expireAt) }}
+            <view
+              class="flex items-center justify-between border-b border-[#efb239]/8 px-4 py-3.5"
+              :class="headerTone(order.status)"
+            >
+              <view class="flex flex-col gap-1">
+                <text class="text-xs text-slate-400">
+                  订单号 {{ order.no }}
+                </text>
+                <text v-if="order.status === 'pending' && order.expireAt" class="text-[11px] text-orange-400 font-medium">
+                  支付剩余 {{ formatCountdown(order.expireAt) }}
+                </text>
+              </view>
+              <text class="text-sm font-bold" :class="statusTone(order.status)">
+                {{ order.statusLabel }}
               </text>
             </view>
-            <text class="text-sm font-bold" :class="statusTone(order.status)">
-              {{ order.statusLabel }}
-            </text>
-          </view>
 
           <view class="flex flex-col gap-3 px-4 py-4">
             <view v-for="item in order.items.slice(0, 2)" :key="item.id" class="flex items-center gap-3">
@@ -286,51 +284,52 @@ function buyAgain(order: typeof orders.value[number]) {
             </view>
           </view>
 
-          <view class="flex flex-wrap justify-end gap-2 border-t border-[#efb239]/8 bg-[#faf9f7] px-4 py-3">
-            <view
-              v-if="order.status === 'pending'"
-              class="border border-slate-200 rounded-lg bg-white px-4 py-2 text-xs text-slate-600 font-bold"
-              @click.stop="cancelOrder(order.id)"
-            >
-              取消订单
-            </view>
-            <view
-              v-if="order.status === 'pending'"
-              class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
-              @click.stop="payOrder(order.id)"
-            >
-              去支付
-            </view>
-            <view
-              v-if="order.status === 'receiving'"
-              class="border border-[#efb239]/20 rounded-lg bg-[#efb239]/20 px-4 py-2 text-xs text-[#c98500] font-bold"
-              @click.stop
-            >
-              查看物流
-            </view>
-            <view
-              v-if="order.status === 'receiving'"
-              class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
-              @click.stop="confirmReceive(order.id)"
-            >
-              确认收货
-            </view>
-            <view
-              v-if="order.status === 'completed'"
-              class="rounded-lg bg-[#efb239]/10 px-4 py-2 text-xs text-[#c98500] font-bold"
-              @click.stop="buyAgain(order)"
-            >
-              再次购买
-            </view>
-            <view
-              v-if="order.status === 'completed'"
-              class="border border-slate-200 rounded-lg bg-white px-4 py-2 text-xs text-slate-600 font-bold"
-              @click.stop
-            >
-              评价商品
+            <view class="flex flex-wrap justify-end gap-2 border-t border-[#efb239]/8 bg-[#faf9f7] px-4 py-3">
+              <view
+                v-if="order.status === 'pending'"
+                class="border border-slate-200 rounded-lg bg-white px-4 py-2 text-xs text-slate-600 font-bold"
+                @click.stop="cancelOrder(order.id)"
+              >
+                取消订单
+              </view>
+              <view
+                v-if="order.status === 'pending'"
+                class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
+                @click.stop="payOrder(order.id)"
+              >
+                去支付
+              </view>
+              <view
+                v-if="order.status === 'receiving'"
+                class="border border-[#efb239]/20 rounded-lg bg-[#efb239]/20 px-4 py-2 text-xs text-[#c98500] font-bold"
+                @click.stop
+              >
+                查看物流
+              </view>
+              <view
+                v-if="order.status === 'receiving'"
+                class="rounded-lg bg-[#efb239] px-5 py-2 text-xs text-slate-900 font-bold"
+                @click.stop="confirmReceive(order.id)"
+              >
+                确认收货
+              </view>
+              <view
+                v-if="order.status === 'completed'"
+                class="rounded-lg bg-[#efb239]/10 px-4 py-2 text-xs text-[#c98500] font-bold"
+                @click.stop="buyAgain(order)"
+              >
+                再次购买
+              </view>
+              <view
+                v-if="order.status === 'completed'"
+                class="border border-slate-200 rounded-lg bg-white px-4 py-2 text-xs text-slate-600 font-bold"
+                @click.stop
+              >
+                评价商品
+              </view>
             </view>
           </view>
-        </view>
+        </template>
       </view>
     </scroll-view>
   </view>

@@ -210,12 +210,8 @@ onShow(() => {
           </text>
         </view>
 
-        <view v-if="loading" class="mt-10 text-center text-sm text-slate-400">
-          加载中...
-        </view>
-
         <view
-          v-else-if="coupons.length === 0"
+          v-if="coupons.length === 0"
           class="mt-8 rounded-[32rpx] border border-[#efb239]/10 bg-white/75 px-8 py-12 text-center"
         >
           <text class="i-material-symbols:confirmation-number text-[72rpx] text-[#efb239]/35 leading-none" />
@@ -230,7 +226,8 @@ onShow(() => {
           </view>
         </view>
 
-        <view v-for="item in coupons" :key="item.id" class="coupon-card" :class="getCardClass(item.status)">
+        <template v-else>
+          <view v-for="item in coupons" :key="item.id" class="coupon-card" :class="getCardClass(item.status)">
           <view class="coupon-card__left" :class="item.status === 'UNUSED' ? 'bg-[#efb239]/8' : 'bg-white/50'">
             <text class="i-material-symbols:confirmation-number text-[40rpx] leading-none" :class="item.status === 'UNUSED' ? 'text-[#efb239]' : 'text-slate-400'" />
             <view class="mt-3 flex items-end gap-1">
@@ -288,7 +285,7 @@ onShow(() => {
               </view>
             </view>
           </view>
-        </view>
+        </template>
       </view>
     </scroll-view>
   </view>

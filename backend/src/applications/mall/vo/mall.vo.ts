@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BrandVo } from '@/brands/vo';
+import { CategoryVo } from '@/categories/vo';
 import { BannerVo } from '@/domains/banners/vo/banner.vo';
 import { ProductWithRelationsVo } from '@/products/vo';
+
+export class MallCategoryVo extends CategoryVo {
+  @ApiProperty({ description: '分类下商品数量' })
+  productCount: number;
+}
 
 export class MallProductSkuCardVo {
   @ApiProperty({ description: 'SKU ID' })

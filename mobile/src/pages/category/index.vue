@@ -30,6 +30,8 @@ interface RawCategory {
   subtitle?: string | null
   remark?: string | null
   image?: string | null
+  parentId?: number | null
+  productCount?: number | null
 }
 
 interface CategoryCardItem {
@@ -82,7 +84,7 @@ function mapSubCategoryItem(category: RawCategory) {
   return {
     id: category.id,
     name: category.name || '未命名分类',
-    count: 0,
+    count: Number(category.productCount || 0),
     image: hasImage ? image : fallbackCategoryImage,
     style: hasImage ? 'dark' as const : 'light' as const,
     subTitle,
@@ -103,11 +105,11 @@ async function loadCategories() {
   try {
     const categoryResponse = await Apis.general.MallHomeController_findCategories().send()
     const categoryList = Array.isArray(categoryResponse) ? categoryResponse : []
-    const rootList = categoryList.filter((category: RawCategory & { parentId?: number | null }) => category.parentId == null)
+    const rootList = categoryList.filter(category => category.parentId == null)
 
     categories.value = rootList.map((category: RawCategory, index: number) => {
       const children = categoryList.filter(
-        (item: RawCategory & { parentId?: number | null }) => item.parentId === category.id,
+        item => item.parentId === category.id,
       )
       return mapCategoryItem(category, children, index)
     })

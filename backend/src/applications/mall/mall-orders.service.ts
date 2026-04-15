@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import {
+  BalanceAccountStatus,
+  BalanceLogType,
   CouponReceiveStatus,
   OrderStatus,
   PaymentMethod,
@@ -155,6 +157,162 @@ export class MallOrdersService {
     };
   }
 
+  private async markOrderPaymentCompleted(tx: any, order: any, payment: any, paidAt: Date) {
+    const shouldUpdateOrder = order.payStatus !== PayStatus.PAID;
+    const nextOrder = shouldUpdateOrder
+      ? await tx.order.update({
+          where: { id: order.id },
+          data: {
+            paid: Number(order.paid) + Number(payment.amount),
+            payStatus: PayStatus.PAID,
+            status: OrderStatus.CONFIRMED,
+            payDate: paidAt,
+          },
+        })
+      : order;
+
+    if (shouldUpdateOrder && order.couponReceiveId) {
+      const couponReceive = await tx.couponReceive.findUnique({
+        where: { id: order.couponReceiveId },
+        select: {
+          id: true,
+          couponId: true,
+          status: true,
+        },
+      });
+
+      if (couponReceive) {
+        await tx.couponReceive.update({
+          where: { id: couponReceive.id },
+          data: {
+            status: CouponReceiveStatus.USED,
+            usedAt: paidAt,
+          },
+        });
+
+        if (couponReceive.status !== CouponReceiveStatus.USED) {
+          await tx.coupon.update({
+            where: { id: couponReceive.couponId },
+            data: {
+              usedCount: {
+                increment: 1,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    return nextOrder;
+  }
+
+  private async ensureBalanceAccount(tx: any, customerId: number) {
+    const existing = await tx.balanceAccount.findUnique({
+      where: { customerId },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return tx.balanceAccount.create({
+      data: {
+        customerId,
+        status: BalanceAccountStatus.ACTIVE,
+      },
+    });
+  }
+
+  private async payOrderByBalance(userId: number, customerId: number, order: any, amount: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const latestOrder = await tx.order.findFirst({
+        where: {
+          id: order.id,
+          customerId,
+          type: 'MALL',
+          deletedAt: null,
+        },
+      });
+
+      if (!latestOrder) {
+        throw new NotFoundException('订单不存在');
+      }
+
+      if (latestOrder.payStatus === PayStatus.PAID) {
+        throw new BadRequestException('订单已支付');
+      }
+
+      if (latestOrder.status === OrderStatus.CANCELLED) {
+        throw new BadRequestException('订单已取消');
+      }
+
+      if (latestOrder.expireAt && latestOrder.expireAt.getTime() <= Date.now()) {
+        await this.cancelExpiredOrder(tx, latestOrder.id);
+        throw new BadRequestException('订单已超时取消');
+      }
+
+      const account = await this.ensureBalanceAccount(tx, customerId);
+      if (account.status !== BalanceAccountStatus.ACTIVE) {
+        throw new BadRequestException('余额账户已停用');
+      }
+
+      const availableBalance = Number(account.availableBalance);
+      if (availableBalance < amount) {
+        throw new BadRequestException(`余额不足，当前可用余额${availableBalance.toFixed(2)}元`);
+      }
+
+      await this.closeWechatPaymentIfPending(tx, latestOrder.id);
+
+      const paidAt = new Date();
+      const payment = await tx.payment.create({
+        data: {
+          type: PaymentType.RECEIPT,
+          bizType: 'SALE',
+          orderId: latestOrder.id,
+          amount,
+          method: PaymentMethod.BALANCE,
+          status: PaymentStatus.COMPLETED,
+          thirdStatus: 'SUCCESS',
+          paidAt,
+          remark: '商城订单余额支付',
+          createdBy: userId,
+        },
+      });
+
+      const afterBalance = availableBalance - amount;
+      await tx.balanceAccount.update({
+        where: { id: account.id },
+        data: {
+          availableBalance: afterBalance,
+          totalConsumed: Number(account.totalConsumed) + amount,
+        },
+      });
+
+      await tx.balanceLog.create({
+        data: {
+          accountId: account.id,
+          customerId,
+          type: BalanceLogType.CONSUME,
+          changeAmount: amount,
+          balanceBefore: availableBalance,
+          balanceAfter: afterBalance,
+          bizType: 'MALL_ORDER',
+          bizId: latestOrder.id,
+          bizNo: latestOrder.orderNo,
+          remark: '商城订单余额支付',
+          createdBy: userId,
+        },
+      });
+
+      const nextOrder = await this.markOrderPaymentCompleted(tx, latestOrder, payment, paidAt);
+
+      return {
+        order: nextOrder,
+        payment,
+      };
+    });
+  }
+
   private async markWechatPaymentSuccessByOutTradeNo(
     outTradeNo: string,
     resource: Partial<WechatTransactionResource>,
@@ -190,50 +348,7 @@ export class MallOrdersService {
         },
       });
 
-      const shouldUpdateOrder = payment.order.payStatus !== PayStatus.PAID;
-      const nextOrder = shouldUpdateOrder
-        ? await tx.order.update({
-            where: { id: payment.order.id },
-            data: {
-              paid: Number(payment.order.paid) + Number(payment.amount),
-              payStatus: PayStatus.PAID,
-              status: OrderStatus.CONFIRMED,
-              payDate: paidAt,
-            },
-          })
-        : payment.order;
-
-      if (shouldUpdateOrder && payment.order.couponReceiveId) {
-        const couponReceive = await tx.couponReceive.findUnique({
-          where: { id: payment.order.couponReceiveId },
-          select: {
-            id: true,
-            couponId: true,
-            status: true,
-          },
-        });
-
-        if (couponReceive) {
-          await tx.couponReceive.update({
-            where: { id: couponReceive.id },
-            data: {
-              status: CouponReceiveStatus.USED,
-              usedAt: paidAt,
-            },
-          });
-
-          if (couponReceive.status !== CouponReceiveStatus.USED) {
-            await tx.coupon.update({
-              where: { id: couponReceive.couponId },
-              data: {
-                usedCount: {
-                  increment: 1,
-                },
-              },
-            });
-          }
-        }
-      }
+      const nextOrder = await this.markOrderPaymentCompleted(tx, payment.order, nextPayment, paidAt);
 
       return {
         order: nextOrder,
@@ -906,8 +1021,13 @@ export class MallOrdersService {
       throw new BadRequestException('订单无需支付');
     }
 
+    if (dto.method === PaymentMethod.BALANCE) {
+      const paid = await this.payOrderByBalance(userId, customer.id, order, remainingAmount);
+      return this.buildMallPayOrderVo(paid.order, paid.payment);
+    }
+
     if (dto.method !== PaymentMethod.WECHAT) {
-      throw new BadRequestException('当前阶段仅支持微信支付');
+      throw new BadRequestException('当前仅支持微信支付或余额支付');
     }
 
     const payer = await this.getWechatPayerInfo(userId);

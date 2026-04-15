@@ -265,10 +265,7 @@ function clearCategoryFilter() {
         </view>
       </view>
 
-      <view v-if="loading" class="px-4 py-12 text-center text-sm text-slate-400">
-        正在加载商品...
-      </view>
-      <view v-else-if="products.length === 0" class="px-4 py-12 text-center text-sm text-slate-400">
+      <view v-if="products.length === 0" class="px-4 py-12 text-center text-sm text-slate-400">
         暂无商品
       </view>
       <view v-else class="grid grid-cols-2 gap-4 px-4 pb-24">

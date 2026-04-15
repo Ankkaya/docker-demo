@@ -30,11 +30,11 @@ import { WechatLoginDto } from './dto/wechat-login.dto';
 import { MallLoginDto } from './dto/mall-login.dto';
 import { MallRefreshTokenDto } from './dto/mall-refresh-token.dto';
 import {
+  MallCategoryVo,
   MallHotProductListResponseVo,
   MallProductDetailVo,
   MallProductListResponseVo,
 } from './vo/mall.vo';
-import { CategoryTreeVo } from '@/categories/vo';
 import { BrandVo } from '@/brands/vo';
 import { BannerVo } from '@/domains/banners/vo/banner.vo';
 import { CartsService } from '@/domains/carts/carts.service';
@@ -138,14 +138,14 @@ export class MallProductsController {
 }
 
 @ApiTags('商城接口/首页')
-@ApiExtraModels(CategoryTreeVo, BrandVo, BannerVo)
+@ApiExtraModels(MallCategoryVo, BrandVo, BannerVo)
 @Controller('mall')
 export class MallHomeController {
   constructor(private readonly mallService: MallService) {}
 
   @Get('categories')
   @ApiOperation({ summary: '获取启用的分类列表' })
-  @ApiOkResponse({ type: [CategoryTreeVo] })
+  @ApiOkResponse({ type: [MallCategoryVo] })
   findCategories(@Query() query: QueryMallCategoryDto) {
     return this.mallService.findCategories(query);
   }

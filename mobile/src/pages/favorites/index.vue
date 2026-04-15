@@ -152,35 +152,32 @@ onShow(() => {
           </text> 件心动好物待带回家
         </view>
 
-        <view v-if="loading" class="mt-8 text-center text-sm text-slate-400">
-          加载中...
-        </view>
-
         <view
-          v-else-if="favoriteCount === 0"
+          v-if="favoriteCount === 0"
           class="mt-8 border border-[#efb239]/10 rounded-3xl bg-white/80 px-6 py-12 text-center text-slate-400"
         >
           暂无收藏商品
         </view>
 
-        <view
-          v-for="item in favorites" :key="item.id"
-          class="favorite-card mt-4 flex gap-4 border border-[#efb239]/8 rounded-2xl bg-white p-3"
-          @click="openProduct(item)"
-        >
-          <image :src="item.image" class="h-28 w-28 shrink-0 rounded-xl bg-[#f6efe0]" mode="aspectFill" />
-          <view class="min-w-0 flex-1 py-1">
-            <view class="flex items-start justify-between gap-3">
-              <text class="line-clamp-2 block text-[30rpx] font-bold leading-[1.35]">
-                {{ item.name }}
-              </text>
-              <view
-                class="size-8 flex shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-400"
-                @click.stop="removeFavorite(item)"
-              >
-                <text class="text-[18px] text-slate-400 leading-none" :class="getFavoriteIconClass('close')" />
+        <template v-else>
+          <view
+            v-for="item in favorites" :key="item.id"
+            class="favorite-card mt-4 flex gap-4 border border-[#efb239]/8 rounded-2xl bg-white p-3"
+            @click="openProduct(item)"
+          >
+            <image :src="item.image" class="h-28 w-28 shrink-0 rounded-xl bg-[#f6efe0]" mode="aspectFill" />
+            <view class="min-w-0 flex-1 py-1">
+              <view class="flex items-start justify-between gap-3">
+                <text class="line-clamp-2 block text-[30rpx] font-bold leading-[1.35]">
+                  {{ item.name }}
+                </text>
+                <view
+                  class="size-8 flex shrink-0 items-center justify-center rounded-full bg-white/90 text-slate-400"
+                  @click.stop="removeFavorite(item)"
+                >
+                  <text class="text-[18px] text-slate-400 leading-none" :class="getFavoriteIconClass('close')" />
+                </view>
               </view>
-            </view>
 
             <text class="mt-1 block text-xs text-slate-400">
               {{ getVariantText(item) }}
@@ -208,8 +205,9 @@ onShow(() => {
               <text class="text-[16px] text-slate-900 leading-none" :class="getFavoriteIconClass('cart')" />
               加入购物车
             </view>
+            </view>
           </view>
-        </view>
+        </template>
 
         <view class="px-2 pb-8 pt-6 text-center text-sm text-slate-400">
           还有更多好物正在等你发现

@@ -162,10 +162,6 @@ onShow(() => {
 
     <scroll-view scroll-y class="pb-20">
       <view class="px-4 pt-4">
-        <view v-if="loading" class="mt-8 text-center text-sm text-slate-400">
-          加载中...
-        </view>
-
         <view
           v-if="historyGroups.length === 0"
           class="mt-10 border border-[#efb239]/10 rounded-3xl bg-white/70 px-6 py-12 text-center text-slate-400"

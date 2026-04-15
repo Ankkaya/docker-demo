@@ -563,8 +563,33 @@ export class MallService {
         : [{ sort: 'asc' }, { id: 'asc' }],
     });
 
+    const categoryIds = categories.map(category => category.id);
+    const productCountMap = new Map<number, number>();
+
+    if (categoryIds.length) {
+      const productCounts = await this.prisma.product.groupBy({
+        by: ['categoryId'],
+        where: {
+          categoryId: {
+            in: categoryIds,
+          },
+          deletedAt: null,
+          isEnabled: true,
+          mallEnabled: true,
+        },
+        _count: {
+          _all: true,
+        },
+      });
+
+      productCounts.forEach((item) => {
+        productCountMap.set(item.categoryId, item._count._all);
+      });
+    }
+
     return Promise.all(categories.map(async (category) => ({
       ...category,
+      productCount: productCountMap.get(category.id) || 0,
       iconUrl: await this.iconAssetsService.resolveIconUrl(category.icon, 'white'),
       image: await this.minioService.resolveStoredFileUrl(category.image),
     })));

@@ -1,9 +1,13 @@
 import AdapterUniapp from '@alova/adapter-uniapp'
 import { createAlova } from 'alova'
 import vueHook from 'alova/vue'
+import { useGlobalLoading } from '@/composables/useGlobalLoading'
 import { useUserStore } from '@/store/userStore'
 import mockAdapter from '../mock/mockAdapter'
 import { handleAlovaError, handleAlovaResponse } from './handlers'
+
+let requestLoadingCount = 0
+let requestLoadingTimer: ReturnType<typeof setTimeout> | null = null
 
 export const alovaInstance = createAlova({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -13,6 +17,7 @@ export const alovaInstance = createAlova({
   statesHook: vueHook,
   beforeRequest: (method) => {
     const userStore = useUserStore()
+    const globalLoading = useGlobalLoading()
     method.config.headers = method.config.headers || {}
 
     // Add content type for POST/PUT/PATCH requests
@@ -27,6 +32,23 @@ export const alovaInstance = createAlova({
     // Add timestamp to prevent caching for GET requests
     if (method.type === 'GET' && CommonUtil.isObj(method.config.params)) {
       method.config.params._t = Date.now()
+    }
+
+    const shouldShowLoading = method.config.showLoading !== false
+    const loadingText = method.config.loadingText || '加载中...'
+    method.config.__showGlobalLoading = shouldShowLoading
+
+    if (shouldShowLoading) {
+      requestLoadingCount += 1
+
+      if (!requestLoadingTimer) {
+        requestLoadingTimer = setTimeout(() => {
+          if (requestLoadingCount > 0) {
+            globalLoading.loading(loadingText)
+          }
+          requestLoadingTimer = null
+        }, 120)
+      }
     }
 
     // Log request in development
@@ -46,8 +68,22 @@ export const alovaInstance = createAlova({
     onError: handleAlovaError,
 
     // Complete handler - runs after success or error
-    onComplete: async () => {
-      // Any cleanup or logging can be done here
+    onComplete: async (method) => {
+      const shouldShowLoading = method.config.__showGlobalLoading !== false
+      if (!shouldShowLoading) {
+        return
+      }
+
+      requestLoadingCount = Math.max(0, requestLoadingCount - 1)
+
+      if (requestLoadingCount === 0) {
+        const globalLoading = useGlobalLoading()
+        if (requestLoadingTimer) {
+          clearTimeout(requestLoadingTimer)
+          requestLoadingTimer = null
+        }
+        globalLoading.close()
+      }
     },
   },
 

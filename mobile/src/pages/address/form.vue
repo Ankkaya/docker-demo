@@ -351,9 +351,6 @@ onLoad((options) => {
       </view>
     </view>
 
-    <view v-if="loading" class="loading-mask">
-      <wd-loading color="#efb239" />
-    </view>
   </view>
 </template>
 
@@ -584,14 +581,4 @@ onLoad((options) => {
   box-shadow: 0 18px 30px rgba(239, 178, 57, 0.22);
 }
 
-.loading-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(248, 247, 246, 0.45);
-  backdrop-filter: blur(4px);
-}
 </style>

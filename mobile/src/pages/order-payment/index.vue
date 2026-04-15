@@ -4,6 +4,7 @@
  */
 
 import { useCheckoutStore } from '@/store/checkoutStore'
+import { useUserStore } from '@/store/userStore'
 
 type CustomerAddressItem = any
 
@@ -58,6 +59,7 @@ interface CouponOption {
 
 const router = useRouter()
 const checkoutStore = useCheckoutStore()
+const userStore = useUserStore()
 const { safeAreaInsetsBottom } = usePlatform()
 
 const remainingSeconds = ref(29 * 60 + 59)
@@ -71,16 +73,9 @@ const shouldHandlePaymentCancel = ref(false)
 const couponPopupVisible = ref(false)
 const couponLoading = ref(false)
 const couponOptions = ref<CouponOption[]>([])
-
-const paymentMethods: PaymentMethod[] = [
-  {
-    key: 'wechat',
-    name: '微信支付',
-    desc: '快速安全支付',
-    iconClass: 'i-material-symbols:account-balance-wallet',
-    iconToneClass: 'bg-emerald-50 text-emerald-500',
-  },
-]
+const balanceSummary = ref({
+  availableBalance: '0.00',
+})
 
 const orderSummary = ref<PaymentOrderSummary>({
   orderId: 0,
@@ -114,9 +109,30 @@ const payableAmount = computed(() => isExistingOrder.value ? orderSummary.value.
 const hasSelectedAddress = computed(() => Boolean(deliveryAddress.value))
 const isExistingOrder = computed(() => orderSummary.value.source === 'order' && orderSummary.value.orderId > 0)
 const availableCouponOptions = computed(() => couponOptions.value.filter(item => goodsAmount.value >= Number(item.thresholdAmount || 0)))
+const availableBalanceAmount = computed(() => Number(balanceSummary.value.availableBalance || 0))
+const balancePayEnabled = computed(() => availableBalanceAmount.value >= orderSummary.value.amount)
+
+const paymentMethods = computed<PaymentMethod[]>(() => [
+  {
+    key: 'wechat',
+    name: '微信支付',
+    desc: '快速安全支付',
+    iconClass: 'i-material-symbols:account-balance-wallet',
+    iconToneClass: 'bg-emerald-50 text-emerald-500',
+  },
+  {
+    key: 'balance',
+    name: '余额支付',
+    desc: balancePayEnabled.value
+      ? `可用余额 ¥${formatAmount(balanceSummary.value.availableBalance)}`
+      : `余额不足，当前 ¥${formatAmount(balanceSummary.value.availableBalance)}`,
+    iconClass: 'i-material-symbols:wallet',
+    iconToneClass: 'bg-amber-50 text-amber-500',
+  },
+])
 
 const selectedPaymentMethod = computed(() => {
-  return paymentMethods.find(item => item.key === selectedPayment.value) || paymentMethods[0]
+  return paymentMethods.value.find(item => item.key === selectedPayment.value) || paymentMethods.value[0]
 })
 
 const formattedTimer = computed(() => {
@@ -160,6 +176,32 @@ function maskPhone(phone: string) {
   if (!/^1\d{10}$/.test(phone))
     return phone
   return `${phone.slice(0, 3)}****${phone.slice(-4)}`
+}
+
+function formatAmount(value?: string | number | null) {
+  return Number(value || 0).toFixed(2)
+}
+
+function updateUserBalanceCache(availableBalance: string) {
+  if (userStore.user?.customer) {
+    userStore.user.customer.availableBalance = availableBalance
+  }
+}
+
+async function loadBalanceSummary() {
+  if (!userStore.isLoggedIn) {
+    balanceSummary.value.availableBalance = '0.00'
+    return
+  }
+
+  try {
+    const data = await (Apis.general as any).MallBalanceController_getSummary({}).send()
+    balanceSummary.value.availableBalance = data.availableBalance || '0.00'
+    updateUserBalanceCache(balanceSummary.value.availableBalance)
+  }
+  catch {
+    balanceSummary.value.availableBalance = userStore.user?.customer?.availableBalance || '0.00'
+  }
 }
 
 async function loadDefaultAddress() {
@@ -313,6 +355,8 @@ function syncSelectedAddressFromStore() {
 function resolvePaymentMethod() {
   if (selectedPayment.value === 'wechat')
     return 'WECHAT'
+  if (selectedPayment.value === 'balance')
+    return 'BALANCE'
   return 'WECHAT'
 }
 
@@ -345,6 +389,11 @@ async function payNow() {
     return
   }
 
+  if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
+    uni.showToast({ title: '余额不足，请先充值', icon: 'none' })
+    return
+  }
+
   shouldHandlePaymentCancel.value = false
   paying.value = true
   try {
@@ -352,11 +401,19 @@ async function payNow() {
       pathParams: { id: orderSummary.value.orderId },
       data: { method: resolvePaymentMethod() },
     }).send()
-    await requestWechatPayment(payResult?.paymentConfig || null)
-    const latestStatus = await queryPaymentStatus(orderSummary.value.orderId)
-    if (latestStatus?.payStatus !== 'PAID') {
-      throw new Error('支付结果确认中，请稍后在订单列表查看')
+
+    if (selectedPayment.value === 'wechat') {
+      await requestWechatPayment(payResult?.paymentConfig || null)
+      const latestStatus = await queryPaymentStatus(orderSummary.value.orderId)
+      if (latestStatus?.payStatus !== 'PAID') {
+        throw new Error('支付结果确认中，请稍后在订单列表查看')
+      }
     }
+    else if (payResult?.payStatus !== 'PAID') {
+      throw new Error('余额支付结果确认中，请稍后在订单列表查看')
+    }
+
+    await loadBalanceSummary()
     uni.showToast({
       title: `${selectedPaymentMethod.value.name}支付成功`,
       icon: 'success',
@@ -406,6 +463,10 @@ async function openPaymentPopup() {
       orderSummary.value.amount = Number(detail.payable || 0)
       orderSummary.value.expireAt = String(detail.expireAt || '')
       syncDiscountFromOrderDetail(detail)
+      await loadBalanceSummary()
+      if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
+        selectedPayment.value = 'wechat'
+      }
       syncCountdownByExpireAt(orderSummary.value.expireAt)
       startCountdown()
       shouldHandlePaymentCancel.value = true
@@ -441,6 +502,10 @@ async function openPaymentPopup() {
     checkoutStore.orderNo = orderSummary.value.orderNo
     checkoutStore.expireAt = orderSummary.value.expireAt
     checkoutStore.totalAmount = orderSummary.value.amount
+    await loadBalanceSummary()
+    if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
+      selectedPayment.value = 'wechat'
+    }
     syncCountdownByExpireAt(orderSummary.value.expireAt)
     startCountdown()
     shouldHandlePaymentCancel.value = true
@@ -588,6 +653,7 @@ onUnload(() => {
 
 onShow(() => {
   syncSelectedAddressFromStore()
+  loadBalanceSummary()
   if (!isExistingOrder.value) {
     loadCouponOptions()
   }
@@ -605,10 +671,7 @@ onShow(() => {
                 <text class="i-material-symbols:location-on text-[22px] text-[#efb239] leading-none" />
               </view>
               <view class="min-w-0 flex-1">
-                <view v-if="addressLoading" class="py-2 text-sm text-slate-400">
-                  正在加载收货地址...
-                </view>
-                <template v-else-if="hasSelectedAddress && deliveryAddress">
+                <template v-if="hasSelectedAddress && deliveryAddress">
                   <view class="flex items-center gap-2">
                     <text class="text-sm text-slate-900 font-semibold">
                       {{ deliveryAddress.receiverName }}
@@ -785,15 +848,12 @@ onShow(() => {
             <text v-if="!discountInfo.couponReceiveId" class="i-material-symbols:check-circle text-[20px] text-[#efb239] leading-none" />
           </view>
 
-          <view v-if="couponLoading" class="py-8 text-center text-sm text-slate-400">
-            正在加载优惠券...
-          </view>
-
-          <view v-else-if="availableCouponOptions.length === 0" class="py-8 text-center text-sm text-slate-400">
+          <view v-if="availableCouponOptions.length === 0" class="py-8 text-center text-sm text-slate-400">
             当前没有满足门槛的优惠券
           </view>
 
           <view
+            v-else
             v-for="item in availableCouponOptions"
             :key="item.id"
             class="coupon-select-card"
@@ -856,7 +916,7 @@ onShow(() => {
           <view
             v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="selectedPayment = item.key"
+            @click="item.key === 'balance' && !balancePayEnabled ? uni.showToast({ title: '余额不足，请先充值', icon: 'none' }) : selectedPayment = item.key"
           >
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">
@@ -881,6 +941,10 @@ onShow(() => {
               />
             </view>
           </view>
+        </view>
+
+        <view v-if="selectedPayment === 'balance'" class="mt-3 rounded-2xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
+          支付后剩余余额 ¥{{ formatAmount(Math.max(0, availableBalanceAmount - orderSummary.amount)) }}
         </view>
 
         <view class="order-payment-popup__submit" :class="paying ? 'opacity-75' : ''" @click="payNow">

@@ -173,12 +173,8 @@ onShow(() => {
           </text>
         </view>
 
-        <view v-if="loading" class="mt-10 text-center text-sm text-slate-400">
-          加载中...
-        </view>
-
         <view
-          v-else-if="coupons.length === 0"
+          v-if="coupons.length === 0"
           class="mt-8 rounded-[32rpx] border border-[#efb239]/10 bg-white/80 px-8 py-12 text-center"
         >
           <text class="i-material-symbols:redeem text-[72rpx] text-[#efb239]/35 leading-none" />
@@ -190,7 +186,8 @@ onShow(() => {
           </text>
         </view>
 
-        <view v-for="item in coupons" :key="item.id" class="offer-card">
+        <template v-else>
+          <view v-for="item in coupons" :key="item.id" class="offer-card">
           <view class="flex items-start justify-between gap-3">
             <view class="offer-card__icon">
               <text class="i-material-symbols:local-mall text-[34rpx] text-[#efb239] leading-none" />
@@ -233,7 +230,7 @@ onShow(() => {
               {{ claimingId === item.id ? '领取中...' : item.actionText }}
             </view>
           </view>
-        </view>
+        </template>
       </view>
     </scroll-view>
   </view>

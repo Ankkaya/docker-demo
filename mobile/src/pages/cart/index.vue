@@ -298,10 +298,6 @@ onShow(() => {
           </view>
         </view>
 
-        <view v-else-if="loading" class="flex items-center justify-center py-20 text-sm text-slate-400">
-          正在加载购物车...
-        </view>
-
         <view v-else-if="!hasCartItems" class="rounded-[32rpx] bg-white px-6 py-16 text-center shadow-sm">
           <view class="mx-auto size-16 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
             <text class="i-material-symbols:shopping-cart-outline-rounded text-[34px]" />
