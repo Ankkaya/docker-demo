@@ -17,7 +17,7 @@ services:
     container_name: staging-backend
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:staging_password@db:5432/docker_demo?schema=public}
-      FILE_BASE_URL: ${FILE_BASE_URL:-http://staging.example.com}
+      FILE_BASE_URL: ${FILE_BASE_URL:-https://stage-docker-demo.ankkaya.top}
       JWT_SECRET: ${JWT_SECRET:-staging-jwt-secret}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}

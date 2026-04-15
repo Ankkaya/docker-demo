@@ -41,6 +41,46 @@ function formatDateTime(value?: string) {
   return new Date(value).toLocaleString('zh-CN')
 }
 
+function formatLogDateMeta(value?: string) {
+  if (!value) {
+    return {
+      date: '',
+      period: '',
+      time: '',
+    }
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      date: '',
+      period: '',
+      time: '',
+    }
+  }
+
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+  const hour = date.getHours()
+  const minute = `${date.getMinutes()}`.padStart(2, '0')
+
+  let period = '凌晨'
+  if (hour >= 6 && hour < 12)
+    period = '上午'
+  else if (hour >= 12 && hour < 18)
+    period = '下午'
+  else if (hour >= 18)
+    period = '晚上'
+
+  return {
+    date: `${year}-${month}-${day}`,
+    period,
+    time: `${`${hour}`.padStart(2, '0')}:${minute}`,
+  }
+}
+
 function resolveLogTone(type: string) {
   if (type === 'RECHARGE' || type === 'REFUND' || type === 'ADJUST_INCREASE')
     return 'text-emerald-600'
@@ -176,9 +216,13 @@ onShow(async () => {
               <text v-if="item.bizNo || item.remark" class="mt-1 block text-xs text-slate-400">
                 {{ item.bizNo || item.remark }}
               </text>
-              <text class="mt-2 block text-[22rpx] text-slate-400">
-                {{ formatDateTime(item.createdAt) }}
-              </text>
+              <view class="balance-log-time mt-2">
+                <text>{{ formatLogDateMeta(item.createdAt).date }}</text>
+                <text class="balance-log-time-dot" />
+                <text>{{ formatLogDateMeta(item.createdAt).period }}</text>
+                <text class="balance-log-time-dot" />
+                <text>{{ formatLogDateMeta(item.createdAt).time }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -212,5 +256,22 @@ onShow(async () => {
 
 .balance-log-row:last-of-type {
   padding-bottom: 0;
+}
+
+.balance-log-time {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  color: #94a3b8;
+  font-size: 22rpx;
+  line-height: 1.2;
+}
+
+.balance-log-time-dot {
+  width: 6rpx;
+  height: 6rpx;
+  flex: none;
+  border-radius: 9999rpx;
+  background: rgba(148, 163, 184, 0.65);
 }
 </style>

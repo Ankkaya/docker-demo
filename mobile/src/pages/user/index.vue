@@ -25,7 +25,12 @@ const userInfo = computed(() => ({
   avatar: userStore.displayAvatar,
 }))
 
-const balanceAmountText = computed(() => `¥${Number(balanceSummary.value.availableBalance || 0).toFixed(2)}`)
+const balanceAmountText = computed(() => {
+  if (!isLoggedIn.value)
+    return '-'
+
+  return `¥${Number(balanceSummary.value.availableBalance || 0).toFixed(2)}`
+})
 
 const orderMenus = ref([
   { key: 'pay', label: '待付款', icon: 'account_balance_wallet', badge: '' },
@@ -106,6 +111,10 @@ function onServiceMenuClick(item: typeof serviceMenus.value[number]) {
 
 function contactSupport() {
   uni.showToast({ title: '客服功能开发中', icon: 'none' })
+}
+
+function onContactServiceError() {
+  uni.showToast({ title: '暂时无法打开客服', icon: 'none' })
 }
 
 function handleLogout() {
@@ -318,7 +327,7 @@ onShow(() => {
                 {{ item.label }}
               </text>
               <view
-                v-if="item.badge"
+                v-if="isLoggedIn && item.badge"
                 class="absolute right-3 top-0 h-4 min-w-4 flex items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white font-bold"
               >
                 {{ item.badge }}
@@ -330,28 +339,90 @@ onShow(() => {
 
       <view class="px-4 py-4">
         <view class="overflow-hidden border border-[#efb239]/5 rounded-xl bg-white shadow-sm">
-          <view v-for="item in serviceMenus" :key="item.key" class="service-row" @click="onServiceMenuClick(item)">
-            <view class="flex items-center gap-4">
-              <view class="rounded-lg p-2" :class="item.iconBg">
-                <text
-                  class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
-                  :style="{ color: item.iconColor }"
-                />
+          <template v-for="item in serviceMenus" :key="item.key">
+            <!-- #ifdef MP-WEIXIN -->
+            <AppButton
+              v-if="item.key === 'service'"
+              class="service-row service-row-button"
+              custom-class="service-row-button__inner"
+              custom-style="display: block; width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; line-height: inherit; color: inherit;"
+              open-type="contact"
+              plain
+              @error="onContactServiceError"
+            >
+              <view class="flex items-center justify-between text-slate-900">
+                <view class="flex items-center gap-4">
+                  <view class="rounded-lg p-2" :class="item.iconBg">
+                    <text
+                      class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
+                      :style="{ color: item.iconColor }"
+                    />
+                  </view>
+                  <text class="text-sm font-medium">
+                    {{ item.label }}
+                  </text>
+                </view>
+                <view class="flex items-center gap-1">
+                  <text
+                    v-if="item.extra" class="text-xs"
+                    :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'"
+                  >
+                    {{ item.extra }}
+                  </text>
+                  <text class="i-material-symbols:chevron-right text-[16px] text-slate-400 leading-none" />
+                </view>
               </view>
-              <text class="text-sm font-medium">
-                {{ item.label }}
-              </text>
+            </AppButton>
+            <!-- #endif -->
+
+            <!-- #ifndef MP-WEIXIN -->
+            <view v-if="item.key === 'service'" class="service-row" @click="contactSupport">
+              <view class="flex items-center gap-4">
+                <view class="rounded-lg p-2" :class="item.iconBg">
+                  <text
+                    class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
+                    :style="{ color: item.iconColor }"
+                  />
+                </view>
+                <text class="text-sm font-medium">
+                  {{ item.label }}
+                </text>
+              </view>
+              <view class="flex items-center gap-1">
+                <text
+                  v-if="item.extra" class="text-xs"
+                  :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'"
+                >
+                  {{ item.extra }}
+                </text>
+                <text class="i-material-symbols:chevron-right text-[16px] text-slate-400 leading-none" />
+              </view>
             </view>
-            <view class="flex items-center gap-1">
-              <text
-                v-if="item.extra" class="text-xs"
-                :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'"
-              >
-                {{ item.extra }}
-              </text>
-              <text class="i-material-symbols:chevron-right text-[16px] text-slate-400 leading-none" />
+            <!-- #endif -->
+
+            <view v-if="item.key !== 'service'" class="service-row" @click="onServiceMenuClick(item)">
+              <view class="flex items-center gap-4">
+                <view class="rounded-lg p-2" :class="item.iconBg">
+                  <text
+                    class="text-[20px] leading-none" :class="getServiceIconClass(item.key)"
+                    :style="{ color: item.iconColor }"
+                  />
+                </view>
+                <text class="text-sm font-medium">
+                  {{ item.label }}
+                </text>
+              </view>
+              <view class="flex items-center gap-1">
+                <text
+                  v-if="item.extra" class="text-xs"
+                  :class="item.key === 'coupon' ? 'text-red-500 font-semibold' : 'text-slate-400'"
+                >
+                  {{ item.extra }}
+                </text>
+                <text class="i-material-symbols:chevron-right text-[16px] text-slate-400 leading-none" />
+              </view>
             </view>
-          </view>
+          </template>
         </view>
       </view>
 
@@ -375,9 +446,24 @@ onShow(() => {
                 我们的穿搭顾问全天在线
               </text>
             </view>
+            <!-- #ifdef MP-WEIXIN -->
+            <AppButton
+              class="contact-service-button"
+              custom-class="contact-service-button__inner"
+              custom-style="padding: 0 16rpx; border: 0; background: #ffffff; line-height: 72rpx;"
+              open-type="contact"
+              plain
+              @error="onContactServiceError"
+            >
+              联系我们
+            </AppButton>
+            <!-- #endif -->
+
+            <!-- #ifndef MP-WEIXIN -->
             <view class="rounded-lg bg-white px-4 py-2 text-xs font-bold" @click="contactSupport">
               联系我们
             </view>
+            <!-- #endif -->
           </view>
           <view class="absolute opacity-10 -bottom-4 -right-4">
             <text class="i-material-symbols:child-care text-[88px] text-[#0f172a] leading-none" />
@@ -399,6 +485,35 @@ onShow(() => {
 
 .service-row:last-child {
   border-bottom: 0;
+}
+
+.service-row-button {
+  display: block;
+}
+
+:deep(.service-row-button__inner) {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  box-shadow: none;
+}
+
+:deep(.service-row-button__inner .wd-button__text) {
+  width: 100%;
+}
+
+:deep(.contact-service-button__inner) {
+  min-height: 0;
+  border-radius: 16rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .balance-card {
