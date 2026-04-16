@@ -641,6 +641,7 @@ export class MallService {
       name: product.mallInfo?.name || product.name,
       description: product.mallInfo?.description || product.description,
       detail: product.mallInfo?.detail || product.detail,
+      hotLabel: product.mallInfo?.hotLabel || null,
       mainImage: await this.minioService.resolveStoredFileUrl(product.mallInfo?.mainImage || product.mainImage),
       images: await this.minioService.resolveStoredFileUrls(mallImages),
       brand: product.brand

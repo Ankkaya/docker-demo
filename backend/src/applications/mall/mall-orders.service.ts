@@ -1267,4 +1267,36 @@ export class MallOrdersService {
 
     return this.findOneByUser(userId, id);
   }
+
+  async remove(userId: number, id: number) {
+    const customer = await this.getCustomerByUserId(userId);
+
+    await this.prisma.$transaction(async (tx) => {
+      await this.syncExpiredOrdersByCustomerId(tx, customer.id);
+
+      const existing = await tx.order.findFirst({
+        where: {
+          id,
+          customerId: customer.id,
+          type: 'MALL',
+          deletedAt: null,
+        },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('订单不存在');
+      }
+
+      if (existing.status !== OrderStatus.CANCELLED) {
+        throw new ForbiddenException('当前订单状态不支持删除');
+      }
+
+      await tx.order.update({
+        where: { id: existing.id },
+        data: { deletedAt: new Date() },
+      });
+    });
+
+    return { success: true };
+  }
 }

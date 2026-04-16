@@ -20,6 +20,7 @@ definePage({
 
 const router = useRouter()
 const userStore = useUserStore()
+const { confirm } = useGlobalMessage()
 const routeOrderId = ref(0)
 const loading = ref(false)
 const loadError = ref('')
@@ -546,6 +547,35 @@ async function cancelOrder() {
   }
 }
 
+async function deleteOrder() {
+  if (!routeOrderId.value)
+    return
+
+  confirm({
+    title: '删除订单',
+    msg: '删除后订单记录将无法恢复，是否继续？',
+    confirmButtonText: '确认删除',
+    cancelButtonText: '取消',
+    success: async (res) => {
+      if (res.action !== 'confirm') {
+        return
+      }
+
+      try {
+        await alovaInstance.Delete(`/mall/orders/${routeOrderId.value}`).send()
+        uni.showToast({ title: '订单已删除', icon: 'success' })
+        router.push({
+          name: 'order-list',
+          query: { status: 'all' },
+        })
+      }
+      catch (error: any) {
+        uni.showToast({ title: error?.message || '删除订单失败', icon: 'none' })
+      }
+    },
+  })
+}
+
 const orderStatusLabel = computed<OrderViewStatus>(() => {
   if (!orderDetail.value) {
     return '待付款'
@@ -620,8 +650,12 @@ const orderInfoRows = computed(() => {
   ]
 })
 
+const canDeleteCurrentOrder = computed(() =>
+  orderStatusLabel.value === '已取消' || orderStatusLabel.value === '已超时',
+)
+
 const showBottomActions = computed(() =>
-  Boolean(orderDetail.value) && orderStatusLabel.value !== '已取消' && orderStatusLabel.value !== '已完成',
+  Boolean(orderDetail.value) && (canDeleteCurrentOrder.value || orderStatusLabel.value !== '已完成'),
 )
 
 const primaryActionLabel = computed(() => {
@@ -635,11 +669,11 @@ const primaryActionLabel = computed(() => {
 })
 
 const secondaryActionLabel = computed(() => (
-  orderStatusLabel.value === '待收货'
+  canDeleteCurrentOrder.value
+    ? '删除订单'
+    : orderStatusLabel.value === '待收货'
     ? '申请售后'
-    : orderStatusLabel.value === '已超时'
-      ? '删除订单'
-      : '取消订单'
+    : '取消订单'
 ))
 
 onUnload(() => {
@@ -831,12 +865,12 @@ onUnload(() => {
     >
       <view
         class="flex-1 border border-slate-200 rounded-full border-solid bg-white py-3 text-center text-sm text-slate-700 font-semibold"
-        @click="cancelOrder"
+        @click="canDeleteCurrentOrder ? deleteOrder() : cancelOrder()"
       >
         {{ secondaryActionLabel }}
       </view>
       <view
-        v-if="orderStatusLabel !== '已超时'"
+        v-if="!canDeleteCurrentOrder"
         class="detail-action flex-[1.2] rounded-full bg-[#efb239] py-3 text-center text-sm text-slate-900 font-bold"
         @click="orderStatusLabel === '待付款' ? openPaymentPopup() : payNow()"
       >

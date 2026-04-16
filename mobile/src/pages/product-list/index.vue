@@ -37,6 +37,8 @@ interface ProductListItem {
   name: string
   price: number
   image: string
+  description: string
+  tag: string
   ratio: string
   offset: string
   skuId: number | null
@@ -82,13 +84,37 @@ function decodeRouteText(value: unknown) {
 }
 
 function getCardOffset(index: number) {
-  const offsets = ['', 'pt-8', '-mt-4', '', '-mt-6', 'pt-6']
+  const offsets = ['', 'pt-4', '-mt-2', '', '-mt-3', 'pt-3']
   return offsets[index % offsets.length]
 }
 
 function getCardRatio(index: number) {
-  const ratios = ['3/4.5', '3/3.5', '3/3.8', '3/4.2', '1/1', '3/4']
+  const ratios = ['3/3.8', '3/3.2', '3/3.4', '1/1', '3/3.1', '3/3.6']
   return ratios[index % ratios.length]
+}
+
+function resolveProductImage(item: any, defaultSku: any) {
+  if (typeof item?.mainImage === 'string' && item.mainImage) {
+    return item.mainImage
+  }
+
+  if (typeof item?.mallInfo?.mainImage === 'string' && item.mallInfo.mainImage) {
+    return item.mallInfo.mainImage
+  }
+
+  if (Array.isArray(item?.images) && typeof item.images[0] === 'string' && item.images[0]) {
+    return item.images[0]
+  }
+
+  if (Array.isArray(item?.mallInfo?.images) && typeof item.mallInfo.images[0] === 'string' && item.mallInfo.images[0]) {
+    return item.mallInfo.images[0]
+  }
+
+  if (typeof defaultSku?.image === 'string' && defaultSku.image) {
+    return defaultSku.image
+  }
+
+  return ''
 }
 
 function normalizeProduct(item: any, index: number): ProductListItem {
@@ -99,7 +125,13 @@ function normalizeProduct(item: any, index: number): ProductListItem {
     id: Number(item?.id || 0),
     name: item?.name || '未命名商品',
     price: Number(item?.minPrice || 0),
-    image: typeof item?.mainImage === 'string' ? item.mainImage : '',
+    image: resolveProductImage(item, defaultSku),
+    description: typeof item?.description === 'string' ? item.description.trim() : '',
+    tag: typeof item?.hotLabel === 'string' && item.hotLabel
+      ? item.hotLabel
+      : typeof item?.mallInfo?.hotLabel === 'string' && item.mallInfo.hotLabel
+          ? item.mallInfo.hotLabel
+          : '在售',
     ratio: getCardRatio(index),
     offset: getCardOffset(index),
     skuId: defaultSku?.id ? Number(defaultSku.id) : null,
@@ -270,26 +302,31 @@ function clearCategoryFilter() {
       </view>
       <view v-else class="grid grid-cols-2 gap-4 px-4 pb-24">
         <view
-          v-for="product in products" :key="product.id" class="flex flex-col gap-2" :class="product.offset"
+          v-for="product in products" :key="product.id"
+          class="overflow-hidden rounded-[24rpx] border border-[#eadfce] bg-[#fffaf3] shadow-[0_10px_24px_rgba(120,93,47,0.08)]"
+          :class="product.offset"
           @click="onProductClick(product)"
         >
           <view
-            class="relative overflow-hidden border border-slate-100 rounded-2xl bg-slate-200 shadow-sm"
+            class="relative overflow-hidden rounded-t-[24rpx] bg-slate-200"
             :style="`aspect-ratio:${product.ratio}`"
           >
-            <image :src="product.image" mode="aspectFill" class="h-full w-full" />
-            <view
-              class="absolute bottom-3 right-3 size-10 flex items-center justify-center rounded-full bg-[#efb239] shadow-lg"
-              @click.stop="addToCart(product)"
-            >
-              <wd-icon name="cart" size="16" color="#fff" />
+            <image v-if="product.image" :src="product.image" mode="aspectFill" class="absolute inset-0 h-full w-full" />
+            <view v-else class="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5efe5,#efe7d8)] text-[#c7a96b]">
+              <wd-icon name="picture" size="28" color="#c7a96b" />
+            </view>
+            <view class="absolute left-3 top-3 rounded-full bg-white/88 px-2.5 py-1 text-[10px] text-[#b7791f] font-semibold backdrop-blur-sm">
+              {{ product.tag }}
             </view>
           </view>
-          <view class="px-1">
-            <text class="line-clamp-1 block text-sm text-slate-800 font-semibold">
+          <view class="border-t border-[#f1e8da] bg-[#fffaf3] px-3 pb-3 pt-3">
+            <text class="line-clamp-1 block text-sm text-slate-800 font-semibold leading-[1.35]">
               {{ product.name }}
             </text>
-            <text class="text-base text-[#efb239] font-bold">
+            <text class="line-clamp-2 mt-1.5 block min-h-[32px] text-xs text-slate-500 leading-[1.4]">
+              {{ product.description || '甄选好物，支持快速下单与多规格选择。' }}
+            </text>
+            <text class="mt-2 block text-base text-[#efb239] font-bold">
               ¥{{ product.price.toFixed(2) }}
             </text>
           </view>
@@ -315,6 +352,13 @@ function clearCategoryFilter() {
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

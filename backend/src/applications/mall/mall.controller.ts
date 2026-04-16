@@ -395,6 +395,12 @@ export class MallOrdersController {
   receiveOrder(@Request() req, @Param('id', ParseIntPipe) id: number) {
     return this.mallOrdersService.receive(req.user.sub, id);
   }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '删除商城订单' })
+  removeOrder(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.mallOrdersService.remove(req.user.sub, id);
+  }
 }
 
 @ApiTags('商城接口/评价')

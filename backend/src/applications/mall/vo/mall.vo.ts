@@ -44,6 +44,9 @@ export class MallProductCardVo extends ProductWithRelationsVo {
   @ApiProperty({ description: '当前用户是否已收藏', required: false })
   isFavorite?: boolean;
 
+  @ApiProperty({ description: '热门标签', nullable: true, required: false })
+  hotLabel?: string | null;
+
   @ApiProperty({
     description: 'SKU列表',
     type: [MallProductSkuCardVo],

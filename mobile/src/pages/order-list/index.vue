@@ -31,6 +31,19 @@ const orders = ref<any[]>([])
 const currentTime = ref(Date.now())
 const countdownTimer = ref<ReturnType<typeof setInterval> | null>(null)
 
+function isExpiredUnpaidOrder(order: any) {
+  if (order.status !== 'CANCELLED' || order.payStatus !== 'UNPAID' || order.payDate) {
+    return false
+  }
+
+  if (!order.expireAt) {
+    return false
+  }
+
+  const expireAt = new Date(order.expireAt).getTime()
+  return !Number.isNaN(expireAt) && expireAt <= Date.now()
+}
+
 function formatSpecs(specs: Record<string, string>) {
   const entries = Object.entries(specs || {})
   if (!entries.length)
@@ -39,6 +52,8 @@ function formatSpecs(specs: Record<string, string>) {
 }
 
 function resolveOrderStatus(order: any) {
+  if (isExpiredUnpaidOrder(order))
+    return { key: 'expired', label: '已超时' }
   if (order.status === 'CANCELLED')
     return { key: 'cancelled', label: '已取消' }
   if (order.status === 'COMPLETED')
@@ -104,16 +119,20 @@ async function loadOrders() {
 
 const filteredOrders = computed(() => orders.value)
 
+function canDeleteOrder(order: { status: string }) {
+  return order.status === 'cancelled' || order.status === 'expired'
+}
+
 function statusTone(status: string) {
   if (status === 'pending')
     return 'text-orange-500'
-  if (status === 'completed' || status === 'cancelled')
+  if (status === 'completed' || status === 'cancelled' || status === 'expired')
     return 'text-slate-400'
   return 'text-[#efb239]'
 }
 
 function headerTone(status: string) {
-  if (status === 'completed' || status === 'cancelled')
+  if (status === 'completed' || status === 'cancelled' || status === 'expired')
     return 'bg-slate-100'
   return 'bg-[#efb239]/6'
 }
@@ -203,7 +222,7 @@ async function deleteOrder(orderId: number) {
         return
       }
       try {
-        await alovaInstance.Delete(`/store/order/${orderId}`).send()
+        await alovaInstance.Delete(`/mall/orders/${orderId}`).send()
         uni.showToast({ title: '订单已删除', icon: 'success' })
         loadOrders()
       }
@@ -353,7 +372,7 @@ function buyAgain(order: typeof orders.value[number]) {
                 评价商品
               </view>
               <view
-                v-if="order.status === 'cancelled'"
+                v-if="canDeleteOrder(order)"
                 class="border border-slate-200 rounded-full border-solid bg-white px-4 py-2 text-xs text-slate-700 font-semibold"
                 @click.stop="deleteOrder(order.id)"
               >
