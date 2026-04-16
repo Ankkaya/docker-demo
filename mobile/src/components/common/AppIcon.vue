@@ -30,9 +30,16 @@ const fontIconStyle = computed(() => ({
   lineHeight: 1,
 }))
 
+const normalizedIcon = computed(() => {
+  const value = typeof props.icon === 'string' ? props.icon.trim() : ''
+  if (!value || value === '-' || value === 'i-' || value.endsWith(':'))
+    return ''
+  return value
+})
+
 const hasIconUrl = computed(() => !!props.iconUrl)
-const hasClassIcon = computed(() => !!props.icon && props.icon.startsWith('i-'))
-const hasWdIcon = computed(() => !!props.icon && !props.icon.startsWith('i-'))
+const hasClassIcon = computed(() => normalizedIcon.value.startsWith('i-'))
+const hasWdIcon = computed(() => !!normalizedIcon.value && !normalizedIcon.value.startsWith('i-'))
 </script>
 
 <template>
@@ -46,12 +53,12 @@ const hasWdIcon = computed(() => !!props.icon && !props.icon.startsWith('i-'))
   <text
     v-else-if="hasClassIcon"
     class="block shrink-0 leading-none"
-    :class="icon"
+    :class="normalizedIcon"
     :style="fontIconStyle"
   />
   <wd-icon
     v-else-if="hasWdIcon"
-    :name="icon!"
+    :name="normalizedIcon"
     :size="normalizedSize"
     :color="color || undefined"
   />

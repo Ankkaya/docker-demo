@@ -55,6 +55,17 @@ function resetProfileForm() {
   profileForm.avatarUrl = userStore.user?.avatarUrl || userStore.profile.avatarUrl || authEnvConfig.defaultAvatarUrl || ''
 }
 
+function shouldPromptProfileCompletion(loginResult: any) {
+  if (typeof loginResult?.profileCompleted === 'boolean') {
+    return !loginResult.profileCompleted
+  }
+
+  const user = loginResult?.user || userStore.user
+  const hasNickname = Boolean(user?.name || user?.username)
+  const hasAvatar = Boolean(user?.avatarUrl)
+  return !(hasNickname && hasAvatar)
+}
+
 async function resumePendingRoute(target: PendingRoute | null) {
   if (!target) {
     return
@@ -163,10 +174,15 @@ async function handleWechatLogin(phoneCode?: string) {
       refreshToken: loginResult.refreshToken,
     })
     userStore.setCurrentUser(loginResult.user)
-    userStore.closeAuthPopup()
 
-    resetProfileForm()
-    profileDialogVisible.value = true
+    if (shouldPromptProfileCompletion(loginResult)) {
+      userStore.closeAuthPopup()
+      resetProfileForm()
+      profileDialogVisible.value = true
+      return
+    }
+
+    await finalizeLogin()
   }
   catch {
     userStore.logout()

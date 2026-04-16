@@ -26,7 +26,7 @@ export default defineConfig({
     }),
     presetIcons({
       scale: 1.2,
-      warn: true,
+      warn: false,
       extraProperties: {
         'display': 'inline-block',
         'vertical-align': 'middle',

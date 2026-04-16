@@ -5,6 +5,7 @@ import { resolve } from 'path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const proxyTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:3001'
+  const stripApiPrefix = env.VITE_API_PROXY_STRIP_PREFIX !== 'false'
 
   return {
     plugins: [vue()],
@@ -31,7 +32,7 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: proxyTarget,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '')
+          rewrite: (path) => stripApiPrefix ? path.replace(/^\/api/, '') : path
         }
       }
     }

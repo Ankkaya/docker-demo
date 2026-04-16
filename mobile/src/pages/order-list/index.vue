@@ -165,7 +165,10 @@ async function cancelOrder(orderId: number) {
     msg: '取消后订单将关闭，是否继续？',
     confirmButtonText: '确认取消',
     cancelButtonText: '再想想',
-    success: async () => {
+    success: async (res) => {
+      if (res.action !== 'confirm') {
+        return
+      }
       try {
         await alovaInstance.Patch(`/mall/orders/${orderId}/cancel`, {}).send()
         uni.showToast({ title: '订单已取消', icon: 'none' })
@@ -187,6 +190,28 @@ async function confirmReceive(orderId: number) {
   catch (error: any) {
     uni.showToast({ title: error?.message || '确认收货失败', icon: 'none' })
   }
+}
+
+async function deleteOrder(orderId: number) {
+  confirm({
+    title: '删除订单',
+    msg: '删除后订单记录将无法恢复，是否继续？',
+    confirmButtonText: '确认删除',
+    cancelButtonText: '取消',
+    success: async (res) => {
+      if (res.action !== 'confirm') {
+        return
+      }
+      try {
+        await alovaInstance.Delete(`/store/order/${orderId}`).send()
+        uni.showToast({ title: '订单已删除', icon: 'success' })
+        loadOrders()
+      }
+      catch (error: any) {
+        uni.showToast({ title: error?.message || '删除订单失败', icon: 'none' })
+      }
+    },
+  })
 }
 
 function buyAgain(order: typeof orders.value[number]) {
@@ -326,6 +351,13 @@ function buyAgain(order: typeof orders.value[number]) {
                 @click.stop
               >
                 评价商品
+              </view>
+              <view
+                v-if="order.status === 'cancelled'"
+                class="border border-slate-200 rounded-full border-solid bg-white px-4 py-2 text-xs text-slate-700 font-semibold"
+                @click.stop="deleteOrder(order.id)"
+              >
+                删除订单
               </view>
             </view>
           </view>

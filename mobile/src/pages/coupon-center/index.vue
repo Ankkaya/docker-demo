@@ -188,46 +188,47 @@ onShow(() => {
 
         <template v-else>
           <view v-for="item in coupons" :key="item.id" class="offer-card">
-          <view class="flex items-start justify-between gap-3">
-            <view class="offer-card__icon">
-              <text class="i-material-symbols:local-mall text-[34rpx] text-[#efb239] leading-none" />
+            <view class="flex items-start justify-between gap-3">
+              <view class="offer-card__icon">
+                <text class="i-material-symbols:local-mall text-[34rpx] text-[#efb239] leading-none" />
+              </view>
+              <view v-if="item.tagText" class="rounded-full bg-[#fef1cf] px-3 py-1 text-[20rpx] text-[#c98500] font-bold">
+                {{ item.tagText }}
+              </view>
             </view>
-            <view v-if="item.tagText" class="rounded-full bg-[#fef1cf] px-3 py-1 text-[20rpx] text-[#c98500] font-bold">
-              {{ item.tagText }}
-            </view>
-          </view>
 
-          <view class="mt-4">
-            <text class="block text-lg font-bold">
-              {{ item.name }}
-            </text>
-            <text class="mt-2 block text-[54rpx] text-[#8b5c11] font-extrabold leading-none">
-              {{ item.discountLabel }}
-            </text>
-            <text class="mt-2 block text-sm text-slate-500 leading-6">
-              {{ item.thresholdLabel }}
-            </text>
-          </view>
-
-          <view class="mt-4 rounded-2xl bg-[#f8f7f6] px-4 py-3 text-[24rpx] text-slate-500 leading-5">
-            {{ item.description || '活动券数量有限，领取后在有效期内下单即可使用。' }}
-          </view>
-
-          <view class="mt-5 flex items-center justify-between gap-4 border-t border-dashed border-[#e2ddd3] pt-4">
-            <view class="min-w-0">
-              <text class="block text-[22rpx] text-slate-400">
-                有效期 {{ item.validPeriodText }}
+            <view class="mt-4">
+              <text class="block text-lg font-bold">
+                {{ item.name }}
               </text>
-              <text class="mt-1 block text-[22rpx] text-slate-500">
-                {{ item.remainingCount === null ? '不限量发放' : `剩余 ${item.remainingCount} 张` }} · 已领 {{ item.claimedCount }} 次
+              <text class="mt-2 block text-[54rpx] text-[#8b5c11] font-extrabold leading-none">
+                {{ item.discountLabel }}
+              </text>
+              <text class="mt-2 block text-sm text-slate-500 leading-6">
+                {{ item.thresholdLabel }}
               </text>
             </view>
-            <view
-              class="shrink-0 rounded-full px-5 py-3 text-sm font-bold"
-              :class="item.canClaim ? 'bg-[#efb239] text-white shadow-[0_10px_20px_rgba(239,178,57,0.28)]' : 'bg-slate-200 text-slate-500'"
-              @click="claimCoupon(item)"
-            >
-              {{ claimingId === item.id ? '领取中...' : item.actionText }}
+
+            <view class="mt-4 rounded-2xl bg-[#f8f7f6] px-4 py-3 text-[24rpx] text-slate-500 leading-5">
+              {{ item.description || '活动券数量有限，领取后在有效期内下单即可使用。' }}
+            </view>
+
+            <view class="mt-5 flex items-center justify-between gap-4 border-t border-dashed border-[#e2ddd3] pt-4">
+              <view class="min-w-0">
+                <text class="block text-[22rpx] text-slate-400">
+                  有效期 {{ item.validPeriodText }}
+                </text>
+                <text class="mt-1 block text-[22rpx] text-slate-500">
+                  {{ item.remainingCount === null ? '不限量发放' : `剩余 ${item.remainingCount} 张` }} · 已领 {{ item.claimedCount }} 次
+                </text>
+              </view>
+              <view
+                class="shrink-0 rounded-full px-5 py-3 text-sm font-bold"
+                :class="item.canClaim ? 'bg-[#efb239] text-white shadow-[0_10px_20px_rgba(239,178,57,0.28)]' : 'bg-slate-200 text-slate-500'"
+                @click="claimCoupon(item)"
+              >
+                {{ claimingId === item.id ? '领取中...' : item.actionText }}
+              </view>
             </view>
           </view>
         </template>

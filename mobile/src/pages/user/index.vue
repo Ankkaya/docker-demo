@@ -14,6 +14,7 @@ definePage({
 
 const router = useRouter()
 const userStore = useUserStore()
+const message = useMessage()
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const balanceSummary = ref({
   availableBalance: '0.00',
@@ -34,7 +35,7 @@ const balanceAmountText = computed(() => {
 
 const orderMenus = ref([
   { key: 'pay', label: '待付款', icon: 'account_balance_wallet', badge: '' },
-  { key: 'ship', label: '待发货', icon: 'package_2', badge: '2' },
+  { key: 'ship', label: '待发货', icon: 'package_2', badge: '' },
   { key: 'receive', label: '待收货', icon: 'local_shipping', badge: '' },
   { key: 'afterSale', label: '售后', icon: 'chat_error', badge: '' },
 ])
@@ -123,6 +124,27 @@ function handleLogout() {
   router.pushTab({ name: 'home' })
 }
 
+function confirmLogout() {
+  message.show({
+    type: 'confirm',
+    title: '退出登录',
+    msg: '确定要退出当前账号吗？',
+    showCancelButton: true,
+    cancelButtonText: '取消',
+    confirmButtonText: '退出',
+    cancelButtonProps: {
+      round: false,
+    },
+    confirmButtonProps: {
+      round: false,
+    },
+  }).then(({ action }) => {
+    if (action === 'confirm') {
+      handleLogout()
+    }
+  }).catch(() => {})
+}
+
 async function loadBalanceSummary() {
   if (!isLoggedIn.value) {
     balanceSummary.value.availableBalance = '0.00'
@@ -135,6 +157,47 @@ async function loadBalanceSummary() {
   }
   catch {
     balanceSummary.value.availableBalance = userStore.user?.customer?.availableBalance || '0.00'
+  }
+}
+
+function setOrderMenuBadge(key: string, count: number) {
+  const menu = orderMenus.value.find(item => item.key === key)
+  if (!menu) {
+    return
+  }
+  menu.badge = count > 0 ? String(count) : ''
+}
+
+async function loadOrderMenuStats() {
+  if (!isLoggedIn.value) {
+    orderMenus.value.forEach((item) => {
+      item.badge = ''
+    })
+    return
+  }
+
+  try {
+    const [pendingOrders, shippingOrders, receivingOrders] = await Promise.all([
+      (Apis.general as any).MallOrdersController_findOrders({
+        params: { status: 'pending' },
+      }).send(),
+      (Apis.general as any).MallOrdersController_findOrders({
+        params: { status: 'shipping' },
+      }).send(),
+      (Apis.general as any).MallOrdersController_findOrders({
+        params: { status: 'receiving' },
+      }).send(),
+    ])
+
+    setOrderMenuBadge('pay', Array.isArray(pendingOrders) ? pendingOrders.length : 0)
+    setOrderMenuBadge('ship', Array.isArray(shippingOrders) ? shippingOrders.length : 0)
+    setOrderMenuBadge('receive', Array.isArray(receivingOrders) ? receivingOrders.length : 0)
+    setOrderMenuBadge('afterSale', 0)
+  }
+  catch {
+    orderMenus.value.forEach((item) => {
+      item.badge = ''
+    })
   }
 }
 
@@ -219,6 +282,7 @@ function getServiceIconClass(key: string) {
 
 onShow(() => {
   loadBalanceSummary()
+  loadOrderMenuStats()
   loadServiceMenuStats()
 })
 </script>
@@ -429,7 +493,7 @@ onShow(() => {
       <view v-if="isLoggedIn" class="px-4 pb-4">
         <view
           class="flex items-center justify-center border border-red-100 rounded-xl bg-white py-4 text-sm text-red-500 font-semibold shadow-sm"
-          @click="handleLogout"
+          @click="confirmLogout"
         >
           退出登录
         </view>

@@ -285,6 +285,7 @@ onShow(() => {
               </view>
             </view>
           </view>
+          </view>
         </template>
       </view>
     </scroll-view>
