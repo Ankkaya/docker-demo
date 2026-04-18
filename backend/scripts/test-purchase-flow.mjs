@@ -1,6 +1,7 @@
 const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
 const USERNAME = process.env.TEST_USERNAME || 'admin';
 const PASSWORD = process.env.TEST_PASSWORD || '123456';
+const PRODUCT_COUNT = Math.max(Number.parseInt(process.env.TEST_PRODUCT_COUNT || '40', 10) || 40, 40);
 
 const runId = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14);
 
@@ -164,111 +165,87 @@ async function createReceipt(token, payload) {
 }
 
 function buildProducts(categoryA, categoryB, unit, brand) {
-  const productASeed = `product-a-${runId}`;
-  const productBSeed = `product-b-${runId}`;
+  return Array.from({ length: PRODUCT_COUNT }, (_, index) => {
+    const productNo = index + 1;
+    const isDigitalProduct = index % 2 === 0;
+    const category = isDigitalProduct ? categoryA : categoryB;
+    const productSeed = `product-${productNo}-${runId}`;
+    const productNoText = String(productNo).padStart(2, '0');
 
-  return [
-    {
-      name: `测试商品A-${runId}`,
-      categoryId: categoryA.id,
+    if (isDigitalProduct) {
+      const storageOptions = ['64G', '128G', '256G'];
+
+      return {
+        name: `测试商品A${productNoText}-${runId}`,
+        categoryId: category.id,
+        brandId: brand.id,
+        unitId: unit.id,
+        description: `采购流程测试商品A-${productNoText}`,
+        detail: `<p>自动化测试商品A-${productNoText}</p>`,
+        mainImage: `https://picsum.photos/seed/${productSeed}-main/960/960`,
+        images: [
+          `https://picsum.photos/seed/${productSeed}-gallery-1/960/960`,
+          `https://picsum.photos/seed/${productSeed}-gallery-2/960/960`,
+          `https://picsum.photos/seed/${productSeed}-gallery-3/960/960`,
+        ],
+        isEnabled: true,
+        mallEnabled: false,
+        specTemplate: [
+          { name: '颜色', values: ['黑色', '白色', '深空灰'] },
+          { name: '容量', values: storageOptions },
+        ],
+        skus: storageOptions.map((storage, skuIndex) => ({
+          specs: [
+            { name: '颜色', value: skuIndex % 2 === 0 ? '黑色' : '白色' },
+            { name: '容量', value: storage },
+          ],
+          costPrice: 120 + productNo * 4 + skuIndex * 12,
+          salePrice: 168 + productNo * 5 + skuIndex * 15,
+          marketPrice: 188 + productNo * 5 + skuIndex * 18,
+          image: `https://picsum.photos/seed/${productSeed}-sku-${skuIndex + 1}/960/960`,
+          barcode: `A${runId}${productNoText}${skuIndex + 1}`,
+          isDefault: skuIndex === 0,
+          sort: skuIndex + 1,
+        })),
+      };
+    }
+
+    const flavorOptions = ['原味', '草莓', '芒果'];
+
+    return {
+      name: `测试商品B${productNoText}-${runId}`,
+      categoryId: category.id,
       brandId: brand.id,
       unitId: unit.id,
-      description: '采购流程测试商品A',
-      detail: '<p>自动化测试商品A</p>',
-      mainImage: `https://picsum.photos/seed/${productASeed}-main/960/960`,
+      description: `采购流程测试商品B-${productNoText}`,
+      detail: `<p>自动化测试商品B-${productNoText}</p>`,
+      mainImage: `https://picsum.photos/seed/${productSeed}-main/960/960`,
       images: [
-        `https://picsum.photos/seed/${productASeed}-gallery-1/960/960`,
-        `https://picsum.photos/seed/${productASeed}-gallery-2/960/960`,
-        `https://picsum.photos/seed/${productASeed}-gallery-3/960/960`,
+        `https://picsum.photos/seed/${productSeed}-gallery-1/960/960`,
+        `https://picsum.photos/seed/${productSeed}-gallery-2/960/960`,
+        `https://picsum.photos/seed/${productSeed}-gallery-3/960/960`,
       ],
       isEnabled: true,
       mallEnabled: false,
       specTemplate: [
-        { name: '颜色', values: ['黑色', '白色'] },
-        { name: '容量', values: ['64G', '128G'] },
+        { name: '口味', values: flavorOptions },
       ],
-      skus: [
-        {
-          specs: [
-            { name: '颜色', value: '黑色' },
-            { name: '容量', value: '64G' },
-          ],
-          costPrice: 120,
-          salePrice: 168,
-          marketPrice: 188,
-          image: `https://picsum.photos/seed/${productASeed}-sku-1/960/960`,
-          barcode: `A${runId}01`,
-          isDefault: true,
-          sort: 1,
-        },
-        {
-          specs: [
-            { name: '颜色', value: '白色' },
-            { name: '容量', value: '128G' },
-          ],
-          costPrice: 135,
-          salePrice: 188,
-          marketPrice: 208,
-          image: `https://picsum.photos/seed/${productASeed}-sku-2/960/960`,
-          barcode: `A${runId}02`,
-          sort: 2,
-        },
-      ],
-    },
-    {
-      name: `测试商品B-${runId}`,
-      categoryId: categoryB.id,
-      brandId: brand.id,
-      unitId: unit.id,
-      description: '采购流程测试商品B',
-      detail: '<p>自动化测试商品B</p>',
-      mainImage: `https://picsum.photos/seed/${productBSeed}-main/960/960`,
-      images: [
-        `https://picsum.photos/seed/${productBSeed}-gallery-1/960/960`,
-        `https://picsum.photos/seed/${productBSeed}-gallery-2/960/960`,
-        `https://picsum.photos/seed/${productBSeed}-gallery-3/960/960`,
-      ],
-      isEnabled: true,
-      mallEnabled: false,
-      specTemplate: [
-        { name: '口味', values: ['原味', '草莓', '芒果'] },
-      ],
-      skus: [
-        {
-          specs: [{ name: '口味', value: '原味' }],
-          costPrice: 18,
-          salePrice: 29.9,
-          marketPrice: 35,
-          image: `https://picsum.photos/seed/${productBSeed}-sku-1/960/960`,
-          barcode: `B${runId}01`,
-          isDefault: true,
-          sort: 1,
-        },
-        {
-          specs: [{ name: '口味', value: '草莓' }],
-          costPrice: 19,
-          salePrice: 31.9,
-          marketPrice: 36,
-          image: `https://picsum.photos/seed/${productBSeed}-sku-2/960/960`,
-          barcode: `B${runId}02`,
-          sort: 2,
-        },
-        {
-          specs: [{ name: '口味', value: '芒果' }],
-          costPrice: 20,
-          salePrice: 32.9,
-          marketPrice: 37,
-          image: `https://picsum.photos/seed/${productBSeed}-sku-3/960/960`,
-          barcode: `B${runId}03`,
-          sort: 3,
-        },
-      ],
-    },
-  ];
+      skus: flavorOptions.map((flavor, skuIndex) => ({
+        specs: [{ name: '口味', value: flavor }],
+        costPrice: 18 + productNo + skuIndex,
+        salePrice: 29.9 + productNo + skuIndex * 1.5,
+        marketPrice: 35 + productNo + skuIndex * 2,
+        image: `https://picsum.photos/seed/${productSeed}-sku-${skuIndex + 1}/960/960`,
+        barcode: `B${runId}${productNoText}${skuIndex + 1}`,
+        isDefault: skuIndex === 0,
+        sort: skuIndex + 1,
+      })),
+    };
+  });
 }
 
 async function main() {
-  console.log(`开始执行采购流程测试，BASE_URL=${BASE_URL}，runId=${runId}`);
+  console.log(`开始执行采购流程测试，BASE_URL=${BASE_URL}，runId=${runId}，productCount=${PRODUCT_COUNT}`);
 
   const token = await login();
   console.log('管理员登录成功');
@@ -291,12 +268,12 @@ async function main() {
     createdProducts.push(created);
   }
 
-  console.log('商品档案创建成功');
+  console.log(`商品档案创建成功，共 ${createdProducts.length} 个商品`);
 
   const purchaseItems = createdProducts.flatMap((product, productIndex) =>
     product.skus.map((sku, skuIndex) => ({
       skuId: sku.id,
-      quantity: productIndex === 0 ? 10 + skuIndex * 5 : 20 + skuIndex * 3,
+      quantity: 10 + (productIndex % 5) * 4 + skuIndex * 3,
       price: Number(sku.costPrice),
     })),
   );
@@ -330,6 +307,8 @@ async function main() {
   const summary = {
     runId,
     baseUrl: BASE_URL,
+    productCount: createdProducts.length,
+    skuCount: purchaseItems.length,
     unit: { id: unit.id, name: unit.name, code: unit.code },
     brand: { id: brand.id, name: brand.name },
     warehouse: { id: warehouse.id, name: warehouse.name, code: warehouse.code },

@@ -15,6 +15,7 @@ declare module 'vue' {
     BaseBaseNavbar: typeof import('./components/base/BaseNavbar.vue')['default']
     BaseBaseStatusbar: typeof import('./components/base/BaseStatusbar.vue')['default']
     CommonAppIcon: typeof import('./components/common/AppIcon.vue')['default']
+    CommonPullLoadContainer: typeof import('./components/common/PullLoadContainer.vue')['default']
     DemoBlock: typeof import('./components/DemoBlock.vue')['default']
     GlobalLoading: typeof import('./components/GlobalLoading.vue')['default']
     GlobalMessage: typeof import('./components/GlobalMessage.vue')['default']
