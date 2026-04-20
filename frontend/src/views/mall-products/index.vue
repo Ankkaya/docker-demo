@@ -27,6 +27,25 @@
     </n-card>
 
     <n-card>
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <n-space>
+          <n-button type="error" :disabled="!checkedRowKeys.length || batchLoading" @click="handleBatchDelete">
+            批量删除
+          </n-button>
+          <n-button :disabled="!checkedRowKeys.length || batchLoading" @click="handleBatchToggleMall(true)">
+            批量上架
+          </n-button>
+          <n-button :disabled="!checkedRowKeys.length || batchLoading" @click="handleBatchToggleMall(false)">
+            批量下架
+          </n-button>
+          <n-button type="warning" :disabled="!checkedRowKeys.length || batchLoading" @click="handleBatchHot(true)">
+            批量热门
+          </n-button>
+        </n-space>
+        <span class="text-sm text-gray-500">
+          已选择 {{ checkedRowKeys.length }} 项
+        </span>
+      </div>
       <div class="mb-4 flex flex-wrap gap-3 text-sm text-gray-600">
         <span>待完善 {{ summary.pendingInfo }}</span>
         <span>待上架 {{ summary.ready }}</span>
@@ -39,7 +58,9 @@
         :data="productList"
         :loading="loading"
         :pagination="pagination"
+        :row-key="(row: Product) => row.id"
         :scroll-x="tableScrollX"
+        v-model:checked-row-keys="checkedRowKeys"
         remote
         @update:page="handlePageChange"
         @update:page-size="handlePageSizeChange"
@@ -51,10 +72,10 @@
 <script setup lang="ts">
 import { h, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NButton, NImage, NSpace, NSwitch, NTag, useMessage } from 'naive-ui'
+import { NButton, NImage, NSpace, NSwitch, NTag, useDialog, useMessage } from 'naive-ui'
 import type { DataTableColumns } from 'naive-ui'
 import QueryForm from '@/components/common/QueryForm.vue'
-import { getProducts, updateProductMallInfo } from '@/api/product'
+import { deleteProduct, getProducts, updateProductMallInfo } from '@/api/product'
 import { getBrands } from '@/api/brand'
 import { getCategories } from '@/api/category'
 import type { Brand, Category } from '@/types/basic-data'
@@ -63,6 +84,7 @@ import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/util
 
 const router = useRouter()
 const message = useMessage()
+const dialog = useDialog()
 
 const searchForm = reactive({
   keyword: '',
@@ -83,8 +105,11 @@ const mallStatusOptions = [
 ]
 
 const loading = ref(false)
+const batchLoading = ref(false)
 const productList = ref<Product[]>([])
+const checkedRowKeys = ref<number[]>([])
 const togglingIds = ref<number[]>([])
+const hotTogglingIds = ref<number[]>([])
 const pagination = reactive({
   page: 1,
   pageSize: 10,
@@ -132,6 +157,7 @@ const getMallStatusTag = (status: NonNullable<Product['mallStatus']>) => {
 }
 
 const columns: DataTableColumns<Product> = autoFitTableColumns([
+  { type: 'selection', fixed: 'left' },
   {
     title: '商城商品',
     key: 'name',
@@ -164,6 +190,22 @@ const columns: DataTableColumns<Product> = autoFitTableColumns([
     key: 'totalAvailable',
     render: (row) => h(NTag, { type: (row.totalAvailable || 0) > 0 ? 'success' : 'default', size: 'small' }, {
       default: () => String(row.totalAvailable || 0),
+    }),
+  },
+  {
+    title: '热门',
+    key: 'isHot',
+    render: (row) => h(NSpace, { align: 'center', size: 8 }, {
+      default: () => [
+        h(NSwitch, {
+          value: row.mallInfo?.isHot ?? false,
+          loading: hotTogglingIds.value.includes(row.id),
+          onUpdateValue: (value: boolean) => handleToggleHot(row, value),
+        }),
+        h(NTag, { type: row.mallInfo?.isHot ? 'warning' : 'default', size: 'small' }, {
+          default: () => row.mallInfo?.isHot ? '热门' : '普通',
+        }),
+      ],
     }),
   },
   {
@@ -250,6 +292,7 @@ const loadData = async () => {
     summary.noStock = rows.filter((item) => item.mallStatus === 'NO_STOCK').length
     summary.disabled = rows.filter((item) => item.mallStatus === 'DISABLED').length
     pagination.itemCount = searchForm.mallStatus ? productList.value.length : res.meta.total
+    checkedRowKeys.value = checkedRowKeys.value.filter((id) => productList.value.some((item) => item.id === id))
   } finally {
     loading.value = false
   }
@@ -287,23 +330,112 @@ const handleEdit = (row: Product) => {
   router.push(`/products/mall-edit/${row.id}`)
 }
 
+const getMallEnableBlockReason = (row: Product) => {
+  if (!row.isEnabled) return '母体商品未启用'
+  if ((row.totalAvailable || 0) <= 0) return '当前无可用库存'
+  if (!isMallInfoComplete(row)) return '商城信息未完善'
+  return ''
+}
+
+const getSelectedRows = () => productList.value.filter((item) => checkedRowKeys.value.includes(item.id))
+
+const executeBatchAction = async (
+  title: string,
+  content: string,
+  action: () => Promise<{ success: number; failed: number }>,
+) => {
+  dialog.warning({
+    title,
+    content,
+    positiveText: '确认',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      batchLoading.value = true
+      try {
+        const result = await action()
+        if (result.failed > 0) {
+          message.warning(`${title}完成，成功 ${result.success} 项，失败 ${result.failed} 项`)
+        } else {
+          message.success(`${title}成功，共处理 ${result.success} 项`)
+        }
+        checkedRowKeys.value = []
+        await loadData()
+      } finally {
+        batchLoading.value = false
+      }
+    },
+  })
+}
+
+const handleBatchDelete = () => {
+  if (!checkedRowKeys.value.length) return
+  const rows = getSelectedRows()
+  executeBatchAction(
+    '批量删除',
+    `确定删除选中的 ${rows.length} 个商品吗？删除后无法恢复。`,
+    async () => {
+      const results = await Promise.allSettled(rows.map((row) => deleteProduct(row.id)))
+      return {
+        success: results.filter((item) => item.status === 'fulfilled').length,
+        failed: results.filter((item) => item.status === 'rejected').length,
+      }
+    },
+  )
+}
+
+const handleBatchToggleMall = (nextValue: boolean) => {
+  if (!checkedRowKeys.value.length) return
+  const rows = getSelectedRows()
+  const invalidRows = nextValue
+    ? rows.filter((row) => getMallEnableBlockReason(row))
+    : []
+
+  if (invalidRows.length) {
+    message.warning(`有 ${invalidRows.length} 个商品不满足上架条件，请先处理后重试`)
+    return
+  }
+
+  executeBatchAction(
+    nextValue ? '批量上架' : '批量下架',
+    `确定${nextValue ? '上架' : '下架'}选中的 ${rows.length} 个商品吗？`,
+    async () => {
+      const results = await Promise.allSettled(rows.map((row) => updateProductMallInfo(row.id, {
+        mallEnabled: nextValue,
+      })))
+      return {
+        success: results.filter((item) => item.status === 'fulfilled').length,
+        failed: results.filter((item) => item.status === 'rejected').length,
+      }
+    },
+  )
+}
+
+const handleBatchHot = (nextValue: boolean) => {
+  if (!checkedRowKeys.value.length) return
+  const rows = getSelectedRows()
+  executeBatchAction(
+    nextValue ? '批量设为热门' : '批量取消热门',
+    `确定将选中的 ${rows.length} 个商品${nextValue ? '设为热门' : '取消热门'}吗？`,
+    async () => {
+      const results = await Promise.allSettled(rows.map((row) => updateProductMallInfo(row.id, {
+        isHot: nextValue,
+      })))
+      return {
+        success: results.filter((item) => item.status === 'fulfilled').length,
+        failed: results.filter((item) => item.status === 'rejected').length,
+      }
+    },
+  )
+}
+
 const handleToggleMall = async (row: Product, nextValue: boolean) => {
   if (row.mallEnabled === nextValue || togglingIds.value.includes(row.id)) {
     return
   }
 
-  if (nextValue && !row.isEnabled) {
-    message.warning('母体商品未启用，不能上架商城')
-    return
-  }
-
-  if (nextValue && (row.totalAvailable || 0) <= 0) {
-    message.warning('当前无可用库存，不能上架商城')
-    return
-  }
-
-  if (nextValue && !isMallInfoComplete(row)) {
-    message.warning('请先完善商城名称、主图和售价')
+  const blockReason = nextValue ? getMallEnableBlockReason(row) : ''
+  if (blockReason) {
+    message.warning(`${blockReason}，不能上架商城`)
     return
   }
 
@@ -318,6 +450,25 @@ const handleToggleMall = async (row: Product, nextValue: boolean) => {
     message.error(nextValue ? '上架失败' : '下架失败')
   } finally {
     togglingIds.value = togglingIds.value.filter((id) => id !== row.id)
+  }
+}
+
+const handleToggleHot = async (row: Product, nextValue: boolean) => {
+  if ((row.mallInfo?.isHot ?? false) === nextValue || hotTogglingIds.value.includes(row.id)) {
+    return
+  }
+
+  try {
+    hotTogglingIds.value = [...hotTogglingIds.value, row.id]
+    await updateProductMallInfo(row.id, {
+      isHot: nextValue,
+    })
+    message.success(nextValue ? '已设为热门' : '已取消热门')
+    await loadData()
+  } catch (error) {
+    message.error(nextValue ? '设置热门失败' : '取消热门失败')
+  } finally {
+    hotTogglingIds.value = hotTogglingIds.value.filter((id) => id !== row.id)
   }
 }
 

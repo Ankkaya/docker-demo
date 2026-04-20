@@ -87,7 +87,7 @@ function mapCategories(list: CategoryTreeVo[]) {
 }
 
 function mapHotProducts(response: MallHotProductListResponseVo) {
-  const list = Array.isArray(response?.list) ? response.list.slice(0, 4) : []
+  const list = Array.isArray(response?.list) ? response.list.slice(0, 20) : []
   if (!list.length) {
     return
   }
@@ -108,7 +108,7 @@ async function loadHomeData() {
       Apis.general.MallHomeController_findCategories().send(),
       Apis.general.MallProductsController_findHotProducts({
         params: {
-          limit: 4,
+          limit: 20,
         },
       }).send(),
     ])
@@ -172,6 +172,15 @@ function onProductClick(product: typeof hotProducts.value[0]) {
     name: 'product-detail',
     params: {
       id: String(product.id),
+    },
+  })
+}
+
+function goToProductList() {
+  router.push({
+    name: 'product-list',
+    params: {
+      title: '全部商品',
     },
   })
 }
@@ -253,7 +262,7 @@ function onProductClick(product: typeof hotProducts.value[0]) {
     </view>
 
     <!-- 热门推荐 -->
-    <scroll-view scroll-y class="pb-10">
+    <scroll-view scroll-y class="pb-5">
       <view class="px-4 pt-8">
         <view class="mb-4 flex items-center justify-between">
           <text class="text-base text-slate-900 font-bold">
@@ -289,6 +298,15 @@ function onProductClick(product: typeof hotProducts.value[0]) {
               </view>
             </view>
           </view>
+        </view>
+        <view v-if="hotProducts.length" class="pt-5">
+          <app-button
+            custom-class="home-hot-more__action"
+            custom-style="width:100%;height:76rpx;"
+            @click="goToProductList"
+          >
+            查看更多商品
+          </app-button>
         </view>
         <view v-else class="rounded-xl bg-white px-4 py-8 text-center text-sm text-slate-400 shadow-sm">
           暂无热门商品
@@ -337,5 +355,15 @@ function onProductClick(product: typeof hotProducts.value[0]) {
   border-radius: 9999px;
   background: #efb239;
   color: #fff;
+}
+
+:deep(.home-hot-more__action) {
+  border: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(120, 93, 47, 0.08);
+  color: #8c6a2f;
+  font-size: 28rpx;
+  font-weight: 700;
 }
 </style>

@@ -2,6 +2,7 @@
 /**
  * 商品列表页 - 参考 Stitch 设计稿
  */
+import PullLoadContainer from '@/components/common/PullLoadContainer.vue'
 
 definePage({
   name: 'product-list',
@@ -40,11 +41,32 @@ interface ProductListItem {
   description: string
   tag: string
   ratio: string
-  offset: string
+  estimatedHeight: number
   skuId: number | null
 }
 
 const products = ref<ProductListItem[]>([])
+const waterfallColumns = computed(() => {
+  const left: ProductListItem[] = []
+  const right: ProductListItem[] = []
+  let leftHeight = 0
+  let rightHeight = 0
+
+  products.value.forEach((product) => {
+    if (leftHeight <= rightHeight) {
+      left.push(product)
+      leftHeight += product.estimatedHeight
+      return
+    }
+
+    right.push(product)
+    rightHeight += product.estimatedHeight
+  })
+
+  return { left, right }
+})
+const leftColumnProducts = computed(() => waterfallColumns.value.left)
+const rightColumnProducts = computed(() => waterfallColumns.value.right)
 const hasCategoryFilter = computed(() => categoryId.value !== null)
 const hasKeywordFilter = computed(() => Boolean(keyword.value))
 const hasActiveContext = computed(() => hasCategoryFilter.value || hasKeywordFilter.value)
@@ -83,14 +105,20 @@ function decodeRouteText(value: unknown) {
   }
 }
 
-function getCardOffset(index: number) {
-  const offsets = ['', 'pt-4', '-mt-2', '', '-mt-3', 'pt-3']
-  return offsets[index % offsets.length]
-}
-
 function getCardRatio(index: number) {
   const ratios = ['3/3.8', '3/3.2', '3/3.4', '1/1', '3/3.1', '3/3.6']
   return ratios[index % ratios.length]
+}
+
+function getEstimatedCardHeight(description: string, ratio: string) {
+  const [width, height] = ratio.split('/').map(value => Number(value))
+  const safeWidth = width > 0 ? width : 1
+  const safeHeight = height > 0 ? height : 1
+  const imageHeight = (safeHeight / safeWidth) * 180
+  const textLines = description ? Math.min(2, Math.ceil(description.length / 18)) : 1
+  const descriptionHeight = textLines * 18
+
+  return imageHeight + descriptionHeight + 122
 }
 
 function resolveProductImage(item: any, defaultSku: any) {
@@ -120,20 +148,22 @@ function resolveProductImage(item: any, defaultSku: any) {
 function normalizeProduct(item: any, index: number): ProductListItem {
   const skus = Array.isArray(item?.skus) ? item.skus : []
   const defaultSku = skus.find((sku: any) => sku.isDefault) || skus[0] || null
+  const description = typeof item?.description === 'string' ? item.description.trim() : ''
+  const ratio = getCardRatio(index)
 
   return {
     id: Number(item?.id || 0),
     name: item?.name || '未命名商品',
     price: Number(item?.minPrice || 0),
     image: resolveProductImage(item, defaultSku),
-    description: typeof item?.description === 'string' ? item.description.trim() : '',
+    description,
     tag: typeof item?.hotLabel === 'string' && item.hotLabel
       ? item.hotLabel
       : typeof item?.mallInfo?.hotLabel === 'string' && item.mallInfo.hotLabel
           ? item.mallInfo.hotLabel
           : '在售',
-    ratio: getCardRatio(index),
-    offset: getCardOffset(index),
+    ratio,
+    estimatedHeight: getEstimatedCardHeight(description, ratio),
     skuId: defaultSku?.id ? Number(defaultSku.id) : null,
   }
 }
@@ -189,6 +219,12 @@ async function loadProducts(reset = false) {
   }
 }
 
+async function reloadProducts() {
+  page.value = 1
+  hasMore.value = true
+  await loadProducts(true)
+}
+
 onLoad((options) => {
   if (options?.title) {
     pageTitle.value = decodeRouteText(options.title)
@@ -217,15 +253,7 @@ function setFilter(key: string) {
   }
 
   activeFilter.value = key
-  loadProducts(true)
-}
-
-function goBack() {
-  router.back()
-}
-
-function goSearch() {
-  router.push({ name: 'search' })
+  reloadProducts()
 }
 
 function onProductClick(product: ProductListItem) {
@@ -237,15 +265,29 @@ function onProductClick(product: ProductListItem) {
   })
 }
 
-async function addToCart(product: ProductListItem) {
-  onProductClick(product)
-}
-
-function handleScrollToLower() {
+function handleLoadMore() {
   if (loading.value || loadingMore.value || !hasMore.value) {
     return
   }
   loadProducts()
+}
+
+async function handleRefresh(ctx?: { done: () => void }) {
+  try {
+    await reloadProducts()
+  }
+  finally {
+    ctx?.done()
+  }
+}
+
+async function handleContainerLoadMore(ctx?: { done: () => void }) {
+  try {
+    await handleLoadMore()
+  }
+  finally {
+    ctx?.done()
+  }
 }
 
 function clearCategoryFilter() {
@@ -262,13 +304,19 @@ function clearCategoryFilter() {
       keyword: keyword.value || '',
     },
   })
-  loadProducts(true)
+  reloadProducts()
 }
 </script>
 
 <template>
-  <view class="flex flex-col bg-[#f8f7f6]">
-    <scroll-view scroll-y class="flex-1" @scrolltolower="handleScrollToLower">
+  <view class="h-screen flex flex-col bg-[#f8f7f6]">
+    <PullLoadContainer
+      class="flex-1"
+      :loading-more="loadingMore"
+      :has-more="hasMore"
+      @refresh="handleRefresh"
+      @load-more="handleContainerLoadMore"
+    >
       <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-4">
         <view
           v-for="item in filters" :key="item.key"
@@ -300,42 +348,76 @@ function clearCategoryFilter() {
       <view v-if="products.length === 0" class="px-4 py-12 text-center text-sm text-slate-400">
         暂无商品
       </view>
-      <view v-else class="grid grid-cols-2 gap-4 px-4 pb-24">
-        <view
-          v-for="product in products" :key="product.id"
-          class="overflow-hidden rounded-[24rpx] border border-[#eadfce] bg-[#fffaf3] shadow-[0_10px_24px_rgba(120,93,47,0.08)]"
-          :class="product.offset"
-          @click="onProductClick(product)"
-        >
+      <view v-else class="flex items-start gap-4 px-4 pb-24">
+        <view class="min-w-0 flex flex-1 flex-col gap-4">
           <view
-            class="relative overflow-hidden rounded-t-[24rpx] bg-slate-200"
-            :style="`aspect-ratio:${product.ratio}`"
+            v-for="product in leftColumnProducts" :key="product.id"
+            class="overflow-hidden rounded-[24rpx] border border-[#eadfce] bg-[#fffaf3] shadow-[0_10px_24px_rgba(120,93,47,0.08)]"
+            @click="onProductClick(product)"
           >
-            <image v-if="product.image" :src="product.image" mode="aspectFill" class="absolute inset-0 h-full w-full" />
-            <view v-else class="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5efe5,#efe7d8)] text-[#c7a96b]">
-              <wd-icon name="picture" size="28" color="#c7a96b" />
+            <view
+              class="relative overflow-hidden rounded-t-[24rpx] bg-slate-200"
+              :style="`aspect-ratio:${product.ratio}`"
+            >
+              <image v-if="product.image" :src="product.image" mode="aspectFill" class="absolute inset-0 h-full w-full" />
+              <view v-else class="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5efe5,#efe7d8)] text-[#c7a96b]">
+                <wd-icon name="picture" size="28" color="#c7a96b" />
+              </view>
+              <view class="absolute left-3 top-3 rounded-full bg-white/88 px-2.5 py-1 text-[10px] text-[#b7791f] font-semibold backdrop-blur-sm">
+                {{ product.tag }}
+              </view>
             </view>
-            <view class="absolute left-3 top-3 rounded-full bg-white/88 px-2.5 py-1 text-[10px] text-[#b7791f] font-semibold backdrop-blur-sm">
-              {{ product.tag }}
+            <view class="border-t border-[#f1e8da] bg-[#fffaf3] px-3 pb-3 pt-3">
+              <text class="line-clamp-1 block text-sm text-slate-800 font-semibold leading-[1.35]">
+                {{ product.name }}
+              </text>
+              <text class="line-clamp-2 mt-1.5 block min-h-[32px] text-xs text-slate-500 leading-[1.4]">
+                {{ product.description || '甄选好物，支持快速下单与多规格选择。' }}
+              </text>
+              <text class="mt-2 block text-base text-[#efb239] font-bold">
+                ¥{{ product.price.toFixed(2) }}
+              </text>
             </view>
-          </view>
-          <view class="border-t border-[#f1e8da] bg-[#fffaf3] px-3 pb-3 pt-3">
-            <text class="line-clamp-1 block text-sm text-slate-800 font-semibold leading-[1.35]">
-              {{ product.name }}
-            </text>
-            <text class="line-clamp-2 mt-1.5 block min-h-[32px] text-xs text-slate-500 leading-[1.4]">
-              {{ product.description || '甄选好物，支持快速下单与多规格选择。' }}
-            </text>
-            <text class="mt-2 block text-base text-[#efb239] font-bold">
-              ¥{{ product.price.toFixed(2) }}
-            </text>
           </view>
         </view>
-        <view v-if="loadingMore" class="col-span-2 py-6 text-center text-sm text-slate-400">
-          正在加载更多...
+        <view class="min-w-0 flex flex-1 flex-col gap-4">
+          <view
+            v-for="product in rightColumnProducts" :key="product.id"
+            class="overflow-hidden rounded-[24rpx] border border-[#eadfce] bg-[#fffaf3] shadow-[0_10px_24px_rgba(120,93,47,0.08)]"
+            @click="onProductClick(product)"
+          >
+            <view
+              class="relative overflow-hidden rounded-t-[24rpx] bg-slate-200"
+              :style="`aspect-ratio:${product.ratio}`"
+            >
+              <image v-if="product.image" :src="product.image" mode="aspectFill" class="absolute inset-0 h-full w-full" />
+              <view v-else class="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5efe5,#efe7d8)] text-[#c7a96b]">
+                <wd-icon name="picture" size="28" color="#c7a96b" />
+              </view>
+              <view class="absolute left-3 top-3 rounded-full bg-white/88 px-2.5 py-1 text-[10px] text-[#b7791f] font-semibold backdrop-blur-sm">
+                {{ product.tag }}
+              </view>
+            </view>
+            <view class="border-t border-[#f1e8da] bg-[#fffaf3] px-3 pb-3 pt-3">
+              <text class="line-clamp-1 block text-sm text-slate-800 font-semibold leading-[1.35]">
+                {{ product.name }}
+              </text>
+              <text class="line-clamp-2 mt-1.5 block min-h-[32px] text-xs text-slate-500 leading-[1.4]">
+                {{ product.description || '甄选好物，支持快速下单与多规格选择。' }}
+              </text>
+              <text class="mt-2 block text-base text-[#efb239] font-bold">
+                ¥{{ product.price.toFixed(2) }}
+              </text>
+            </view>
+          </view>
         </view>
       </view>
-    </scroll-view>
+      <template #loadMore="{ loadingMore: slotLoadingMore, hasMore: slotHasMore }">
+        <view v-if="products.length" class="py-6 text-center text-xs text-slate-400">
+          {{ slotLoadingMore ? '正在加载更多...' : slotHasMore ? `当前筛选：${filters.find(item => item.key === activeFilter)?.label || '推荐'}` : '没有更多商品了' }}
+        </view>
+      </template>
+    </PullLoadContainer>
   </view>
 </template>
 
