@@ -11,9 +11,11 @@ import {
   OrderStatus,
   ShipStatus,
   ShipmentStatus,
+  OrderType,
   Prisma,
 } from '@prisma/client';
 import { ShipmentVo, ShipmentDetailVo } from './vo/shipment.vo';
+import { CartsService } from '@/domains/carts/carts.service';
 
 function generateShipmentNo(): string {
   const date = new Date();
@@ -28,7 +30,10 @@ function generateShipmentNo(): string {
 
 @Injectable()
 export class ShipmentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cartsService: CartsService,
+  ) {}
 
   async create(createDto: CreateShipmentDto, userId: number) {
     const { orderId, items, logisticsCompany, trackingNo, remark } = createDto;
@@ -73,6 +78,10 @@ export class ShipmentsService {
       throw new BadRequestException('发货商品必须与订单待发货商品一致');
     }
 
+    // MALL 订单在创建时已通过 carts.lockSkuInventory 占用 locked，校验时需放宽到 quantity 维度
+    // （locked 已扣减 available，若仍按 available 校验会导致 mall 订单永远发不出去）
+    const isMallOrder = order.type === OrderType.MALL;
+
     for (const orderItem of pendingItems) {
       const shipmentItem = items.find(item => item.skuId === orderItem.skuId);
       if (!shipmentItem) {
@@ -106,9 +115,13 @@ export class ShipmentsService {
         },
       });
 
-      if (!inventory || inventory.available < shipmentItem.quantity) {
+      const stockOnHand = isMallOrder
+        ? (inventory?.quantity || 0)
+        : (inventory?.available || 0);
+      if (!inventory || stockOnHand < shipmentItem.quantity) {
+        const label = isMallOrder ? '物理库存' : '可用库存';
         throw new BadRequestException(
-          `商品SKU(ID:${shipmentItem.skuId})在仓库[${warehouse.name}]库存不足(可用:${inventory?.available || 0})`,
+          `商品SKU(ID:${shipmentItem.skuId})在仓库[${warehouse.name}]${label}不足(${label}:${stockOnHand})`,
         );
       }
     }
@@ -275,6 +288,8 @@ export class ShipmentsService {
       throw new BadRequestException('发货单没有可发货商品');
     }
 
+    const isMallOrder = shipment.order.type === OrderType.MALL;
+
     for (const item of shipment.items) {
       const warehouse = await this.prisma.warehouse.findFirst({
         where: { id: item.warehouseId, deletedAt: null },
@@ -292,9 +307,15 @@ export class ShipmentsService {
         },
       });
 
-      if (!inventory || inventory.available < item.quantity) {
+      // MALL 订单已锁定 locked，本仓物理库存(quantity)足够即可
+      // SALE 订单未锁定，需要本仓 available 足够
+      const stockOnHand = isMallOrder
+        ? (inventory?.quantity || 0)
+        : (inventory?.available || 0);
+      if (!inventory || stockOnHand < item.quantity) {
+        const label = isMallOrder ? '物理库存' : '可用库存';
         throw new BadRequestException(
-          `商品SKU(ID:${item.skuId})在仓库[${warehouse.name}]库存不足(可用:${inventory?.available || 0})`,
+          `商品SKU(ID:${item.skuId})在仓库[${warehouse.name}]${label}不足(${label}:${stockOnHand})`,
         );
       }
     }
@@ -328,6 +349,12 @@ export class ShipmentsService {
       });
 
       for (const item of shipment.items) {
+        // MALL 订单：先释放该 SKU 的 locked（跨仓贪心），把可用度还原后再走标准扣减
+        // 这样可以避免「lock 已扣 available」与「ship 再扣 available」叠加导致 available 跑负
+        if (isMallOrder) {
+          await this.cartsService.releaseSkuInventoryForOrder(tx, item.skuId, item.quantity);
+        }
+
         const inventory = await tx.inventory.findUnique({
           where: {
             skuId_warehouseId: {
@@ -340,16 +367,24 @@ export class ShipmentsService {
         const beforeQty = inventory?.quantity || 0;
         const afterQty = beforeQty - item.quantity;
 
-        await tx.inventory.updateMany({
+        // 原子条件扣减：仅当 quantity & available 同时充足才生效，杜绝 oversell
+        const decResult = await tx.inventory.updateMany({
           where: {
             skuId: item.skuId,
             warehouseId: item.warehouseId,
+            quantity: { gte: item.quantity },
+            available: { gte: item.quantity },
           },
           data: {
             quantity: { decrement: item.quantity },
             available: { decrement: item.quantity },
           },
         });
+        if (decResult.count !== 1) {
+          throw new BadRequestException(
+            `商品SKU(ID:${item.skuId})在仓库(ID:${item.warehouseId})库存不足，并发扣减失败`,
+          );
+        }
 
         await tx.inventoryLog.create({
           data: {

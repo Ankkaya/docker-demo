@@ -11,6 +11,7 @@ import { QuerySaleReturnDto } from './dto/query-sale-return.dto';
 import { AuditSaleReturnDto, AuditAction } from './dto/audit-sale-return.dto';
 import { ReturnStatus, ShipmentStatus, Prisma } from '@prisma/client';
 import { SaleReturnVo, SaleReturnDetailVo } from './vo/sale-return.vo';
+import { sumMoney, mulMoney, subMoneyClampZero } from '@/common/utils/money';
 
 // 生成退货单号
 function generateReturnNo(): string {
@@ -81,7 +82,7 @@ export class SaleReturnsService {
     }
 
     // 计算总金额
-    const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    const totalAmount = sumMoney(items, (item) => mulMoney(item.price, item.quantity));
 
     // 创建退货单
     const returnOrder = await this.prisma.saleReturn.create({
@@ -421,7 +422,7 @@ export class SaleReturnsService {
 
         // 2. 扣减销售订单的应收金额（因为退款给客户）
         const order = existing.shipment.order;
-        const newPayable = Math.max(0, Number(order.payable) - Number(existing.totalAmount));
+        const newPayable = subMoneyClampZero(order.payable, existing.totalAmount);
         await tx.order.update({
           where: { id: order.id },
           data: { payable: newPayable },

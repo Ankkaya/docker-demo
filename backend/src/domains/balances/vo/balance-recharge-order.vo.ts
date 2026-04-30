@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMethod, PaymentStatus } from '@prisma/client';
+import { PaymentMethod, PaymentRefundStatus, PaymentStatus } from '@prisma/client';
 
 export class BalanceRechargeOrderVo {
   @ApiProperty()
@@ -25,6 +25,15 @@ export class BalanceRechargeOrderVo {
 
   @ApiProperty({ type: String })
   amount: string;
+
+  @ApiProperty({ type: String })
+  bonusAmount: string;
+
+  @ApiProperty({ type: String })
+  arrivalAmount: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  activityName: string | null;
 
   @ApiProperty({ enum: PaymentMethod })
   method: PaymentMethod;
@@ -53,7 +62,19 @@ export class BalanceRechargeOrderVo {
   @ApiProperty()
   createdAt: Date;
 
-  static fromEntity(entity: any): BalanceRechargeOrderVo {
+  @ApiPropertyOptional({ enum: PaymentRefundStatus, nullable: true })
+  refundStatus?: PaymentRefundStatus | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  refundStatusText?: string | null;
+
+  @ApiProperty()
+  canRefund: boolean;
+
+  static fromEntity(entity: any, refunds: any[] = []): BalanceRechargeOrderVo {
+    const latestRefund = refunds[0] || null;
+    const hasBlockedRefund = refunds.some(item => item.status === 'PROCESSING' || item.status === 'SUCCESS');
+
     return {
       id: entity.id,
       rechargeNo: entity.rechargeNo,
@@ -63,6 +84,9 @@ export class BalanceRechargeOrderVo {
       customerCode: entity.customer.code,
       customerPhone: entity.customer.phone || null,
       amount: entity.amount.toString(),
+      bonusAmount: (entity.bonusAmount ?? 0).toString(),
+      arrivalAmount: (Number(entity.amount || 0) + Number(entity.bonusAmount || 0)).toFixed(2),
+      activityName: entity.activityName || null,
       method: entity.method,
       methodText: this.getMethodText(entity.method),
       status: entity.status,
@@ -72,11 +96,21 @@ export class BalanceRechargeOrderVo {
       thirdStatus: entity.thirdStatus || null,
       paidAt: entity.paidAt || null,
       createdAt: entity.createdAt,
+      refundStatus: latestRefund?.status || null,
+      refundStatusText: latestRefund ? this.getRefundStatusText(latestRefund.status) : null,
+      canRefund: entity.status === PaymentStatus.COMPLETED
+        && entity.method === PaymentMethod.WECHAT
+        && !!entity.outTradeNo
+        && !!entity.thirdTradeNo
+        && !hasBlockedRefund,
     };
   }
 
-  static fromEntities(entities: any[]) {
-    return entities.map(entity => this.fromEntity(entity));
+  static fromEntities(entities: any[], refundMap?: Map<string, any[]>) {
+    return entities.map((entity) => this.fromEntity(
+      entity,
+      entity.outTradeNo ? (refundMap?.get(entity.outTradeNo) || []) : [],
+    ));
   }
 
   private static getMethodText(method: PaymentMethod) {
@@ -98,5 +132,15 @@ export class BalanceRechargeOrderVo {
       CANCELLED: '已取消',
     };
     return map[status] || status;
+  }
+
+  private static getRefundStatusText(status: PaymentRefundStatus) {
+    const map: Record<PaymentRefundStatus, string> = {
+      PROCESSING: '退款处理中',
+      SUCCESS: '退款成功',
+      CLOSED: '退款关闭',
+      ABNORMAL: '退款异常',
+    };
+    return map[status];
   }
 }

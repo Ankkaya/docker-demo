@@ -14,6 +14,7 @@ definePage({
 
 const router = useRouter()
 const userStore = useUserStore()
+const toast = useToast()
 const message = useMessage()
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const balanceSummary = ref({
@@ -49,19 +50,15 @@ const serviceMenus = ref([
 ])
 
 function openSettings() {
-  uni.showToast({ title: '设置开发中', icon: 'none' })
+  toast.info('设置开发中')
 }
 
 function openLogin() {
-  userStore.openAuthPopup({
-    name: 'user',
-    path: '/pages/user/index',
-    isTabbar: true,
-  })
+  userStore.openAuthPopup()
 }
 
 function viewAllOrders() {
-  router.push({ name: 'order-list', query: { status: 'all' } })
+  router.push({ name: 'order-list', params: { status: 'all' } })
 }
 
 function openBalance() {
@@ -91,7 +88,7 @@ function onOrderMenuClick(item: typeof orderMenus.value[number]) {
   }
   router.push({
     name: 'order-list',
-    query: { status: statusMap[item.key] || 'all' },
+    params: { status: statusMap[item.key] || 'all' },
   })
 }
 
@@ -107,20 +104,20 @@ function onServiceMenuClick(item: typeof serviceMenus.value[number]) {
     router.push({ name: routeName })
     return
   }
-  uni.showToast({ title: `${item.label}开发中`, icon: 'none' })
+  toast.info(`${item.label}开发中`)
 }
 
 function contactSupport() {
-  uni.showToast({ title: '客服功能开发中', icon: 'none' })
+  toast.info('客服功能开发中')
 }
 
 function onContactServiceError() {
-  uni.showToast({ title: '暂时无法打开客服', icon: 'none' })
+  toast.error('暂时无法打开客服')
 }
 
 function handleLogout() {
   userStore.logout()
-  uni.showToast({ title: '已退出登录', icon: 'success' })
+  toast.success('已退出登录')
   router.pushTab({ name: 'home' })
 }
 
@@ -168,6 +165,15 @@ function setOrderMenuBadge(key: string, count: number) {
   menu.badge = count > 0 ? String(count) : ''
 }
 
+function resolvePagedTotal(result: any) {
+  const metaTotal = Number(result?.meta?.total || 0)
+  if (metaTotal > 0) {
+    return metaTotal
+  }
+
+  return Array.isArray(result?.data) ? result.data.length : 0
+}
+
 async function loadOrderMenuStats() {
   if (!isLoggedIn.value) {
     orderMenus.value.forEach((item) => {
@@ -189,9 +195,9 @@ async function loadOrderMenuStats() {
       }).send(),
     ])
 
-    setOrderMenuBadge('pay', Array.isArray(pendingOrders) ? pendingOrders.length : 0)
-    setOrderMenuBadge('ship', Array.isArray(shippingOrders) ? shippingOrders.length : 0)
-    setOrderMenuBadge('receive', Array.isArray(receivingOrders) ? receivingOrders.length : 0)
+    setOrderMenuBadge('pay', resolvePagedTotal(pendingOrders))
+    setOrderMenuBadge('ship', resolvePagedTotal(shippingOrders))
+    setOrderMenuBadge('receive', resolvePagedTotal(receivingOrders))
     setOrderMenuBadge('afterSale', 0)
   }
   catch {

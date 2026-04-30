@@ -69,7 +69,7 @@ export default {
   >
     <wd-tabbar-item
       v-for="(item, index) in tabbarList" :key="item.name" :name="item.name"
-      :value="getTabbarItemValue(item.name)" :title="item.title" :icon="item.icon"
+      :value="item.name === 'category' ? null : getTabbarItemValue(item.name)" :title="item.title" :icon="item.icon"
     >
       <template #icon="{ active }">
         <!-- 使用静态类名确保 UnoCSS 能正确扫描 -->

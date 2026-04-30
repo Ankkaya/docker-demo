@@ -20,10 +20,13 @@
       </QueryForm>
     </n-card>
 
-    <n-card class="bg-container transition-theme">
-      <div class="page-toolbar mb-4">
+    <n-card class="mb-4 bg-container transition-theme">
+      <div class="page-toolbar">
         <n-button type="primary" @click="handleCreate">新增分类</n-button>
       </div>
+    </n-card>
+
+    <n-card class="bg-container transition-theme">
       <n-data-table
         :columns="columns"
         :data="categories"
@@ -38,7 +41,7 @@
     <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑分类' : '新增分类'"
-      :form-item-count="9"
+      :form-item-count="11"
       modal-width="500px"
       :drawer-width="760"
     >
@@ -109,6 +112,17 @@
         <n-form-item label="排序号" path="sort">
           <n-input-number v-model:value="form.sort" :min="0" style="width: 100%" />
         </n-form-item>
+        <n-form-item label="搜索推荐" path="mallRecommend">
+          <n-switch v-model:value="form.mallRecommend" />
+        </n-form-item>
+        <n-form-item label="推荐排序" path="mallRecommendSort">
+          <n-input-number
+            v-model:value="form.mallRecommendSort"
+            :min="0"
+            :disabled="!form.mallRecommend"
+            style="width: 100%"
+          />
+        </n-form-item>
         <n-form-item label="启用状态" path="isEnabled">
           <n-switch v-model:value="form.isEnabled" />
         </n-form-item>
@@ -174,6 +188,8 @@ const form = reactive<CreateCategoryDto & { isEnabled: boolean }>({
   subtitle: '',
   remark: '',
   parentId: undefined,
+  mallRecommend: false,
+  mallRecommendSort: 0,
   icon: '',
   image: '',
   sort: 0,
@@ -332,8 +348,22 @@ const createColumns = (): DataTableColumns<Category> => {
       }
     },
     {
-      title: '层级',
-      key: 'level',
+      title: '搜索推荐',
+      key: 'mallRecommend',
+      render: (row) => {
+        return h(NSwitch, {
+          value: row.mallRecommend,
+          loading: statusUpdatingIds.value.includes(row.id),
+          onUpdateValue: (value: boolean) => handleToggleMallRecommend(row, value),
+          checkedValue: true,
+          uncheckedValue: false,
+        })
+      },
+    },
+    {
+      title: '推荐排序',
+      key: 'mallRecommendSort',
+      render: (row) => row.mallRecommend ? row.mallRecommendSort : '-',
     },
     { title: '排序号', key: 'sort' },
     {
@@ -433,6 +463,8 @@ const handleCreate = () => {
   form.subtitle = ''
   form.remark = ''
   form.parentId = undefined
+  form.mallRecommend = false
+  form.mallRecommendSort = 0
   form.icon = ''
   form.image = ''
   form.sort = 0
@@ -449,6 +481,8 @@ const handleAddChild = (category: Category) => {
   form.subtitle = ''
   form.remark = ''
   form.parentId = category.id
+  form.mallRecommend = false
+  form.mallRecommendSort = 0
   form.icon = ''
   form.image = ''
   form.sort = 0
@@ -469,6 +503,8 @@ const handleEdit = async (category: Category) => {
     form.subtitle = detail.subtitle || ''
     form.remark = detail.remark || ''
     form.parentId = detail.parentId
+    form.mallRecommend = detail.mallRecommend ?? false
+    form.mallRecommendSort = detail.mallRecommendSort ?? 0
     form.icon = detail.icon || ''
     form.image = detail.image || ''
     form.sort = detail.sort
@@ -506,6 +542,22 @@ const handleToggleStatus = async (category: Category, isEnabled: boolean) => {
   }
 }
 
+const handleToggleMallRecommend = async (category: Category, mallRecommend: boolean) => {
+  statusUpdatingIds.value = [...statusUpdatingIds.value, category.id]
+  try {
+    await updateCategory(category.id, {
+      mallRecommend,
+      mallRecommendSort: mallRecommend ? (category.mallRecommendSort ?? 0) : 0,
+    })
+    message.success(`${category.name}已${mallRecommend ? '设为搜索推荐' : '取消搜索推荐'}`)
+    await fetchCategories()
+  } catch (error: any) {
+    message.error(error.message || '搜索推荐状态更新失败')
+  } finally {
+    statusUpdatingIds.value = statusUpdatingIds.value.filter(id => id !== category.id)
+  }
+}
+
 const handleDelete = (category: Category) => {
   dialog.warning({
     title: '提示',
@@ -534,7 +586,12 @@ const handleSubmit = async () => {
     if (!errors) {
       submitLoading.value = true
       try {
-        const data = { ...form, icon: form.icon?.trim() || '' }
+        const data = {
+          ...form,
+          mallRecommend: form.mallRecommend,
+          mallRecommendSort: form.mallRecommend ? (form.mallRecommendSort ?? 0) : 0,
+          icon: form.icon?.trim() || '',
+        }
         if (!data.parentId) {
           delete data.parentId
         }

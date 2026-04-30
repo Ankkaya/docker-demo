@@ -100,6 +100,9 @@ const materialSymbolsIcons = [
   'material-symbols:print-outline',
   'material-symbols:print-connect-outline',
   'material-symbols:local-activity-outline',
+  'material-symbols:cloud-upload',
+  'material-symbols:cloud-download',
+  'material-symbols:upload-file-outline',
 ]
 
 const mdiIcons = [

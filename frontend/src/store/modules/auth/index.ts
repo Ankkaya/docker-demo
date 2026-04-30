@@ -4,6 +4,7 @@ import type { User, Menu } from '@/types'
 import { login as loginApi, register as registerApi } from '@/api/auth'
 import { getCurrentUser, getUserMenus } from '@/api/user'
 import router from '@/router'
+import { encryptPassword } from '@/utils/crypto'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('token') || '')
@@ -13,11 +14,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isLoggedIn = computed(() => !!token.value)
 
-  // 登录
+  // 登录（密码使用 RSA 公钥加密后传输）
   const login = async (username: string, password: string) => {
     loading.value = true
     try {
-      const res = await loginApi({ username, password })
+      const cipher = await encryptPassword(password)
+      const res = await loginApi({ username, password: cipher })
       token.value = res.token
       user.value = res.user
       localStorage.setItem('token', res.token)
@@ -30,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 注册
+  // 注册（注册接口暂未启用 RSA 加密，沿用明文）
   const register = async (username: string, password: string, name?: string) => {
     loading.value = true
     try {

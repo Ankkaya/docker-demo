@@ -3,6 +3,10 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { CryptoKeysService } from './services/crypto-keys.service';
+import { LoginThrottleService } from './services/login-throttle.service';
+import { PrismaService } from '@/infrastructure/prisma/prisma.service';
+import { LoginLogType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -10,6 +14,9 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private readonly cryptoKeys: CryptoKeysService,
+    private readonly loginThrottle: LoginThrottleService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
@@ -18,21 +25,55 @@ export class AuthService {
     return { user, token };
   }
 
-  async login(loginDto: LoginDto) {
-    const user = await this.usersService.findByUsername(loginDto.username);
+  async login(loginDto: LoginDto, ip = 'unknown', userAgent?: string) {
+    const username = loginDto.username;
 
-    if (!user) {
-      throw new UnauthorizedException('用户名或密码错误');
+    // ① 锁定校验：超过失败阈值则直接拒绝
+    await this.loginThrottle.assertNotLocked(username, ip);
+
+    // ② RSA 解密前端密文 → 明文密码
+    const plainPassword = this.cryptoKeys.decryptLoginPayload(loginDto.password);
+
+    // ③ 用户/密码校验（保持「用户名或密码错误」统一文案，避免泄露用户存在性）
+    const user = await this.usersService.findByUsername(username);
+    const isPasswordValid =
+      !!user && (await bcrypt.compare(plainPassword, user.password));
+
+    if (!user || !isPasswordValid) {
+      const failCount = await this.loginThrottle.recordFailure(username, ip);
+      const hint = failCount > 0 ? `（已失败 ${failCount} 次）` : '';
+      // 记录登录失败日志
+      await this.prisma.loginLog.create({
+        data: {
+          userId: user?.id,
+          username,
+          type: LoginLogType.LOGIN,
+          ip,
+          userAgent: userAgent || '',
+          success: false,
+          failReason: `用户名或密码错误${hint}`,
+        },
+      });
+      throw new UnauthorizedException(`用户名或密码错误${hint}`);
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('用户名或密码错误');
-    }
+    // ④ 登录成功 → 清零计数
+    await this.loginThrottle.reset(username, ip);
 
     const token = this.generateToken(user.id);
     const { password, ...result } = user;
+
+    // 记录登录成功日志
+    await this.prisma.loginLog.create({
+      data: {
+        userId: user.id,
+        username: user.username,
+        type: LoginLogType.LOGIN,
+        ip,
+        userAgent: userAgent || '',
+        success: true,
+      },
+    });
 
     return { user: result, token };
   }

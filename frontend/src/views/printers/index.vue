@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
-    <n-card class="bg-container transition-theme">
-      <div class="page-toolbar mb-4">
+    <n-card class="mb-4 bg-container transition-theme">
+      <div class="page-toolbar">
         <n-space>
           <n-tooltip>
             <template #trigger>
@@ -16,6 +16,9 @@
           <n-button type="primary" @click="handleCreate">新增打印机</n-button>
         </n-space>
       </div>
+    </n-card>
+
+    <n-card class="bg-container transition-theme">
       <n-data-table :columns="columns" :data="listWithStatus" :loading="loading" striped />
     </n-card>
 

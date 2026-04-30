@@ -77,6 +77,8 @@ const legacyIconAliasMap: Record<string, string> = {
   slideshow: 'material-symbols:view-carousel-outline',
   home: 'material-symbols:home-outline',
   coupon: 'material-symbols:local-activity-outline',
+  redeem: 'material-symbols:redeem',
+  upload: 'material-symbols:cloud-upload',
 }
 
 const normalizeLegacyIcon = (icon: string) => {

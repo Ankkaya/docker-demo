@@ -16,6 +16,7 @@ import { IconAssetsService } from '@/infrastructure/icon-assets/icon-assets.serv
 import { AuthService } from '@/domains/auth/auth.service';
 import { FavoritesService } from '@/domains/favorites/favorites.service';
 import { BrowseHistoriesService } from '@/domains/browse-histories/browse-histories.service';
+import { MallHotSearchesService } from '@/domains/mall-hot-searches/mall-hot-searches.service';
 import { WechatLoginDto } from './dto/wechat-login.dto';
 import { MallLoginDto } from './dto/mall-login.dto';
 import { MallRefreshTokenDto } from './dto/mall-refresh-token.dto';
@@ -33,6 +34,7 @@ export class MallService {
     private authService: AuthService,
     private favoritesService: FavoritesService,
     private browseHistoriesService: BrowseHistoriesService,
+    private mallHotSearchesService: MallHotSearchesService,
     private systemSettingsService: SystemSettingsService,
   ) {}
 
@@ -316,41 +318,125 @@ export class MallService {
     const where: any = this.buildMallProductWhere();
 
     if (keyword) {
-      where.name = { contains: keyword, mode: 'insensitive' };
+      where.mallInfo = {
+        is: {
+          name: { contains: keyword, mode: 'insensitive' },
+        },
+      };
     }
 
     if (categoryId) {
-      where.categoryId = categoryId;
+      const categoryIds = await this.resolveMallCategoryIds(categoryId);
+      where.categoryId = categoryIds.length > 1
+        ? { in: categoryIds }
+        : categoryId;
     }
 
     if (brandId) {
       where.brandId = brandId;
     }
 
-    // 构建排序
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: 'desc' };
-    // 简化排序逻辑，暂时只支持创建时间排序
-    // 价格排序需要更复杂的聚合查询
-    switch (sort) {
-      case 'price_asc':
-      case 'price_desc':
-      case 'sales':
-      case 'new':
-      default:
-        orderBy = { createdAt: 'desc' };
-        break;
-    }
+    let data: any[] = [];
+    let total = 0;
 
-    const [data, total] = await Promise.all([
-      this.prisma.product.findMany({
+    if (sort === 'price_asc' || sort === 'price_desc') {
+      const sortCandidates: any[] = await this.prisma.product.findMany({
         where,
-        include: this.buildMallProductInclude(),
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy,
-      } as any),
-      this.prisma.product.count({ where }),
-    ]) as [any[], number];
+        select: {
+          id: true,
+          createdAt: true,
+          skus: {
+            where: { status: SkuStatus.ACTIVE, deletedAt: null },
+            select: {
+              salePrice: true,
+              mallInfo: {
+                select: {
+                  salePrice: true,
+                },
+              },
+            },
+          },
+        },
+      } as any);
+
+      const sortedIds = sortCandidates
+        .map((product) => {
+          const prices = Array.isArray(product.skus)
+            ? product.skus
+                .map((sku: any) => Number(sku.mallInfo?.salePrice ?? sku.salePrice ?? 0))
+                .filter((price: number) => Number.isFinite(price))
+            : [];
+          const minPrice = prices.length ? Math.min(...prices) : 0;
+
+          return {
+            id: product.id,
+            createdAt: product.createdAt,
+            minPrice,
+          };
+        })
+        .sort((a, b) => {
+          if (a.minPrice !== b.minPrice) {
+            return sort === 'price_asc' ? a.minPrice - b.minPrice : b.minPrice - a.minPrice;
+          }
+
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+      total = sortedIds.length;
+      const pageIds = sortedIds
+        .slice((page - 1) * pageSize, page * pageSize)
+        .map((item) => item.id);
+
+      if (pageIds.length > 0) {
+        const records = await this.prisma.product.findMany({
+          where: {
+            ...where,
+            id: { in: pageIds },
+          },
+          include: this.buildMallProductInclude(),
+        } as any);
+
+        const recordMap = new Map(records.map(item => [item.id, item]));
+        data = pageIds
+          .map(id => recordMap.get(id))
+          .filter((item): item is any => Boolean(item));
+      }
+    } else {
+      let orderBy: Prisma.ProductOrderByWithRelationInput[] = [{ createdAt: 'desc' }];
+
+      switch (sort) {
+        case 'recommended':
+          orderBy = [
+            { mallInfo: { isHot: 'desc' } },
+            { mallInfo: { hotSort: 'asc' } },
+            { mallStat: { hotScore: 'desc' } },
+            { createdAt: 'desc' },
+          ];
+          break;
+        case 'sales':
+          orderBy = [
+            { mallStat: { saleQty30d: 'desc' } },
+            { mallStat: { orderCount30d: 'desc' } },
+            { createdAt: 'desc' },
+          ];
+          break;
+        case 'new':
+        default:
+          orderBy = [{ createdAt: 'desc' }];
+          break;
+      }
+
+      [data, total] = await Promise.all([
+        this.prisma.product.findMany({
+          where,
+          include: this.buildMallProductInclude(),
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          orderBy,
+        } as any),
+        this.prisma.product.count({ where }),
+      ]) as [any[], number];
+    }
 
     // 处理返回数据，计算价格区间
     const processedData = await Promise.all(data.map(async (product) => this.toMallProductCard(product)));
@@ -498,6 +584,18 @@ export class MallService {
     return { list };
   }
 
+  async findSearchInit() {
+    const [hotKeywords, recommendCategories] = await Promise.all([
+      this.mallHotSearchesService.findEnabled(10),
+      this.getRecommendCategoriesForSearch(),
+    ]);
+
+    return {
+      hotKeywords,
+      recommendCategories,
+    };
+  }
+
   // 提取规格选项（用于前端选择）
   private extractSpecOptions(skus: any[]) {
     const specMap = new Map<string, Set<string>>();
@@ -595,6 +693,23 @@ export class MallService {
     })));
   }
 
+  private async getRecommendCategoriesForSearch() {
+    const recommendList = await this.findCategories({
+      parentId: null,
+      recommendOnly: true,
+    });
+
+    if (recommendList.length > 0) {
+      return recommendList.slice(0, 8);
+    }
+
+    const rootCategoryList = await this.findCategories({
+      parentId: null,
+    });
+
+    return rootCategoryList.slice(0, 8);
+  }
+
   // 获取启用的品牌列表
   async findBrands() {
     const brands = await this.prisma.brand.findMany({
@@ -628,6 +743,49 @@ export class MallService {
       ...banner,
       image: await this.minioService.resolveStoredFileUrl(banner.image),
     })));
+  }
+
+  private async resolveMallCategoryIds(categoryId: number) {
+    const category = await this.prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!category) {
+      return [categoryId];
+    }
+
+    const childIds = await this.getCategoryDescendantIds(categoryId);
+    return [categoryId, ...childIds];
+  }
+
+  private async getCategoryDescendantIds(parentId: number): Promise<number[]> {
+    const children = await this.prisma.category.findMany({
+      where: {
+        parentId,
+        deletedAt: null,
+        isEnabled: true,
+      },
+      select: {
+        id: true,
+      },
+      orderBy: [{ sort: 'asc' }, { id: 'asc' }],
+    });
+
+    const result: number[] = [];
+
+    for (const child of children) {
+      result.push(child.id);
+      const descendants = await this.getCategoryDescendantIds(child.id);
+      result.push(...descendants);
+    }
+
+    return result;
   }
 
   private async toMallProductCard(product: any) {

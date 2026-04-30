@@ -162,6 +162,7 @@ var _hmt = _hmt || [];
           { text: '样式', link: '/guide/styling' },
           { text: '路由', link: '/guide/router' },
           { text: '网络请求', link: '/guide/request' },
+          { text: '刷新列表高度计算', link: '/guide/pull-load-height' },
           { text: '状态管理', link: '/guide/state-management' },
           { text: '全局反馈组件', link: '/guide/feedback' },
           { text: '图标', link: '/guide/icons' },

@@ -9,12 +9,24 @@ import { createDecipheriv, createSign, createVerify, randomBytes, X509Certificat
 import { readFile } from 'fs/promises';
 import * as path from 'path';
 import { SystemSettingsService } from '@/domains/system-settings/system-settings.service';
+import { DecimalLike, yuanToFen } from '@/common/utils/money';
 
 interface CreateJsapiOrderParams {
   description: string;
   outTradeNo: string;
-  amount: number;
+  /** 元，支持 number / string / Prisma.Decimal；内部统一转成分提交微信。 */
+  amount: DecimalLike;
   payerOpenId: string;
+}
+
+interface CreateRefundParams {
+  outTradeNo: string;
+  outRefundNo: string;
+  /** 元，原订单总金额。 */
+  amount: DecimalLike;
+  /** 元，本次退款金额。 */
+  refundAmount: DecimalLike;
+  reason?: string;
 }
 
 interface WechatPayResponse {
@@ -23,11 +35,22 @@ interface WechatPayResponse {
   message?: string;
   trade_state?: string;
   trade_state_desc?: string;
+  trade_type?: string;
+  success_time?: string;
   transaction_id?: string;
   out_trade_no?: string;
   payer?: {
     openid?: string;
   };
+}
+
+export interface WechatRefundResponse {
+  refund_id?: string;
+  out_refund_no?: string;
+  out_trade_no?: string;
+  status?: string;
+  success_time?: string;
+  user_received_account?: string;
 }
 
 export interface WechatMiniProgramPayParams {
@@ -60,6 +83,21 @@ export interface WechatTransactionResource {
   };
   payer?: {
     openid?: string;
+  };
+}
+
+export interface WechatRefundNotifyResource {
+  out_refund_no: string;
+  refund_id?: string;
+  refund_status?: string;
+  success_time?: string;
+  user_received_account?: string;
+  amount?: {
+    refund?: number;
+    total?: number;
+    payer_refund?: number;
+    payer_total?: number;
+    currency?: string;
   };
 }
 
@@ -122,7 +160,39 @@ export class WechatPayService {
     });
   }
 
+  async createRefund(params: CreateRefundParams) {
+    const config = await this.getValidatedConfig();
+    const body = {
+      out_trade_no: params.outTradeNo,
+      out_refund_no: params.outRefundNo,
+      reason: params.reason,
+      notify_url: config.refundNotifyUrl || config.notifyUrl,
+      amount: {
+        refund: this.toFen(params.refundAmount),
+        total: this.toFen(params.amount),
+        currency: 'CNY',
+      },
+    };
+
+    return this.requestWechat<WechatRefundResponse>({
+      method: 'POST',
+      path: '/v3/refund/domestic/refunds',
+      body,
+    });
+  }
+
+  async queryRefund(outRefundNo: string) {
+    return this.requestWechat<WechatRefundResponse>({
+      method: 'GET',
+      path: `/v3/refund/domestic/refunds/${encodeURIComponent(outRefundNo)}`,
+    });
+  }
+
   async verifyAndDecryptNotify(rawBody: string, headers: WechatNotifyHeaders): Promise<WechatTransactionResource> {
+    return this.verifyAndDecryptNotifyResource<WechatTransactionResource>(rawBody, headers);
+  }
+
+  async verifyAndDecryptNotifyResource<T>(rawBody: string, headers: WechatNotifyHeaders): Promise<T> {
     const config = await this.getValidatedConfig();
 
     if (!headers.timestamp || !headers.nonce || !headers.signature) {
@@ -156,7 +226,7 @@ export class WechatPayService {
       ciphertext: payload.resource.ciphertext,
     });
 
-    return JSON.parse(decrypted) as WechatTransactionResource;
+    return JSON.parse(decrypted) as T;
   }
 
   async buildClientPayParams(prepayId: string) {
@@ -293,7 +363,8 @@ export class WechatPayService {
     return randomBytes(16).toString('hex');
   }
 
-  private toFen(amount: number) {
-    return Math.round(Number(amount) * 100);
+  private toFen(amount: DecimalLike) {
+    // 使用 Decimal 精确乘法，避免 JS 浮点在 x.xx5 类边界上四舍五入错方向
+    return yuanToFen(amount);
   }
 }

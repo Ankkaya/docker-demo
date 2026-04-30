@@ -25,6 +25,7 @@ export interface BalanceAccount {
   availableBalance: string;
   frozenBalance: string;
   totalRecharged: string;
+  totalPresented: string;
   totalConsumed: string;
   totalRefunded: string;
   totalAdjusted: string;
@@ -41,6 +42,7 @@ export interface BalanceLog {
   type: BalanceLogType;
   typeText: string;
   changeAmount: string;
+  bonusAmount: string;
   balanceBefore: string;
   balanceAfter: string;
   customerName: string;
@@ -104,6 +106,9 @@ export interface BalanceRechargeOrder {
   customerCode: string;
   customerPhone?: string | null;
   amount: string;
+  bonusAmount: string;
+  arrivalAmount: string;
+  activityName?: string | null;
   method: import('./purchase').PaymentMethod;
   methodText: string;
   status: import('./purchase').PaymentStatus;
@@ -113,6 +118,9 @@ export interface BalanceRechargeOrder {
   thirdStatus?: string | null;
   paidAt?: string | null;
   createdAt: string;
+  refundStatus?: import('./purchase').PaymentRefundStatus | null;
+  refundStatusText?: string | null;
+  canRefund: boolean;
 }
 
 export interface QueryBalanceRechargeParams {

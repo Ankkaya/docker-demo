@@ -11,6 +11,7 @@ import { QueryReturnDto } from './dto/query-return.dto';
 import { AuditReturnDto, AuditAction } from './dto/audit-return.dto';
 import { ReturnStatus, ReceiptStatus, Prisma } from '@prisma/client';
 import { ReturnVo, ReturnDetailVo } from './vo/return.vo';
+import { sumMoney, mulMoney, subMoneyClampZero } from '@/common/utils/money';
 
 // 生成退货单号
 function generateReturnNo(): string {
@@ -82,7 +83,7 @@ export class PurchaseReturnsService {
     }
 
     // 计算总金额
-    const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    const totalAmount = sumMoney(items, (item) => mulMoney(item.price, item.quantity));
 
     // 创建退货单
     const returnOrder = await this.prisma.purchaseReturn.create({
@@ -389,13 +390,23 @@ export class PurchaseReturnsService {
             const beforeQty = inventory.quantity;
             const afterQty = beforeQty - item.quantity;
 
-            await tx.inventory.update({
-              where: { id: inventory.id },
+            // 原子条件扣减：杜绝并发 oversell
+            const decResult = await tx.inventory.updateMany({
+              where: {
+                id: inventory.id,
+                quantity: { gte: item.quantity },
+                available: { gte: item.quantity },
+              },
               data: {
                 quantity: { decrement: item.quantity },
                 available: { decrement: item.quantity },
               },
             });
+            if (decResult.count !== 1) {
+              throw new BadRequestException(
+                `商品SKU(ID:${item.skuId})库存不足，并发扣减失败`,
+              );
+            }
 
             // 创建出库流水
             await tx.inventoryLog.create({
@@ -418,7 +429,7 @@ export class PurchaseReturnsService {
 
         // 2. 扣减采购订单的应付金额
         const purchase = existing.receipt.purchase;
-        const newPayable = Math.max(0, Number(purchase.payable) - Number(existing.totalAmount));
+        const newPayable = subMoneyClampZero(purchase.payable, existing.totalAmount);
         await tx.purchase.update({
           where: { id: purchase.id },
           data: { payable: newPayable },

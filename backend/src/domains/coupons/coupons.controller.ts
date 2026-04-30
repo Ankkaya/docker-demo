@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CouponsService } from './coupons.service';
+import { CreateCouponExchangeCodesDto } from './dto/create-coupon-exchange-codes.dto';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { IssueCouponDto } from './dto/issue-coupon.dto';
 import { QueryCouponReceiveDto } from './dto/query-coupon-receive.dto';
@@ -49,6 +50,12 @@ export class CouponsController {
   @ApiOperation({ summary: '后台发放优惠券' })
   issue(@Param('id') id: string, @Body() dto: IssueCouponDto) {
     return this.couponsService.issue(Number(id), dto);
+  }
+
+  @Post(':id/exchange-codes')
+  @ApiOperation({ summary: '生成优惠券兑换码' })
+  createExchangeCodes(@Param('id') id: string, @Body() dto: CreateCouponExchangeCodesDto) {
+    return this.couponsService.createExchangeCodes(Number(id), dto);
   }
 
   @Delete(':id')

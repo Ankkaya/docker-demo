@@ -20,6 +20,7 @@ const { setTabbarItem, setTabbarItemActive } = useTabbar()
 
 const { navigationBarHeight, statusBarHeight } = usePlatform()
 const { error: showError } = useGlobalToast()
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || ''
 
 interface HomeBannerItem {
   id: number
@@ -32,6 +33,7 @@ interface HomeBannerItem {
 interface HomeCategoryItem {
   id: number
   name: string
+  image?: string | null
   icon?: string | null
   iconUrl?: string | null
 }
@@ -58,6 +60,27 @@ const categories = ref<HomeCategoryItem[]>([])
 // 热销商品数据
 const hotProducts = ref<HomeHotProductItem[]>([])
 
+function resolveAssetUrl(url?: string | null) {
+  if (!url) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+
+  if (!apiBaseURL) {
+    return url
+  }
+
+  try {
+    return new URL(url, apiBaseURL).toString()
+  }
+  catch {
+    return url
+  }
+}
+
 function mapBanners(list: BannerVo[]) {
   if (!list.length) {
     return
@@ -81,6 +104,7 @@ function mapCategories(list: CategoryTreeVo[]) {
   categories.value = rootCategories.map((item, index) => ({
     id: item.id,
     name: item.name,
+    image: resolveAssetUrl(typeof item.image === 'string' ? item.image : ''),
     icon: typeof item.icon === 'string' && item.icon ? item.icon : fallbackCategoryIcons[index] || fallbackCategoryIcons[0],
     iconUrl: typeof item.iconUrl === 'string' ? item.iconUrl : '',
   }))
@@ -250,9 +274,19 @@ function goToProductList() {
       <view class="grid grid-cols-4 gap-4">
         <view v-for="category in categories" :key="category.id" class="flex flex-col items-center gap-2"
           @click="onCategoryClick(category)">
-          <view class="size-14 flex items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]">
-            <app-icon :icon="category.icon" :icon-url="category.icon ? '' : category.iconUrl" :size="28"
-              color="#efb239" />
+          <view class="size-14 flex items-center justify-center overflow-hidden rounded-full bg-[#efb239]/10 text-[#efb239]">
+            <image
+              v-if="category.image"
+              :src="category.image"
+              class="h-full w-full"
+              mode="aspectFill"
+            />
+            <view
+              v-else
+              class="home-category__placeholder h-full w-full flex items-center justify-center"
+            >
+              <wd-icon name="picture" size="22" color="#efb239" />
+            </view>
           </view>
           <text class="text-[11px] text-slate-600 font-medium">
             {{ category.name }}
@@ -365,5 +399,9 @@ function goToProductList() {
   color: #8c6a2f;
   font-size: 28rpx;
   font-weight: 700;
+}
+
+.home-category__placeholder {
+  background: linear-gradient(135deg, #fff7e6 0%, #fde7b2 100%);
 }
 </style>

@@ -1,13 +1,12 @@
 <template>
-  <div class="page-container">
-    <n-card title="余额账户" class="page-card">
-      <n-form inline :model="searchForm" class="search-form">
+  <div class="p-4">
+    <n-card class="mb-4" content-style="padding-bottom: 0;">
+      <QueryForm :model="searchForm">
         <n-form-item label="关键词">
           <n-input
             v-model:value="searchForm.keyword"
-            placeholder="客户名称/编码/手机号"
+            placeholder="客户名称/手机号"
             clearable
-            style="width: 220px"
           />
         </n-form-item>
         <n-form-item label="状态">
@@ -16,7 +15,6 @@
             :options="statusOptions"
             placeholder="全部状态"
             clearable
-            style="width: 160px"
           />
         </n-form-item>
         <n-form-item>
@@ -25,13 +23,17 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
+    </n-card>
 
-      <n-space class="toolbar">
+    <n-card class="mb-4">
+      <n-space>
         <n-button type="primary" @click="openCreateModal">开通余额账户</n-button>
         <n-button @click="router.push('/balances/recharges')">充值单</n-button>
       </n-space>
+    </n-card>
 
+    <n-card>
       <n-data-table
         :columns="columns"
         :data="tableData"
@@ -59,10 +61,19 @@
       </n-form>
     </n-modal>
 
-    <n-modal v-model:show="adjustModalVisible" preset="dialog" title="余额调账" positive-text="确定" negative-text="取消" @positive-click="handleAdjustAccount">
-      <n-form :model="adjustForm" label-width="90">
+    <n-modal
+      v-model:show="adjustModalVisible"
+      preset="dialog"
+      title="余额调账"
+      style="width: 620px"
+      positive-text="确定"
+      negative-text="取消"
+      @positive-click="handleAdjustAccount"
+    >
+      <div class="adjust-modal-body">
+        <n-form :model="adjustForm" label-width="92" label-placement="left">
         <n-form-item label="账户">
-          <div>{{ currentAccountLabel }}</div>
+          <div class="account-summary">{{ currentAccountLabel }}</div>
         </n-form-item>
         <n-form-item label="方向">
           <n-radio-group v-model:value="adjustForm.direction">
@@ -73,16 +84,14 @@
         <n-form-item label="金额">
           <n-input-number v-model:value="adjustForm.amount" :min="0.01" :precision="2" style="width: 100%" />
         </n-form-item>
-        <n-form-item label="业务类型">
-          <n-input v-model:value="adjustForm.bizType" placeholder="如 MANUAL / RECHARGE" />
-        </n-form-item>
         <n-form-item label="业务单号">
           <n-input v-model:value="adjustForm.bizNo" placeholder="可选" />
         </n-form-item>
         <n-form-item label="备注">
           <n-input v-model:value="adjustForm.remark" type="textarea" placeholder="请输入调账说明" />
         </n-form-item>
-      </n-form>
+        </n-form>
+      </div>
     </n-modal>
   </div>
 </template>
@@ -92,6 +101,7 @@ import { computed, h, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import type { DataTableColumns, SelectOption } from 'naive-ui';
 import { NButton, NSpace, NTag, useMessage } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 import { createBalanceAccount, adjustBalanceAccount, getBalanceAccounts } from '@/api/balance';
 import { getCustomers } from '@/api/customer';
 import type { Customer } from '@/types/basic-data';
@@ -156,11 +166,10 @@ const currentAccountLabel = computed(() => {
 });
 
 const columns: DataTableColumns<BalanceAccount> = [
-  { title: '账户ID', key: 'id', width: 90 },
   {
     title: '客户信息',
     key: 'customer',
-    minWidth: 220,
+    width: 180,
     render(row) {
       return h('div', [
         h('div', { style: 'font-weight: 600;' }, row.customer.name),
@@ -176,16 +185,16 @@ const columns: DataTableColumns<BalanceAccount> = [
     render: row => `¥${Number(row.availableBalance).toFixed(2)}`,
   },
   {
-    title: '冻结余额',
-    key: 'frozenBalance',
-    width: 120,
-    render: row => `¥${Number(row.frozenBalance).toFixed(2)}`,
-  },
-  {
     title: '累计充值',
     key: 'totalRecharged',
     width: 120,
     render: row => `¥${Number(row.totalRecharged).toFixed(2)}`,
+  },
+  {
+    title: '累计赠送',
+    key: 'totalPresented',
+    width: 120,
+    render: row => `¥${Number(row.totalPresented).toFixed(2)}`,
   },
   {
     title: '累计消费',
@@ -371,11 +380,18 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.search-form {
-  margin-bottom: 16px;
+.adjust-modal-body {
+  padding-top: 8px;
 }
 
-.toolbar {
-  margin-bottom: 16px;
+.account-summary {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 12px;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  color: #334155;
 }
 </style>

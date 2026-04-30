@@ -70,6 +70,18 @@ const router = createRouter({
           name: 'system-settings',
           component: () => import('@/views/system-settings/index.vue'),
           meta: { title: '系统设置' }
+        },
+        {
+          path: 'system-logs',
+          name: 'system-logs',
+          component: () => import('@/views/system-logs/index.vue'),
+          meta: { title: '系统日志' }
+        },
+        {
+          path: 'upload-records',
+          name: 'upload-records',
+          component: () => import('@/views/upload-records/index.vue'),
+          meta: { title: '上传记录' }
         }
       ]
     },
@@ -299,13 +311,26 @@ const router = createRouter({
     {
       path: '/payments',
       component: () => import('@/views/layout/index.vue'),
-      meta: { title: '收款记录' },
+      meta: { title: '支付记录' },
       children: [
         {
           path: '',
           name: 'payment-list',
           component: () => import('@/views/payments/index.vue'),
-          meta: { title: '收款记录' }
+          meta: { title: '支付记录' }
+        }
+      ]
+    },
+    {
+      path: '/payment-refunds',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '退款记录' },
+      children: [
+        {
+          path: '',
+          name: 'payment-refund-list',
+          component: () => import('@/views/payment-refunds/index.vue'),
+          meta: { title: '退款记录' }
         }
       ]
     },
@@ -349,6 +374,58 @@ const router = createRouter({
       ]
     },
     {
+      path: '/mall-recharge-packages',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '充值套餐' },
+      children: [
+        {
+          path: '',
+          name: 'mall-recharge-packages',
+          component: () => import('@/views/mall-recharge-packages/index.vue'),
+          meta: { title: '充值套餐' }
+        }
+      ]
+    },
+    {
+      path: '/mall-recharge-activities',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '充值活动' },
+      children: [
+        {
+          path: '',
+          name: 'mall-recharge-activities',
+          component: () => import('@/views/mall-recharge-activities/index.vue'),
+          meta: { title: '充值活动' }
+        }
+      ]
+    },
+    {
+      path: '/reviews',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '评价管理' },
+      children: [
+        {
+          path: '',
+          name: 'review-list',
+          component: () => import('@/views/reviews/index.vue'),
+          meta: { title: '评价管理' }
+        }
+      ]
+    },
+    {
+      path: '/mall-config',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '商城配置' },
+      children: [
+        {
+          path: '',
+          name: 'mall-config',
+          component: () => import('@/views/mall-config/index.vue'),
+          meta: { title: '商城配置' }
+        }
+      ]
+    },
+    {
       path: '/balances',
       component: () => import('@/views/layout/index.vue'),
       redirect: '/balances/accounts',
@@ -370,7 +447,7 @@ const router = createRouter({
           path: 'recharges',
           name: 'balance-recharges',
           component: () => import('@/views/balances/recharges.vue'),
-          meta: { title: '余额充值单' }
+          meta: { title: '充值记录' }
         }
       ]
     },

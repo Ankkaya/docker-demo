@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#efb239",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221c10",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .star-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="max-w-md mx-auto min-h-screen pb-32 relative">
+<!-- Top Navigation -->
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-primary/10">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold">Write Reviews</h1>
+<div class="w-10"></div>
+</header>
+<main class="p-4 space-y-6">
+<!-- Order Info Header -->
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-sm font-medium text-slate-500 dark:text-slate-400">Order #123456789</h2>
+<p class="text-xs text-slate-400">Delivered on Oct 24, 2023</p>
+</div>
+<div class="bg-primary/20 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                    Pending
+                </div>
+</div>
+<!-- Item Review Cards -->
+<div class="space-y-4">
+<!-- Item 1 -->
+<section class="bg-white dark:bg-slate-800/50 p-4 rounded-xl shadow-sm border border-primary/5">
+<div class="flex gap-4 mb-4">
+<div class="w-20 h-20 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Baby organic cotton yellow onesie hanging" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNnWlyIvsWxtrVk2FRapeDr79zFrmueOpch-OqvVSc5rVGONTL226-ggNaJPYtjROOBMfBsxAyYifZ-fOktgvVmLW3qV7_pgms_CNafi2jHYSS1cB3PLMtGQJfKkX6RAvye5APa1WDKjzyDXDg-48cX6djKNGYrcvX0BJWyaqnE2tx0JLUaFDN6i6Qa7WCF3D8gywagd72XnFZqe9rYVpb7PEDv6v-Nhrmy-LFL_c-TloqmBvVSius_6RQqd_re5DoQjeCfPl70lw-"/>
+</div>
+<div class="flex-1">
+<h3 class="font-bold text-base leading-tight">Organic Cotton Onesie</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Size: 6-12M | Color: Soft Yellow</p>
+<div class="flex gap-1 mt-2 text-primary">
+<span class="material-symbols-outlined star-filled">star</span>
+<span class="material-symbols-outlined star-filled">star</span>
+<span class="material-symbols-outlined star-filled">star</span>
+<span class="material-symbols-outlined star-filled">star</span>
+<span class="material-symbols-outlined">star</span>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<textarea class="w-full rounded-lg border-primary/20 bg-background-light dark:bg-slate-900 focus:border-primary focus:ring-primary text-sm min-h-[100px] placeholder:text-slate-400" placeholder="How was the material and fit?"></textarea>
+<div class="flex flex-wrap gap-2">
+<button class="w-20 h-20 rounded-lg border-2 border-dashed border-primary/30 flex flex-col items-center justify-center text-primary/60 hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined">add_a_photo</span>
+<span class="text-[10px] mt-1 font-bold">Add Photo</span>
+</button>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+<span class="text-sm font-medium text-slate-600 dark:text-slate-400">Review Anonymously</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Item 2 -->
+<section class="bg-white dark:bg-slate-800/50 p-4 rounded-xl shadow-sm border border-primary/5">
+<div class="flex gap-4 mb-4">
+<div class="w-20 h-20 rounded-lg bg-slate-100 dark:bg-slate-700 overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Childrens knitted brown cardigan flat lay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaZvla--xGjtzM5INYMfaKtTFEyij4MT-HsDUOAM4fVY3maxo8twTgFOenrGLWUI4ZYdrlGoF4DqlPwQ79PaTxg7pUxBBLo8vOJniBG6hNUT4rQtVgd39DQj1j0LP09QSCjWEf_eQxgDjYDdJuJsDV1IUTbjQ6-Ygwjna8Ij4TFrVb9EklHRZfbejL45oOHzTPXrwC14REivBtbJQNJKozRuQOxeZtAFVLQtLHPJJfwysOfM2wjp7sgS5yKXVbWJvnq4QD6qNf908l"/>
+</div>
+<div class="flex-1">
+<h3 class="font-bold text-base leading-tight">Knitted Baby Cardigan</h3>
+<p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Size: 12-18M | Color: Earthy Brown</p>
+<div class="flex gap-1 mt-2 text-primary">
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<textarea class="w-full rounded-lg border-primary/20 bg-background-light dark:bg-slate-900 focus:border-primary focus:ring-primary text-sm min-h-[100px] placeholder:text-slate-400" placeholder="How was the material and fit?"></textarea>
+<div class="flex flex-wrap gap-2">
+<button class="w-20 h-20 rounded-lg border-2 border-dashed border-primary/30 flex flex-col items-center justify-center text-primary/60 hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined">add_a_photo</span>
+<span class="text-[10px] mt-1 font-bold">Add Photo</span>
+</button>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+<span class="text-sm font-medium text-slate-600 dark:text-slate-400">Review Anonymously</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- Service Ratings Section -->
+<section class="bg-white dark:bg-slate-800/50 p-4 rounded-xl shadow-sm border border-primary/5 space-y-4">
+<h3 class="font-bold text-base flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">store</span>
+                    Store &amp; Logistics
+                </h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-sm text-slate-600 dark:text-slate-400">Logistics Speed</span>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm text-slate-600 dark:text-slate-400">Seller Service</span>
+<div class="flex gap-1 text-primary">
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+<span class="material-symbols-outlined">star</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Action Button -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-t border-primary/10">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2">
+                Submit All Reviews
+                <span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+</div>
+</body></html>

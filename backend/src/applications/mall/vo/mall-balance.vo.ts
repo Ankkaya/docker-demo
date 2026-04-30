@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { BalanceLogType, PaymentMethod } from '@prisma/client';
+import { MallRechargePackageVo } from '@/domains/mall-recharge-packages/vo/mall-recharge-package.vo';
 
 export class MallBalanceSummaryVo {
   @ApiProperty({ description: '账户ID' })
@@ -17,6 +18,9 @@ export class MallBalanceSummaryVo {
   @ApiProperty({ description: '累计充值', type: String })
   totalRecharged: string;
 
+  @ApiProperty({ description: '累计赠送', type: String })
+  totalPresented: string;
+
   @ApiProperty({ description: '累计消费', type: String })
   totalConsumed: string;
 
@@ -27,14 +31,18 @@ export class MallBalanceSummaryVo {
   updatedAt: Date;
 
   static fromEntity(entity: any): MallBalanceSummaryVo {
+    const totalConsumed = Number(entity.totalConsumed || 0);
+    const totalRefunded = Number(entity.totalRefunded || 0);
+
     return {
       id: entity.id,
       customerId: entity.customerId,
       availableBalance: entity.availableBalance.toString(),
       frozenBalance: entity.frozenBalance.toString(),
       totalRecharged: entity.totalRecharged.toString(),
-      totalConsumed: entity.totalConsumed.toString(),
-      totalRefunded: entity.totalRefunded.toString(),
+      totalPresented: (entity.totalPresented ?? 0).toString(),
+      totalConsumed: Math.max(0, totalConsumed - totalRefunded).toFixed(2),
+      totalRefunded: totalRefunded.toFixed(2),
       updatedAt: entity.updatedAt,
     };
   }
@@ -52,6 +60,9 @@ export class MallBalanceLogVo {
 
   @ApiProperty({ description: '变动金额', type: String })
   changeAmount: string;
+
+  @ApiProperty({ description: '赠送金额', type: String })
+  bonusAmount: string;
 
   @ApiProperty({ description: '变动前余额', type: String })
   balanceBefore: string;
@@ -74,6 +85,7 @@ export class MallBalanceLogVo {
       type: entity.type,
       typeText: this.getTypeText(entity.type),
       changeAmount: entity.changeAmount.toString(),
+      bonusAmount: (entity.bonusAmount ?? 0).toString(),
       balanceBefore: entity.balanceBefore.toString(),
       balanceAfter: entity.balanceAfter.toString(),
       bizNo: entity.bizNo || null,
@@ -121,6 +133,18 @@ export class MallBalanceRechargeVo {
   @ApiProperty({ description: '充值金额', type: String })
   amount: string;
 
+  @ApiProperty({ description: '赠送金额', type: String })
+  bonusAmount: string;
+
+  @ApiProperty({ description: '到账金额', type: String })
+  arrivalAmount: string;
+
+  @ApiPropertyOptional({ description: '套餐名称', nullable: true })
+  packageName?: string | null;
+
+  @ApiPropertyOptional({ description: '活动名称', nullable: true })
+  activityName?: string | null;
+
   @ApiProperty({ description: '充值方式', enum: PaymentMethod })
   method: PaymentMethod;
 
@@ -155,4 +179,9 @@ export class MallBalanceRechargeVo {
 
   @ApiProperty({ description: '支付完成时间', nullable: true })
   paidAt?: Date | null;
+}
+
+export class MallRechargePackageListVo {
+  @ApiProperty({ type: [MallRechargePackageVo] })
+  data: MallRechargePackageVo[];
 }

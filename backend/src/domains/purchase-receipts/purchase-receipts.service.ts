@@ -10,6 +10,7 @@ import { QueryReceiptDto } from './dto/query-receipt.dto';
 import { PurchaseDetailVo } from '@/purchases/vo/purchase.vo';
 import { PurchaseStatus, ReceiptStatus, Prisma } from '@prisma/client';
 import { ReceiptVo, ReceiptDetailVo } from './vo/receipt.vo';
+import { sumMoney, mulMoney } from '@/common/utils/money';
 
 // 生成入库单号
 function generateReceiptNo(): string {
@@ -122,7 +123,7 @@ export class PurchaseReceiptsService {
     }
 
     // 计算总金额
-    const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    const totalAmount = sumMoney(items, (item) => mulMoney(item.price, item.quantity));
 
     // 创建入库单
     const receipt = await this.prisma.purchaseReceipt.create({

@@ -71,6 +71,12 @@ export default defineManifestConfig({
     usingComponents: true,
     darkmode: true,
     themeLocation: 'theme.json',
+    plugins: {
+      kdPlugin: {
+        version: '1.1.4',
+        provider: 'wx6885acbedba59c14',
+      },
+    },
   },
   'app-harmony': {},
   'mp-harmony': {},

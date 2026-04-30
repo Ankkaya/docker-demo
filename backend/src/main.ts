@@ -27,11 +27,13 @@ import { ReviewsModule } from './domains/reviews/reviews.module';
 import { SaleReturnsModule } from './domains/sale-returns/sale-returns.module';
 import { ShipmentsModule } from './domains/shipments/shipments.module';
 import { SuppliersModule } from './domains/suppliers/suppliers.module';
+import { SystemLogsModule } from './domains/system-logs/system-logs.module';
 import { TransfersModule } from './domains/transfers/transfers.module';
 import { UnitsModule } from './domains/units/units.module';
 import { UsersModule } from './domains/users/users.module';
 import { WarehousesModule } from './domains/warehouses/warehouses.module';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { OperationLogInterceptor } from './common/interceptors/operation-log.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { PrismaService } from './infrastructure/prisma/prisma.service';
 
@@ -68,6 +70,10 @@ async function bootstrap() {
 
   // 全局异常过滤器
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  // 全局操作审计拦截器
+  const prismaService = app.get(PrismaService);
+  app.useGlobalInterceptors(new OperationLogInterceptor(prismaService));
 
   // Swagger 文档配置，支持顶部下拉切换平台
   const adminConfig = new DocumentBuilder()
@@ -113,6 +119,7 @@ async function bootstrap() {
       PrintersModule,
       PrinterConfigsModule,
       BannersModule,
+      SystemLogsModule,
     ],
   });
 
@@ -134,8 +141,8 @@ async function bootstrap() {
     },
   });
 
-  // 获取 PrismaService，确保数据库连接成功
-  const prismaService = app.get(PrismaService);
+  // 获取 PrismaService，确保数据库连接成功（已在上方声明）
+  app.get(PrismaService);
   
   const port = process.env.PORT || 3001;
   await app.listen(port);

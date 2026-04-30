@@ -23,6 +23,7 @@ export default {
   'general.MallHomeController_findCategories': ['GET', '/mall/categories'],
   'general.MallHomeController_findBrands': ['GET', '/mall/brands'],
   'general.MallHomeController_findBanners': ['GET', '/mall/banners'],
+  'general.MallHomeController_findSearchInit': ['GET', '/mall/search/init'],
   'general.MallAuthController_login': ['POST', '/mall/auth/login'],
   'general.MallAuthController_refresh': ['POST', '/mall/auth/refresh'],
   'general.MallAuthController_wechatLogin': ['POST', '/mall/auth/wechat-login'],
@@ -39,7 +40,10 @@ export default {
   'general.MallOrdersController_findOrders': ['GET', '/mall/orders'],
   'general.MallOrdersController_createOrder': ['POST', '/mall/orders'],
   'general.MallOrdersController_findOrderDetail': ['GET', '/mall/orders/{id}'],
+  'general.MallOrdersController_removeOrder': ['DELETE', '/mall/orders/{id}'],
   'general.MallOrdersController_payOrder': ['POST', '/mall/orders/{id}/pay'],
+  'general.MallOrdersController_getPaymentStatus': ['GET', '/mall/orders/{id}/payment-status'],
+  'general.MallPaymentsController_wechatNotify': ['POST', '/mall/payments/wechat/notify'],
   'general.MallReviewsController_findProductReviews': ['GET', '/mall/products/{id}/reviews'],
   'general.MallReviewsController_getProductReviewStats': ['GET', '/mall/products/{id}/review-stats'],
   'general.MallReviewsController_createReview': ['POST', '/mall/reviews'],
@@ -48,6 +52,7 @@ export default {
   'general.MallBalanceController_getSummary': ['GET', '/mall/balance'],
   'general.MallBalanceController_getLogs': ['GET', '/mall/balance/logs'],
   'general.MallBalanceController_recharge': ['POST', '/mall/balance/recharge'],
+  'general.MallBalanceController_getRechargeStatus': ['GET', '/mall/balance/recharges/{id}/status'],
   'general.MallFavoritesController_findFavorites': ['GET', '/mall/favorites'],
   'general.MallFavoritesController_createFavorite': ['POST', '/mall/favorites'],
   'general.MallFavoritesController_checkFavoriteStatus': ['GET', '/mall/favorites/check'],
@@ -55,5 +60,9 @@ export default {
   'general.MallBrowseHistoriesController_findHistories': ['GET', '/mall/histories'],
   'general.MallBrowseHistoriesController_createHistory': ['POST', '/mall/histories'],
   'general.MallBrowseHistoriesController_clearHistories': ['DELETE', '/mall/histories/clear'],
-  'general.MallBrowseHistoriesController_removeHistory': ['DELETE', '/mall/histories/{productId}']
+  'general.MallBrowseHistoriesController_removeHistory': ['DELETE', '/mall/histories/{productId}'],
+  'general.MallCouponsController_getSummary': ['GET', '/mall/coupons/summary'],
+  'general.MallCouponsController_findWallet': ['GET', '/mall/coupons'],
+  'general.MallCouponsController_findCenter': ['GET', '/mall/coupons/center'],
+  'general.MallCouponsController_claimCoupon': ['POST', '/mall/coupons/{id}/claim']
 };

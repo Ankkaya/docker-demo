@@ -428,6 +428,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   border-radius: 50%;
   transition: all 0.2s;
 }

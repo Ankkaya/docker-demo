@@ -43,6 +43,7 @@ import { getPrintErrorMessage, printShipment } from '@/services/print/print-serv
 import ShipmentForm from './components/ShipmentForm.vue';
 import type { Shipment, ShipmentStatus } from '@/types/purchase';
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
+import { resolveKuaidiCompanyLabel } from '@/constants/kuaidi-companies';
 
 const message = useMessage();
 
@@ -63,7 +64,13 @@ const columns: DataTableColumns<Shipment> = autoFitTableColumns([
   { title: '发货单号', key: 'shipmentNo' },
   { title: '订单号', key: 'orderNo' },
   { title: '仓库', key: 'warehouseName' },
-  { title: '物流公司', key: 'logisticsCompany' },
+  {
+    title: '物流公司',
+    key: 'logisticsCompany',
+    render(row) {
+      return row.logisticsCompany ? resolveKuaidiCompanyLabel(row.logisticsCompany) : '-';
+    },
+  },
   { title: '物流单号', key: 'trackingNo' },
   {
     title: '状态',

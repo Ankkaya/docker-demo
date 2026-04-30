@@ -13,6 +13,7 @@ export interface WechatPaySetting {
   mchSerialNo: string;
   apiV3Key: string;
   notifyUrl: string;
+  refundNotifyUrl: string;
   privateKey: string;
   platformPublicKey: string;
   platformCertPath: string;
@@ -28,6 +29,7 @@ const DEFAULT_WECHAT_PAY_SETTING: WechatPaySetting = {
   mchSerialNo: '',
   apiV3Key: '',
   notifyUrl: '',
+  refundNotifyUrl: '',
   privateKey: '',
   platformPublicKey: '',
   platformCertPath: '',
@@ -96,6 +98,7 @@ export class SystemSettingsService {
       mchSerialNo: String(value.mchSerialNo ?? DEFAULT_WECHAT_PAY_SETTING.mchSerialNo),
       apiV3Key: String(value.apiV3Key ?? DEFAULT_WECHAT_PAY_SETTING.apiV3Key),
       notifyUrl: String(value.notifyUrl ?? DEFAULT_WECHAT_PAY_SETTING.notifyUrl),
+      refundNotifyUrl: String(value.refundNotifyUrl ?? DEFAULT_WECHAT_PAY_SETTING.refundNotifyUrl),
       privateKey: String(value.privateKey ?? DEFAULT_WECHAT_PAY_SETTING.privateKey),
       platformPublicKey: String(value.platformPublicKey ?? DEFAULT_WECHAT_PAY_SETTING.platformPublicKey),
       platformCertPath: String(value.platformCertPath ?? DEFAULT_WECHAT_PAY_SETTING.platformCertPath),

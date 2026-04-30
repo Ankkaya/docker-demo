@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PrismaModule } from '@/infrastructure/prisma/prisma.module';
 import { IconAssetsModule } from '@/infrastructure/icon-assets/icon-assets.module';
 import { MallService } from './mall.service';
@@ -22,15 +22,21 @@ import { MallBalanceService } from './mall-balance.service';
 import { MallBalanceController } from './mall.controller';
 import { FavoritesModule } from '@/domains/favorites/favorites.module';
 import { BrowseHistoriesModule } from '@/domains/browse-histories/browse-histories.module';
+import { MallHotSearchesModule } from '@/domains/mall-hot-searches/mall-hot-searches.module';
 import { SystemSettingsModule } from '@/domains/system-settings/system-settings.module';
+import { PaymentsModule } from '@/domains/payments/payments.module';
 import { MallBrowseHistoriesController, MallFavoritesController } from './mall.controller';
 import { MallCouponsController } from './mall.controller';
 import { MallCouponsService } from './mall-coupons.service';
 import { WechatPayService } from './wechat-pay.service';
+import { MallRechargeActivitiesModule } from '@/domains/mall-recharge-activities/mall-recharge-activities.module';
+import { MallRechargePackagesModule } from '@/domains/mall-recharge-packages/mall-recharge-packages.module';
+import { CouponsModule } from '@/domains/coupons/coupons.module';
 
 @Module({
-  imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, CustomerAddressesModule, AuthModule, ReviewsModule, FavoritesModule, BrowseHistoriesModule, SystemSettingsModule],
+  imports: [PrismaModule, MinioModule, IconAssetsModule, CartsModule, CustomerAddressesModule, AuthModule, ReviewsModule, FavoritesModule, BrowseHistoriesModule, MallHotSearchesModule, SystemSettingsModule, MallRechargeActivitiesModule, MallRechargePackagesModule, CouponsModule, forwardRef(() => PaymentsModule)],
   controllers: [MallProductsController, MallHomeController, MallAuthController, MallCartController, MallAddressesController, MallOrdersController, MallPaymentsController, MallReviewsController, MallBalanceController, MallFavoritesController, MallBrowseHistoriesController, MallCouponsController],
   providers: [MallService, MallOrdersService, MallBalanceService, MallCouponsService, WechatPayService],
+  exports: [WechatPayService],
 })
 export class MallModule {}

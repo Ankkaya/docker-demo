@@ -19,6 +19,8 @@ import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiBearerAuth } from '@nes
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { MinioService } from './minio.service';
 import { BufferedFile } from './dto/file.dto';
+import { PrismaService } from '@/infrastructure/prisma/prisma.service';
+import { Request } from '@nestjs/common';
 
 @ApiTags('后台接口/文件存储')
 @Controller(['files', 'api/files'])
@@ -40,7 +42,10 @@ export class MinioController {
     'video/quicktime',
   ]);
 
-  constructor(private readonly minioService: MinioService) {}
+  constructor(
+    private readonly minioService: MinioService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * 上传单个文件
@@ -69,10 +74,27 @@ export class MinioController {
   async uploadFile(
     @UploadedFile() file: BufferedFile,
     @Query('path') path?: string,
+    @Request() req?: any,
   ): Promise<{ filename: string; objectKey: string; url: string; etag: string }> {
     this.validateUploadFile(file);
 
     const result = await this.minioService.uploadFile(file, path);
+
+    // 写入上传记录
+    const module = this.inferModuleFromPath(path);
+    const user = req?.user;
+    await this.prisma.uploadRecord.create({
+      data: {
+        userId: user?.userId,
+        originalName: file.originalname,
+        objectKey: result.objectKey,
+        url: result.url,
+        mimeType: file.mimetype,
+        size: file.size,
+        module,
+      },
+    });
+
     return {
       filename: file.originalname,
       objectKey: result.objectKey,
@@ -111,6 +133,7 @@ export class MinioController {
   async uploadFiles(
     @UploadedFiles() files: BufferedFile[],
     @Query('path') path?: string,
+    @Request() req?: any,
   ): Promise<Array<{ filename: string; objectKey: string; url: string; etag: string }>> {
     if (!files?.length) {
       throw new BadRequestException('请至少上传一个文件');
@@ -119,6 +142,23 @@ export class MinioController {
     files.forEach(file => this.validateUploadFile(file));
 
     const results = await this.minioService.uploadFiles(files, path);
+
+    // 批量写入上传记录
+    const module = this.inferModuleFromPath(path);
+    const user = req?.user;
+    await this.prisma.uploadRecord.createMany({
+      data: results.map((result, index) => ({
+        userId: user?.userId,
+        originalName: files[index].originalname,
+        objectKey: result.objectKey,
+        url: result.url,
+        mimeType: files[index].mimetype,
+        size: files[index].size,
+        module,
+      })),
+      skipDuplicates: true,
+    });
+
     return results.map((result, index) => ({
         filename: files[index].originalname,
         objectKey: result.objectKey,
@@ -258,6 +298,12 @@ export class MinioController {
   ): Promise<{ exists: boolean }> {
     const exists = await this.minioService.fileExists(filename);
     return { exists };
+  }
+
+  private inferModuleFromPath(path?: string): string {
+    if (!path) return 'unknown';
+    const segments = path.split('/').filter(Boolean);
+    return segments[0] || 'unknown';
   }
 
   private validateUploadFile(file?: BufferedFile): void {

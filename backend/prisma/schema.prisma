@@ -219,6 +219,21 @@ model Banner {
   @@index([isEnabled, sort])
 }
 
+// 商城热门搜索词
+model MallHotSearchKeyword {
+  id          Int       @id @default(autoincrement())
+  keyword     String    @unique // 热门搜索词
+  sort        Int       @default(0) // 排序号，越小越靠前
+  isEnabled   Boolean   @default(true)
+  searchCount Int       @default(0) // 预留给后续统计
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([deletedAt])
+  @@index([isEnabled, sort])
+}
+
 // 仓库
 model Warehouse {
   id          Int               @id @default(autoincrement())
@@ -301,6 +316,7 @@ model Customer {
   balanceLogs  BalanceLog[]
   rechargeOrders BalanceRechargeOrder[]
   couponReceives CouponReceive[]
+  couponExchangeCodes CouponExchangeCode[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -347,6 +363,51 @@ model SystemSetting {
 
 enum CouponType {
   CASH
+  DISCOUNT
+  INSTANT_REDUCTION
+}
+
+enum CouponSceneType {
+  COMMON
+  NEW_USER
+  FIRST_ORDER
+  RECHARGE_GIFT
+  ORDER_GIFT
+  MANUAL
+}
+
+enum CouponIssueType {
+  USER_CLAIM
+  ADMIN_ASSIGN
+  AUTO_GRANT
+  EXCHANGE_CODE
+}
+
+enum CouponValidType {
+  FIXED
+  RELATIVE
+}
+
+enum CouponIssueScopeType {
+  ALL
+  CUSTOMERS
+  NEW_USERS
+  FIRST_ORDER_USERS
+  RECHARGED_USERS
+}
+
+enum CouponUseScopeType {
+  ALL
+  CATEGORY
+  BRAND
+  PRODUCT
+  SKU
+}
+
+enum CouponRefundReturnMode {
+  RETURN_ORIGINAL
+  GRANT_NEW
+  NOT_RETURN
 }
 
 enum CouponReceiveStatus {
@@ -356,30 +417,84 @@ enum CouponReceiveStatus {
   INVALID
 }
 
+enum CouponExchangeCodeStatus {
+  UNUSED
+  USED
+  EXPIRED
+  DISABLED
+}
+
 model Coupon {
-  id              Int        @id @default(autoincrement())
-  name            String
-  code            String     @unique
-  type            CouponType @default(CASH)
-  thresholdAmount Decimal    @default(0) @db.Decimal(12, 2)
-  discountAmount  Decimal    @db.Decimal(12, 2)
-  totalCount      Int?
-  perLimit        Int        @default(1)
-  receivedCount   Int        @default(0)
-  usedCount       Int        @default(0)
-  startTime       DateTime
-  endTime         DateTime
-  description     String?
-  sort            Int        @default(0)
-  isEnabled       Boolean    @default(true)
-  deletedAt       DateTime?
-  receives        CouponReceive[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  code                  String                 @unique
+  type                  CouponType             @default(CASH)
+  sceneType             CouponSceneType        @default(COMMON)
+  issueType             CouponIssueType        @default(USER_CLAIM)
+  thresholdAmount       Decimal                @default(0) @db.Decimal(12, 2)
+  discountAmount        Decimal                @db.Decimal(12, 2)
+  discountRate          Int?
+  maxDiscountAmount     Decimal?               @db.Decimal(12, 2)
+  totalCount            Int?
+  perLimit              Int                    @default(1)
+  dailyLimit            Int?
+  receivedCount         Int                    @default(0)
+  usedCount             Int                    @default(0)
+  expiredCount          Int                    @default(0)
+  claimStartTime        DateTime?
+  claimEndTime          DateTime?
+  startTime             DateTime
+  endTime               DateTime
+  validType             CouponValidType        @default(FIXED)
+  validDays             Int?
+  validDelayDays        Int                    @default(0)
+  issueScopeType        CouponIssueScopeType   @default(ALL)
+  issueRuleJson         Json?
+  useScopeType          CouponUseScopeType     @default(ALL)
+  useRuleJson           Json?
+  channelScope          String[]
+  stackable             Boolean                @default(false)
+  canUseWithPromotion   Boolean                @default(true)
+  canUseWithMemberPrice Boolean                @default(true)
+  canUseWithPoint       Boolean                @default(true)
+  canUseWithBalance     Boolean                @default(true)
+  isPublic              Boolean                @default(true)
+  refundReturnMode      CouponRefundReturnMode @default(RETURN_ORIGINAL)
+  description           String?
+  sort                  Int                    @default(0)
+  isEnabled             Boolean                @default(true)
+  deletedAt             DateTime?
+  receives              CouponReceive[]
+  exchangeCodes         CouponExchangeCode[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
 
   @@index([deletedAt])
   @@index([isEnabled, sort])
   @@index([startTime, endTime])
+  @@index([claimStartTime, claimEndTime])
+  @@index([issueType, isPublic, isEnabled])
+}
+
+model CouponExchangeCode {
+  id         Int                      @id @default(autoincrement())
+  couponId   Int
+  coupon     Coupon                   @relation(fields: [couponId], references: [id])
+  code       String                   @unique
+  status     CouponExchangeCodeStatus @default(UNUSED)
+  customerId Int?
+  customer   Customer?                @relation(fields: [customerId], references: [id])
+  usedAt     DateTime?
+  expiresAt  DateTime?
+  remark     String?
+  deletedAt  DateTime?
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  @@index([couponId, status])
+  @@index([customerId])
+  @@index([expiresAt])
+  @@index([deletedAt])
 }
 
 model CouponReceive {
@@ -845,6 +960,7 @@ model Order {
   items        OrderItem[]
   shipments    Shipment[]
   payments     Payment[]
+  paymentRefunds PaymentRefund[]
   reviews      Review[]
   
   remark       String?
@@ -1252,6 +1368,13 @@ enum PaymentStatus {
   CANCELLED // 已取消
 }
 
+enum PaymentRefundStatus {
+  PROCESSING // 退款处理中
+  SUCCESS    // 退款成功
+  CLOSED     // 退款关闭
+  ABNORMAL   // 退款异常
+}
+
 // 收付款记录
 model Payment {
   id          Int           @id @default(autoincrement())
@@ -1278,6 +1401,7 @@ model Payment {
   paidAt      DateTime?
   failReason  String?
   notifyPayload Json?       // 回调原始报文
+  refunds     PaymentRefund[]
   
   remark      String?
   createdBy   Int
@@ -1294,6 +1418,32 @@ model Payment {
   @@index([paidAt])
 }
 
+model PaymentRefund {
+  id            Int                 @id @default(autoincrement())
+  refundNo      String              @unique
+  paymentId     Int
+  payment       Payment             @relation(fields: [paymentId], references: [id])
+  orderId       Int?
+  order         Order?              @relation(fields: [orderId], references: [id])
+  amount        Decimal             @db.Decimal(12, 2)
+  reason        String?
+  status        PaymentRefundStatus @default(PROCESSING)
+  thirdRefundNo String?
+  thirdStatus   String?
+  successAt     DateTime?
+  failReason    String?
+  notifyAt      DateTime?
+  notifyPayload Json?
+  createdBy     Int
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model BalanceAccount {
   id               Int                  @id @default(autoincrement())
   customerId       Int                  @unique
@@ -1301,6 +1451,7 @@ model BalanceAccount {
   availableBalance Decimal              @default(0) @db.Decimal(12, 2)
   frozenBalance    Decimal              @default(0) @db.Decimal(12, 2)
   totalRecharged   Decimal              @default(0) @db.Decimal(12, 2)
+  totalPresented   Decimal              @default(0) @db.Decimal(12, 2)
   totalConsumed    Decimal              @default(0) @db.Decimal(12, 2)
   totalRefunded    Decimal              @default(0) @db.Decimal(12, 2)
   totalAdjusted    Decimal              @default(0) @db.Decimal(12, 2)
@@ -1322,6 +1473,7 @@ model BalanceLog {
   customer      Customer       @relation(fields: [customerId], references: [id])
   type          BalanceLogType
   changeAmount  Decimal        @db.Decimal(12, 2)
+  bonusAmount   Decimal        @default(0) @db.Decimal(12, 2)
   balanceBefore Decimal        @db.Decimal(12, 2)
   balanceAfter  Decimal        @db.Decimal(12, 2)
   bizType       String?
@@ -1344,6 +1496,11 @@ model BalanceRechargeOrder {
   customerId    Int
   customer      Customer      @relation(fields: [customerId], references: [id])
   amount        Decimal       @db.Decimal(12, 2)
+  bonusAmount   Decimal       @default(0) @db.Decimal(12, 2)
+  packageId     Int?
+  packageName   String?
+  activityId    Int?
+  activityName  String?
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   outTradeNo    String?       @unique
@@ -1368,4 +1525,142 @@ model BalanceRechargeOrder {
   @@index([outTradeNo])
   @@index([paidAt])
   @@index([deletedAt])
+}
+
+model MallRechargePackage {
+  id          Int                         @id @default(autoincrement())
+  name        String
+  rechargeAmount Decimal                  @db.Decimal(12, 2)
+  tag         String?
+  description String?
+  sort        Int                         @default(0)
+  isEnabled   Boolean                     @default(true)
+  remark      String?
+  deletedAt   DateTime?
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+  activities  MallRechargePackageActivity[]
+
+  @@index([deletedAt])
+  @@index([isEnabled, sort])
+}
+
+model MallRechargeActivity {
+  id                Int       @id @default(autoincrement())
+  name              String
+  bonusAmount       Decimal   @default(0) @db.Decimal(12, 2)
+  tag               String?
+  description       String?
+  startTime         DateTime?
+  endTime           DateTime?
+  sort              Int       @default(0)
+  isEnabled         Boolean   @default(true)
+  firstRechargeOnly Boolean   @default(false)
+  remark            String?
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  packages          MallRechargePackageActivity[]
+
+  @@index([deletedAt])
+  @@index([isEnabled, sort])
+}
+
+model MallRechargePackageActivity {
+  id          Int                  @id @default(autoincrement())
+  packageId   Int
+  package     MallRechargePackage  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  activityId  Int
+  activity    MallRechargeActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  sort        Int                  @default(0)
+  isEnabled   Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([packageId, activityId])
+  @@index([packageId, isEnabled, sort])
+  @@index([activityId])
+}
+
+// ==================== 系统日志模块 ====================
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  IMPORT
+  APPROVE
+  REJECT
+  CANCEL
+  OTHER
+}
+
+model OperationLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?
+  username    String?
+  module      String   // 模块: product, order, inventory...
+  action      LogAction // 动作
+  targetId    String?  // 被操作数据主键
+  targetType  String?  // 被操作数据类型
+  description String?  // 操作描述
+  oldValue    Json?    // 变更前快照
+  newValue    Json?    // 变更后快照
+  ip          String?
+  userAgent   String?
+  duration    Int?     // 接口耗时 ms
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([module, action, createdAt])
+  @@index([targetId, targetType])
+  @@index([createdAt])
+}
+
+enum LoginLogType {
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  TOKEN_EXPIRED
+  TOKEN_REFRESH
+}
+
+model LoginLog {
+  id         Int          @id @default(autoincrement())
+  userId     Int?
+  username   String?
+  type       LoginLogType // 登录/登出/改密/Token过期
+  ip         String
+  location   String?      // IP属地
+  userAgent  String?
+  success    Boolean
+  failReason String?
+  createdAt  DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([ip])
+  @@index([type, createdAt])
+}
+
+model UploadRecord {
+  id           Int      @id @default(autoincrement())
+  userId       Int?
+  originalName String
+  objectKey    String
+  url          String
+  mimeType     String
+  size         Int      // 字节
+  module       String   // avatars, reviews, products...
+  refId        String?  // 关联业务ID
+  refType      String?  // 关联业务类型
+  status       String   @default("ACTIVE") // ACTIVE, DELETED
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([module, refId])
+  @@index([objectKey])
+  @@index([createdAt])
 }

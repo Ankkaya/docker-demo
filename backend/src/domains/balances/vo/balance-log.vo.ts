@@ -21,6 +21,9 @@ export class BalanceLogVo {
   changeAmount: string;
 
   @ApiProperty({ type: String })
+  bonusAmount: string;
+
+  @ApiProperty({ type: String })
   balanceBefore: string;
 
   @ApiProperty({ type: String })
@@ -61,6 +64,7 @@ export class BalanceLogVo {
       type: entity.type,
       typeText: this.getTypeText(entity.type),
       changeAmount: entity.changeAmount.toString(),
+      bonusAmount: (entity.bonusAmount ?? 0).toString(),
       balanceBefore: entity.balanceBefore.toString(),
       balanceAfter: entity.balanceAfter.toString(),
       customerName: entity.customer.name,

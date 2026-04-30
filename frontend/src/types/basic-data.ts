@@ -28,6 +28,8 @@ export interface Category {
   parentId?: number;
   level: number;
   sort: number;
+  mallRecommend: boolean;
+  mallRecommendSort: number;
   icon?: string;
   iconUrl?: string;
   image?: string;
@@ -46,6 +48,8 @@ export interface CreateCategoryDto {
   parentId?: number;
   level?: number;
   sort?: number;
+  mallRecommend?: boolean;
+  mallRecommendSort?: number;
   icon?: string;
   iconUrl?: string;
   image?: string;

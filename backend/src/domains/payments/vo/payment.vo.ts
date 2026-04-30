@@ -1,4 +1,5 @@
 import { PaymentType, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { PaymentRefundVo } from './payment-refund.vo';
 
 // 收付款记录VO
 export class PaymentVo {
@@ -6,6 +7,8 @@ export class PaymentVo {
   type: PaymentType;
   typeText: string;
   bizType: string;
+  orderSource: 'SHOPPING' | 'RECHARGE';
+  orderSourceText: string;
   bizId: number | null;
   orderNo?: string;
   orderType?: string | null;
@@ -16,8 +19,18 @@ export class PaymentVo {
   statusText: string;
   outTradeNo?: string | null;
   thirdTradeNo?: string | null;
+  tradeType?: string | null;
+  prepayId?: string | null;
   thirdStatus?: string | null;
+  queryCount: number;
+  lastQueryAt?: Date | null;
+  notifyAt?: Date | null;
   paidAt?: Date | null;
+  failReason?: string | null;
+  notifyPayload?: unknown;
+  confirmSource: 'NOTIFY' | 'QUERY' | 'MANUAL' | 'UNKNOWN';
+  confirmSourceText: string;
+  refunds?: PaymentRefundVo[];
   remark?: string;
   createdBy: number;
   createdAt: Date;
@@ -29,6 +42,8 @@ export class PaymentVo {
     vo.type = entity.type;
     vo.typeText = entity.type === PaymentType.RECEIPT ? '收款' : '付款';
     vo.bizType = entity.bizType;
+    vo.orderSource = entity.orderSource || 'SHOPPING';
+    vo.orderSourceText = vo.orderSource === 'RECHARGE' ? '充值' : '购物';
     vo.bizId = entity.purchaseId || entity.orderId || null;
     vo.orderNo = entity.purchase?.orderNo || entity.order?.orderNo || '';
     vo.orderType = entity.order?.type || null;
@@ -39,8 +54,18 @@ export class PaymentVo {
     vo.statusText = this.getStatusText(entity.status);
     vo.outTradeNo = entity.outTradeNo || null;
     vo.thirdTradeNo = entity.thirdTradeNo || null;
+    vo.tradeType = entity.tradeType || null;
+    vo.prepayId = entity.prepayId || null;
     vo.thirdStatus = entity.thirdStatus || null;
+    vo.queryCount = entity.queryCount || 0;
+    vo.lastQueryAt = entity.lastQueryAt || null;
+    vo.notifyAt = entity.notifyAt || null;
     vo.paidAt = entity.paidAt || null;
+    vo.failReason = entity.failReason || null;
+    vo.notifyPayload = entity.notifyPayload ?? null;
+    vo.confirmSource = this.getConfirmSource(entity);
+    vo.confirmSourceText = this.getConfirmSourceText(vo.confirmSource);
+    vo.refunds = Array.isArray(entity.refunds) ? PaymentRefundVo.fromEntities(entity.refunds) : undefined;
     vo.remark = entity.remark || undefined;
     vo.createdBy = entity.createdBy;
     vo.createdAt = entity.createdAt;
@@ -71,5 +96,31 @@ export class PaymentVo {
       CANCELLED: '已取消',
     };
     return map[status] || status;
+  }
+
+  private static getConfirmSource(entity: any): 'NOTIFY' | 'QUERY' | 'MANUAL' | 'UNKNOWN' {
+    if (entity.notifyAt) {
+      return 'NOTIFY';
+    }
+
+    if (entity.queryCount > 0) {
+      return 'QUERY';
+    }
+
+    if (entity.status === PaymentStatus.COMPLETED) {
+      return 'MANUAL';
+    }
+
+    return 'UNKNOWN';
+  }
+
+  private static getConfirmSourceText(source: 'NOTIFY' | 'QUERY' | 'MANUAL' | 'UNKNOWN') {
+    const map: Record<typeof source, string> = {
+      NOTIFY: '微信回调',
+      QUERY: '主动查单',
+      MANUAL: '手工确认',
+      UNKNOWN: '未确认',
+    };
+    return map[source];
   }
 }

@@ -25,3 +25,5 @@
 - 功能目录：`订单支付页 (Order Payment)`
 - 页面：`7b46930573e64c02a36adb0fa5123da9`（新增收货地址 Add New Address）
 - 功能目录：`新增收货地址 (Add New Address)`
+- 页面：`f18b78ab4ade407b88f94d88b680ebc7`（多商品订单评价页）
+- 功能目录：`多商品订单评价页 (Multi Product Order Review)`

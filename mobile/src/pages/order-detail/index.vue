@@ -19,6 +19,7 @@ definePage({
 })
 
 const router = useRouter()
+const toast = useToast()
 const userStore = useUserStore()
 const { confirm } = useGlobalMessage()
 const routeOrderId = ref(0)
@@ -34,10 +35,11 @@ const balanceSummary = ref({
   availableBalance: '0.00',
 })
 
-type OrderViewStatus = '待付款' | '待发货' | '待收货' | '已完成' | '已取消' | '已超时'
+type OrderViewStatus = '待付款' | '待发货' | '待收货' | '已完成' | '已取消' | '已超时' | '退款中' | '已退款'
 
 interface OrderViewItem {
   id: string
+  orderItemId: number
   productId: number
   name: string
   spec: string
@@ -45,6 +47,8 @@ interface OrderViewItem {
   qty: number
   amount: number
   image: string
+  reviewed: boolean
+  canReview: boolean
 }
 
 interface OrderViewTimelineItem {
@@ -54,8 +58,10 @@ interface OrderViewTimelineItem {
 
 interface OrderViewLogistics {
   company: string
+  companyCode: string
   trackingNo: string
   status: string
+  canQuery: boolean
 }
 
 const formattedTimer = computed(() => {
@@ -72,6 +78,8 @@ const statusIconMap: Record<string, string> = {
   已完成: 'i-material-symbols:task-alt',
   已取消: 'i-material-symbols:cancel',
   已超时: 'i-material-symbols:timer-off',
+  退款中: 'i-material-symbols:sync',
+  已退款: 'i-material-symbols:undo',
 }
 
 function getOrderDetailIconClass(name: string) {
@@ -190,7 +198,7 @@ async function loadBalanceSummary() {
 }
 
 function isExpiredUnpaidOrder(detail: MallOrderDetail) {
-  if (detail.status !== 'CANCELLED' || detail.payStatus !== 'UNPAID' || detail.payDate) {
+  if (detail.payStatus !== 'UNPAID' || detail.payDate || detail.status === 'COMPLETED') {
     return false
   }
 
@@ -205,6 +213,10 @@ function isExpiredUnpaidOrder(detail: MallOrderDetail) {
 function resolveOrderStatus(detail: MallOrderDetail): OrderViewStatus {
   if (isExpiredUnpaidOrder(detail))
     return '已超时'
+  if (detail.status === 'REFUNDING' || detail.payStatus === 'REFUNDING')
+    return '退款中'
+  if (detail.status === 'REFUNDED' || detail.payStatus === 'REFUNDED')
+    return '已退款'
   if (detail.status === 'CANCELLED')
     return '已取消'
   if (detail.status === 'COMPLETED')
@@ -225,57 +237,136 @@ function resolveStatusDesc(detail: MallOrderDetail, statusLabel: OrderViewStatus
     return '商家正在备货，请耐心等待'
   if (statusLabel === '待收货')
     return '包裹已经发出，记得及时签收'
+  if (statusLabel === '退款中')
+    return '订单已取消，退款正在处理中'
+  if (statusLabel === '已退款')
+    return '订单已取消，支付金额已原路退回'
   if (statusLabel === '已取消')
     return '订单已取消，可返回继续挑选商品'
   return '订单已完成，期待你再次光临'
 }
 
+function resolveCompanyLabel(code?: string | null) {
+  if (!code)
+    return '平台配送'
+  return KUAIDI_COMPANY_LABELS[code] || code
+}
+
 function resolveLogistics(detail: MallOrderDetail, statusLabel: OrderViewStatus): OrderViewLogistics {
+  const code = detail.logisticsCompany || ''
+  const trackingNo = detail.trackingNo || ''
+  const hasShipped = Boolean(detail.shipDate || trackingNo)
+  const company = resolveCompanyLabel(code)
+
+  // 已发货（待收货 / 已完成）且后台已填运单号，允许跳转插件查看
+  if ((statusLabel === '待收货' || statusLabel === '已完成') && trackingNo) {
+    const desc = statusLabel === '已完成'
+      ? (detail.receiveDate ? `签收时间 ${formatDateTime(detail.receiveDate).slice(5, 16)}` : '订单已完成')
+      : (detail.shipDate ? `发货时间 ${formatDateTime(detail.shipDate).slice(5, 16)}` : '包裹运输中')
+    return {
+      company,
+      companyCode: code,
+      trackingNo,
+      status: desc,
+      canQuery: true,
+    }
+  }
+
   if (statusLabel === '待收货') {
     return {
-      company: '平台配送',
-      trackingNo: detail.shipDate ? '已发货' : '配送中',
+      company,
+      companyCode: code,
+      trackingNo: hasShipped ? '已发货' : '配送中',
       status: detail.shipDate ? `发货时间 ${formatDateTime(detail.shipDate).slice(5, 16)}` : '包裹运输中',
+      canQuery: false,
     }
   }
 
   if (statusLabel === '待发货') {
     return {
       company: '平台配送',
+      companyCode: '',
       trackingNo: '待出库',
       status: '商家备货中',
+      canQuery: false,
     }
   }
 
   if (statusLabel === '已完成') {
     return {
-      company: '平台配送',
+      company,
+      companyCode: code,
       trackingNo: '已签收',
       status: detail.receiveDate ? `签收时间 ${formatDateTime(detail.receiveDate).slice(5, 16)}` : '订单已完成',
+      canQuery: false,
     }
   }
 
   if (statusLabel === '已超时') {
     return {
       company: '平台配送',
+      companyCode: '',
       trackingNo: '订单关闭',
       status: '订单支付超时',
+      canQuery: false,
+    }
+  }
+
+  if (statusLabel === '退款中') {
+    return {
+      company: '平台配送',
+      companyCode: '',
+      trackingNo: '退款处理中',
+      status: '订单已取消，退款处理中',
+      canQuery: false,
+    }
+  }
+
+  if (statusLabel === '已退款') {
+    return {
+      company: '平台配送',
+      companyCode: '',
+      trackingNo: '已退款',
+      status: '订单已取消并退款',
+      canQuery: false,
     }
   }
 
   if (statusLabel === '已取消') {
     return {
       company: '平台配送',
+      companyCode: '',
       trackingNo: '订单关闭',
       status: '订单已取消',
+      canQuery: false,
     }
   }
 
   return {
     company: '平台配送',
+    companyCode: '',
     trackingNo: '待支付',
     status: '等待付款',
+    canQuery: false,
   }
+}
+
+// 快递100 公司编码 -> 中文名称映射（常用，完整表见 https://api.kuaidi100.com/manager/openapi/download/kdbm.do）
+// 后台如果存的已是中文名称或未知编码，这里 fallback 直接展示后台值
+const KUAIDI_COMPANY_LABELS: Record<string, string> = {
+  shunfeng: '顺丰速运',
+  yuantong: '圆通速递',
+  zhongtong: '中通快递',
+  shentong: '申通快递',
+  yunda: '韵达快递',
+  ems: 'EMS',
+  youzhengguonei: '邮政快递包裹',
+  jd: '京东物流',
+  jtexpress: '极兔速递',
+  debangkuaidi: '德邦快递',
+  zhaijisong: '宅急送',
+  huitongkuaidi: '百世汇通',
+  tiantian: '天天快递',
 }
 
 function syncCountdownByExpireAt(expireAt?: string | null) {
@@ -339,6 +430,22 @@ function resolveTimeline(detail: MallOrderDetail, statusLabel: OrderViewStatus):
     })
   }
 
+  if (statusLabel === '退款中') {
+    list.push({
+      time: detail.cancelDate ? formatDateTime(detail.cancelDate).slice(0, 16) : undefined,
+      text: '订单已取消，退款处理中',
+    })
+    return list
+  }
+
+  if (statusLabel === '已退款') {
+    list.push({
+      time: detail.cancelDate ? formatDateTime(detail.cancelDate).slice(0, 16) : undefined,
+      text: '订单已取消并退款',
+    })
+    return list
+  }
+
   if (detail.shipDate) {
     list.push({
       time: formatDateTime(detail.shipDate).slice(0, 16),
@@ -389,7 +496,6 @@ async function loadOrder() {
   catch (error: any) {
     orderDetail.value = null
     loadError.value = error?.message || '加载订单失败'
-    uni.showToast({ title: loadError.value, icon: 'none' })
   }
   finally {
     loading.value = false
@@ -410,7 +516,7 @@ function goBack() {
 }
 
 function contactService() {
-  uni.showToast({ title: '联系客服开发中', icon: 'none' })
+  toast.info('联系客服开发中')
 }
 
 function openProduct(item: OrderViewItem) {
@@ -421,6 +527,19 @@ function openProduct(item: OrderViewItem) {
     name: 'product-detail',
     params: {
       id: String(item.productId),
+    },
+  })
+}
+
+function goReviewOrder() {
+  if (!routeOrderId.value || !orderDetail.value?.hasPendingReview) {
+    return
+  }
+
+  router.push({
+    name: 'order-review',
+    params: {
+      id: String(routeOrderId.value),
     },
   })
 }
@@ -473,17 +592,16 @@ async function payNow() {
   if (orderStatusLabel.value === '待收货') {
     try {
       await alovaInstance.Patch(`/mall/orders/${routeOrderId.value}/receive`, {}).send()
-      uni.showToast({ title: '已确认收货', icon: 'success' })
+      toast.success('已确认收货')
       loadOrder()
     }
-    catch (error: any) {
-      uni.showToast({ title: error?.message || '确认收货失败', icon: 'none' })
+    catch {
     }
     return
   }
 
   if (orderStatusLabel.value === '待发货') {
-    uni.showToast({ title: '已提醒商家发货', icon: 'none' })
+    toast.info('已提醒商家发货')
     return
   }
 
@@ -491,7 +609,7 @@ async function payNow() {
     return
 
   if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
-    uni.showToast({ title: '余额不足，请先充值', icon: 'none' })
+    toast.error('余额不足，请先充值')
     return
   }
 
@@ -515,16 +633,18 @@ async function payNow() {
 
     paymentPopupVisible.value = false
     await loadBalanceSummary()
-    uni.showToast({ title: `${selectedPayment.value === 'balance' ? '余额' : '微信'}支付成功`, icon: 'success' })
+    toast.success(`${selectedPayment.value === 'balance' ? '余额' : '微信'}支付成功`)
     await loadOrder()
   }
   catch (error: any) {
     const errMsg = String(error?.errMsg || error?.message || '')
     if (errMsg.includes('cancel')) {
-      uni.showToast({ title: '已取消支付', icon: 'none' })
+      toast.info('已取消支付')
       return
     }
-    uni.showToast({ title: error?.message || error?.errMsg || '支付失败', icon: 'none' })
+    if (!error?.handled) {
+      toast.error(error?.message || error?.errMsg || '支付失败')
+    }
   }
   finally {
     paying.value = false
@@ -533,18 +653,34 @@ async function payNow() {
 
 async function cancelOrder() {
   if (orderStatusLabel.value === '待收货') {
-    uni.showToast({ title: '售后申请已提交', icon: 'success' })
+    toast.success('售后申请已提交')
     return
   }
 
-  try {
-    await alovaInstance.Patch(`/mall/orders/${routeOrderId.value}/cancel`, {}).send()
-    uni.showToast({ title: '订单已取消', icon: 'none' })
-    loadOrder()
-  }
-  catch (error: any) {
-    uni.showToast({ title: error?.message || '取消订单失败', icon: 'none' })
-  }
+  confirm({
+    title: '确认取消订单',
+    msg: '取消后订单将关闭，是否继续？',
+    confirmButtonText: '确认取消',
+    cancelButtonText: '再想想',
+    success: async (res) => {
+      if (res.action !== 'confirm') {
+        return
+      }
+
+      try {
+        const result = await alovaInstance.Patch(`/mall/orders/${routeOrderId.value}/cancel`, {}).send() as any
+        const toastTitle = result?.payStatus === 'REFUNDING'
+          ? '取消成功，退款处理中'
+          : result?.payStatus === 'REFUNDED'
+            ? '订单已取消并退款'
+            : '订单已取消'
+        toast.success(toastTitle)
+        loadOrder()
+      }
+      catch {
+      }
+    },
+  })
 }
 
 async function deleteOrder() {
@@ -563,14 +699,13 @@ async function deleteOrder() {
 
       try {
         await alovaInstance.Delete(`/mall/orders/${routeOrderId.value}`).send()
-        uni.showToast({ title: '订单已删除', icon: 'success' })
+        toast.success('订单已删除')
         router.push({
           name: 'order-list',
           query: { status: 'all' },
         })
       }
-      catch (error: any) {
-        uni.showToast({ title: error?.message || '删除订单失败', icon: 'none' })
+      catch {
       }
     },
   })
@@ -590,6 +725,7 @@ const orderItems = computed<OrderViewItem[]>(() => {
 
   return (orderDetail.value.items || []).map((item: MallOrderItem, index: number) => ({
     id: `${orderDetail.value?.id}-${item.skuId}-${index}`,
+    orderItemId: Number(item.orderItemId || 0),
     productId: Number(item.productId || 0),
     name: item.productName || '未命名商品',
     spec: formatSpecs(item.specs || {}),
@@ -597,6 +733,8 @@ const orderItems = computed<OrderViewItem[]>(() => {
     qty: Number(item.quantity || 0),
     amount: Number(item.amount || 0),
     image: item.image || '',
+    reviewed: Boolean(item.reviewed),
+    canReview: Boolean(item.canReview),
   }))
 })
 
@@ -604,8 +742,10 @@ const orderLogistics = computed<OrderViewLogistics>(() => {
   if (!orderDetail.value) {
     return {
       company: '平台配送',
+      companyCode: '',
       trackingNo: '-',
       status: '-',
+      canQuery: false,
     }
   }
   return resolveLogistics(orderDetail.value, orderStatusLabel.value)
@@ -638,25 +778,48 @@ const orderInfoRows = computed(() => {
     return []
   }
 
-  return [
+  const rows = [
     { label: '订单编号', value: orderDetail.value.orderNo || '-' },
     { label: '下单时间', value: formatDateTime(orderDetail.value.orderDate) || '-' },
     { label: '支付方式', value: resolvePaymentMethodLabel(orderDetail.value.paymentMethod) },
     { label: '支付时间', value: orderDetail.value.payDate ? formatDateTime(orderDetail.value.payDate) : '-' },
-    { label: '取消时间', value: orderDetail.value.cancelDate ? formatDateTime(orderDetail.value.cancelDate) : '-' },
     { label: '发货时间', value: orderDetail.value.shipDate ? formatDateTime(orderDetail.value.shipDate) : '-' },
     { label: '收货时间', value: orderDetail.value.receiveDate ? formatDateTime(orderDetail.value.receiveDate) : '-' },
     { label: '订单状态', value: orderStatusLabel.value },
   ]
+
+  if (orderDetail.value.status === 'CANCELLED' && orderDetail.value.cancelDate) {
+    rows.splice(4, 0, {
+      label: '取消时间',
+      value: formatDateTime(orderDetail.value.cancelDate),
+    })
+  }
+
+  return rows
 })
 
 const canDeleteCurrentOrder = computed(() =>
-  orderStatusLabel.value === '已取消' || orderStatusLabel.value === '已超时',
+  orderStatusLabel.value === '已完成'
+  || orderStatusLabel.value === '已取消'
+  || orderStatusLabel.value === '已超时'
+  || orderStatusLabel.value === '已退款',
 )
 
-const showBottomActions = computed(() =>
-  Boolean(orderDetail.value) && (canDeleteCurrentOrder.value || orderStatusLabel.value !== '已完成'),
+const canReviewCurrentOrder = computed(() =>
+  orderStatusLabel.value === '已完成' && Boolean(orderDetail.value?.hasPendingReview),
 )
+
+const showBottomActions = computed(() => {
+  if (!orderDetail.value) {
+    return false
+  }
+
+  if (canDeleteCurrentOrder.value || canReviewCurrentOrder.value) {
+    return true
+  }
+
+  return ['待付款', '待发货', '待收货'].includes(orderStatusLabel.value)
+})
 
 const primaryActionLabel = computed(() => {
   if (orderStatusLabel.value === '已超时')
@@ -681,6 +844,40 @@ onUnload(() => {
     clearInterval(timer.value)
   }
 })
+
+function openLogisticsPlugin() {
+  const detail = orderDetail.value
+  if (!detail?.trackingNo) {
+    toast.info('暂无可查询的物流信息')
+    return
+  }
+
+  const phone = (detail.receiverPhone || '').replace(/\D/g, '')
+  const phoneTail = phone ? phone.slice(-4) : ''
+  // 快递100 插件页面为 index，必填参数 num（运单号），可选 com（公司编码）/ phone（顺丰必填收件人手机后4位）/ appName（调用方名称）
+  const params: string[] = [
+    `num=${encodeURIComponent(detail.trackingNo)}`,
+    `appName=${encodeURIComponent('商城订单')}`,
+  ]
+  if (detail.logisticsCompany)
+    params.push(`com=${encodeURIComponent(detail.logisticsCompany)}`)
+  if (phoneTail)
+    params.push(`phone=${encodeURIComponent(phoneTail)}`)
+
+  const url = `plugin://kdPlugin/index?${params.join('&')}`
+  // #ifdef MP-WEIXIN
+  uni.navigateTo({
+    url,
+    fail: (err) => {
+      console.error('[kdPlugin] navigateTo failed', err)
+      toast.error('无法打开物流查询，请检查插件是否已启用')
+    },
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  toast.info('请在微信小程序中查看物流')
+  // #endif
+}
 </script>
 
 <template>
@@ -770,8 +967,18 @@ onUnload(() => {
                 <text class="text-[20px] text-[#efb239] leading-none" :class="getOrderDetailIconClass('shipping')" />
               </view>
               <view class="min-w-0 flex-1">
-                <view class="text-sm font-semibold">
-                  配送信息
+                <view class="flex items-center justify-between">
+                  <text class="text-sm font-semibold">
+                    配送信息
+                  </text>
+                  <view
+                    v-if="orderLogistics.canQuery"
+                    class="flex items-center gap-1 rounded-full bg-[#fff6df] px-3 py-1 text-xs text-[#c98500] font-semibold"
+                    @click.stop="openLogisticsPlugin"
+                  >
+                    <text class="i-material-symbols:search text-[14px] leading-none" />
+                    <text>查看物流</text>
+                  </view>
                 </view>
                 <view class="mt-3 text-sm text-slate-700 font-medium">
                   {{ orderLogistics.company }} · {{ orderLogistics.trackingNo }}
@@ -802,6 +1009,14 @@ onUnload(() => {
                     <view class="mt-2">
                       <text class="text-sm text-[#efb239] font-bold">
                         ￥{{ item.price.toFixed(2) }}
+                      </text>
+                    </view>
+                    <view v-if="orderStatusLabel === '已完成'" class="mt-2">
+                      <text
+                        class="inline-flex rounded-full px-2 py-1 text-[20rpx] font-semibold"
+                        :class="item.reviewed ? 'bg-slate-100 text-slate-500' : item.canReview ? 'bg-[#fff6df] text-[#c98500]' : 'bg-slate-100 text-slate-400'"
+                      >
+                        {{ item.reviewed ? '已评价' : item.canReview ? '待评价' : '不可评价' }}
                       </text>
                     </view>
                   </view>
@@ -864,17 +1079,25 @@ onUnload(() => {
       class="fixed bottom-0 left-0 right-0 z-40 flex items-center gap-3 border-t border-[#efb239]/8 bg-white/95 p-4 pb-6 backdrop-blur-md"
     >
       <view
+        v-if="!canReviewCurrentOrder"
         class="flex-1 border border-slate-200 rounded-full border-solid bg-white py-3 text-center text-sm text-slate-700 font-semibold"
         @click="canDeleteCurrentOrder ? deleteOrder() : cancelOrder()"
       >
         {{ secondaryActionLabel }}
       </view>
       <view
-        v-if="!canDeleteCurrentOrder"
+        v-if="!canDeleteCurrentOrder && !canReviewCurrentOrder"
         class="detail-action flex-[1.2] rounded-full bg-[#efb239] py-3 text-center text-sm text-slate-900 font-bold"
         @click="orderStatusLabel === '待付款' ? openPaymentPopup() : payNow()"
       >
         {{ primaryActionLabel }}
+      </view>
+      <view
+        v-if="canReviewCurrentOrder"
+        class="detail-action flex-[1.2] rounded-full bg-[#efb239] py-3 text-center text-sm text-slate-900 font-bold"
+        @click="goReviewOrder"
+      >
+        评价商品
       </view>
     </view>
 
@@ -910,7 +1133,7 @@ onUnload(() => {
           <view
             v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="item.key === 'balance' && !balancePayEnabled ? uni.showToast({ title: '余额不足，请先充值', icon: 'none' }) : selectedPayment = item.key"
+            @click="item.key === 'balance' && !balancePayEnabled ? toast.error('余额不足，请先充值') : selectedPayment = item.key"
           >
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">

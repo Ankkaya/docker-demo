@@ -1,9 +1,12 @@
 <template>
   <div class="p-4 menu-list">
-    <n-card class="bg-container transition-theme">
-      <div class="page-toolbar mb-4">
+    <n-card class="mb-4 bg-container transition-theme">
+      <div class="page-toolbar">
         <n-button type="primary" @click="handleCreate(null)">新增菜单</n-button>
       </div>
+    </n-card>
+
+    <n-card class="bg-container transition-theme">
       <n-data-table
         :columns="columns"
         :data="menus"

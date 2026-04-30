@@ -1,18 +1,39 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
+import { WechatPayService, WechatRefundNotifyResource } from '@/applications/mall/wechat-pay.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreatePaymentRefundDto } from './dto/create-payment-refund.dto';
 import { QueryPaymentDto } from './dto/query-payment.dto';
-import { PaymentStatus, PaymentType, Prisma, PurchaseStatus } from '@prisma/client';
+import { QueryPaymentRefundDto } from './dto/query-payment-refund.dto';
+import { BalanceLogType, OrderStatus, PaymentMethod, PaymentRefundStatus, PaymentStatus, PaymentType, PayStatus, Prisma, PurchaseStatus } from '@prisma/client';
+import { PaymentRefundVo } from './vo/payment-refund.vo';
 import { PaymentVo } from './vo/payment.vo';
+import {
+  D,
+  addMoney,
+  subMoney,
+  subMoneyClampZero,
+  sumMoney,
+  toYuan,
+  yuanToFen,
+  moneyGt,
+  moneyLt,
+} from '@/common/utils/money';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(PaymentsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private wechatPayService: WechatPayService,
+  ) {}
 
   // 创建收付款记录
   async create(createDto: CreatePaymentDto, userId: number) {
@@ -31,9 +52,9 @@ export class PaymentsService {
 
       // 验证付款金额
       if (type === PaymentType.PAYMENT) {
-        const remaining = Number(purchase.payable) - Number(purchase.paid);
-        if (amount > remaining) {
-          throw new BadRequestException(`付款金额超过未付金额(未付:${remaining})`);
+        const remaining = subMoney(purchase.payable, purchase.paid);
+        if (moneyGt(amount, remaining)) {
+          throw new BadRequestException(`付款金额超过未付金额(未付:${remaining.toFixed(2)})`);
         }
       }
     } else if (bizType === 'SALE') {
@@ -47,9 +68,9 @@ export class PaymentsService {
 
       // 验证收款金额
       if (type === PaymentType.RECEIPT) {
-        const remaining = Number(order.payable) - Number(order.paid);
-        if (amount > remaining) {
-          throw new BadRequestException(`收款金额超过未收金额(未收:${remaining})`);
+        const remaining = subMoney(order.payable, order.paid);
+        if (moneyGt(amount, remaining)) {
+          throw new BadRequestException(`收款金额超过未收金额(未收:${remaining.toFixed(2)})`);
         }
       }
     } else {
@@ -93,62 +114,120 @@ export class PaymentsService {
 
   // 查询收付款列表
   async findAll(query: QueryPaymentDto) {
-    const { type, bizType, status, method, keyword, mallOnly, page = 1, pageSize = 10 } = query;
+    const { type, bizType, status, method, keyword, orderSource, page = 1, pageSize = 10 } = query;
 
-    const where: Prisma.PaymentWhereInput = {
+    const paymentWhere: Prisma.PaymentWhereInput = {
       deletedAt: null,
-    };
-
-    if (type) {
-      where.type = type;
-    }
-
-    if (bizType) {
-      where.bizType = bizType;
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (method) {
-      where.method = method;
-    }
-
-    if (mallOnly) {
-      where.order = {
+      order: {
         is: {
           type: 'MALL',
           deletedAt: null,
         },
-      };
+      },
+    };
+
+    if (type) {
+      paymentWhere.type = type;
+    }
+
+    if (bizType) {
+      paymentWhere.bizType = bizType;
+    }
+
+    if (status) {
+      paymentWhere.status = status;
+    }
+
+    if (method) {
+      paymentWhere.method = method;
     }
 
     if (keyword) {
-      where.OR = [
+      paymentWhere.OR = [
         { outTradeNo: { contains: keyword, mode: 'insensitive' } },
         { thirdTradeNo: { contains: keyword, mode: 'insensitive' } },
-        { purchase: { is: { orderNo: { contains: keyword, mode: 'insensitive' } } } },
         { order: { is: { orderNo: { contains: keyword, mode: 'insensitive' } } } },
       ];
     }
 
-    const [data, total] = await Promise.all([
-      this.prisma.payment.findMany({
-        where,
-        include: {
-          purchase: { select: { orderNo: true } },
-          order: { select: { orderNo: true, type: true } },
-        },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.payment.count({ where }),
+    const rechargeWhere: Prisma.BalanceRechargeOrderWhereInput = {
+      deletedAt: null,
+    };
+
+    if (status) {
+      rechargeWhere.status = status;
+    }
+
+    if (method) {
+      rechargeWhere.method = method;
+    }
+
+    if (keyword) {
+      rechargeWhere.OR = [
+        { rechargeNo: { contains: keyword, mode: 'insensitive' } },
+        { outTradeNo: { contains: keyword, mode: 'insensitive' } },
+        { thirdTradeNo: { contains: keyword, mode: 'insensitive' } },
+        { customer: { is: { name: { contains: keyword, mode: 'insensitive' } } } },
+        { customer: { is: { code: { contains: keyword, mode: 'insensitive' } } } },
+        { customer: { is: { phone: { contains: keyword, mode: 'insensitive' } } } },
+      ];
+    }
+
+    const shouldLoadShopping = (!orderSource || orderSource === 'SHOPPING');
+    const shouldLoadRecharge = (!orderSource || orderSource === 'RECHARGE') && (!type || type === PaymentType.RECEIPT);
+
+    const [paymentData, rechargeData] = await Promise.all([
+      shouldLoadShopping
+        ? this.prisma.payment.findMany({
+            where: paymentWhere,
+            include: {
+              purchase: { select: { orderNo: true } },
+              order: { select: { orderNo: true, type: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+          })
+        : Promise.resolve([]),
+      shouldLoadRecharge
+        ? this.prisma.balanceRechargeOrder.findMany({
+            where: rechargeWhere,
+            include: {
+              customer: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  phone: true,
+                },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          })
+        : Promise.resolve([]),
     ]);
 
+    const rechargeRefundMap = await this.getRechargeRefundMap(
+      rechargeData
+        .map(item => item.outTradeNo)
+        .filter((value): value is string => !!value),
+    );
+
+    const merged = [
+      ...paymentData.map(item => ({
+        ...PaymentVo.fromEntity(item),
+        orderSource: 'SHOPPING' as const,
+        orderSourceText: '购物',
+      })),
+      ...rechargeData.map(item => this.toRechargePaymentRow(
+        item,
+        item.outTradeNo ? rechargeRefundMap.get(item.outTradeNo) : [],
+      )),
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const total = merged.length;
+    const data = merged.slice((page - 1) * pageSize, page * pageSize);
+
     return {
-      data: PaymentVo.fromEntities(data),
+      data,
       meta: {
         page,
         pageSize,
@@ -158,13 +237,168 @@ export class PaymentsService {
     };
   }
 
+  async findRefunds(query: QueryPaymentRefundDto) {
+    const { keyword, orderSource, status, page = 1, pageSize = 10 } = query;
+    const where: Prisma.PaymentRefundWhereInput = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (orderSource === 'SHOPPING') {
+      where.payment = {
+        is: {
+          order: {
+            is: {
+              deletedAt: null,
+              type: 'MALL',
+            },
+          },
+        },
+      };
+    } else if (orderSource === 'RECHARGE') {
+      where.payment = {
+        is: {
+          bizType: 'RECHARGE',
+          deletedAt: null,
+        },
+      };
+    }
+
+    if (keyword) {
+      where.OR = [
+        { refundNo: { contains: keyword, mode: 'insensitive' } },
+        { thirdRefundNo: { contains: keyword, mode: 'insensitive' } },
+        { payment: { is: { outTradeNo: { contains: keyword, mode: 'insensitive' } } } },
+        { payment: { is: { remark: { contains: keyword, mode: 'insensitive' } } } },
+        { payment: { is: { order: { is: { orderNo: { contains: keyword, mode: 'insensitive' } } } } } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.paymentRefund.findMany({
+        where,
+        include: {
+          payment: {
+            include: {
+              order: {
+                select: {
+                  orderNo: true,
+                  type: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.paymentRefund.count({ where }),
+    ]);
+
+    return {
+      data: data.map(item => PaymentRefundVo.fromEntity({
+        ...item,
+        orderNo: item.payment?.order?.orderNo ?? item.payment?.remark ?? null,
+        outTradeNo: item.payment?.outTradeNo ?? null,
+        orderSource: item.payment?.bizType === 'RECHARGE' ? 'RECHARGE' : 'SHOPPING',
+      })),
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
+  async findRefundOne(refundId: number) {
+    const refund = await this.prisma.paymentRefund.findUnique({
+      where: { id: refundId },
+      include: {
+        payment: {
+          include: {
+            order: {
+              select: {
+                orderNo: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!refund) {
+      throw new NotFoundException('退款记录不存在');
+    }
+
+    return PaymentRefundVo.fromEntity({
+      ...refund,
+      orderNo: refund.payment?.order?.orderNo ?? refund.payment?.remark ?? null,
+      outTradeNo: refund.payment?.outTradeNo ?? null,
+      orderSource: refund.payment?.bizType === 'RECHARGE' ? 'RECHARGE' : 'SHOPPING',
+    });
+  }
+
   // 查询收付款详情
-  async findOne(id: number) {
+  async findOne(id: number, orderSource?: 'SHOPPING' | 'RECHARGE') {
+    if (orderSource === 'RECHARGE') {
+      const recharge = await this.prisma.balanceRechargeOrder.findFirst({
+        where: { id, deletedAt: null },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      if (!recharge) {
+        throw new NotFoundException('充值单不存在');
+      }
+
+      const mirrorPayment = recharge.outTradeNo
+        ? await this.prisma.payment.findFirst({
+            where: {
+              outTradeNo: recharge.outTradeNo,
+              bizType: 'RECHARGE',
+              deletedAt: null,
+            },
+            include: {
+              refunds: {
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          })
+        : null;
+
+      return this.toRechargePaymentRow(
+        recharge,
+        mirrorPayment
+          ? PaymentRefundVo.fromEntities(mirrorPayment.refunds.map(refund => ({
+              ...refund,
+              orderNo: recharge.rechargeNo,
+              outTradeNo: recharge.outTradeNo,
+              orderSource: 'RECHARGE',
+            })))
+          : [],
+      );
+    }
+
     const payment = await this.prisma.payment.findFirst({
       where: { id, deletedAt: null },
       include: {
         purchase: { select: { orderNo: true } },
         order: { select: { orderNo: true, type: true } },
+        refunds: {
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
@@ -173,6 +407,295 @@ export class PaymentsService {
     }
 
     return PaymentVo.fromEntity(payment);
+  }
+
+  // 发起微信退款（当前仅支持整单退款）
+  async createRefund(id: number, createDto: CreatePaymentRefundDto, userId: number, orderSource?: 'SHOPPING' | 'RECHARGE') {
+    if (orderSource === 'RECHARGE') {
+      return this.createRechargeRefund(id, createDto, userId);
+    }
+
+    const payment = await this.prisma.payment.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        order: true,
+        refunds: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('收付款记录不存在');
+    }
+
+    if (payment.type !== PaymentType.RECEIPT || payment.method !== PaymentMethod.WECHAT) {
+      throw new BadRequestException('当前仅支持对微信收款记录发起退款');
+    }
+
+    if (payment.status !== PaymentStatus.COMPLETED || !payment.outTradeNo || !payment.thirdTradeNo) {
+      throw new BadRequestException('仅已完成的微信支付记录支持退款');
+    }
+
+    if (!payment.orderId || !payment.order) {
+      throw new BadRequestException('当前仅支持订单支付退款');
+    }
+
+    const processingRefund = payment.refunds.find(item => item.status === PaymentRefundStatus.PROCESSING);
+    if (processingRefund) {
+      throw new BadRequestException('已有退款处理中，请先等待结果');
+    }
+
+    const successRefund = payment.refunds.find(item => item.status === PaymentRefundStatus.SUCCESS);
+    if (successRefund) {
+      throw new BadRequestException('该支付单已退款成功，暂不支持重复退款');
+    }
+
+    const refundNo = await this.generateRefundNo();
+    const reason = createDto.reason?.trim() || '后台发起退款';
+    const remote = await this.wechatPayService.createRefund({
+      outTradeNo: payment.outTradeNo,
+      outRefundNo: refundNo,
+      amount: Number(payment.amount),
+      refundAmount: Number(payment.amount),
+      reason,
+    });
+
+    const nextStatus = this.toRefundStatus(remote.status);
+    const refund = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.paymentRefund.create({
+        data: {
+          refundNo,
+          paymentId: payment.id,
+          orderId: payment.orderId,
+          amount: payment.amount,
+          reason,
+          status: nextStatus,
+          thirdRefundNo: remote.refund_id || null,
+          thirdStatus: remote.status || null,
+          successAt: nextStatus === PaymentRefundStatus.SUCCESS && remote.success_time ? new Date(remote.success_time) : null,
+          createdBy: userId,
+        },
+      });
+
+      if (nextStatus === PaymentRefundStatus.SUCCESS) {
+        await this.applyRefundSuccess(tx, payment, Number(payment.amount), remote.success_time ? new Date(remote.success_time) : new Date());
+      } else if (payment.orderId) {
+        await tx.order.update({
+          where: { id: payment.orderId },
+          data: {
+            payStatus: PayStatus.REFUNDING,
+            status: OrderStatus.REFUNDING,
+          },
+        });
+      }
+
+      return created;
+    });
+
+    return PaymentRefundVo.fromEntity(refund);
+  }
+
+  // 主动查询微信退款状态
+  async queryRefund(refundId: number) {
+    const refund = await this.prisma.paymentRefund.findUnique({
+      where: { id: refundId },
+      include: {
+        payment: {
+          include: {
+            order: true,
+          },
+        },
+      },
+    });
+
+    if (!refund) {
+      throw new NotFoundException('退款记录不存在');
+    }
+
+    const remote = await this.wechatPayService.queryRefund(refund.refundNo);
+    const nextStatus = this.toRefundStatus(remote.status);
+    const successAt = remote.success_time ? new Date(remote.success_time) : refund.successAt;
+
+    const nextRefund = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.paymentRefund.update({
+        where: { id: refund.id },
+        data: {
+          status: nextStatus,
+          thirdRefundNo: remote.refund_id || refund.thirdRefundNo,
+          thirdStatus: remote.status || refund.thirdStatus,
+          successAt,
+          failReason: nextStatus === PaymentRefundStatus.ABNORMAL ? remote.status || '退款异常' : null,
+        },
+      });
+
+      if (nextStatus === PaymentRefundStatus.SUCCESS && refund.status !== PaymentRefundStatus.SUCCESS) {
+        await this.applyRefundSuccess(tx, refund.payment, Number(refund.amount), successAt || new Date());
+      }
+
+      if (refund.payment.orderId && nextStatus !== PaymentRefundStatus.SUCCESS) {
+        await tx.order.update({
+          where: { id: refund.payment.orderId },
+          data: {
+            payStatus: nextStatus === PaymentRefundStatus.CLOSED ? PayStatus.PAID : PayStatus.REFUNDING,
+            status: nextStatus === PaymentRefundStatus.CLOSED ? OrderStatus.CONFIRMED : OrderStatus.REFUNDING,
+          },
+        });
+      }
+
+      return updated;
+    });
+
+    return PaymentRefundVo.fromEntity(nextRefund);
+  }
+
+  // 微信退款异步回调
+  async handleWechatRefundNotify(rawBody: string, headers: { serial?: string; nonce?: string; signature?: string; timestamp?: string }) {
+    const resource = await this.wechatPayService.verifyAndDecryptNotifyResource<WechatRefundNotifyResource>(rawBody, headers);
+    if (!resource.out_refund_no) {
+      throw new BadRequestException('微信退款回调缺少退款单号');
+    }
+
+    const refund = await this.prisma.paymentRefund.findFirst({
+      where: {
+        refundNo: resource.out_refund_no,
+      },
+      include: {
+        payment: {
+          include: {
+            order: true,
+          },
+        },
+      },
+    });
+
+    if (!refund) {
+      throw new NotFoundException('退款单不存在');
+    }
+
+    // 安全校验：回调退款金额（分）与本地退款单金额一致，防止串单/篡改
+    if (this.toRefundStatus(resource.refund_status) === PaymentRefundStatus.SUCCESS) {
+      const expectedRefundFen = yuanToFen(refund.amount);
+      const actualRefundFen = resource.amount?.refund;
+      if (actualRefundFen !== expectedRefundFen) {
+        this.logger.error(
+          `微信退款回调金额不一致 outRefundNo=${resource.out_refund_no} 本地=${expectedRefundFen}分 回调=${actualRefundFen}分`,
+        );
+        throw new BadRequestException('回调退款金额与退款单金额不一致');
+      }
+    }
+
+    const nextStatus = this.toRefundStatus(resource.refund_status);
+    const successAt = resource.success_time ? new Date(resource.success_time) : refund.successAt;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.paymentRefund.update({
+        where: { id: refund.id },
+        data: {
+          status: nextStatus,
+          thirdRefundNo: resource.refund_id || refund.thirdRefundNo,
+          thirdStatus: resource.refund_status || refund.thirdStatus,
+          successAt,
+          notifyAt: new Date(),
+          notifyPayload: JSON.parse(rawBody || '{}'),
+          failReason: nextStatus === PaymentRefundStatus.ABNORMAL
+            ? refund.failReason || resource.refund_status || '退款异常'
+            : null,
+        },
+      });
+
+      if (nextStatus === PaymentRefundStatus.SUCCESS && refund.status !== PaymentRefundStatus.SUCCESS) {
+        await this.applyRefundSuccess(tx, refund.payment, Number(refund.amount), successAt || new Date());
+      }
+
+      if (refund.payment.orderId && nextStatus !== PaymentRefundStatus.SUCCESS) {
+        await tx.order.update({
+          where: { id: refund.payment.orderId },
+          data: {
+            payStatus: nextStatus === PaymentRefundStatus.CLOSED ? PayStatus.PAID : PayStatus.REFUNDING,
+            status: nextStatus === PaymentRefundStatus.CLOSED ? OrderStatus.CONFIRMED : OrderStatus.REFUNDING,
+          },
+        });
+      }
+    });
+
+    return true;
+  }
+
+  // 主动查询微信支付状态
+  async queryWechatPayment(id: number) {
+    const payment = await this.prisma.payment.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        purchase: { select: { orderNo: true } },
+        order: {
+          select: {
+            id: true,
+            orderNo: true,
+            type: true,
+            payStatus: true,
+            status: true,
+            paid: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('收付款记录不存在');
+    }
+
+    if (payment.method !== PaymentMethod.WECHAT || !payment.outTradeNo) {
+      throw new BadRequestException('该收付款记录不支持微信主动查单');
+    }
+
+    if (payment.status === PaymentStatus.CANCELLED) {
+      throw new BadRequestException('已取消的收付款记录不能查单');
+    }
+
+    const remote = await this.wechatPayService.queryOrder(payment.outTradeNo);
+    const queriedAt = new Date();
+    const paidAt = remote.success_time ? new Date(remote.success_time) : queriedAt;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const nextPayment = await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          thirdStatus: remote.trade_state || payment.thirdStatus,
+          thirdTradeNo: remote.transaction_id || payment.thirdTradeNo,
+          tradeType: payment.tradeType,
+          lastQueryAt: queriedAt,
+          queryCount: {
+            increment: 1,
+          },
+          status: remote.trade_state === 'SUCCESS' ? PaymentStatus.COMPLETED : payment.status,
+          paidAt: remote.trade_state === 'SUCCESS' ? paidAt : payment.paidAt,
+          failReason: remote.trade_state === 'SUCCESS'
+            ? null
+            : payment.failReason || remote.trade_state_desc || null,
+        },
+        include: {
+          purchase: { select: { orderNo: true } },
+          order: { select: { id: true, orderNo: true, type: true } },
+        },
+      });
+
+      if (remote.trade_state === 'SUCCESS' && payment.order && payment.order.payStatus !== PayStatus.PAID) {
+        await tx.order.update({
+          where: { id: payment.order.id },
+          data: {
+            paid: { increment: payment.amount },
+            payStatus: PayStatus.PAID,
+            status: payment.order.status === OrderStatus.CANCELLED ? payment.order.status : OrderStatus.CONFIRMED,
+            payDate: paidAt,
+          },
+        });
+      }
+
+      return nextPayment;
+    });
+
+    return PaymentVo.fromEntity(updated);
   }
 
   // 确认收付款
@@ -234,7 +757,7 @@ export class PaymentsService {
           where: { id: payment.purchaseId },
         });
         if (purchase) {
-          const newPaid = Math.max(0, Number(purchase.paid) - Number(payment.amount));
+          const newPaid = subMoneyClampZero(purchase.paid, payment.amount);
           await this.prisma.purchase.update({
             where: { id: payment.purchaseId },
             data: { paid: newPaid },
@@ -245,7 +768,7 @@ export class PaymentsService {
           where: { id: payment.orderId },
         });
         if (order) {
-          const newPaid = Math.max(0, Number(order.paid) - Number(payment.amount));
+          const newPaid = subMoneyClampZero(order.paid, payment.amount);
           await this.prisma.order.update({
             where: { id: payment.orderId },
             data: { paid: newPaid },
@@ -314,14 +837,16 @@ export class PaymentsService {
       orderNo: p.orderNo,
       supplierId: p.supplier.id,
       supplierName: p.supplier.name,
-      payable: Number(p.payable),
-      paid: Number(p.paid),
-      unpaid: Number(p.payable) - Number(p.paid),
+      payable: toYuan(p.payable),
+      paid: toYuan(p.paid),
+      unpaid: toYuan(subMoney(p.payable, p.paid)),
     }));
 
-    const totalPayable = stats.reduce((sum, s) => sum + s.payable, 0);
-    const totalPaid = stats.reduce((sum, s) => sum + s.paid, 0);
-    const totalUnpaid = stats.reduce((sum, s) => sum + s.unpaid, 0);
+    const totalPayable = toYuan(sumMoney(purchases, (p) => p.payable));
+    const totalPaid = toYuan(sumMoney(purchases, (p) => p.paid));
+    const totalUnpaid = toYuan(
+      sumMoney(purchases, (p) => subMoney(p.payable, p.paid)),
+    );
 
     return {
       list: stats,
@@ -330,6 +855,326 @@ export class PaymentsService {
         totalPaid,
         totalUnpaid,
       },
+    };
+  }
+
+  private async createRechargeRefund(id: number, createDto: CreatePaymentRefundDto, userId: number) {
+    const recharge = await this.prisma.balanceRechargeOrder.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        account: true,
+      },
+    });
+
+    if (!recharge) {
+      throw new NotFoundException('充值单不存在');
+    }
+
+    if (recharge.method !== PaymentMethod.WECHAT) {
+      throw new BadRequestException('当前仅支持对微信充值单发起退款');
+    }
+
+    if (recharge.status !== PaymentStatus.COMPLETED || !recharge.outTradeNo || !recharge.thirdTradeNo) {
+      throw new BadRequestException('仅已完成的微信充值单支持退款');
+    }
+
+    const arrivalAmount = addMoney(recharge.amount, recharge.bonusAmount);
+    if (moneyLt(recharge.account.availableBalance, arrivalAmount)) {
+      throw new BadRequestException(`当前余额不足以回退该充值单，至少需要保留${arrivalAmount.toFixed(2)}元可用余额`);
+    }
+
+    const payment = await this.prisma.$transaction(async (tx) => {
+      return this.getOrCreateRechargePayment(tx, recharge, userId);
+    });
+
+    const processingRefund = payment.refunds.find(item => item.status === PaymentRefundStatus.PROCESSING);
+    if (processingRefund) {
+      throw new BadRequestException('已有退款处理中，请先等待结果');
+    }
+
+    const successRefund = payment.refunds.find(item => item.status === PaymentRefundStatus.SUCCESS);
+    if (successRefund) {
+      throw new BadRequestException('该充值单已退款成功，暂不支持重复退款');
+    }
+
+    const refundNo = await this.generateRefundNo();
+    const reason = createDto.reason?.trim() || '后台发起充值退款';
+    const remote = await this.wechatPayService.createRefund({
+      outTradeNo: payment.outTradeNo!,
+      outRefundNo: refundNo,
+      amount: Number(payment.amount),
+      refundAmount: Number(payment.amount),
+      reason,
+    });
+
+    const nextStatus = this.toRefundStatus(remote.status);
+    const refund = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.paymentRefund.create({
+        data: {
+          refundNo,
+          paymentId: payment.id,
+          amount: payment.amount,
+          reason,
+          status: nextStatus,
+          thirdRefundNo: remote.refund_id || null,
+          thirdStatus: remote.status || null,
+          successAt: nextStatus === PaymentRefundStatus.SUCCESS && remote.success_time ? new Date(remote.success_time) : null,
+          createdBy: userId,
+        },
+      });
+
+      if (nextStatus === PaymentRefundStatus.SUCCESS) {
+        await this.applyRefundSuccess(tx, payment, Number(payment.amount), remote.success_time ? new Date(remote.success_time) : new Date());
+      }
+
+      return created;
+    });
+
+    return PaymentRefundVo.fromEntity({
+      ...refund,
+      orderNo: recharge.rechargeNo,
+      outTradeNo: recharge.outTradeNo,
+      orderSource: 'RECHARGE',
+    });
+  }
+
+  private async applyRefundSuccess(tx: Prisma.TransactionClient, payment: any, refundAmount: number, refundedAt: Date) {
+    if (payment.bizType === 'RECHARGE') {
+      await this.applyRechargeRefundSuccess(tx, payment, refundAmount);
+      return;
+    }
+
+    if (!payment.orderId || !payment.order) {
+      return;
+    }
+
+    const nextPaid = subMoneyClampZero(payment.order.paid, refundAmount);
+    await tx.order.update({
+      where: { id: payment.orderId },
+      data: {
+        paid: nextPaid,
+        payStatus: PayStatus.REFUNDED,
+        status: OrderStatus.REFUNDED,
+      },
+    });
+  }
+
+  private async applyRechargeRefundSuccess(tx: Prisma.TransactionClient, payment: any, refundAmount: number) {
+    const recharge = await tx.balanceRechargeOrder.findFirst({
+      where: {
+        outTradeNo: payment.outTradeNo || '',
+        deletedAt: null,
+      },
+      include: {
+        account: true,
+      },
+    });
+
+    if (!recharge?.account) {
+      throw new NotFoundException('充值单不存在');
+    }
+
+    const arrivalAmount = addMoney(recharge.amount, recharge.bonusAmount);
+    const before = D(recharge.account.availableBalance);
+    const after = before.sub(arrivalAmount);
+    if (after.isNegative()) {
+      throw new BadRequestException('当前余额不足，无法完成充值退款回退');
+    }
+
+    await tx.balanceAccount.update({
+      where: { id: recharge.accountId },
+      data: {
+        availableBalance: after,
+        totalRecharged: subMoneyClampZero(recharge.account.totalRecharged, refundAmount),
+        totalPresented: subMoneyClampZero((recharge.account as any).totalPresented, recharge.bonusAmount),
+      } as any,
+    });
+
+    await tx.balanceLog.create({
+      data: {
+        accountId: recharge.accountId,
+        customerId: recharge.customerId,
+        type: BalanceLogType.REFUND,
+        changeAmount: arrivalAmount.neg(),
+        bonusAmount: D(recharge.bonusAmount).neg(),
+        balanceBefore: before,
+        balanceAfter: after,
+        bizType: 'MALL_RECHARGE_REFUND',
+        bizId: recharge.id,
+        bizNo: recharge.rechargeNo,
+        remark: '后台发起充值退款',
+        createdBy: payment.createdBy,
+      } as any,
+    });
+
+    await tx.balanceRechargeOrder.update({
+      where: { id: recharge.id },
+      data: {
+        thirdStatus: 'REFUND_SUCCESS',
+        failReason: null,
+      },
+    });
+  }
+
+  private toRefundStatus(status?: string | null) {
+    switch (status) {
+      case 'SUCCESS':
+        return PaymentRefundStatus.SUCCESS;
+      case 'CLOSED':
+        return PaymentRefundStatus.CLOSED;
+      case 'ABNORMAL':
+        return PaymentRefundStatus.ABNORMAL;
+      default:
+        return PaymentRefundStatus.PROCESSING;
+    }
+  }
+
+  private async generateRefundNo() {
+    const now = new Date();
+    const pad = (value: number, length = 2) => String(value).padStart(length, '0');
+    const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const latest = await this.prisma.paymentRefund.findFirst({
+      where: {
+        refundNo: {
+          startsWith: `TK${datePart}`,
+        },
+      },
+      orderBy: {
+        refundNo: 'desc',
+      },
+      select: {
+        refundNo: true,
+      },
+    });
+
+    const sequence = latest ? Number(latest.refundNo.slice(-3)) + 1 : 1;
+    return `TK${datePart}${String(sequence).padStart(3, '0')}`;
+  }
+
+  private async getRechargeRefundMap(outTradeNos: string[]) {
+    if (!outTradeNos.length) {
+      return new Map<string, PaymentRefundVo[]>();
+    }
+
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        outTradeNo: {
+          in: outTradeNos,
+        },
+        bizType: 'RECHARGE',
+        deletedAt: null,
+      },
+      include: {
+        refunds: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    return new Map(
+      payments.map(item => [
+        item.outTradeNo!,
+        PaymentRefundVo.fromEntities(item.refunds.map(refund => ({
+          ...refund,
+          orderNo: item.remark,
+          outTradeNo: item.outTradeNo,
+          orderSource: 'RECHARGE',
+        }))),
+      ]),
+    );
+  }
+
+  private async getOrCreateRechargePayment(tx: Prisma.TransactionClient, recharge: any, userId: number) {
+    const existing = await tx.payment.findFirst({
+      where: {
+        outTradeNo: recharge.outTradeNo,
+        bizType: 'RECHARGE',
+        deletedAt: null,
+      },
+      include: {
+        refunds: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return tx.payment.create({
+      data: {
+        type: PaymentType.RECEIPT,
+        bizType: 'RECHARGE',
+        amount: recharge.amount,
+        method: recharge.method,
+        status: recharge.status,
+        outTradeNo: recharge.outTradeNo,
+        thirdTradeNo: recharge.thirdTradeNo,
+        tradeType: 'JSAPI',
+        prepayId: recharge.prepayId,
+        thirdStatus: recharge.thirdStatus,
+        queryCount: recharge.queryCount || 0,
+        lastQueryAt: recharge.lastQueryAt,
+        notifyAt: recharge.notifyAt,
+        paidAt: recharge.paidAt,
+        failReason: recharge.failReason,
+        notifyPayload: recharge.notifyPayload ?? undefined,
+        remark: recharge.rechargeNo,
+        createdBy: recharge.createdBy || userId,
+        createdAt: recharge.createdAt,
+      } as any,
+      include: {
+        refunds: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  }
+
+  private toRechargePaymentRow(entity: any, refunds: PaymentRefundVo[] = []) {
+    const methodTextMap: Record<string, string> = {
+      CASH: '现金',
+      BANK: '银行转账',
+      ALIPAY: '支付宝',
+      WECHAT: '微信支付',
+      CREDIT: '挂账/赊销',
+      BALANCE: '余额支付',
+    };
+
+    return {
+      id: entity.id,
+      type: 'RECEIPT' as PaymentType,
+      typeText: '收款',
+      bizType: 'RECHARGE',
+      orderSource: 'RECHARGE' as const,
+      orderSourceText: '充值',
+      bizId: entity.id,
+      orderNo: entity.rechargeNo,
+      orderType: 'RECHARGE',
+      amount: Number(entity.amount),
+      method: entity.method,
+      methodText: methodTextMap[entity.method] || entity.method,
+      status: entity.status,
+      statusText: entity.status === PaymentStatus.PENDING ? '待支付' : entity.status === PaymentStatus.COMPLETED ? '已完成' : '已取消',
+      outTradeNo: entity.outTradeNo || null,
+      thirdTradeNo: entity.thirdTradeNo || null,
+      tradeType: null,
+      prepayId: entity.prepayId || null,
+      thirdStatus: entity.thirdStatus || null,
+      queryCount: entity.queryCount || 0,
+      lastQueryAt: entity.lastQueryAt || null,
+      notifyAt: entity.notifyAt || null,
+      paidAt: entity.paidAt || null,
+      failReason: entity.failReason || null,
+      notifyPayload: entity.notifyPayload ?? null,
+      confirmSource: entity.notifyAt ? 'NOTIFY' : entity.queryCount > 0 ? 'QUERY' : entity.status === PaymentStatus.COMPLETED ? 'MANUAL' : 'UNKNOWN',
+      confirmSourceText: entity.notifyAt ? '微信回调' : entity.queryCount > 0 ? '主动查单' : entity.status === PaymentStatus.COMPLETED ? '手工确认' : '未确认',
+      refunds,
+      remark: null,
+      createdBy: entity.createdBy || 0,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt || entity.createdAt,
     };
   }
 }

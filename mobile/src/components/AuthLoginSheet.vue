@@ -8,6 +8,7 @@ import { authEnvConfig } from '@/config/auth'
 import { useUserStore } from '@/store/userStore'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const toast = useToast()
 const { tabbarList, setTabbarItemActive } = useTabbar()
@@ -50,6 +51,51 @@ function buildRandomNickname() {
   return `微信用户${Math.random().toString(16).slice(2, 10).padEnd(8, '0')}`
 }
 
+function normalizeQueryValue(value: unknown) {
+  if (value == null) {
+    return ''
+  }
+
+  return String(value)
+}
+
+function isSameQuery(
+  currentQuery: Record<string, any> | undefined,
+  targetQuery: Record<string, any> | undefined,
+) {
+  const currentKeys = Object.keys(currentQuery || {}).sort()
+  const targetKeys = Object.keys(targetQuery || {}).sort()
+
+  if (currentKeys.length !== targetKeys.length) {
+    return false
+  }
+
+  return currentKeys.every((key, index) => (
+    key === targetKeys[index]
+    && normalizeQueryValue(currentQuery?.[key]) === normalizeQueryValue(targetQuery?.[key])
+  ))
+}
+
+function isCurrentPendingRoute(target: PendingRoute) {
+  if (target.name && route.name && String(target.name) !== String(route.name)) {
+    return false
+  }
+
+  if (target.path && route.path && String(target.path) !== String(route.path)) {
+    return false
+  }
+
+  if (target.name && !route.name) {
+    return false
+  }
+
+  if (target.path && !route.path) {
+    return false
+  }
+
+  return isSameQuery((route.query || {}) as Record<string, any>, target.query)
+}
+
 function resetProfileForm() {
   profileForm.nickname = userStore.user?.name || userStore.profile.nickname || buildRandomNickname()
   profileForm.avatarUrl = userStore.user?.avatarUrl || userStore.profile.avatarUrl || authEnvConfig.defaultAvatarUrl || ''
@@ -68,6 +114,10 @@ function shouldPromptProfileCompletion(loginResult: any) {
 
 async function resumePendingRoute(target: PendingRoute | null) {
   if (!target) {
+    return
+  }
+
+  if (isCurrentPendingRoute(target)) {
     return
   }
 
@@ -109,12 +159,12 @@ async function handlePhoneLogin() {
   const password = loginForm.password.trim()
 
   if (!/^1\d{10}$/.test(phone)) {
-    toast.show('请输入正确的手机号')
+    toast.error('请输入正确的手机号')
     return
   }
 
   if (!password) {
-    toast.show('请输入登录密码')
+    toast.error('请输入登录密码')
     return
   }
 
@@ -195,7 +245,7 @@ async function handleWechatLogin(phoneCode?: string) {
 async function handleWechatProfileFill() {
   const getUserProfile = (uni as any).getUserProfile || (typeof wx !== 'undefined' ? wx.getUserProfile : undefined)
   if (typeof getUserProfile !== 'function') {
-    toast.show('当前环境暂不支持拉取微信资料')
+    toast.info('当前环境暂不支持拉取微信资料')
     return
   }
 
@@ -210,7 +260,7 @@ async function handleWechatProfileFill() {
 
     const profile = extractWechatProfile(result)
     if (!profile.nickname && !profile.avatarUrl) {
-      toast.show('未获取到微信头像昵称')
+      toast.error('未获取到微信头像昵称')
       return
     }
 
@@ -218,7 +268,7 @@ async function handleWechatProfileFill() {
     profileForm.avatarUrl = profile.avatarUrl || profileForm.avatarUrl
   }
   catch {
-    toast.show('未获取到微信资料')
+    toast.error('未获取到微信资料')
   }
 }
 
@@ -243,7 +293,7 @@ async function handleChooseAvatar() {
     profileForm.avatarUrl = uploadResult.url || uploadResult.objectKey
   }
   catch {
-    toast.show('头像上传失败')
+    toast.error('头像上传失败')
   }
 }
 
@@ -259,7 +309,7 @@ async function handleWechatChooseAvatar(event: any) {
     profileForm.avatarUrl = uploadResult.url || uploadResult.objectKey
   }
   catch {
-    toast.show('头像上传失败')
+    toast.error('头像上传失败')
   }
 }
 
@@ -313,7 +363,7 @@ function handlePhoneNumberAuthorize(event: any) {
 
   if (!phoneCode) {
     if (errMsg.includes('fail')) {
-      toast.show('已取消手机号授权')
+      toast.info('已取消手机号授权')
       handleCancel()
     }
     return

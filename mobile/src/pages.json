@@ -98,6 +98,17 @@
       }
     },
     {
+      "path": "pages/coupon-center/detail",
+      "type": "page",
+      "name": "coupon-center-detail",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "优惠券详情",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
+    },
+    {
       "path": "pages/coupon-center/index",
       "type": "page",
       "name": "coupon-center",
@@ -180,7 +191,19 @@
       "style": {
         "navigationBarTitleText": "订单支付",
         "navigationStyle": "custom"
-      }
+      },
+      "needLogin": true
+    },
+    {
+      "path": "pages/order-review/index",
+      "type": "page",
+      "name": "order-review",
+      "layout": "default",
+      "style": {
+        "navigationBarTitleText": "订单评价",
+        "navigationStyle": "custom"
+      },
+      "needLogin": true
     },
     {
       "path": "pages/product-detail/index",

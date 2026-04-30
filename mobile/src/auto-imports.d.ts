@@ -167,6 +167,7 @@ declare global {
   const until: typeof import('@vueuse/core')['until']
   const updateMallProfile: typeof import('./api/mall-auth')['updateMallProfile']
   const uploadAvatar: typeof import('./api/file')['uploadAvatar']
+  const uploadReviewImage: typeof import('./api/file')['uploadReviewImage']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
   const useAnimate: typeof import('@vueuse/core')['useAnimate']
   const useArrayDifference: typeof import('@vueuse/core')['useArrayDifference']
@@ -536,6 +537,7 @@ declare module 'vue' {
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
     readonly updateMallProfile: UnwrapRef<typeof import('./api/mall-auth')['updateMallProfile']>
     readonly uploadAvatar: UnwrapRef<typeof import('./api/file')['uploadAvatar']>
+    readonly uploadReviewImage: UnwrapRef<typeof import('./api/file')['uploadReviewImage']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>

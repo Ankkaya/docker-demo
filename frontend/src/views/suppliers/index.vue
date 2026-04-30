@@ -23,10 +23,13 @@
       </QueryForm>
     </n-card>
 
-    <n-card class="bg-container transition-theme">
-      <div class="page-toolbar mb-4">
+    <n-card class="mb-4 bg-container transition-theme">
+      <div class="page-toolbar">
         <n-button type="primary" @click="handleCreate">新增供应商</n-button>
       </div>
+    </n-card>
+
+    <n-card class="bg-container transition-theme">
       <n-data-table
         :columns="columns"
         :data="suppliers"

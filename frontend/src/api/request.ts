@@ -45,19 +45,13 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response): any => {
     const data = response.data as ApiResponse<unknown>
-    
-    // 检查是否是标准格式
-    if (data && typeof data === 'object' && 'code' in data && 'message' in data && 'data' in data) {
-      // 如果是标准格式，检查业务状态码
-      if (data.code >= 200 && data.code < 300) {
-        return data.data
-      } else {
-        // 业务错误，返回包含错误信息的对象
-        return Promise.reject({ message: data.message || '请求失败', data })
-      }
+
+    // 标准格式 { code, message, data }，直接解包 data
+    if (data && typeof data === 'object' && 'data' in data) {
+      return data.data
     }
-    
-    // 如果不是标准格式，直接返回数据（兼容旧接口）
+
+    // 非标准格式，直接返回原始数据（兼容旧接口）
     return data
   },
   (error) => {
@@ -66,29 +60,24 @@ instance.interceptors.response.use(
     
     // 处理HTTP错误
     if (response) {
-      // 检查是否是标准错误格式
-      if (response.data && typeof response.data === 'object' && 'message' in response.data) {
-        errorMessage = response.data.message
-      } else {
-        // 处理HTTP状态码错误
-        switch (response.status) {
-          case 401:
-            localStorage.removeItem('token')
-            window.location.href = '/login'
-            errorMessage = '登录已过期'
-            break
-          case 403:
-            errorMessage = '没有权限'
-            break
-          case 404:
-            errorMessage = '请求的资源不存在'
-            break
-          case 500:
-            errorMessage = '服务器错误'
-            break
-          default:
-            errorMessage = response.data?.message || '请求失败'
-        }
+      // 优先按 HTTP 状态码处理（特别是 401 需要触发跳转）
+      switch (response.status) {
+        case 401:
+          localStorage.removeItem('token')
+          window.location.href = '/login'
+          errorMessage = response.data?.message || '登录已过期'
+          break
+        case 403:
+          errorMessage = response.data?.message || '没有权限'
+          break
+        case 404:
+          errorMessage = response.data?.message || '请求的资源不存在'
+          break
+        case 500:
+          errorMessage = response.data?.message || '服务器错误'
+          break
+        default:
+          errorMessage = response.data?.message || '请求失败'
       }
     } else {
       errorMessage = '网络连接异常'

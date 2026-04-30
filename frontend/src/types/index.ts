@@ -166,18 +166,30 @@ export namespace PaymentApi {
     bizType?: string
     method?: import('./purchase').PaymentMethod
     status?: import('./purchase').PaymentStatus
-    mallOnly?: boolean
+    orderSource?: 'SHOPPING' | 'RECHARGE'
     page?: number
     pageSize?: number
   }
   export type List = import('./purchase').PaginatedResponse<import('./purchase').Payment>
-  export type Detail = import('./api').ApiResponse<import('./purchase').Payment>
+  export type Detail = import('./purchase').Payment
   export type CreateParams = import('./purchase').CreatePaymentDto
-  export type Create = import('./api').ApiResponse<import('./purchase').Payment>
-  export type Confirm = import('./api').ApiResponse<import('./purchase').Payment>
-  export type Cancel = import('./api').ApiResponse<import('./purchase').Payment>
-  export type Delete = import('./api').ApiResponse<{ success: boolean }>
-  export type PayableStats = import('./api').ApiResponse<import('./purchase').PayableStats>
+  export type Create = import('./purchase').Payment
+  export type Confirm = import('./purchase').Payment
+  export type Cancel = import('./purchase').Payment
+  export type Sync = import('./purchase').Payment
+  export type RefundParams = import('./purchase').CreatePaymentRefundDto
+  export type Refund = import('./purchase').PaymentRefund
+  export type RefundSync = import('./purchase').PaymentRefund
+  export interface RefundQueryParams {
+    keyword?: string
+    orderSource?: 'SHOPPING' | 'RECHARGE'
+    status?: import('./purchase').PaymentRefundStatus
+    page?: number
+    pageSize?: number
+  }
+  export type RefundList = import('./purchase').PaginatedResponse<import('./purchase').PaymentRefund>
+  export type Delete = { success: boolean }
+  export type PayableStats = import('./purchase').PayableStats
 }
 
 // 采购退货 API

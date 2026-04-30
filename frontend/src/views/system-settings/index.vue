@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <n-card class="bg-container transition-theme">
-      <n-tabs type="segment" animated>
+      <n-tabs type="line" animated>
         <n-tab-pane name="mini-program" tab="小程序配置">
           <n-form :model="miniProgramForm" label-width="120">
             <n-grid :cols="2" :x-gap="16">
@@ -22,8 +22,11 @@
 
         <n-tab-pane name="wechat-pay" tab="微信支付">
           <n-alert type="info" class="mb-4" :show-icon="false">
-            支付通知地址需指向后端公开可访问的微信回调接口：
-            <code>/mall/payments/wechat/notify</code>。平台公钥与平台证书路径二选一即可；若填写平台证书路径，需保证后端服务可读取到该证书文件。
+            支付回调地址需指向后端公开可访问的支付结果通知接口：
+            <code>/mall/payments/wechat/notify</code>；
+            退款回调地址需指向退款结果通知接口：
+            <code>/mall/payments/wechat/refund-notify</code>。
+            平台公钥与平台证书路径二选一即可；若填写平台证书路径，需保证后端服务可读取到该证书文件。
           </n-alert>
           <n-form :model="wechatPayForm" label-width="120">
             <n-grid :cols="2" :x-gap="16">
@@ -33,8 +36,11 @@
               <n-form-item-gi label="商户证书序列号">
                 <n-input v-model:value="wechatPayForm.mchSerialNo" placeholder="请输入证书序列号" />
               </n-form-item-gi>
-              <n-form-item-gi label="支付通知地址">
-                <n-input v-model:value="wechatPayForm.notifyUrl" placeholder="https://example.com/pay/notify" />
+              <n-form-item-gi label="支付回调地址">
+                <n-input v-model:value="wechatPayForm.notifyUrl" />
+              </n-form-item-gi>
+              <n-form-item-gi label="退款回调地址">
+                <n-input v-model:value="wechatPayForm.refundNotifyUrl" />
               </n-form-item-gi>
               <n-form-item-gi span="2" label="APIv3 Key">
                 <n-input v-model:value="wechatPayForm.apiV3Key" type="password" show-password-on="click" placeholder="请输入 APIv3 Key" />
@@ -86,6 +92,7 @@ const wechatPayForm = reactive({
   mchSerialNo: '',
   apiV3Key: '',
   notifyUrl: '',
+  refundNotifyUrl: '',
   privateKey: '',
   platformPublicKey: '',
   platformCertPath: '',
@@ -151,3 +158,16 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+:deep(.n-tabs-nav) {
+  justify-content: flex-start !important;
+}
+:deep(.n-tabs-tab) {
+  flex: 0 0 auto !important;
+  padding: 0 16px 12px 16px !important;
+}
+:deep(.n-tabs-pad) {
+  padding-top: 16px !important;
+}
+</style>

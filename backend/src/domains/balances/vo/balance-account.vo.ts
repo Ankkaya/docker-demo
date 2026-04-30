@@ -49,6 +49,9 @@ export class BalanceAccountVo {
   totalRecharged: string;
 
   @ApiProperty({ type: String })
+  totalPresented: string;
+
+  @ApiProperty({ type: String })
   totalConsumed: string;
 
   @ApiProperty({ type: String })
@@ -70,6 +73,9 @@ export class BalanceAccountVo {
   updatedAt: Date;
 
   static fromEntity(entity: any): BalanceAccountVo {
+    const totalConsumed = Number(entity.totalConsumed || 0);
+    const totalRefunded = Number(entity.totalRefunded || 0);
+
     return {
       id: entity.id,
       customerId: entity.customerId,
@@ -89,8 +95,9 @@ export class BalanceAccountVo {
       availableBalance: entity.availableBalance.toString(),
       frozenBalance: entity.frozenBalance.toString(),
       totalRecharged: entity.totalRecharged.toString(),
-      totalConsumed: entity.totalConsumed.toString(),
-      totalRefunded: entity.totalRefunded.toString(),
+      totalPresented: (entity.totalPresented ?? 0).toString(),
+      totalConsumed: Math.max(0, totalConsumed - totalRefunded).toFixed(2),
+      totalRefunded: totalRefunded.toFixed(2),
       totalAdjusted: entity.totalAdjusted.toString(),
       status: entity.status,
       remark: entity.remark || null,

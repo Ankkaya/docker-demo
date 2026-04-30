@@ -1,12 +1,15 @@
 <template>
   <div class="p-4 banner-list">
-    <n-card class="bg-container transition-theme">
-      <div class="page-toolbar mb-4">
+    <n-card class="mb-4 bg-container transition-theme">
+      <div class="page-toolbar">
         <n-space>
           <n-button type="primary" @click="handleCreate">新增轮播图</n-button>
           <n-button @click="handleResetList">重置</n-button>
         </n-space>
       </div>
+    </n-card>
+
+    <n-card class="bg-container transition-theme">
       <n-data-table :columns="columns" :data="banners" :loading="loading" striped />
     </n-card>
 

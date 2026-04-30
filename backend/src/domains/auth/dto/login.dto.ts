@@ -1,4 +1,4 @@
-import { IsString, MinLength } from 'class-validator';
+import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
@@ -10,10 +10,9 @@ export class LoginDto {
   username: string;
 
   @ApiProperty({
-    example: 'password123',
-    description: '用户密码',
+    description: '密码（前端使用 /auth/public-key 返回的 RSA 公钥加密后的 base64 字符串）',
+    example: 'kJx9aB2c... (RSA-PKCS1 cipher base64)',
   })
   @IsString()
-  @MinLength(6)
   password: string;
 }

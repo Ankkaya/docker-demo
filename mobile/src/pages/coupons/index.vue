@@ -26,6 +26,10 @@ interface CouponItem {
   validPeriodText: string
   description: string | null
   isExpiringSoon: boolean
+  scopeText?: string
+  sceneTypeText?: string
+  useScopeTypeText?: string
+  endTime?: string
 }
 
 definePage({
@@ -39,6 +43,7 @@ definePage({
 })
 
 const router = useRouter()
+const { topAreaHeight } = usePlatform()
 const currentTab = ref<CouponTab>('UNUSED')
 const summary = ref<CouponSummary>({
   unusedCount: 0,
@@ -54,6 +59,7 @@ const tabs = [
   { key: 'USED' as CouponTab, label: '已使用' },
   { key: 'EXPIRED' as CouponTab, label: '已过期' },
 ]
+const pageContentHeight = computed(() => `calc(100vh - ${topAreaHeight}px)`)
 
 const currentCount = computed(() => {
   if (currentTab.value === 'USED') {
@@ -65,23 +71,10 @@ const currentCount = computed(() => {
   return summary.value.unusedCount
 })
 
-function getAmountText(item: CouponItem) {
-  return Number(item.discountAmount || 0).toFixed(Number(item.discountAmount || 0) % 1 === 0 ? 0 : 2)
-}
-
-function getStatusBadgeClass(status: CouponTab) {
-  const map: Record<CouponTab, string> = {
-    UNUSED: 'bg-[#efb239]/12 text-[#c98500]',
-    USED: 'bg-slate-200 text-slate-500',
-    EXPIRED: 'bg-slate-200 text-slate-500',
-  }
-  return map[status]
-}
-
 function getCardClass(status: CouponTab) {
   return status === 'UNUSED'
-    ? 'border-[#efb239]/10 bg-white shadow-[0_14px_28px_rgba(15,23,42,0.05)]'
-    : 'border-slate-200/80 bg-[#f3efe8] opacity-78'
+    ? 'coupon-card--active'
+    : 'coupon-card--muted'
 }
 
 function openCouponCenter() {
@@ -90,6 +83,42 @@ function openCouponCenter() {
 
 function useCoupon() {
   router.pushTab({ name: 'home' })
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return ''
+  }
+
+  const rangeParts = value.split(' - ')
+  const target = rangeParts.length > 1 ? rangeParts[1] : value
+  return target.trim()
+}
+
+function getExpireText(item: CouponItem) {
+  const endTimeText = formatDateTime(item.validPeriodText)
+  return endTimeText ? `${endTimeText} 前使用有效` : item.validPeriodText
+}
+
+function getSceneType(item: CouponItem) {
+  return item.sceneTypeText || '通用活动'
+}
+
+function getLeftRuleText(item: CouponItem) {
+  return item.discountAmount > 0
+    ? `¥${Number(item.discountAmount || 0).toFixed(Number(item.discountAmount || 0) % 1 === 0 ? 0 : 2)}`
+    : item.discountLabel || item.thresholdLabel
+}
+
+function openCouponDetail(item: CouponItem) {
+  router.push({
+    name: 'coupon-center-detail',
+    params: {
+      id: String(item.id),
+      source: 'wallet',
+      status: item.status,
+    },
+  })
 }
 
 async function loadSummary() {
@@ -147,14 +176,11 @@ onShow(() => {
 </script>
 
 <template>
-  <view class="coupon-page min-h-screen text-slate-900">
-    <scroll-view scroll-y class="h-screen">
-      <view class="px-4 pb-10 pt-4">
+  <view class="coupon-page flex flex-col overflow-hidden text-slate-900" :style="{ height: pageContentHeight }">
+    <scroll-view class="h-full min-h-0 flex-1" scroll-y>
+      <view class="px-4 pt-4">
         <view class="summary-card">
           <view class="relative z-10">
-            <text class="block text-[22rpx] text-[#8b5c11] font-bold tracking-[0.3em]">
-              COUPON WALLET
-            </text>
             <view class="mt-4 flex items-end gap-2">
               <text class="text-[64rpx] text-[#8b5c11] font-extrabold leading-none">
                 {{ summary.unusedCount }}
@@ -201,18 +227,9 @@ onShow(() => {
           </view>
         </view>
 
-        <view class="mt-4 flex items-center justify-between px-1">
-          <text class="text-sm text-slate-500">
-            共 {{ currentCount }} 张
-          </text>
-          <text v-if="currentTab === 'UNUSED'" class="text-xs text-[#c98500]">
-            先用快过期的券更划算
-          </text>
-        </view>
-
         <view
           v-if="coupons.length === 0"
-          class="mt-8 rounded-[32rpx] border border-[#efb239]/10 bg-white/75 px-8 py-12 text-center"
+          class="mt-4 rounded-[32rpx] border border-[#efb239]/10 bg-white/75 px-8 py-12 text-center"
         >
           <text class="i-material-symbols:confirmation-number text-[72rpx] text-[#efb239]/35 leading-none" />
           <text class="mt-4 block text-base font-bold">
@@ -228,63 +245,48 @@ onShow(() => {
 
         <template v-else>
           <view v-for="item in coupons" :key="item.id" class="coupon-card" :class="getCardClass(item.status)">
-          <view class="coupon-card__left" :class="item.status === 'UNUSED' ? 'bg-[#efb239]/8' : 'bg-white/50'">
-            <text class="i-material-symbols:confirmation-number text-[40rpx] leading-none" :class="item.status === 'UNUSED' ? 'text-[#efb239]' : 'text-slate-400'" />
-            <view class="mt-3 flex items-end gap-1">
-              <text class="text-sm font-bold" :class="item.status === 'UNUSED' ? 'text-[#8b5c11]' : 'text-slate-500'">
-                ¥
+            <view class="coupon-card__left">
+              <text class="coupon-card__rule">
+                {{ getLeftRuleText(item) }}
               </text>
-              <text class="text-[52rpx] font-extrabold leading-none" :class="item.status === 'UNUSED' ? 'text-[#8b5c11]' : 'text-slate-500'">
-                {{ getAmountText(item) }}
+              <text class="coupon-card__threshold">
+                {{ item.thresholdAmount > 0 ? `满${Number(item.thresholdAmount || 0).toFixed(0)}可用` : '无门槛可用' }}
               </text>
             </view>
-            <text class="mt-2 text-[22rpx] font-bold tracking-[0.25em]" :class="item.status === 'UNUSED' ? 'text-[#c98500]' : 'text-slate-400'">
-              OFF
-            </text>
-          </view>
 
-          <view class="coupon-card__cutout" />
+            <view class="coupon-card__divider" />
+            <view class="coupon-card__cutout coupon-card__cutout--top" />
+            <view class="coupon-card__cutout coupon-card__cutout--bottom" />
 
-          <view class="min-w-0 flex-1 px-5 py-4">
-            <view class="flex items-start justify-between gap-3">
-              <view class="min-w-0">
-                <text class="line-clamp-1 block text-base font-bold">
-                  {{ item.name }}
-                </text>
-                <text class="mt-1 block text-xs text-slate-500">
-                  {{ item.thresholdLabel }}
+            <view class="coupon-card__right">
+              <view class="min-w-0 flex-1">
+                <view class="flex items-center gap-2 min-w-0">
+                  <text class="line-clamp-1 min-w-0 flex-1 text-[28rpx] font-bold leading-[1.35] text-slate-900">
+                    {{ item.name }}
+                  </text>
+                  <text class="coupon-card__scene-tag">{{ getSceneType(item) }}</text>
+                </view>
+                <text class="coupon-card__expire">
+                  有效期至 {{ getExpireText(item).replace(' 前使用有效', '') }}
                 </text>
               </view>
-              <view class="rounded-full px-3 py-1 text-[20rpx] font-bold" :class="getStatusBadgeClass(item.status)">
-                {{ item.statusText }}
-              </view>
-            </view>
 
-            <view class="mt-4 rounded-2xl bg-[#f8f7f6] px-3 py-2 text-[22rpx] text-slate-500 leading-5">
-              {{ item.description || '指定商品可用，不与其他满减叠加。' }}
-            </view>
-
-            <view class="mt-4 flex items-center justify-between gap-3">
-              <view class="min-w-0">
-                <text class="block text-[22rpx] text-slate-400">
-                  {{ item.sourceText }}
-                </text>
-                <text class="mt-1 block text-[22rpx] text-slate-500">
-                  {{ item.validPeriodText }}
-                </text>
-                <text v-if="item.isExpiringSoon" class="mt-1 block text-[22rpx] text-[#ef4444] font-semibold">
-                  即将到期，请尽快使用
-                </text>
-              </view>
-              <view
-                v-if="item.status === 'UNUSED'"
-                class="shrink-0 rounded-full bg-[#efb239] px-4 py-2 text-xs text-white font-bold"
-                @click="useCoupon"
-              >
-                去使用
+              <view class="coupon-card__bottom">
+                <view class="flex-1" />
+                <view class="coupon-card__actions">
+                  <view class="coupon-card__ghost-action" @click="openCouponDetail(item)">
+                    查看详情
+                  </view>
+                  <view
+                    v-if="item.status === 'UNUSED'"
+                    class="coupon-card__primary-action"
+                    @click="useCoupon"
+                  >
+                    去使用
+                  </view>
+                </view>
               </view>
             </view>
-          </view>
           </view>
         </template>
       </view>
@@ -310,8 +312,8 @@ onShow(() => {
 
 .summary-card__stars {
   position: absolute;
-  right: -10rpx;
-  bottom: -8rpx;
+  right: 12rpx;
+  bottom: 10rpx;
   opacity: 0.12;
 }
 
@@ -327,32 +329,154 @@ onShow(() => {
 .coupon-card {
   position: relative;
   display: flex;
+  align-items: stretch;
   margin-top: 24rpx;
   overflow: hidden;
-  border: 1px solid;
-  border-radius: 32rpx;
+  border-radius: 34rpx;
+  background: #fff;
+  box-shadow:
+    0 18px 38px rgba(243, 146, 57, 0.12),
+    0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.coupon-card--active {
+  border: 1px solid rgba(251, 146, 60, 0.22);
+}
+
+.coupon-card--muted {
+  border: 1px solid rgba(203, 213, 225, 0.7);
+  background: #fff;
 }
 
 .coupon-card__left {
+  position: relative;
   display: flex;
-  width: 200rpx;
+  width: 240rpx;
   flex-shrink: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-right: 1px dashed rgba(148, 163, 184, 0.35);
-  padding: 28rpx 18rpx;
+  padding: 34rpx 20rpx;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255, 241, 228, 0.98) 0%, rgba(255, 249, 243, 1) 100%);
+}
+
+.coupon-card__rule {
+  display: block;
+  color: #ff7a00;
+  font-size: 68rpx;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  word-break: break-word;
+}
+
+.coupon-card__threshold {
+  display: block;
+  margin-top: 14rpx;
+  color: #ff7a00;
+  font-size: 20rpx;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.coupon-card__divider {
+  position: relative;
+  z-index: 1;
+  width: 0;
+  flex-shrink: 0;
+  border-right: 2rpx dashed rgba(251, 146, 60, 0.32);
 }
 
 .coupon-card__cutout {
   position: absolute;
-  left: 200rpx;
-  top: 50%;
-  width: 28rpx;
-  height: 28rpx;
-  transform: translate(-50%, -50%);
+  left: 240rpx;
+  z-index: 2;
+  width: 38rpx;
+  height: 38rpx;
   border-radius: 9999px;
-  background: #f5f0e8;
+  background: #f8f7f6;
+  transform: translateX(-50%);
+}
+
+.coupon-card__cutout--top {
+  top: -19rpx;
+}
+
+.coupon-card__cutout--bottom {
+  bottom: -19rpx;
+}
+
+.coupon-card__right {
+  min-width: 0;
+  flex: 1;
+  padding: 26rpx 24rpx 22rpx 28rpx;
+}
+
+.coupon-card__scene-tag {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 180rpx;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #fff1e8;
+  padding: 8rpx 16rpx;
+  color: #ff7a00;
+  font-size: 20rpx;
+  font-weight: 700;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coupon-card__expire {
+  display: block;
+  margin-top: 14rpx;
+  color: #94a3b8;
+  font-size: 20rpx;
+  line-height: 1.35;
+}
+
+.coupon-card__bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1px dashed rgba(251, 146, 60, 0.22);
+}
+
+.coupon-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+
+.coupon-card__ghost-action,
+.coupon-card__primary-action {
+  border-radius: 9999px;
+  padding: 12rpx 20rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}
+
+.coupon-card__ghost-action {
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: #fff;
+  color: #f59e0b;
+}
+
+.coupon-card__primary-action {
+  min-width: auto;
+  background: linear-gradient(135deg, #ff8f2a 0%, #ff7a00 100%);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(255, 122, 0, 0.18);
 }
 
 .line-clamp-1 {

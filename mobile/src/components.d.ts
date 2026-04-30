@@ -26,6 +26,7 @@ declare module 'vue' {
     WdButton: typeof import('wot-design-uni/components/wd-button/wd-button.vue')['default']
     WdCell: typeof import('wot-design-uni/components/wd-cell/wd-cell.vue')['default']
     WdCellGroup: typeof import('wot-design-uni/components/wd-cell-group/wd-cell-group.vue')['default']
+    WdCheckbox: typeof import('wot-design-uni/components/wd-checkbox/wd-checkbox.vue')['default']
     WdColPicker: typeof import('wot-design-uni/components/wd-col-picker/wd-col-picker.vue')['default']
     WdConfigProvider: typeof import('wot-design-uni/components/wd-config-provider/wd-config-provider.vue')['default']
     WdGap: typeof import('wot-design-uni/components/wd-gap/wd-gap.vue')['default']

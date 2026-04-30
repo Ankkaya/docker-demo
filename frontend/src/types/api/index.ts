@@ -59,6 +59,9 @@ export type {
   MallApi,
 } from './product.api';
 
+// 商城配置 API 类型
+export type { MallHotSearchApi } from './mall-hot-search.api';
+
 // 文件上传 API 类型
 export type {
   FileApi,

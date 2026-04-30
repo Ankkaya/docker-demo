@@ -22,6 +22,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PaymentsService } from '@/domains/payments/payments.service';
 import { MallService } from './mall.service';
 import { QueryMallProductDto } from './dto/query-mall-product.dto';
 import { QueryHotProductDto } from './dto/query-hot-product.dto';
@@ -34,6 +35,7 @@ import {
   MallHotProductListResponseVo,
   MallProductDetailVo,
   MallProductListResponseVo,
+  MallSearchInitVo,
 } from './vo/mall.vo';
 import { BrandVo } from '@/brands/vo';
 import { BannerVo } from '@/domains/banners/vo/banner.vo';
@@ -62,6 +64,7 @@ import {
   MallCreateOrderVo,
   MallOrderDetailVo,
   MallOrderListItemVo,
+  MallOrderListResponseVo,
   MallPayOrderVo,
 } from './vo/mall-order.vo';
 import { PayMallOrderDto } from './dto/pay-mall-order.dto';
@@ -69,7 +72,7 @@ import { QueryMallOrderDto } from './dto/query-mall-order.dto';
 import { MallBalanceService } from './mall-balance.service';
 import { QueryMallBalanceLogDto } from './dto/query-mall-balance-log.dto';
 import { CreateMallBalanceRechargeDto } from './dto/create-mall-balance-recharge.dto';
-import { MallBalanceLogListVo, MallBalanceRechargeVo, MallBalanceSummaryVo } from './vo/mall-balance.vo';
+import { MallBalanceLogListVo, MallBalanceRechargeVo, MallBalanceSummaryVo, MallRechargePackageListVo } from './vo/mall-balance.vo';
 import { AuthService } from '@/domains/auth/auth.service';
 import { FavoritesService } from '@/domains/favorites/favorites.service';
 import { BrowseHistoriesService } from '@/domains/browse-histories/browse-histories.service';
@@ -86,7 +89,8 @@ import {
 import { BrowseHistoryListVo } from '@/domains/browse-histories/vo';
 import { MallCouponsService } from './mall-coupons.service';
 import { QueryMallCouponDto } from './dto/query-mall-coupon.dto';
-import { MallCouponCenterListVo, MallCouponClaimResultVo, MallCouponSummaryVo, MallCouponWalletListVo } from './vo/mall-coupon.vo';
+import { ExchangeMallCouponDto } from './dto/exchange-mall-coupon.dto';
+import { MallCouponCenterListVo, MallCouponClaimResultVo, MallCouponDetailVo, MallCouponSummaryVo, MallCouponWalletListVo } from './vo/mall-coupon.vo';
 
 @ApiTags('商城接口/商品')
 @ApiExtraModels(MallProductListResponseVo, MallHotProductListResponseVo, MallProductDetailVo)
@@ -138,7 +142,7 @@ export class MallProductsController {
 }
 
 @ApiTags('商城接口/首页')
-@ApiExtraModels(MallCategoryVo, BrandVo, BannerVo)
+@ApiExtraModels(MallCategoryVo, BrandVo, BannerVo, MallSearchInitVo)
 @Controller('mall')
 export class MallHomeController {
   constructor(private readonly mallService: MallService) {}
@@ -162,6 +166,13 @@ export class MallHomeController {
   @ApiOkResponse({ type: [BannerVo] })
   findBanners() {
     return this.mallService.findBanners();
+  }
+
+  @Get('search/init')
+  @ApiOperation({ summary: '获取搜索页初始化数据' })
+  @ApiOkResponse({ type: MallSearchInitVo })
+  findSearchInit() {
+    return this.mallService.findSearchInit();
   }
 }
 
@@ -336,7 +347,7 @@ export class MallAddressesController {
 }
 
 @ApiTags('商城接口/订单')
-@ApiExtraModels(MallCreateOrderVo, MallPayOrderVo, MallOrderListItemVo, MallOrderDetailVo)
+@ApiExtraModels(MallCreateOrderVo, MallPayOrderVo, MallOrderListItemVo, MallOrderDetailVo, MallOrderListResponseVo)
 @Controller('mall/orders')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -345,7 +356,7 @@ export class MallOrdersController {
 
   @Get()
   @ApiOperation({ summary: '获取我的订单列表' })
-  @ApiOkResponse({ type: [MallOrderListItemVo] })
+  @ApiOkResponse({ type: MallOrderListResponseVo })
   findOrders(@Request() req, @Query() query: QueryMallOrderDto) {
     return this.mallOrdersService.findAllByUser(req.user.sub, query);
   }
@@ -458,7 +469,7 @@ export class MallReviewsController {
 }
 
 @ApiTags('商城接口/余额')
-@ApiExtraModels(MallBalanceSummaryVo, MallBalanceLogListVo, MallBalanceRechargeVo)
+@ApiExtraModels(MallBalanceSummaryVo, MallBalanceLogListVo, MallBalanceRechargeVo, MallRechargePackageListVo)
 @Controller('mall/balance')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -477,6 +488,15 @@ export class MallBalanceController {
   @ApiOkResponse({ type: MallBalanceLogListVo })
   getLogs(@Request() req, @Query() query: QueryMallBalanceLogDto) {
     return this.mallBalanceService.getLogsByUserId(req.user.sub, query);
+  }
+
+  @Get('recharge-packages')
+  @ApiOperation({ summary: '获取可用充值套餐' })
+  @ApiOkResponse({ type: MallRechargePackageListVo })
+  async getRechargePackages(@Request() req) {
+    return {
+      data: await this.mallBalanceService.getRechargePackagesByUserId(req.user.sub),
+    };
   }
 
   @Post('recharge')
@@ -500,6 +520,7 @@ export class MallPaymentsController {
   constructor(
     private readonly mallOrdersService: MallOrdersService,
     private readonly mallBalanceService: MallBalanceService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   @Post('wechat/notify')
@@ -528,6 +549,36 @@ export class MallPaymentsController {
           timestamp,
         });
       }
+      return res.status(200).json({
+        code: 'SUCCESS',
+        message: '成功',
+      });
+    } catch (error) {
+      return res.status(500).json({
+        code: 'FAIL',
+        message: error instanceof Error ? error.message : '处理失败',
+      });
+    }
+  }
+
+  @Post('wechat/refund-notify')
+  @ApiOperation({ summary: '微信退款回调通知' })
+  async wechatRefundNotify(
+    @Req() req,
+    @Res() res,
+    @Headers('wechatpay-serial') serial?: string,
+    @Headers('wechatpay-nonce') nonce?: string,
+    @Headers('wechatpay-signature') signature?: string,
+    @Headers('wechatpay-timestamp') timestamp?: string,
+    ) {
+    try {
+      const rawBody = Buffer.isBuffer(req.rawBody) ? req.rawBody.toString('utf8') : JSON.stringify(req.body || {});
+      await this.paymentsService.handleWechatRefundNotify(rawBody, {
+        serial,
+        nonce,
+        signature,
+        timestamp,
+      });
       return res.status(200).json({
         code: 'SUCCESS',
         message: '成功',
@@ -611,7 +662,7 @@ export class MallBrowseHistoriesController {
 }
 
 @ApiTags('商城接口/优惠券')
-@ApiExtraModels(MallCouponSummaryVo, MallCouponWalletListVo, MallCouponCenterListVo, MallCouponClaimResultVo)
+@ApiExtraModels(MallCouponSummaryVo, MallCouponWalletListVo, MallCouponCenterListVo, MallCouponClaimResultVo, MallCouponDetailVo)
 @Controller('mall/coupons')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -639,10 +690,28 @@ export class MallCouponsController {
     return this.mallCouponsService.findCenterCouponsByUserId(req.user.sub, query);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: '获取优惠券详情' })
+  @ApiOkResponse({ type: MallCouponDetailVo })
+  findDetail(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Query('source') source?: 'center' | 'wallet',
+  ) {
+    return this.mallCouponsService.findDetailByUser(req.user.sub, id, source || 'center');
+  }
+
   @Post(':id/claim')
   @ApiOperation({ summary: '领取优惠券' })
   @ApiOkResponse({ type: MallCouponClaimResultVo })
   claimCoupon(@Request() req, @Param('id', ParseIntPipe) id: number) {
     return this.mallCouponsService.claimByUserId(req.user.sub, id);
+  }
+
+  @Post('exchange')
+  @ApiOperation({ summary: '兑换优惠券' })
+  @ApiOkResponse({ type: MallCouponClaimResultVo })
+  exchangeCoupon(@Request() req, @Body() dto: ExchangeMallCouponDto) {
+    return this.mallCouponsService.exchangeByUserId(req.user.sub, dto.code);
   }
 }

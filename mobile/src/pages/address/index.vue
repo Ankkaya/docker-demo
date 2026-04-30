@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PullLoadContainer from '@/components/common/PullLoadContainer.vue'
 import { useCheckoutStore } from '@/store/checkoutStore'
 
 type CustomerAddressItem = any
@@ -14,9 +15,13 @@ definePage({
 })
 
 const router = useRouter()
-const route = useRoute()
 const checkoutStore = useCheckoutStore()
 const toast = useToast()
+const { topAreaHeight, safeAreaInsetsBottom } = usePlatform()
+
+const ADDRESS_ACTION_BUTTON_HEIGHT = 56
+const ADDRESS_ACTION_VERTICAL_PADDING = 40
+const ADDRESS_ACTION_TOTAL_HEIGHT = ADDRESS_ACTION_BUTTON_HEIGHT + ADDRESS_ACTION_VERTICAL_PADDING
 
 const loading = ref(false)
 const actionId = ref<number | null>(null)
@@ -24,6 +29,13 @@ const addresses = ref<CustomerAddressItem[]>([])
 const source = ref('')
 const selectedAddressId = ref<number | null>(null)
 const isSelectingForOrderPayment = computed(() => source.value === 'order-payment')
+const pageContentHeight = computed(() => `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px)`)
+const listAreaStyle = computed(() => ({
+  height: `calc(${pageContentHeight.value} - ${ADDRESS_ACTION_TOTAL_HEIGHT}px)`,
+}))
+const actionBarStyle = computed(() => ({
+  paddingBottom: '24px',
+}))
 const activeSelectedAddressId = computed(() => {
   if (selectedAddressId.value)
     return selectedAddressId.value
@@ -72,6 +84,15 @@ async function fetchAddresses() {
   }
   finally {
     loading.value = false
+  }
+}
+
+async function handleRefresh(ctx?: { done: () => void }) {
+  try {
+    await fetchAddresses()
+  }
+  finally {
+    ctx?.done()
   }
 }
 
@@ -132,7 +153,7 @@ async function deleteAddress(id: number) {
     await (Apis.general as any).MallAddressesController_removeCurrentUserAddress({
       pathParams: { id },
     }).send()
-    toast.show('地址已删除')
+    toast.success('地址已删除')
     await fetchAddresses()
   }
   finally {
@@ -151,7 +172,7 @@ async function setDefault(id: number) {
       ...item,
       isDefault: item.id === id,
     }))
-    toast.show('已设为默认地址')
+    toast.success('已设为默认地址')
     await fetchAddresses()
   }
   finally {
@@ -176,102 +197,110 @@ onLoad((options) => {
 </script>
 
 <template>
-  <view class="address-page text-slate-900">
-    <scroll-view scroll-y class="pb-28">
-      <view class="px-4 pb-36 pt-4">
-        <view
-          v-if="!loading && addresses.length === 0"
-          class="border border-[#efb239]/25 rounded-[28rpx] border-dashed bg-white/72 px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.05)]"
-        >
-          <text class="mx-auto mb-4 block text-[52rpx] text-[#d3c4a0]" :class="getAddressUiIcon('empty')" />
-          <text class="block text-base text-slate-800 font-600">
-            还没有收货地址
-          </text>
-          <text class="mt-2 block text-sm text-slate-500 leading-6">
-            新增一个地址后，结算页可直接带出收货信息。
-          </text>
-        </view>
-
-        <view
-          v-for="item in addresses" :key="item.id"
-          class="address-card mb-4 overflow-hidden rounded-[30rpx] bg-white px-5 py-5"
-          :class="[
-            isSelectingForOrderPayment && activeSelectedAddressId === item.id
-              ? 'address-card-selected'
-              : 'address-card-normal',
-          ]"
-          @click="selectAddress(item)"
-        >
-          <view class="flex items-start justify-between gap-3">
-            <view class="flex items-center gap-3">
-              <view class="size-11 flex items-center justify-center rounded-[20rpx] bg-[#fff8eb]">
-                <text
-                  class="text-[24px] text-[#efb239] leading-none"
-                  :class="getAddressIcon(item.tag)"
-                />
-              </view>
-              <view class="min-w-0 flex-1">
-                <view class="flex items-center gap-2">
-                  <text class="truncate text-[17px] text-slate-900 font-700">
-                    {{ item.receiverName }}
-                  </text>
-                  <text class="text-[13px] text-[#b3821d] font-600">
-                    {{ maskPhone(item.receiverPhone) }}
-                  </text>
-                </view>
-                <view class="mt-2 flex items-center gap-2">
-                  <view
-                    v-if="item.isDefault"
-                    class="rounded-full bg-[#efb239]/16 px-2.5 py-1 text-[10px] text-[#b3821d] font-700 tracking-[0.16em]"
-                  >
-                    默认地址
-                  </view>
-                  <view v-if="item.tag" class="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-500 font-600">
-                    {{ item.tag }}
-                  </view>
-                </view>
-              </view>
-            </view>
-
-            <view class="flex items-center gap-2">
-              <view class="action-icon" @click.stop="editAddress(item.id)">
-                <text class="text-[18px] text-slate-400 leading-none" :class="getAddressUiIcon('edit')" />
-              </view>
-              <view class="action-icon" @click.stop="deleteAddress(item.id)">
-                <text class="text-[18px] text-slate-400 leading-none" :class="getAddressUiIcon('delete')" />
-              </view>
-            </view>
-          </view>
-
-          <text class="mt-4 block text-sm text-slate-500 leading-7">
-            {{ item.fullAddress }}
-          </text>
-
-          <view class="mt-4 flex items-center justify-between border-t border-[#efb239]/10 pt-3">
-            <view
-              class="flex items-center gap-1.5 text-xs text-slate-500"
-              :class="actionId === item.id ? 'opacity-55' : ''" @click.stop="setDefault(item.id)"
-            >
-              <text
-                class="text-[17px] text-[#efb239] leading-none"
-                :class="item.isDefault ? getAddressUiIcon('checked') : getAddressUiIcon('unchecked')"
-              />
-              设为默认地址
-            </view>
-            <text class="text-[11px] text-slate-400">
-              {{ item.province }} {{ item.city }} {{ item.district }}
+  <view class="address-page flex flex-col overflow-hidden text-slate-900" :style="{ height: pageContentHeight }">
+    <view class="min-h-0 flex-1 overflow-hidden" :style="listAreaStyle">
+      <PullLoadContainer
+        class="h-full"
+        :has-more="false"
+        @refresh="handleRefresh"
+      >
+        <view class="px-4 pt-4">
+          <view
+            v-if="!loading && addresses.length === 0"
+            class="border border-[#efb239]/25 rounded-[28rpx] border-dashed bg-white/72 px-6 py-12 text-center shadow-[0_14px_40px_rgba(15,23,42,0.05)]"
+          >
+            <text class="mx-auto mb-4 block text-[52rpx] text-[#d3c4a0]" :class="getAddressUiIcon('empty')" />
+            <text class="block text-base text-slate-800 font-600">
+              还没有收货地址
+            </text>
+            <text class="mt-2 block text-sm text-slate-500 leading-6">
+              新增一个地址后，结算页可直接带出收货信息。
             </text>
           </view>
-        </view>
-      </view>
-    </scroll-view>
 
-    <view class="fixed bottom-0 left-0 right-0 z-40 bg-[#f8f7f6]/92 p-4 pb-6 backdrop-blur-md">
+          <view
+            v-for="item in addresses" :key="item.id"
+            class="address-card mb-4 overflow-hidden rounded-[30rpx] bg-white px-5 py-5"
+            :class="[
+              isSelectingForOrderPayment && activeSelectedAddressId === item.id
+                ? 'address-card-selected'
+                : 'address-card-normal',
+            ]"
+            @click="selectAddress(item)"
+          >
+            <view class="flex items-start justify-between gap-3">
+              <view class="flex items-center gap-3">
+                <view class="size-11 flex items-center justify-center rounded-[20rpx] bg-[#fff8eb]">
+                  <text
+                    class="text-[24px] text-[#efb239] leading-none"
+                    :class="getAddressIcon(item.tag)"
+                  />
+                </view>
+                <view class="min-w-0 flex-1">
+                  <view class="flex items-center gap-2">
+                    <text class="truncate text-[17px] text-slate-900 font-700">
+                      {{ item.receiverName }}
+                    </text>
+                    <text class="text-[13px] text-[#b3821d] font-600">
+                      {{ maskPhone(item.receiverPhone) }}
+                    </text>
+                  </view>
+                  <view class="mt-2 flex items-center gap-2">
+                    <view
+                      v-if="item.isDefault"
+                      class="rounded-full bg-[#efb239]/16 px-2.5 py-1 text-[10px] text-[#b3821d] font-700 tracking-[0.16em]"
+                    >
+                      默认地址
+                    </view>
+                    <view v-if="item.tag" class="rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-500 font-600">
+                      {{ item.tag }}
+                    </view>
+                  </view>
+                </view>
+              </view>
+
+              <view class="flex items-center gap-2">
+                <view class="action-icon" @click.stop="editAddress(item.id)">
+                  <text class="text-[18px] text-slate-400 leading-none" :class="getAddressUiIcon('edit')" />
+                </view>
+                <view class="action-icon" @click.stop="deleteAddress(item.id)">
+                  <text class="text-[18px] text-slate-400 leading-none" :class="getAddressUiIcon('delete')" />
+                </view>
+              </view>
+            </view>
+
+            <text class="mt-4 block text-sm text-slate-500 leading-7">
+              {{ item.fullAddress }}
+            </text>
+
+            <view class="mt-4 flex items-center justify-between border-t border-[#efb239]/10 pt-3">
+              <view
+                class="flex items-center gap-1.5 text-xs text-slate-500"
+                :class="actionId === item.id ? 'opacity-55' : ''" @click.stop="setDefault(item.id)"
+              >
+                <text
+                  class="text-[17px] text-[#efb239] leading-none"
+                  :class="item.isDefault ? getAddressUiIcon('checked') : getAddressUiIcon('unchecked')"
+                />
+                设为默认地址
+              </view>
+              <text class="text-[11px] text-slate-400">
+                {{ item.province }} {{ item.city }} {{ item.district }}
+              </text>
+            </view>
+          </view>
+        </view>
+        <template #loadMore />
+      </PullLoadContainer>
+    </view>
+
+    <view class="shrink-0 bg-[#f8f7f6]/92 px-4 pt-4 backdrop-blur-md" :style="actionBarStyle">
       <view
-        class="address-action rounded-[28rpx] bg-[#efb239] py-4 text-center text-sm text-slate-900 font-700"
+        class="address-action rounded-[28rpx] bg-[#efb239] text-center text-sm text-slate-900 font-700"
+        :style="{ height: `${ADDRESS_ACTION_BUTTON_HEIGHT}px` }"
         @click="addAddress"
       >
-        <view class="flex items-center justify-center gap-2">
+        <view class="h-full flex items-center justify-center gap-2">
           <text class="text-[18px] text-slate-900 leading-none" :class="getAddressUiIcon('add')" />
           新增地址
         </view>
@@ -301,25 +330,6 @@ onLoad((options) => {
 
 .address-card-normal {
   border: 1px solid rgba(239, 178, 57, 0.12);
-}
-
-.address-card-selected::after {
-  position: absolute;
-  top: 18px;
-  right: 18px;
-  display: flex;
-  height: 22px;
-  min-width: 22px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: #efb239;
-  color: #fff;
-  content: '✓';
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow: 0 8px 18px rgba(239, 178, 57, 0.28);
 }
 
 .address-action {

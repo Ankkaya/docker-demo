@@ -12,6 +12,7 @@ type _LocationUrl =
   "/pages/balance-recharge/index" |
   "/pages/cart/index" |
   "/pages/category/index" |
+  "/pages/coupon-center/detail" |
   "/pages/coupon-center/index" |
   "/pages/coupons/index" |
   "/pages/favorites/index" |
@@ -20,6 +21,7 @@ type _LocationUrl =
   "/pages/order-detail/index" |
   "/pages/order-list/index" |
   "/pages/order-payment/index" |
+  "/pages/order-review/index" |
   "/pages/product-detail/index" |
   "/pages/product-list/index" |
   "/pages/review-list/index" |

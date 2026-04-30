@@ -43,7 +43,9 @@ export async function handleAlovaResponse(
   const userStore = useUserStore()
   // Extract status code and data from UniApp response
   const { statusCode, data } = response as UniNamespace.RequestSuccessCallbackResult
-  const json = data as ApiResponse
+  // 兼容 uni.uploadFile：其 success 回调中 data 是 JSON 字符串
+  const parsed = typeof data === 'string' ? (JSON.parse(data) as ApiResponse) : (data as ApiResponse)
+  const json = parsed
   const message = json?.message || json?.msg || '请求异常'
   const businessCode = Number(json?.code)
 

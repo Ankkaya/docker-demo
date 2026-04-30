@@ -11,7 +11,14 @@
         />
       </n-form-item>
       <n-form-item label="物流公司">
-        <n-input v-model:value="formData.logisticsCompany" placeholder="物流公司" />
+        <n-select
+          v-model:value="formData.logisticsCompany"
+          :options="kuaidiCompanyOptions"
+          placeholder="请选择物流公司（可搜索名称/拼音/编码）"
+          filterable
+          clearable
+          :filter="filterKuaidiCompany"
+        />
       </n-form-item>
       <n-form-item label="物流单号">
         <n-input v-model:value="formData.trackingNo" placeholder="物流单号" />
@@ -73,6 +80,19 @@ import type { FormInst, FormRules, SelectOption } from 'naive-ui';
 import { createShipment, getOrder, getOrders } from '@/api/order';
 import { getSkuInventories } from '@/api/inventory';
 import type { Order, OrderItem } from '@/types/purchase';
+import { getKuaidiCompanyOptions } from '@/constants/kuaidi-companies';
+
+const kuaidiCompanyOptions = getKuaidiCompanyOptions();
+
+function filterKuaidiCompany(pattern: string, option: SelectOption): boolean {
+  if (!pattern) return true;
+  const p = pattern.trim().toLowerCase();
+  if (!p) return true;
+  const name = String((option as any).name || option.label || '').toLowerCase();
+  const code = String((option as any).code || option.value || '').toLowerCase();
+  const pinyin = String((option as any).pinyin || '').toLowerCase();
+  return name.includes(p) || code.includes(p) || pinyin.includes(p);
+}
 
 interface ShipmentFormItem extends OrderItem {
   warehouseId: number | null;
@@ -92,7 +112,7 @@ const selectedItems = ref<ShipmentFormItem[]>([]);
 
 const formData = reactive({
   orderId: null as number | null,
-  logisticsCompany: '',
+  logisticsCompany: null as string | null,
   trackingNo: '',
   remark: '',
 });
@@ -191,7 +211,7 @@ async function handleSubmit() {
         quantity: item.quantity,
         warehouseId: item.warehouseId!,
       })),
-      logisticsCompany: formData.logisticsCompany,
+      logisticsCompany: formData.logisticsCompany || undefined,
       trackingNo: formData.trackingNo,
       remark: formData.remark,
     });

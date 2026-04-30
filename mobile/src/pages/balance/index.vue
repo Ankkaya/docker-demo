@@ -10,7 +10,6 @@ definePage({
 })
 
 const router = useRouter()
-const toast = useToast()
 
 const loading = ref(false)
 const summaryLoading = ref(false)
@@ -18,6 +17,7 @@ const summary = ref({
   availableBalance: '0.00',
   frozenBalance: '0.00',
   totalRecharged: '0.00',
+  totalPresented: '0.00',
   totalConsumed: '0.00',
   totalRefunded: '0.00',
   updatedAt: '',
@@ -26,9 +26,9 @@ const logs = ref<any[]>([])
 
 const statCards = computed(() => [
   { label: '累计充值', value: summary.value.totalRecharged, tone: 'text-[#efb239]' },
-  { label: '累计消费', value: summary.value.totalConsumed, tone: 'text-slate-900' },
+  { label: '累计赠送', value: summary.value.totalPresented, tone: 'text-amber-500' },
+  { label: '累计支付', value: summary.value.totalConsumed, tone: 'text-slate-900' },
   { label: '累计退款', value: summary.value.totalRefunded, tone: 'text-emerald-600' },
-  { label: '冻结金额', value: summary.value.frozenBalance, tone: 'text-slate-500' },
 ])
 
 function formatAmount(value?: string | number | null) {
@@ -101,6 +101,7 @@ async function loadSummary() {
       availableBalance: data.availableBalance || '0.00',
       frozenBalance: data.frozenBalance || '0.00',
       totalRecharged: data.totalRecharged || '0.00',
+      totalPresented: data.totalPresented || '0.00',
       totalConsumed: data.totalConsumed || '0.00',
       totalRefunded: data.totalRefunded || '0.00',
       updatedAt: data.updatedAt || '',
@@ -119,8 +120,7 @@ async function loadLogs() {
     }).send()
     logs.value = Array.isArray(result.data) ? result.data : []
   }
-  catch (error: any) {
-    toast.show(error?.message || '加载余额流水失败')
+  catch {
     logs.value = []
   }
   finally {
@@ -140,7 +140,7 @@ onShow(async () => {
 
 <template>
   <view class="balance-page text-slate-900">
-    <scroll-view scroll-y class="pb-24">
+    <scroll-view scroll-y>
       <view class="px-4 pb-10 pt-4">
         <view class="balance-hero overflow-hidden rounded-[32rpx] px-5 py-5">
           <view class="relative z-10 flex items-start justify-between gap-4">

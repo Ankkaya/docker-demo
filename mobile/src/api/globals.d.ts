@@ -112,9 +112,17 @@ export interface WechatLoginDto {
    */
   code: string;
   /**
+   * 微信手机号授权 code，可选
+   */
+  phoneCode?: string;
+  /**
    * 微信昵称，可选
    */
   nickname?: string;
+  /**
+   * 微信头像地址，可选
+   */
+  avatarUrl?: string;
 }
 export interface AddToCartDto {
   /**
@@ -203,7 +211,7 @@ export interface CreateMallBalanceRechargeDto {
   /**
    * 充值方式
    */
-  method: 'WECHAT' | 'ALIPAY' | 'BANK' | 'CASH';
+  method: 'WECHAT';
 }
 export interface CreateFavoriteDto {
   /**
@@ -301,6 +309,116 @@ export interface BannerVo {
    */
   updatedAt: string;
 }
+export interface MallHotSearchVo {
+  /**
+   * 热门搜索词 ID
+   */
+  id: number;
+  /**
+   * 热门搜索词
+   */
+  keyword: string;
+  /**
+   * 排序号
+   */
+  sort: number;
+  /**
+   * 是否启用
+   */
+  isEnabled: boolean;
+  /**
+   * 搜索次数
+   */
+  searchCount: number;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   */
+  updatedAt: string;
+}
+export interface MallCategoryVo {
+  /**
+   * 分类ID
+   */
+  id: number;
+  /**
+   * 分类名称
+   */
+  name: string;
+  /**
+   * 分类编码
+   */
+  code: string;
+  /**
+   * 子标题
+   */
+  subtitle: object | null;
+  /**
+   * 备注
+   */
+  remark: object | null;
+  /**
+   * 父级ID
+   */
+  parentId: object | null;
+  /**
+   * 层级
+   */
+  level: number;
+  /**
+   * 排序号
+   */
+  sort: number;
+  /**
+   * 是否作为商城搜索推荐分类
+   */
+  mallRecommend: boolean;
+  /**
+   * 商城搜索推荐排序号
+   */
+  mallRecommendSort: number;
+  /**
+   * 分类图标
+   */
+  icon: object | null;
+  /**
+   * 分类图标 URL
+   */
+  iconUrl: object | null;
+  /**
+   * 分类图片
+   */
+  image: object | null;
+  /**
+   * 是否启用
+   */
+  isEnabled: boolean;
+  /**
+   * 创建时间
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   */
+  updatedAt: string;
+  /**
+   * 分类下商品数量
+   */
+  productCount: number;
+}
+export interface MallSearchInitVo {
+  /**
+   * 热门搜索词列表
+   */
+  hotKeywords: MallHotSearchVo[];
+  /**
+   * 推荐分类列表
+   */
+  recommendCategories: MallCategoryVo[];
+}
 export interface MallCurrentCustomerVo {
   /**
    * 客户ID
@@ -344,6 +462,10 @@ export interface MallCurrentUserVo {
    * 姓名
    */
   name: object | null;
+  /**
+   * 头像地址
+   */
+  avatarUrl: object | null;
   /**
    * 创建时间
    */
@@ -609,6 +731,34 @@ export interface MallOrderListItemVo {
    */
   items: MallOrderItemVo[];
 }
+export interface MallOrderListMetaVo {
+  /**
+   * 当前页码
+   */
+  page: number;
+  /**
+   * 每页数量
+   */
+  pageSize: number;
+  /**
+   * 总记录数
+   */
+  total: number;
+  /**
+   * 总页数
+   */
+  totalPages: number;
+}
+export interface MallOrderListResponseVo {
+  /**
+   * 订单列表
+   */
+  data: MallOrderListItemVo[];
+  /**
+   * 分页信息
+   */
+  meta: MallOrderListMetaVo;
+}
 export interface MallBalanceSummaryVo {
   /**
    * 账户ID
@@ -642,6 +792,24 @@ export interface MallBalanceSummaryVo {
    * 最近更新时间
    */
   updatedAt: string;
+}
+export interface MallCouponSummaryVo {
+  /**
+   * 未使用优惠券数量
+   */
+  unusedCount: number;
+  /**
+   * 已使用优惠券数量
+   */
+  usedCount: number;
+  /**
+   * 已过期优惠券数量
+   */
+  expiredCount: number;
+  /**
+   * 可领取优惠券数量
+   */
+  claimableCount: number;
 }
 export type PayMallOrderDto = object;
 export interface CategoryVo {
@@ -829,6 +997,10 @@ export interface MallProductCardVo {
    * 当前用户是否已收藏
    */
   isFavorite?: boolean;
+  /**
+   * 热门标签
+   */
+  hotLabel?: object | null;
   /**
    * 最低价
    */
@@ -1034,76 +1206,6 @@ export interface MallProductDetailVo {
    */
   specOptions: MallProductSpecOptionVo[];
 }
-export interface CategoryTreeVo {
-  /**
-   * 分类ID
-   */
-  id: number;
-  /**
-   * 分类名称
-   */
-  name: string;
-  /**
-   * 分类编码
-   */
-  code: string;
-  /**
-   * 子标题
-   */
-  subtitle: object | null;
-  /**
-   * 备注
-   */
-  remark: object | null;
-  /**
-   * 父级ID
-   */
-  parentId: object | null;
-  /**
-   * 层级
-   */
-  level: number;
-  /**
-   * 排序号
-   */
-  sort: number;
-  /**
-   * 是否作为商城搜索推荐分类
-   */
-  mallRecommend: boolean;
-  /**
-   * 商城搜索推荐排序号
-   */
-  mallRecommendSort: number;
-  /**
-   * 分类图标
-   */
-  icon: object | null;
-  /**
-   * 分类图标 URL
-   */
-  iconUrl: object | null;
-  /**
-   * 分类图片
-   */
-  image: object | null;
-  /**
-   * 是否启用
-   */
-  isEnabled: boolean;
-  /**
-   * 创建时间
-   */
-  createdAt: string;
-  /**
-   * 更新时间
-   */
-  updatedAt: string;
-  /**
-   * 子分类
-   */
-  children: CategoryTreeVo[] | null;
-}
 export interface MallTokenPairVo {
   /**
    * JWT token
@@ -1113,32 +1215,6 @@ export interface MallTokenPairVo {
    * 刷新 token
    */
   refreshToken: string;
-}
-export interface UserVo {
-  /**
-   * 用户ID
-   */
-  id: number;
-  /**
-   * 用户名
-   */
-  username: string;
-  /**
-   * 邮箱
-   */
-  email: object | null;
-  /**
-   * 姓名
-   */
-  name: object | null;
-  /**
-   * 创建时间
-   */
-  createdAt: string;
-  /**
-   * 更新时间
-   */
-  updatedAt: string;
 }
 export interface MallWechatLoginVo {
   /**
@@ -1152,7 +1228,11 @@ export interface MallWechatLoginVo {
   /**
    * 用户信息
    */
-  user: UserVo;
+  user: MallCurrentUserVo;
+  /**
+   * 是否已完成资料设置
+   */
+  profileCompleted: boolean;
 }
 export interface MallCreateOrderVo {
   /**
@@ -1175,6 +1255,18 @@ export interface MallCreateOrderVo {
    * 应付金额
    */
   payable: number;
+  /**
+   * 优惠金额
+   */
+  discount: number;
+  /**
+   * 优惠券领取记录 ID
+   */
+  couponReceiveId: object | null;
+  /**
+   * 优惠券名称
+   */
+  couponName: object | null;
   /**
    * 商品件数
    */
@@ -1266,6 +1358,10 @@ export interface MallOrderDetailVo {
    */
   payDate: object | null;
   /**
+   * 取消时间
+   */
+  cancelDate: object | null;
+  /**
    * 发货时间
    */
   shipDate: object | null;
@@ -1277,6 +1373,60 @@ export interface MallOrderDetailVo {
    * 支付方式
    */
   paymentMethod: object | null;
+  /**
+   * 优惠券领取记录 ID
+   */
+  couponReceiveId: object | null;
+  /**
+   * 优惠券名称
+   */
+  couponName: object | null;
+}
+export interface MallPayOrderVo {
+  /**
+   * 支付单ID
+   */
+  paymentId: object | null;
+  /**
+   * 订单ID
+   */
+  id: number;
+  /**
+   * 订单号
+   */
+  orderNo: string;
+  /**
+   * 支付状态
+   */
+  payStatus: string;
+  /**
+   * 订单状态
+   */
+  status: string;
+  /**
+   * 已付金额
+   */
+  paid: number;
+  /**
+   * 支付单状态
+   */
+  paymentStatus: string;
+  /**
+   * 支付方式
+   */
+  method: object | null;
+  /**
+   * 商户支付单号
+   */
+  outTradeNo: object | null;
+  /**
+   * 支付完成时间
+   */
+  payDate: object | null;
+  /**
+   * 微信小程序支付参数
+   */
+  paymentConfig?: object | null;
 }
 export interface MallBalanceLogVo {
   /**
@@ -1325,6 +1475,10 @@ export interface MallBalanceLogListVo {
 }
 export interface MallBalanceRechargeVo {
   /**
+   * 充值单ID
+   */
+  id: number;
+  /**
    * 账户ID
    */
   accountId: number;
@@ -1337,17 +1491,33 @@ export interface MallBalanceRechargeVo {
    */
   method: 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT' | 'BALANCE';
   /**
-   * 充值后余额
+   * 当前可用余额
    */
   availableBalance: string;
   /**
-   * 充值流水号
+   * 充值单号
    */
-  bizNo: string;
+  rechargeNo: string;
+  /**
+   * 充值状态
+   */
+  status: string;
+  /**
+   * 商户支付单号
+   */
+  outTradeNo: object | null;
+  /**
+   * 微信小程序支付参数
+   */
+  paymentConfig?: object | null;
   /**
    * 充值时间
    */
   createdAt: string;
+  /**
+   * 支付完成时间
+   */
+  paidAt: object | null;
 }
 export interface FavoriteItemVo {
   /**
@@ -1442,6 +1612,10 @@ export interface FavoriteItemVo {
    * 当前用户是否已收藏
    */
   isFavorite?: boolean;
+  /**
+   * 热门标签
+   */
+  hotLabel?: object | null;
   /**
    * 最低价
    */
@@ -1571,6 +1745,10 @@ export interface BrowseHistoryItemVo {
    */
   isFavorite?: boolean;
   /**
+   * 热门标签
+   */
+  hotLabel?: object | null;
+  /**
    * 最低价
    */
   minPrice: number;
@@ -1603,31 +1781,155 @@ export interface BrowseHistoryListVo {
   data: BrowseHistoryItemVo[];
   meta: MallProductListMetaVo;
 }
-export interface MallPayOrderVo {
+export interface MallCouponWalletItemVo {
   /**
-   * 订单ID
+   * 领取记录 ID
    */
   id: number;
   /**
-   * 订单号
+   * 优惠券 ID
    */
-  orderNo: string;
+  couponId: number;
   /**
-   * 支付状态
+   * 优惠券名称
    */
-  payStatus: string;
+  name: string;
   /**
-   * 订单状态
+   * 优惠券编码
    */
-  status: string;
+  code: string;
   /**
-   * 已付金额
+   * 优惠券金额
    */
-  paid: number;
+  discountAmount: number;
   /**
-   * 支付完成时间
+   * 使用门槛金额
    */
-  payDate: string;
+  thresholdAmount: number;
+  /**
+   * 优惠文案
+   */
+  discountLabel: string;
+  /**
+   * 使用门槛文案
+   */
+  thresholdLabel: string;
+  /**
+   * 状态
+   */
+  status: 'UNUSED' | 'USED' | 'EXPIRED' | 'INVALID';
+  /**
+   * 状态文案
+   */
+  statusText: string;
+  /**
+   * 来源文案
+   */
+  sourceText: string;
+  /**
+   * 有效期开始时间
+   */
+  validFrom: string;
+  /**
+   * 有效期结束时间
+   */
+  validTo: string;
+  /**
+   * 有效期文案
+   */
+  validPeriodText: string;
+  /**
+   * 使用说明
+   */
+  description: object | null;
+  /**
+   * 是否临近到期
+   */
+  isExpiringSoon: boolean;
+}
+export interface MallCouponWalletListVo {
+  data: MallCouponWalletItemVo[];
+  meta: MallProductListMetaVo;
+}
+export interface MallCouponCenterItemVo {
+  /**
+   * 优惠券 ID
+   */
+  id: number;
+  /**
+   * 优惠券名称
+   */
+  name: string;
+  /**
+   * 优惠券编码
+   */
+  code: string;
+  /**
+   * 优惠券金额
+   */
+  discountAmount: number;
+  /**
+   * 使用门槛金额
+   */
+  thresholdAmount: number;
+  /**
+   * 优惠文案
+   */
+  discountLabel: string;
+  /**
+   * 使用门槛文案
+   */
+  thresholdLabel: string;
+  /**
+   * 剩余数量
+   */
+  remainingCount: object | null;
+  /**
+   * 个人已领取次数
+   */
+  claimedCount: number;
+  /**
+   * 是否可领取
+   */
+  canClaim: boolean;
+  /**
+   * 按钮文案
+   */
+  actionText: string;
+  /**
+   * 标签文案
+   */
+  tagText: object | null;
+  /**
+   * 有效期开始时间
+   */
+  startTime: string;
+  /**
+   * 有效期结束时间
+   */
+  endTime: string;
+  /**
+   * 有效期文案
+   */
+  validPeriodText: string;
+  /**
+   * 使用说明
+   */
+  description: object | null;
+}
+export interface MallCouponCenterListVo {
+  data: MallCouponCenterItemVo[];
+  meta: MallProductListMetaVo;
+}
+export interface MallCouponClaimResultVo {
+  /**
+   * 是否成功
+   */
+  success: boolean;
+  /**
+   * 提示信息
+   */
+  message: string;
 }
 declare global {
   interface Apis {
@@ -1650,7 +1952,7 @@ declare global {
        *   categoryId?: number
        *   // 品牌ID
        *   brandId?: number
-       *   // 排序: price_asc-价格升序, price_desc-价格降序, new-最新, sales-销量
+       *   // 排序: recommended-推荐, price_asc-价格升序, price_desc-价格降序, new-最新, sales-销量
        *   sort?: string
        *   // 页码
        *   page?: number
@@ -1783,6 +2085,8 @@ declare global {
        *     skus?: Array<Record<string, any>>
        *     // 当前用户是否已收藏
        *     isFavorite?: boolean
+       *     // 热门标签
+       *     hotLabel?: object | null
        *     // 最低价
        *     minPrice: number
        *     // 最高价
@@ -1820,7 +2124,7 @@ declare global {
              */
             brandId?: number;
             /**
-             * 排序: price_asc-价格升序, price_desc-价格降序, new-最新, sales-销量
+             * 排序: recommended-推荐, price_asc-价格升序, price_desc-价格降序, new-最新, sales-销量
              */
             sort?: string;
             /**
@@ -2117,18 +2421,13 @@ declare global {
        *   createdAt: string
        *   // 更新时间
        *   updatedAt: string
-       *   // 子分类
-       *   // [params1] start
-       *   // [items] start
-       *   // [cycle] $.[]
-       *   // [items] end
-       *   // [params1] end
-       *   children: CategoryTreeVo[] | null
+       *   // 分类下商品数量
+       *   productCount: number
        * }>
        * ```
        */
       MallHomeController_findCategories<
-        Config extends Alova2MethodConfig<CategoryTreeVo[]> & {
+        Config extends Alova2MethodConfig<MallCategoryVo[]> & {
           params: {
             /**
              * 父级分类ID，传空字符串时筛选一级分类
@@ -2142,7 +2441,7 @@ declare global {
         }
       >(
         config: Config
-      ): Alova2Method<CategoryTreeVo[], 'general.MallHomeController_findCategories', Config>;
+      ): Alova2Method<MallCategoryVo[], 'general.MallHomeController_findCategories', Config>;
       /**
        * ---
        *
@@ -2219,6 +2518,82 @@ declare global {
       MallHomeController_findBanners<Config extends Alova2MethodConfig<BannerVo[]>>(
         config?: Config
       ): Alova2Method<BannerVo[], 'general.MallHomeController_findBanners', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取搜索页初始化数据
+       *
+       * **path:** /mall/search/init
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 热门搜索词列表
+       *   // [items] start
+       *   // [items] end
+       *   hotKeywords: Array<{
+       *     // 热门搜索词 ID
+       *     id: number
+       *     // 热门搜索词
+       *     keyword: string
+       *     // 排序号
+       *     sort: number
+       *     // 是否启用
+       *     isEnabled: boolean
+       *     // 搜索次数
+       *     searchCount: number
+       *     // 创建时间
+       *     createdAt: string
+       *     // 更新时间
+       *     updatedAt: string
+       *   }>
+       *   // 推荐分类列表
+       *   // [items] start
+       *   // [items] end
+       *   recommendCategories: Array<{
+       *     // 分类ID
+       *     id: number
+       *     // 分类名称
+       *     name: string
+       *     // 分类编码
+       *     code: string
+       *     // 子标题
+       *     subtitle: object | null
+       *     // 备注
+       *     remark: object | null
+       *     // 父级ID
+       *     parentId: object | null
+       *     // 层级
+       *     level: number
+       *     // 排序号
+       *     sort: number
+       *     // 是否作为商城搜索推荐分类
+       *     mallRecommend: boolean
+       *     // 商城搜索推荐排序号
+       *     mallRecommendSort: number
+       *     // 分类图标
+       *     icon: object | null
+       *     // 分类图标 URL
+       *     iconUrl: object | null
+       *     // 分类图片
+       *     image: object | null
+       *     // 是否启用
+       *     isEnabled: boolean
+       *     // 创建时间
+       *     createdAt: string
+       *     // 更新时间
+       *     updatedAt: string
+       *     // 分类下商品数量
+       *     productCount: number
+       *   }>
+       * }
+       * ```
+       */
+      MallHomeController_findSearchInit<Config extends Alova2MethodConfig<MallSearchInitVo>>(
+        config?: Config
+      ): Alova2Method<MallSearchInitVo, 'general.MallHomeController_findSearchInit', Config>;
       /**
        * ---
        *
@@ -2307,8 +2682,12 @@ declare global {
        * type RequestBody = {
        *   // 微信小程序 wx.login 返回的 code
        *   code: string
+       *   // 微信手机号授权 code，可选
+       *   phoneCode?: string
        *   // 微信昵称，可选
        *   nickname?: string
+       *   // 微信头像地址，可选
+       *   avatarUrl?: string
        * }
        * ```
        *
@@ -2331,11 +2710,32 @@ declare global {
        *     email: object | null
        *     // 姓名
        *     name: object | null
+       *     // 头像地址
+       *     avatarUrl: object | null
        *     // 创建时间
        *     createdAt: string
        *     // 更新时间
        *     updatedAt: string
+       *     // 手机号
+       *     phone: object | null
+       *     // 关联客户信息
+       *     customer: {
+       *       // 客户ID
+       *       id: number
+       *       // 客户名称
+       *       name: string
+       *       // 手机号
+       *       phone: object | null
+       *       // 地址
+       *       address: object | null
+       *       // 余额账户ID
+       *       balanceAccountId: object | null
+       *       // 可用余额
+       *       availableBalance: string | null
+       *     }
        *   }
+       *   // 是否已完成资料设置
+       *   profileCompleted: boolean
        * }
        * ```
        */
@@ -2366,6 +2766,8 @@ declare global {
        *   email: object | null
        *   // 姓名
        *   name: object | null
+       *   // 头像地址
+       *   avatarUrl: object | null
        *   // 创建时间
        *   createdAt: string
        *   // 更新时间
@@ -2833,58 +3235,74 @@ declare global {
        *
        * **Response**
        * ```ts
-       * type Response = Array<{
-       *   // 订单ID
-       *   id: number
-       *   // 订单号
-       *   orderNo: string
-       *   // 订单状态
-       *   status: string
-       *   // 支付状态
-       *   payStatus: string
-       *   // 发货状态
-       *   shipStatus: string
-       *   // 下单时间
-       *   orderDate: string
-       *   // 支付截止时间
-       *   expireAt: object | null
-       *   // 商品总额
-       *   totalAmount: number
-       *   // 应付金额
-       *   payable: number
-       *   // 已付金额
-       *   paid: number
-       *   // 商品件数
-       *   itemCount: number
-       *   // 订单商品
+       * type Response = {
+       *   // 订单列表
        *   // [items] start
        *   // [items] end
-       *   items: Array<{
-       *     // 商品ID
-       *     productId: number
-       *     // SKU ID
-       *     skuId: number
-       *     // 商品名称
-       *     productName: string
-       *     // SKU 编码
-       *     skuCode: string
-       *     // 规格
-       *     specs: object
-       *     // 商品图片
-       *     image: object | null
-       *     // 单价
-       *     price: number
-       *     // 数量
-       *     quantity: number
-       *     // 金额
-       *     amount: number
+       *   data: Array<{
+       *     // 订单ID
+       *     id: number
+       *     // 订单号
+       *     orderNo: string
+       *     // 订单状态
+       *     status: string
+       *     // 支付状态
+       *     payStatus: string
+       *     // 发货状态
+       *     shipStatus: string
+       *     // 下单时间
+       *     orderDate: string
+       *     // 支付截止时间
+       *     expireAt: object | null
+       *     // 商品总额
+       *     totalAmount: number
+       *     // 应付金额
+       *     payable: number
+       *     // 已付金额
+       *     paid: number
+       *     // 商品件数
+       *     itemCount: number
+       *     // 订单商品
+       *     // [items] start
+       *     // [items] end
+       *     items: Array<{
+       *       // 商品ID
+       *       productId: number
+       *       // SKU ID
+       *       skuId: number
+       *       // 商品名称
+       *       productName: string
+       *       // SKU 编码
+       *       skuCode: string
+       *       // 规格
+       *       specs: object
+       *       // 商品图片
+       *       image: object | null
+       *       // 单价
+       *       price: number
+       *       // 数量
+       *       quantity: number
+       *       // 金额
+       *       amount: number
+       *     }>
        *   }>
-       * }>
+       *   // 分页信息
+       *   meta: {
+       *     // 当前页码
+       *     page: number
+       *     // 每页数量
+       *     pageSize: number
+       *     // 总记录数
+       *     total: number
+       *     // 总页数
+       *     totalPages: number
+       *   }
+       * }
        * ```
        */
-      MallOrdersController_findOrders<Config extends Alova2MethodConfig<MallOrderListItemVo[]>>(
+      MallOrdersController_findOrders<Config extends Alova2MethodConfig<MallOrderListResponseVo>>(
         config?: Config
-      ): Alova2Method<MallOrderListItemVo[], 'general.MallOrdersController_findOrders', Config>;
+      ): Alova2Method<MallOrderListResponseVo, 'general.MallOrdersController_findOrders', Config>;
       /**
        * ---
        *
@@ -2914,6 +3332,12 @@ declare global {
        *   totalAmount: number
        *   // 应付金额
        *   payable: number
+       *   // 优惠金额
+       *   discount: number
+       *   // 优惠券领取记录 ID
+       *   couponReceiveId: object | null
+       *   // 优惠券名称
+       *   couponName: object | null
        *   // 商品件数
        *   itemCount: number
        *   // 订单状态
@@ -3010,12 +3434,18 @@ declare global {
        *   freight: number
        *   // 支付时间
        *   payDate: object | null
+       *   // 取消时间
+       *   cancelDate: object | null
        *   // 发货时间
        *   shipDate: object | null
        *   // 收货时间
        *   receiveDate: object | null
        *   // 支付方式
        *   paymentMethod: object | null
+       *   // 优惠券领取记录 ID
+       *   couponReceiveId: object | null
+       *   // 优惠券名称
+       *   couponName: object | null
        * }
        * ```
        */
@@ -3028,6 +3458,38 @@ declare global {
       >(
         config: Config
       ): Alova2Method<MallOrderDetailVo, 'general.MallOrdersController_findOrderDetail', Config>;
+      /**
+       * ---
+       *
+       * [DELETE] 删除商城订单
+       *
+       * **path:** /mall/orders/{id}
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallOrdersController_removeOrder<
+        Config extends Alova2MethodConfig<null> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<null, 'general.MallOrdersController_removeOrder', Config>;
       /**
        * ---
        *
@@ -3056,6 +3518,8 @@ declare global {
        * **Response**
        * ```ts
        * type Response = {
+       *   // 支付单ID
+       *   paymentId: object | null
        *   // 订单ID
        *   id: number
        *   // 订单号
@@ -3066,8 +3530,16 @@ declare global {
        *   status: string
        *   // 已付金额
        *   paid: number
+       *   // 支付单状态
+       *   paymentStatus: string
+       *   // 支付方式
+       *   method: object | null
+       *   // 商户支付单号
+       *   outTradeNo: object | null
        *   // 支付完成时间
-       *   payDate: string
+       *   payDate: object | null
+       *   // 微信小程序支付参数
+       *   paymentConfig?: object | null
        * }
        * ```
        */
@@ -3081,6 +3553,78 @@ declare global {
       >(
         config: Config
       ): Alova2Method<MallPayOrderVo, 'general.MallOrdersController_payOrder', Config>;
+      /**
+       * ---
+       *
+       * [GET] 查询商城订单支付状态
+       *
+       * **path:** /mall/orders/{id}/payment-status
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 支付单ID
+       *   paymentId: object | null
+       *   // 订单ID
+       *   id: number
+       *   // 订单号
+       *   orderNo: string
+       *   // 支付状态
+       *   payStatus: string
+       *   // 订单状态
+       *   status: string
+       *   // 已付金额
+       *   paid: number
+       *   // 支付单状态
+       *   paymentStatus: string
+       *   // 支付方式
+       *   method: object | null
+       *   // 商户支付单号
+       *   outTradeNo: object | null
+       *   // 支付完成时间
+       *   payDate: object | null
+       *   // 微信小程序支付参数
+       *   paymentConfig?: object | null
+       * }
+       * ```
+       */
+      MallOrdersController_getPaymentStatus<
+        Config extends Alova2MethodConfig<MallPayOrderVo> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallPayOrderVo, 'general.MallOrdersController_getPaymentStatus', Config>;
+      /**
+       * ---
+       *
+       * [POST] 微信支付回调通知
+       *
+       * **path:** /mall/payments/wechat/notify
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = null
+       * ```
+       */
+      MallPaymentsController_wechatNotify<Config extends Alova2MethodConfig<null>>(
+        config?: Config
+      ): Alova2Method<null, 'general.MallPaymentsController_wechatNotify', Config>;
       /**
        * ---
        *
@@ -3393,7 +3937,7 @@ declare global {
        *   // 充值金额
        *   amount: number
        *   // 充值方式
-       *   method: 'WECHAT' | 'ALIPAY' | 'BANK' | 'CASH'
+       *   method: 'WECHAT'
        * }
        * ```
        *
@@ -3402,18 +3946,28 @@ declare global {
        * **Response**
        * ```ts
        * type Response = {
+       *   // 充值单ID
+       *   id: number
        *   // 账户ID
        *   accountId: number
        *   // 充值金额
        *   amount: string
        *   // 充值方式
        *   method: 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT' | 'BALANCE'
-       *   // 充值后余额
+       *   // 当前可用余额
        *   availableBalance: string
-       *   // 充值流水号
-       *   bizNo: string
+       *   // 充值单号
+       *   rechargeNo: string
+       *   // 充值状态
+       *   status: string
+       *   // 商户支付单号
+       *   outTradeNo: object | null
+       *   // 微信小程序支付参数
+       *   paymentConfig?: object | null
        *   // 充值时间
        *   createdAt: string
+       *   // 支付完成时间
+       *   paidAt: object | null
        * }
        * ```
        */
@@ -3424,6 +3978,61 @@ declare global {
       >(
         config: Config
       ): Alova2Method<MallBalanceRechargeVo, 'general.MallBalanceController_recharge', Config>;
+      /**
+       * ---
+       *
+       * [GET] 查询余额充值状态
+       *
+       * **path:** /mall/balance/recharges/{id}/status
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 充值单ID
+       *   id: number
+       *   // 账户ID
+       *   accountId: number
+       *   // 充值金额
+       *   amount: string
+       *   // 充值方式
+       *   method: 'CASH' | 'BANK' | 'ALIPAY' | 'WECHAT' | 'CREDIT' | 'BALANCE'
+       *   // 当前可用余额
+       *   availableBalance: string
+       *   // 充值单号
+       *   rechargeNo: string
+       *   // 充值状态
+       *   status: string
+       *   // 商户支付单号
+       *   outTradeNo: object | null
+       *   // 微信小程序支付参数
+       *   paymentConfig?: object | null
+       *   // 充值时间
+       *   createdAt: string
+       *   // 支付完成时间
+       *   paidAt: object | null
+       * }
+       * ```
+       */
+      MallBalanceController_getRechargeStatus<
+        Config extends Alova2MethodConfig<MallBalanceRechargeVo> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallBalanceRechargeVo, 'general.MallBalanceController_getRechargeStatus', Config>;
       /**
        * ---
        *
@@ -3568,6 +4177,8 @@ declare global {
        *     skus?: Array<Record<string, any>>
        *     // 当前用户是否已收藏
        *     isFavorite?: boolean
+       *     // 热门标签
+       *     hotLabel?: object | null
        *     // 最低价
        *     minPrice: number
        *     // 最高价
@@ -3862,6 +4473,8 @@ declare global {
        *     skus?: Array<Record<string, any>>
        *     // 当前用户是否已收藏
        *     isFavorite?: boolean
+       *     // 热门标签
+       *     hotLabel?: object | null
        *     // 最低价
        *     minPrice: number
        *     // 最高价
@@ -3990,6 +4603,259 @@ declare global {
       >(
         config: Config
       ): Alova2Method<null, 'general.MallBrowseHistoriesController_removeHistory', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的优惠券概览
+       *
+       * **path:** /mall/coupons/summary
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 未使用优惠券数量
+       *   unusedCount: number
+       *   // 已使用优惠券数量
+       *   usedCount: number
+       *   // 已过期优惠券数量
+       *   expiredCount: number
+       *   // 可领取优惠券数量
+       *   claimableCount: number
+       * }
+       * ```
+       */
+      MallCouponsController_getSummary<Config extends Alova2MethodConfig<MallCouponSummaryVo>>(
+        config?: Config
+      ): Alova2Method<MallCouponSummaryVo, 'general.MallCouponsController_getSummary', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取我的优惠券列表
+       *
+       * **path:** /mall/coupons
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 状态筛选
+       *   status?: 'UNUSED' | 'USED' | 'EXPIRED'
+       *   // 页码
+       *   page?: number
+       *   // 每页条数
+       *   pageSize?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // [items] start
+       *   // [items] end
+       *   data: Array<{
+       *     // 领取记录 ID
+       *     id: number
+       *     // 优惠券 ID
+       *     couponId: number
+       *     // 优惠券名称
+       *     name: string
+       *     // 优惠券编码
+       *     code: string
+       *     // 优惠券金额
+       *     discountAmount: number
+       *     // 使用门槛金额
+       *     thresholdAmount: number
+       *     // 优惠文案
+       *     discountLabel: string
+       *     // 使用门槛文案
+       *     thresholdLabel: string
+       *     // 状态
+       *     status: 'UNUSED' | 'USED' | 'EXPIRED' | 'INVALID'
+       *     // 状态文案
+       *     statusText: string
+       *     // 来源文案
+       *     sourceText: string
+       *     // 有效期开始时间
+       *     validFrom: string
+       *     // 有效期结束时间
+       *     validTo: string
+       *     // 有效期文案
+       *     validPeriodText: string
+       *     // 使用说明
+       *     description: object | null
+       *     // 是否临近到期
+       *     isExpiringSoon: boolean
+       *   }>
+       *   meta: {
+       *     // 当前页码
+       *     page: number
+       *     // 每页数量
+       *     pageSize: number
+       *     // 总记录数
+       *     total: number
+       *     // 总页数
+       *     totalPages: number
+       *   }
+       * }
+       * ```
+       */
+      MallCouponsController_findWallet<
+        Config extends Alova2MethodConfig<MallCouponWalletListVo> & {
+          params: {
+            /**
+             * 状态筛选
+             */
+            status?: 'UNUSED' | 'USED' | 'EXPIRED';
+            /**
+             * 页码
+             */
+            page?: number;
+            /**
+             * 每页条数
+             */
+            pageSize?: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallCouponWalletListVo, 'general.MallCouponsController_findWallet', Config>;
+      /**
+       * ---
+       *
+       * [GET] 获取领券中心列表
+       *
+       * **path:** /mall/coupons/center
+       *
+       * ---
+       *
+       * **Query Parameters**
+       * ```ts
+       * type QueryParameters = {
+       *   // 状态筛选
+       *   status?: 'UNUSED' | 'USED' | 'EXPIRED'
+       *   // 页码
+       *   page?: number
+       *   // 每页条数
+       *   pageSize?: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // [items] start
+       *   // [items] end
+       *   data: Array<{
+       *     // 优惠券 ID
+       *     id: number
+       *     // 优惠券名称
+       *     name: string
+       *     // 优惠券编码
+       *     code: string
+       *     // 优惠券金额
+       *     discountAmount: number
+       *     // 使用门槛金额
+       *     thresholdAmount: number
+       *     // 优惠文案
+       *     discountLabel: string
+       *     // 使用门槛文案
+       *     thresholdLabel: string
+       *     // 剩余数量
+       *     remainingCount: object | null
+       *     // 个人已领取次数
+       *     claimedCount: number
+       *     // 是否可领取
+       *     canClaim: boolean
+       *     // 按钮文案
+       *     actionText: string
+       *     // 标签文案
+       *     tagText: object | null
+       *     // 有效期开始时间
+       *     startTime: string
+       *     // 有效期结束时间
+       *     endTime: string
+       *     // 有效期文案
+       *     validPeriodText: string
+       *     // 使用说明
+       *     description: object | null
+       *   }>
+       *   meta: {
+       *     // 当前页码
+       *     page: number
+       *     // 每页数量
+       *     pageSize: number
+       *     // 总记录数
+       *     total: number
+       *     // 总页数
+       *     totalPages: number
+       *   }
+       * }
+       * ```
+       */
+      MallCouponsController_findCenter<
+        Config extends Alova2MethodConfig<MallCouponCenterListVo> & {
+          params: {
+            /**
+             * 状态筛选
+             */
+            status?: 'UNUSED' | 'USED' | 'EXPIRED';
+            /**
+             * 页码
+             */
+            page?: number;
+            /**
+             * 每页条数
+             */
+            pageSize?: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallCouponCenterListVo, 'general.MallCouponsController_findCenter', Config>;
+      /**
+       * ---
+       *
+       * [POST] 领取优惠券
+       *
+       * **path:** /mall/coupons/{id}/claim
+       *
+       * ---
+       *
+       * **Path Parameters**
+       * ```ts
+       * type PathParameters = {
+       *   id: number
+       * }
+       * ```
+       *
+       * ---
+       *
+       * **Response**
+       * ```ts
+       * type Response = {
+       *   // 是否成功
+       *   success: boolean
+       *   // 提示信息
+       *   message: string
+       * }
+       * ```
+       */
+      MallCouponsController_claimCoupon<
+        Config extends Alova2MethodConfig<MallCouponClaimResultVo> & {
+          pathParams: {
+            id: number;
+          };
+        }
+      >(
+        config: Config
+      ): Alova2Method<MallCouponClaimResultVo, 'general.MallCouponsController_claimCoupon', Config>;
     };
   }
 

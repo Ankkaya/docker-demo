@@ -5,6 +5,7 @@
 
 import { useCheckoutStore } from '@/store/checkoutStore'
 import { useUserStore } from '@/store/userStore'
+import { createQrMatrix } from '@/utils/qrcode/index'
 
 definePage({
   name: 'product-detail',
@@ -18,7 +19,7 @@ definePage({
 const router = useRouter()
 const checkoutStore = useCheckoutStore()
 const userStore = useUserStore()
-const { error: showError } = useGlobalToast()
+const toast = useToast()
 
 interface ProductOptionGroup {
   name: string
@@ -66,6 +67,8 @@ interface LoadProductDataOptions {
   preserveSelectedSpecs?: boolean
 }
 
+type QrMatrixCell = boolean
+
 const routeProductId = ref<number | null>(null)
 const loading = ref(false)
 const productDetail = ref<MallProductDetailVo | null>(null)
@@ -77,6 +80,13 @@ const liked = ref(false)
 const selectedSpecs = ref<Record<string, string>>({})
 const lastLoadedProductId = ref<number | null>(null)
 const addingToCart = ref(false)
+const shareVisible = ref(false)
+const savingPoster = ref(false)
+const qrMatrix = ref<QrMatrixCell[][]>([])
+const posterTempFilePath = ref('')
+const posterCanvasWidth = 750
+const posterCanvasHeight = 1180
+const cartItemCount = ref(0)
 
 const specGroups = computed<ProductOptionGroup[]>(() => {
   const list = productDetail.value?.specOptions
@@ -207,6 +217,18 @@ const productDescription = computed(() => {
 
   return '暂无商品详情'
 })
+const sharePosterImage = computed(() => {
+  return gallery.value[0] || productDetail.value?.mainImage || ''
+})
+const qrModuleCount = computed(() => qrMatrix.value.length || 1)
+const qrModules = computed(() => qrMatrix.value.flat())
+const cartBadgeText = computed(() => {
+  const count = Number(cartItemCount.value || 0)
+  if (count <= 0) {
+    return ''
+  }
+  return count > 99 ? '99+' : String(count)
+})
 const productHighlights = computed(() => {
   const items: ProductHighlightItem[] = []
 
@@ -269,6 +291,303 @@ function getReviewInitial(name: string) {
   }
 
   return normalized.slice(0, 1).toUpperCase()
+}
+
+function resolveSharePath() {
+  const productId = Number(routeProductId.value || productDetail.value?.id || 0)
+  return `/pages/product-detail/index?id=${productId}`
+}
+
+function resolveShareQrContent() {
+  const path = resolveSharePath()
+
+  // H5 下优先生成可直接访问的完整链接，其余端退回页面路径文本。
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/#${path}`
+  }
+
+  return path
+}
+
+function buildQrMatrix(content: string) {
+  return createQrMatrix(content) as QrMatrixCell[][]
+}
+
+function openSharePoster() {
+  if (!routeProductId.value && !productDetail.value?.id) {
+    return
+  }
+
+  qrMatrix.value = buildQrMatrix(resolveShareQrContent())
+  shareVisible.value = true
+}
+
+function closeSharePoster() {
+  shareVisible.value = false
+}
+
+function previewGalleryImage(index = 0) {
+  if (!gallery.value.length) {
+    return
+  }
+
+  const current = gallery.value[index] || gallery.value[0]
+  uni.previewImage({
+    urls: gallery.value,
+    current,
+  })
+}
+
+function drawRoundRectPath(
+  ctx: UniApp.CanvasContext,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2))
+  ctx.beginPath()
+  ctx.moveTo(x + safeRadius, y)
+  ctx.lineTo(x + width - safeRadius, y)
+  ctx.arcTo(x + width, y, x + width, y + safeRadius, safeRadius)
+  ctx.lineTo(x + width, y + height - safeRadius)
+  ctx.arcTo(x + width, y + height, x + width - safeRadius, y + height, safeRadius)
+  ctx.lineTo(x + safeRadius, y + height)
+  ctx.arcTo(x, y + height, x, y + height - safeRadius, safeRadius)
+  ctx.lineTo(x, y + safeRadius)
+  ctx.arcTo(x, y, x + safeRadius, y, safeRadius)
+  ctx.closePath()
+}
+
+function wrapCanvasText(
+  ctx: UniApp.CanvasContext,
+  text: string,
+  maxWidth: number,
+  maxLines: number,
+) {
+  const content = text.trim()
+  if (!content) {
+    return []
+  }
+
+  const lines: string[] = []
+  let current = ''
+
+  for (const char of content) {
+    const nextLine = `${current}${char}`
+    if (ctx.measureText(nextLine).width <= maxWidth) {
+      current = nextLine
+      continue
+    }
+
+    if (current) {
+      lines.push(current)
+      current = char
+    }
+    else {
+      lines.push(char)
+      current = ''
+    }
+
+    if (lines.length >= maxLines) {
+      break
+    }
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current)
+  }
+
+  if (lines.length > maxLines) {
+    lines.length = maxLines
+  }
+
+  if (lines.length === maxLines && current) {
+    const lastIndex = lines.length - 1
+    let lastLine = lines[lastIndex]
+    while (lastLine && ctx.measureText(`${lastLine}...`).width > maxWidth) {
+      lastLine = lastLine.slice(0, -1)
+    }
+    lines[lastIndex] = `${lastLine || ''}...`
+  }
+
+  return lines
+}
+
+async function getLocalImagePath(src?: string | null) {
+  if (!src) {
+    return ''
+  }
+
+  if (!/^https?:\/\//i.test(src) && !/^wxfile:\/\//i.test(src) && !/^file:\/\//i.test(src) && !/^\//.test(src)) {
+    return src
+  }
+
+  return await new Promise<string>((resolve) => {
+    uni.getImageInfo({
+      src,
+      success: (res) => resolve(res.path),
+      fail: () => resolve(src),
+    })
+  })
+}
+
+function drawQrMatrixToCanvas(
+  ctx: UniApp.CanvasContext,
+  matrix: QrMatrixCell[][],
+  x: number,
+  y: number,
+  size: number,
+) {
+  const moduleCount = matrix.length
+  if (!moduleCount) {
+    return
+  }
+
+  const quietZone = 4
+  const totalModules = moduleCount + quietZone * 2
+  const moduleSize = size / totalModules
+
+  ctx.setFillStyle('#ffffff')
+  ctx.fillRect(x, y, size, size)
+
+  ctx.setFillStyle('#111827')
+  matrix.forEach((row, rowIndex) => {
+    row.forEach((cell, colIndex) => {
+      if (!cell) {
+        return
+      }
+
+      ctx.fillRect(
+        x + (colIndex + quietZone) * moduleSize,
+        y + (rowIndex + quietZone) * moduleSize,
+        Math.ceil(moduleSize),
+        Math.ceil(moduleSize),
+      )
+    })
+  })
+}
+
+async function createPosterTempFile() {
+  if (!productDetail.value) {
+    return ''
+  }
+
+  const instance = getCurrentInstance()
+  const ctx = uni.createCanvasContext('product-share-poster-canvas', instance)
+  const localImage = await getLocalImagePath(sharePosterImage.value)
+  const posterNameLines = (() => {
+    ctx.setFontSize(34)
+    return wrapCanvasText(ctx, productName.value, 560, 2)
+  })()
+
+  ctx.setFillStyle('#f5f1e8')
+  ctx.fillRect(0, 0, posterCanvasWidth, posterCanvasHeight)
+
+  ctx.setFillStyle('#ffffff')
+  drawRoundRectPath(ctx, 36, 36, 678, 1088, 32)
+  ctx.fill()
+
+  if (localImage) {
+    ctx.save()
+    drawRoundRectPath(ctx, 72, 72, 606, 606, 28)
+    ctx.clip()
+    ctx.drawImage(localImage, 72, 72, 606, 606)
+    ctx.restore()
+  }
+  else {
+    ctx.setFillStyle('#f6e8c9')
+    drawRoundRectPath(ctx, 72, 72, 606, 606, 28)
+    ctx.fill()
+    ctx.setFillStyle('#d0a85b')
+    ctx.setFontSize(40)
+    ctx.fillText('商品图片', 290, 390)
+  }
+
+  ctx.setFillStyle('#0f172a')
+  ctx.setFontSize(34)
+  posterNameLines.forEach((line, index) => {
+    ctx.fillText(line, 72, 740 + index * 48)
+  })
+
+  ctx.setFillStyle('#efb239')
+  ctx.setFontSize(44)
+  ctx.fillText(`¥${productPrice.value.toFixed(2)}`, 72, 860)
+
+  ctx.setFillStyle('#94a3b8')
+  ctx.setFontSize(24)
+  ctx.fillText('长按识别二维码，查看商品详情', 72, 912)
+
+  ctx.setFillStyle('#fffaf0')
+  drawRoundRectPath(ctx, 72, 948, 606, 140, 24)
+  ctx.fill()
+
+  drawQrMatrixToCanvas(ctx, qrMatrix.value, 96, 972, 92)
+
+  ctx.setFillStyle('#0f172a')
+  ctx.setFontSize(26)
+  ctx.fillText('BabyWhale Kids', 212, 1018)
+
+  ctx.setFillStyle('#64748b')
+  ctx.setFontSize(22)
+  ctx.fillText('扫码打开当前商品页', 212, 1060)
+
+  return await new Promise<string>((resolve, reject) => {
+    ctx.draw(false, () => {
+      uni.canvasToTempFilePath({
+        canvasId: 'product-share-poster-canvas',
+        width: posterCanvasWidth,
+        height: posterCanvasHeight,
+        destWidth: posterCanvasWidth,
+        destHeight: posterCanvasHeight,
+        success: (res) => resolve(res.tempFilePath),
+        fail: reject,
+      }, instance)
+    })
+  })
+}
+
+async function ensurePosterTempFile() {
+  if (posterTempFilePath.value) {
+    return posterTempFilePath.value
+  }
+
+  const tempFilePath = await createPosterTempFile()
+  posterTempFilePath.value = tempFilePath
+  return tempFilePath
+}
+
+async function savePosterToAlbum() {
+  if (savingPoster.value) {
+    return
+  }
+
+  savingPoster.value = true
+
+  try {
+    const filePath = await ensurePosterTempFile()
+
+    await new Promise<void>((resolve, reject) => {
+      uni.saveImageToPhotosAlbum({
+        filePath,
+        success: () => resolve(),
+        fail: (error) => reject(error),
+      })
+    })
+
+    toast.success('已保存到相册')
+  }
+  catch {
+    uni.showModal({
+      title: '保存失败',
+      content: '请确认已授权保存到相册权限后重试',
+      showCancel: false,
+    })
+  }
+  finally {
+    savingPoster.value = false
+  }
 }
 
 function syncSelectedSpecs(
@@ -395,6 +714,21 @@ async function loadRelatedProducts(productId: number) {
   }
 }
 
+async function loadCartCount() {
+  if (!userStore.isLoggedIn) {
+    cartItemCount.value = 0
+    return
+  }
+
+  try {
+    const response = await (Apis.general as any).MallCartController_findCurrentUserCart({}).send()
+    cartItemCount.value = Number(response?.stats?.totalCount || 0)
+  }
+  catch {
+    cartItemCount.value = 0
+  }
+}
+
 async function loadProductData(productId: number, options: LoadProductDataOptions = {}) {
   loading.value = true
   const previousSelectedSpecs = options.preserveSelectedSpecs
@@ -470,11 +804,7 @@ function toggleLike() {
   }
 
   if (!userStore.isLoggedIn) {
-    userStore.openAuthPopup({
-      name: 'product-detail',
-      path: '/pages/product-detail/index',
-      query: routeProductId.value ? { id: String(routeProductId.value) } : undefined,
-    })
+    userStore.openAuthPopup()
     return
   }
 
@@ -494,7 +824,7 @@ function toggleLike() {
       if (productDetail.value) {
         productDetail.value.isFavorite = nextLiked
       }
-      uni.showToast({ title: nextLiked ? '已收藏' : '已取消收藏', icon: 'none' })
+      toast.success(nextLiked ? '已收藏' : '已取消收藏')
     })
     .catch(() => {
       liked.value = !nextLiked
@@ -503,21 +833,17 @@ function toggleLike() {
 
 async function addToCart() {
   if (!canSelectSku.value) {
-    uni.showToast({ title: '请先选择规格', icon: 'none' })
+    toast.info('请先选择规格')
     return
   }
 
   if (!hasStock.value) {
-    uni.showToast({ title: '当前规格暂无库存', icon: 'none' })
+    toast.error('当前规格暂无库存')
     return
   }
 
   if (!userStore.isLoggedIn) {
-    userStore.openAuthPopup({
-      name: 'product-detail',
-      path: '/pages/product-detail/index',
-      query: routeProductId.value ? { id: String(routeProductId.value) } : undefined,
-    })
+    userStore.openAuthPopup()
     return
   }
 
@@ -533,10 +859,11 @@ async function addToCart() {
         quantity: 1,
       },
     }).send()
+    await loadCartCount()
     if (routeProductId.value) {
       await loadProductData(routeProductId.value, { preserveSelectedSpecs: true })
     }
-    uni.showToast({ title: '已加入购物车', icon: 'success' })
+    toast.success('已加入购物车')
   }
   catch { }
   finally {
@@ -544,14 +871,25 @@ async function addToCart() {
   }
 }
 
+function openCart() {
+  router.pushTab({
+    name: 'cart',
+  })
+}
+
 function buyNow() {
   if (!canSelectSku.value || !selectedSku.value) {
-    uni.showToast({ title: '请先选择规格', icon: 'none' })
+    toast.info('请先选择规格')
     return
   }
 
   if (!hasStock.value) {
-    uni.showToast({ title: '当前规格暂不可购买', icon: 'none' })
+    toast.error('当前规格暂不可购买')
+    return
+  }
+
+  if (!userStore.isLoggedIn) {
+    userStore.openAuthPopup()
     return
   }
 
@@ -580,7 +918,7 @@ function buyNow() {
 function openRelated(item: typeof relatedProducts.value[number]) {
   router.push({
     name: 'product-detail',
-    query: {
+    params: {
       id: String(item.id),
     },
   })
@@ -598,6 +936,43 @@ function openReviewList() {
     },
   })
 }
+
+watch(
+  () => routeProductId.value,
+  () => {
+    posterTempFilePath.value = ''
+    qrMatrix.value = []
+  },
+)
+
+watch(
+  [productName, productPrice, sharePosterImage],
+  () => {
+    posterTempFilePath.value = ''
+  },
+)
+
+onShareAppMessage(() => ({
+  title: productName.value || '商品详情',
+  path: resolveSharePath(),
+  imageUrl: sharePosterImage.value || undefined,
+}))
+
+onShow(() => {
+  loadCartCount()
+})
+
+watch(
+  () => userStore.isLoggedIn,
+  (loggedIn) => {
+    if (!loggedIn) {
+      cartItemCount.value = 0
+      return
+    }
+
+    loadCartCount()
+  },
+)
 </script>
 
 <template>
@@ -610,7 +985,7 @@ function openReviewList() {
             @change="onImageChange"
           >
             <swiper-item v-for="(img, idx) in gallery" :key="idx">
-              <image :src="img" mode="aspectFill" class="h-full w-full" />
+              <image :src="img" mode="aspectFill" class="h-full w-full" @click="previewGalleryImage(idx)" />
             </swiper-item>
           </swiper>
 
@@ -621,11 +996,19 @@ function openReviewList() {
             />
           </view>
 
-          <view
-            class="absolute right-4 top-6 size-10 flex items-center justify-center rounded-full bg-white/90 shadow-md"
-            @click="toggleLike"
-          >
-            <wd-icon :name="liked ? 'heart-filled' : 'heart'" size="18" :color="liked ? '#f43f5e' : '#64748b'" />
+          <view class="absolute right-4 top-6 flex flex-col gap-3">
+            <view
+              class="size-10 flex items-center justify-center rounded-full bg-white/90 shadow-md"
+              @click="toggleLike"
+            >
+              <wd-icon :name="liked ? 'heart-filled' : 'heart'" size="18" :color="liked ? '#f43f5e' : '#64748b'" />
+            </view>
+            <view
+              class="size-10 flex items-center justify-center rounded-full bg-white/90 shadow-md"
+              @click="openSharePoster"
+            >
+              <wd-icon name="share" size="18" color="#64748b" />
+            </view>
           </view>
         </view>
 
@@ -699,7 +1082,7 @@ function openReviewList() {
           <view class="grid grid-cols-2 gap-3">
             <view
               v-for="item in productHighlights" :key="item.key"
-              class="flex items-center gap-3 rounded-2xl p-4 shadow-sm"
+              class="flex items-center gap-3 overflow-hidden rounded-2xl p-4 shadow-sm"
             >
               <view
                 class="size-10 flex shrink-0 items-center justify-center rounded-full bg-[#efb239]/10 text-[#efb239]"
@@ -710,7 +1093,10 @@ function openReviewList() {
                 <text class="block text-xs text-slate-400 font-medium">
                   {{ item.label }}
                 </text>
-                <text class="mt-1 block text-sm font-bold leading-6" :class="getHighlightValueClass(item)">
+                <text
+                  class="product-highlight-value mt-1 block text-sm font-bold leading-6"
+                  :class="getHighlightValueClass(item)"
+                >
                   {{ item.value }}
                 </text>
               </view>
@@ -794,7 +1180,9 @@ function openReviewList() {
           </text>
           <scroll-view scroll-x class="no-scrollbar box-border whitespace-nowrap px-5 pb-4">
             <view
-              v-for="item in relatedProducts" :key="item.id" class="mr-4 inline-block w-[280rpx]"
+              v-for="(item, index) in relatedProducts" :key="item.id"
+              class="inline-block w-[280rpx]"
+              :class="index === relatedProducts.length - 1 ? '' : 'mr-4'"
               @click="openRelated(item)"
             >
               <image :src="item.image" mode="aspectFill" class="h-[280rpx] w-[280rpx] rounded-lg bg-slate-200" />
@@ -813,6 +1201,17 @@ function openReviewList() {
     <view
       class="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-4 border-t border-slate-100 bg-white/95 p-4 pb-6 backdrop-blur-md"
     >
+      <view class="product-detail-cart-entry" @click="openCart">
+        <view class="product-detail-cart-entry__icon-wrap">
+          <text class="i-material-symbols:shopping-cart-outline-rounded product-detail-cart-entry__icon" />
+          <view v-if="cartBadgeText" class="product-detail-cart-entry__badge">
+            {{ cartBadgeText }}
+          </view>
+        </view>
+        <text class="product-detail-cart-entry__label">
+          购物车
+        </text>
+      </view>
       <view class="flex flex-1 gap-3">
         <view
           v-if="hasStock" class="flex-1 border-[3px] border-[#efb239] rounded-xl bg-white py-3 text-center text-sm text-[#efb239] font-bold shadow-[inset_0_0_0_1px_rgba(239,178,57,0.24)] transition"
@@ -828,6 +1227,88 @@ function openReviewList() {
           {{ hasStock ? '立即购买' : '暂无库存' }}
         </view>
       </view>
+    </view>
+
+    <view v-if="shareVisible" class="product-share-mask">
+      <view class="product-share-mask__backdrop" @click="closeSharePoster" />
+      <view class="product-share-mask__body">
+        <view class="product-share-poster">
+          <view class="product-share-poster__image">
+            <image v-if="sharePosterImage" :src="sharePosterImage" mode="aspectFill" class="h-full w-full" />
+            <view v-else class="product-share-poster__image-placeholder">
+              <wd-icon name="picture" size="40" color="#c5a35c" />
+            </view>
+          </view>
+          <view class="product-share-poster__content">
+            <text class="product-share-poster__name">
+              {{ productName }}
+            </text>
+            <text class="product-share-poster__price">
+              ¥{{ productPrice.toFixed(2) }}
+            </text>
+          </view>
+          <view class="product-share-poster__footer">
+            <view
+              class="product-share-poster__qr"
+              :style="{ gridTemplateColumns: `repeat(${qrModuleCount}, 1fr)` }"
+            >
+              <view
+                v-for="(cell, index) in qrModules"
+                :key="index"
+                class="product-share-poster__qr-cell"
+                :class="cell ? 'product-share-poster__qr-cell--dark' : 'product-share-poster__qr-cell--light'"
+              />
+            </view>
+            <view class="product-share-poster__tips">
+              <text class="product-share-poster__brand">BabyWhale Kids</text>
+              <text class="product-share-poster__tip">扫码查看该商品页面</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="product-share-actions">
+        <!-- #ifdef MP-WEIXIN -->
+        <button class="product-share-actions__item product-share-actions__item--button" open-type="share">
+          <view class="product-share-actions__icon product-share-actions__icon--primary">
+            <wd-icon name="share" size="22" color="#ffffff" />
+          </view>
+          <text class="product-share-actions__label">
+            转发
+          </text>
+        </button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <button class="product-share-actions__item product-share-actions__item--button" @click="toast.info('当前环境暂不支持微信转发')">
+          <view class="product-share-actions__icon product-share-actions__icon--primary">
+            <wd-icon name="share" size="22" color="#ffffff" />
+          </view>
+          <text class="product-share-actions__label">
+            转发
+          </text>
+        </button>
+        <!-- #endif -->
+        <button class="product-share-actions__item product-share-actions__item--button" @click="savePosterToAlbum">
+          <view class="product-share-actions__icon">
+            <wd-icon :name="savingPoster ? 'loading' : 'download'" size="22" color="#475569" :class="{ 'product-share-actions__icon--spinning': savingPoster }" />
+          </view>
+          <text class="product-share-actions__label">
+            {{ savingPoster ? '保存中' : '保存' }}
+          </text>
+        </button>
+        <button class="product-share-actions__item product-share-actions__item--button" @click="closeSharePoster">
+          <view class="product-share-actions__icon">
+            <wd-icon name="close" size="22" color="#475569" />
+          </view>
+          <text class="product-share-actions__label">
+            取消
+          </text>
+        </button>
+      </view>
+      <canvas
+        canvas-id="product-share-poster-canvas"
+        class="product-share-poster__canvas"
+        :style="{ width: `${posterCanvasWidth}px`, height: `${posterCanvasHeight}px` }"
+      />
     </view>
   </view>
 </template>
@@ -847,5 +1328,255 @@ function openReviewList() {
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.product-highlight-value {
+  display: -webkit-box;
+  overflow: hidden;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.product-detail-cart-entry {
+  display: flex;
+  width: 108rpx;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+}
+
+.product-detail-cart-entry__icon-wrap {
+  position: relative;
+  display: flex;
+  height: 76rpx;
+  width: 76rpx;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-detail-cart-entry__icon {
+  color: #334155;
+  font-size: 46rpx;
+  line-height: 1;
+}
+
+.product-detail-cart-entry__badge {
+  position: absolute;
+  top: -6rpx;
+  right: -10rpx;
+  min-width: 34rpx;
+  padding: 0 8rpx;
+  border-radius: 9999rpx;
+  background: #ef4444;
+  box-shadow: 0 6rpx 18rpx rgba(239, 68, 68, 0.24);
+  color: #fff;
+  font-size: 20rpx;
+  font-weight: 700;
+  line-height: 34rpx;
+  text-align: center;
+}
+
+.product-detail-cart-entry__label {
+  color: #475569;
+  font-size: 22rpx;
+  line-height: 1.2;
+}
+
+.product-share-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+}
+
+.product-share-mask__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.product-share-mask__body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 220rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 72rpx 40rpx 32rpx;
+}
+
+.product-share-poster {
+  width: 620rpx;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 36rpx;
+  background: #fff;
+  box-shadow: 0 24rpx 80rpx rgba(15, 23, 42, 0.2);
+}
+
+.product-share-poster__image {
+  height: 620rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fff5df 0%, #f7e2b1 100%);
+}
+
+.product-share-poster__image-placeholder {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-share-poster__content {
+  padding: 32rpx 32rpx 16rpx;
+}
+
+.product-share-poster__name {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #0f172a;
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.product-share-poster__price {
+  margin-top: 18rpx;
+  display: block;
+  color: #efb239;
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.product-share-poster__footer {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin: 0 32rpx 32rpx;
+  padding: 24rpx;
+  border-radius: 24rpx;
+  background: #fff9ef;
+}
+
+.product-share-poster__qr {
+  display: grid;
+  flex: none;
+  width: 168rpx;
+  height: 168rpx;
+  padding: 12rpx;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.product-share-poster__qr-cell {
+  width: 100%;
+  height: 100%;
+}
+
+.product-share-poster__qr-cell--dark {
+  background: #111827;
+}
+
+.product-share-poster__qr-cell--light {
+  background: #fff;
+}
+
+.product-share-poster__tips {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.product-share-poster__brand {
+  color: #0f172a;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.product-share-poster__tip {
+  color: #64748b;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.product-share-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 48rpx;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 44rpx;
+  padding: 0 40rpx;
+}
+
+.product-share-actions__item {
+  display: flex;
+  min-width: 120rpx;
+  flex-direction: column;
+  align-items: center;
+  gap: 14rpx;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.product-share-actions__item--button::after {
+  border: 0;
+}
+
+.product-share-actions__icon {
+  display: flex;
+  height: 92rpx;
+  width: 92rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999rpx;
+  background: #fff;
+  box-shadow: 0 12rpx 32rpx rgba(15, 23, 42, 0.14);
+}
+
+.product-share-actions__icon--primary {
+  background: #efb239;
+}
+
+.product-share-actions__label {
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.product-share-actions__icon--spinning {
+  animation: product-share-spin 0.9s linear infinite;
+}
+
+.product-share-poster__canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes product-share-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

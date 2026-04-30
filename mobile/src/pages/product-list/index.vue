@@ -14,6 +14,7 @@ definePage({
 })
 
 const router = useRouter()
+const { topAreaHeight, safeAreaInsetsBottom } = usePlatform()
 const pageTitle = ref('连体衣与包屁衣')
 const activeFilter = ref('recommended')
 const priceSortDirection = ref<'asc' | 'desc'>('asc')
@@ -70,6 +71,7 @@ const rightColumnProducts = computed(() => waterfallColumns.value.right)
 const hasCategoryFilter = computed(() => categoryId.value !== null)
 const hasKeywordFilter = computed(() => Boolean(keyword.value))
 const hasActiveContext = computed(() => hasCategoryFilter.value || hasKeywordFilter.value)
+const pageContentHeight = computed(() => `calc(100vh - ${topAreaHeight}px - ${safeAreaInsetsBottom}px)`)
 
 const contextTags = computed(() => {
   const tags: { key: string, label: string, removable?: boolean }[] = []
@@ -169,6 +171,9 @@ function normalizeProduct(item: any, index: number): ProductListItem {
 }
 
 function resolveSort() {
+  if (activeFilter.value === 'recommended') {
+    return 'recommended'
+  }
   if (activeFilter.value === 'sales') {
     return 'sales'
   }
@@ -309,42 +314,43 @@ function clearCategoryFilter() {
 </script>
 
 <template>
-  <view class="h-screen flex flex-col bg-[#f8f7f6]">
-    <PullLoadContainer
-      class="flex-1"
-      :loading-more="loadingMore"
-      :has-more="hasMore"
-      @refresh="handleRefresh"
-      @load-more="handleContainerLoadMore"
-    >
-      <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-4">
-        <view
-          v-for="item in filters" :key="item.key"
-          class="h-9 flex shrink-0 items-center gap-1 border rounded-full px-4" :class="activeFilter === item.key
-            ? 'border-[#efb239] bg-[#efb239] text-white'
-            : 'border-slate-200 bg-white text-slate-600'" @click="setFilter(item.key)"
-        >
-          <text class="text-sm" :class="activeFilter === item.key ? 'font-semibold' : 'font-medium'">
-            {{ item.label }}
-          </text>
-          <wd-icon
-            v-if="item.sort" :name="activeFilter === item.key && item.key === 'price'
-              ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
-              : 'switch-horizontal'" size="14" :color="activeFilter === item.key ? '#fff' : '#64748b'"
-          />
-        </view>
+  <view class="flex flex-col bg-[#f8f7f6]" :style="{ height: pageContentHeight }">
+    <view class="no-scrollbar flex gap-3 overflow-x-auto px-4 py-4">
+      <view
+        v-for="item in filters" :key="item.key"
+        class="h-9 flex shrink-0 items-center gap-1 border rounded-full px-4" :class="activeFilter === item.key
+          ? 'border-[#efb239] bg-[#efb239] text-white'
+          : 'border-slate-200 bg-white text-slate-600'" @click="setFilter(item.key)"
+      >
+        <text class="text-sm" :class="activeFilter === item.key ? 'font-semibold' : 'font-medium'">
+          {{ item.label }}
+        </text>
+        <wd-icon
+          v-if="item.sort" :name="activeFilter === item.key && item.key === 'price'
+            ? (priceSortDirection === 'asc' ? 'arrow-up' : 'arrow-down')
+            : 'switch-horizontal'" size="14" :color="activeFilter === item.key ? '#fff' : '#64748b'"
+        />
       </view>
+    </view>
 
-      <view v-if="hasActiveContext" class="flex flex-wrap items-center gap-2 px-4 pb-3">
-        <view
-          v-for="tag in contextTags" :key="tag.key"
-          class="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm"
-        >
-          <text>{{ tag.label }}</text>
-          <wd-icon v-if="tag.removable" name="close" size="14" color="#94a3b8" @click.stop="clearCategoryFilter" />
-        </view>
+    <view v-if="hasActiveContext" class="flex flex-wrap items-center gap-2 px-4 pb-3">
+      <view
+        v-for="tag in contextTags" :key="tag.key"
+        class="flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm"
+      >
+        <text>{{ tag.label }}</text>
+        <wd-icon v-if="tag.removable" name="close" size="14" color="#94a3b8" @click.stop="clearCategoryFilter" />
       </view>
+    </view>
 
+    <view class="min-h-0 flex-1">
+      <PullLoadContainer
+        class="h-full"
+        :loading-more="loadingMore"
+        :has-more="hasMore"
+        @refresh="handleRefresh"
+        @load-more="handleContainerLoadMore"
+      >
       <view v-if="products.length === 0" class="px-4 py-12 text-center text-sm text-slate-400">
         暂无商品
       </view>
@@ -417,7 +423,8 @@ function clearCategoryFilter() {
           {{ slotLoadingMore ? '正在加载更多...' : slotHasMore ? `当前筛选：${filters.find(item => item.key === activeFilter)?.label || '推荐'}` : '没有更多商品了' }}
         </view>
       </template>
-    </PullLoadContainer>
+      </PullLoadContainer>
+    </view>
   </view>
 </template>
 

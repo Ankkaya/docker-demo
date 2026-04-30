@@ -1,6 +1,7 @@
 <script setup lang="ts">
 type PullStatus = 'idle' | 'pulling' | 'ready' | 'refreshing'
 type LoadMoreStatus = 'idle' | 'loading' | 'no-more'
+type DisplayStatus = 'idle' | 'pulling' | 'ready' | 'refreshing'
 
 interface ActionContext {
   done: () => void
@@ -17,17 +18,19 @@ interface Props {
   damping?: number
   lowerThreshold?: number
   scrollWithAnimation?: boolean
+  headerVisibleHeight?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   hasMore: true,
-  refreshThreshold: 96,
-  refreshHoldDistance: 72,
+  refreshThreshold: 44,
+  refreshHoldDistance: 44,
   maxPullDistance: 140,
   damping: 0.35,
   lowerThreshold: 80,
   scrollWithAnimation: false,
+  headerVisibleHeight: 44,
 })
 
 const emit = defineEmits<{
@@ -41,7 +44,12 @@ const touching = ref(false)
 const pulling = ref(false)
 const internalRefreshing = ref(false)
 const internalLoadingMore = ref(false)
+const restoringAfterRefresh = ref(false)
+const restoringAfterRelease = ref(false)
 const startY = ref(0)
+const displayStatus = ref<DisplayStatus>('idle')
+let refreshRestoreTimer: ReturnType<typeof setTimeout> | null = null
+let releaseRestoreTimer: ReturnType<typeof setTimeout> | null = null
 
 const isRefreshing = computed(() => props.refreshing ?? internalRefreshing.value)
 const isLoadingMore = computed(() => props.loadingMore ?? internalLoadingMore.value)
@@ -86,12 +94,18 @@ const contentTransform = computed(() => ({
   transition: animated.value ? 'transform 220ms ease' : 'none',
 }))
 
+const headerVisibleHeightPx = computed(() => props.headerVisibleHeight)
+const headerOffset = computed(() => (isRefreshing.value ? 0 : contentOffset.value - headerVisibleHeightPx.value))
+
 const headerStyle = computed(() => ({
-  height: `${props.maxPullDistance}px`,
-  transform: `translateY(${contentOffset.value - props.maxPullDistance}px)`,
+  height: `${headerVisibleHeightPx.value}px`,
+  transform: `translateY(${headerOffset.value}px)`,
   transition: animated.value ? 'transform 220ms ease, opacity 220ms ease' : 'none',
   opacity: contentOffset.value > 0 || isRefreshing.value ? 1 : 0,
 }))
+
+const isRestoring = computed(() => restoringAfterRefresh.value || restoringAfterRelease.value)
+const showDefaultPullHint = computed(() => !isRestoring.value)
 
 const footerHint = computed(() => {
   if (loadMoreStatus.value === 'loading') {
@@ -104,11 +118,11 @@ const footerHint = computed(() => {
 })
 
 const pullHint = computed(() => {
-  switch (pullStatus.value) {
+  switch (displayStatus.value) {
     case 'ready':
       return '松手立即刷新'
     case 'refreshing':
-      return '正在刷新...'
+      return '加载中...'
     case 'pulling':
       return '下拉刷新'
     default:
@@ -141,11 +155,52 @@ function restorePull() {
   touching.value = false
   pulling.value = false
   pullDistance.value = 0
+  restoringAfterRefresh.value = false
+  restoringAfterRelease.value = false
+  displayStatus.value = 'idle'
+}
+
+function clearReleaseRestoreTimer() {
+  if (releaseRestoreTimer) {
+    clearTimeout(releaseRestoreTimer)
+    releaseRestoreTimer = null
+  }
+}
+
+function startReleaseRestore() {
+  clearReleaseRestoreTimer()
+  restoringAfterRelease.value = true
+  touching.value = false
+  pulling.value = false
+  pullDistance.value = 0
+
+  releaseRestoreTimer = setTimeout(() => {
+    restorePull()
+    releaseRestoreTimer = null
+  }, 220)
+}
+
+function startRefreshRestore() {
+  restoringAfterRefresh.value = true
+  internalRefreshing.value = false
+  touching.value = false
+  pulling.value = false
+  pullDistance.value = 0
+
+  refreshRestoreTimer = setTimeout(() => {
+    restorePull()
+    refreshRestoreTimer = null
+  }, 220)
 }
 
 function finishRefresh() {
-  internalRefreshing.value = false
-  restorePull()
+  if (refreshRestoreTimer) {
+    clearTimeout(refreshRestoreTimer)
+  }
+
+  refreshRestoreTimer = setTimeout(() => {
+    startRefreshRestore()
+  }, 800)
 }
 
 function finishLoadMore() {
@@ -181,6 +236,7 @@ function handleTouchMove(event: TouchEvent | any) {
 
   pulling.value = true
   pullDistance.value = getDampedDistance(deltaY)
+  displayStatus.value = pullDistance.value >= props.refreshThreshold ? 'ready' : 'pulling'
 
   if (typeof event?.preventDefault === 'function') {
     event.preventDefault()
@@ -190,6 +246,7 @@ function handleTouchMove(event: TouchEvent | any) {
 function triggerRefresh() {
   internalRefreshing.value = true
   pullDistance.value = props.refreshHoldDistance
+  displayStatus.value = 'refreshing'
   emit('refresh', { done: finishRefresh })
 }
 
@@ -206,7 +263,7 @@ function handleTouchEnd() {
     return
   }
 
-  restorePull()
+  startReleaseRestore()
 }
 
 function handleScroll(event: any) {
@@ -232,6 +289,7 @@ watch(
     if (value === true) {
       internalRefreshing.value = false
       pullDistance.value = props.refreshHoldDistance
+      displayStatus.value = 'refreshing'
       return
     }
 
@@ -280,12 +338,12 @@ defineExpose({
         :maxDistance="props.maxPullDistance"
         :refreshing="isRefreshing"
       >
-        <view class="pull-load-header__default">
+        <view v-if="showDefaultPullHint" class="pull-load-header__default">
           <wd-icon
-            :name="pullStatus === 'ready' ? 'arrow-up' : pullStatus === 'refreshing' ? 'loading' : 'arrow-down'"
+            :name="displayStatus === 'ready' ? 'arrow-up' : displayStatus === 'refreshing' ? 'loading' : 'arrow-down'"
             size="16px"
             color="#b78a24"
-            :class="{ 'pull-load-header__icon--spinning': pullStatus === 'refreshing' }"
+            :class="{ 'pull-load-header__icon--spinning': displayStatus === 'refreshing' }"
           />
           <text class="pull-load-header__text">
             {{ pullHint }}
@@ -304,25 +362,27 @@ defineExpose({
     >
       <view class="pull-load-content" :style="contentTransform">
         <slot />
-        <slot
-          name="loadMore"
-          :status="loadMoreStatus"
-          :loadingMore="isLoadingMore"
-          :hasMore="props.hasMore"
-        >
-          <view class="pull-load-footer">
-            <wd-icon
-              v-if="loadMoreStatus === 'loading'"
-              name="loading"
-              size="16px"
-              color="#94a3b8"
-              class="pull-load-header__icon--spinning"
-            />
-            <text class="pull-load-footer__text">
-              {{ footerHint }}
-            </text>
-          </view>
-        </slot>
+        <template v-if="!isRefreshing">
+          <slot
+            name="loadMore"
+            :status="loadMoreStatus"
+            :loadingMore="isLoadingMore"
+            :hasMore="props.hasMore"
+          >
+            <view class="pull-load-footer">
+              <wd-icon
+                v-if="loadMoreStatus === 'loading'"
+                name="loading"
+                size="16px"
+                color="#94a3b8"
+                class="pull-load-header__icon--spinning"
+              />
+              <text class="pull-load-footer__text">
+                {{ footerHint }}
+              </text>
+            </view>
+          </slot>
+        </template>
       </view>
     </scroll-view>
   </view>
@@ -352,16 +412,19 @@ defineExpose({
   left: 0;
   z-index: 1;
   width: 100%;
+  overflow: hidden;
   pointer-events: none;
 }
 
 .pull-load-header__default {
   display: flex;
+  width: 100%;
+  height: 100%;
   align-items: center;
   justify-content: center;
   gap: 12rpx;
-  height: 100%;
-  padding-bottom: 20rpx;
+  box-sizing: border-box;
+  background: transparent;
 }
 
 .pull-load-header__text,

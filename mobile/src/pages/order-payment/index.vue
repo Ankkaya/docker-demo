@@ -15,6 +15,7 @@ definePage({
     navigationBarTitleText: '订单支付',
     navigationStyle: 'custom',
   },
+  needLogin: true,
 })
 
 interface PaymentMethod {
@@ -60,6 +61,7 @@ interface CouponOption {
 const router = useRouter()
 const checkoutStore = useCheckoutStore()
 const userStore = useUserStore()
+const toast = useToast()
 const { safeAreaInsetsBottom } = usePlatform()
 
 const remainingSeconds = ref(29 * 60 + 59)
@@ -70,6 +72,7 @@ const creatingOrder = ref(false)
 const paying = ref(false)
 const paymentPopupVisible = ref(false)
 const shouldHandlePaymentCancel = ref(false)
+const paymentCancelRedirecting = ref(false)
 const couponPopupVisible = ref(false)
 const couponLoading = ref(false)
 const couponOptions = ref<CouponOption[]>([])
@@ -134,6 +137,7 @@ const paymentMethods = computed<PaymentMethod[]>(() => [
 const selectedPaymentMethod = computed(() => {
   return paymentMethods.value.find(item => item.key === selectedPayment.value) || paymentMethods.value[0]
 })
+const primaryCheckoutItem = computed(() => checkoutItems.value[0] || null)
 
 const formattedTimer = computed(() => {
   const minutes = Math.floor(remainingSeconds.value / 60)
@@ -360,6 +364,64 @@ function resolvePaymentMethod() {
   return 'WECHAT'
 }
 
+function redirectToPendingOrders() {
+  Promise.resolve(router.replace({
+    name: 'order-list',
+    query: {
+      status: 'pending',
+    },
+  })).finally(() => {
+    checkoutStore.clear()
+  })
+}
+
+function redirectToPendingOrdersAfterCancel() {
+  Promise.resolve(router.replaceAll({
+    name: 'order-list',
+    query: {
+      status: 'pending',
+      forceBack: '1',
+      backMode: orderSummary.value.source === 'cart' ? 'cart' : primaryCheckoutItem.value?.productId ? 'product-detail' : 'home',
+      productId: primaryCheckoutItem.value?.productId ? String(primaryCheckoutItem.value.productId) : '',
+    },
+  })).finally(() => {
+    checkoutStore.clear()
+  })
+}
+
+function handlePaymentCancelled() {
+  if (paymentCancelRedirecting.value) {
+    return
+  }
+
+  paymentCancelRedirecting.value = true
+  shouldHandlePaymentCancel.value = false
+  paymentPopupVisible.value = false
+
+  setTimeout(() => {
+    uni.showModal({
+      title: '提示',
+      content: '您已取消支付，即将跳转到订单列表',
+      showCancel: false,
+      confirmText: '知道了',
+      success: () => {
+        redirectToPendingOrdersAfterCancel()
+      },
+      complete: () => {
+        paymentCancelRedirecting.value = false
+      },
+    })
+  }, 180)
+}
+
+function redirectToOrderList() {
+  Promise.resolve(router.replace({
+    name: 'order-list',
+  })).finally(() => {
+    checkoutStore.clear()
+  })
+}
+
 async function queryPaymentStatus(orderId: number) {
   return alovaInstance.Get(`/mall/orders/${orderId}/payment-status`).send() as Promise<any>
 }
@@ -385,12 +447,12 @@ async function requestWechatPayment(paymentConfig?: Record<string, string> | nul
 
 async function payNow() {
   if (!orderSummary.value.orderId) {
-    uni.showToast({ title: '订单信息异常', icon: 'none' })
+    toast.error('订单信息异常')
     return
   }
 
   if (selectedPayment.value === 'balance' && !balancePayEnabled.value) {
-    uni.showToast({ title: '余额不足，请先充值', icon: 'none' })
+    toast.error('余额不足，请先充值')
     return
   }
 
@@ -414,30 +476,20 @@ async function payNow() {
     }
 
     await loadBalanceSummary()
-    uni.showToast({
-      title: `${selectedPaymentMethod.value.name}支付成功`,
-      icon: 'success',
-    })
-    checkoutStore.clear()
+    toast.success(`${selectedPaymentMethod.value.name}支付成功`)
     setTimeout(() => {
-      router.replace({
-        name: 'order-list',
-      })
+      redirectToOrderList()
     }, 500)
   }
   catch (error: any) {
     const errMsg = String(error?.errMsg || error?.message || '')
     if (errMsg.includes('cancel')) {
-      uni.showToast({
-        title: '已取消支付',
-        icon: 'none',
-      })
+      handlePaymentCancelled()
       return
     }
-    uni.showToast({
-      title: error?.message || error?.errMsg || '支付失败',
-      icon: 'none',
-    })
+    if (!error?.handled) {
+      toast.error(error?.message || error?.errMsg || '支付失败')
+    }
   }
   finally {
     paying.value = false
@@ -449,7 +501,7 @@ async function openPaymentPopup() {
     return
 
   if (!isExistingOrder.value && !deliveryAddress.value) {
-    uni.showToast({ title: '请选择收货地址', icon: 'none' })
+    toast.error('请选择收货地址')
     return
   }
 
@@ -511,11 +563,7 @@ async function openPaymentPopup() {
     shouldHandlePaymentCancel.value = true
     paymentPopupVisible.value = true
   }
-  catch (error: any) {
-    uni.showToast({
-      title: error?.message || '创建订单失败',
-      icon: 'none',
-    })
+  catch {
   }
   finally {
     creatingOrder.value = false
@@ -523,12 +571,11 @@ async function openPaymentPopup() {
 }
 
 watch(paymentPopupVisible, (visible) => {
-  if (visible || !shouldHandlePaymentCancel.value) {
+  if (visible || !shouldHandlePaymentCancel.value || paymentCancelRedirecting.value) {
     return
   }
 
-  shouldHandlePaymentCancel.value = false
-  router.back()
+  handlePaymentCancelled()
 })
 
 onLoad((options) => {
@@ -916,7 +963,7 @@ onShow(() => {
           <view
             v-for="item in paymentMethods" :key="item.key" class="order-payment-popup__method"
             :class="selectedPayment === item.key ? 'order-payment-popup__method--active' : 'order-payment-popup__method--idle'"
-            @click="item.key === 'balance' && !balancePayEnabled ? uni.showToast({ title: '余额不足，请先充值', icon: 'none' }) : selectedPayment = item.key"
+            @click="item.key === 'balance' && !balancePayEnabled ? toast.error('余额不足，请先充值') : selectedPayment = item.key"
           >
             <view class="flex items-center gap-3">
               <view class="size-10 flex items-center justify-center rounded-2xl" :class="item.iconToneClass">

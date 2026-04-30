@@ -1,6 +1,6 @@
 <template>
-  <div class="page-container">
-    <n-card title="余额充值单" class="page-card">
+  <div class="p-4">
+    <n-card class="mb-4" content-style="padding-bottom: 0;">
       <QueryForm :model="searchForm">
         <n-form-item label="关键词">
           <n-input v-model:value="searchForm.keyword" placeholder="充值单号/商户单号/微信单号/客户信息" clearable />
@@ -18,7 +18,9 @@
           </n-space>
         </n-form-item>
       </QueryForm>
+    </n-card>
 
+    <n-card>
       <n-data-table
         :columns="columns"
         :data="tableData"
@@ -28,21 +30,53 @@
         remote
       />
     </n-card>
+
+    <n-modal v-model:show="refundVisible" preset="card" title="发起充值退款" style="width: 560px">
+      <n-form label-placement="top">
+        <n-form-item label="退款金额">
+          <n-input :value="currentRow ? `¥${Number(currentRow.amount).toFixed(2)}` : '-'" disabled />
+        </n-form-item>
+        <n-form-item v-if="currentRow && Number(currentRow.bonusAmount || 0) > 0" label="回退到账金额">
+          <n-input :value="`¥${Number(currentRow.arrivalAmount).toFixed(2)}（含赠送金额）`" disabled />
+        </n-form-item>
+        <n-form-item label="退款说明">
+          <n-input
+            v-model:value="refundReason"
+            type="textarea"
+            :rows="4"
+            maxlength="200"
+            show-count
+            placeholder="请输入退款原因，默认会记录为后台发起充值退款"
+          />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="refundVisible = false">取消</n-button>
+          <n-button type="warning" :loading="refundSubmitting" @click="handleCreateRefund">确认退款</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { h, onMounted, reactive, ref } from 'vue'
 import type { DataTableColumns } from 'naive-ui'
-import { NTag, useMessage } from 'naive-ui'
+import { NButton, NSpace, NTag, useMessage } from 'naive-ui'
 import QueryForm from '@/components/common/QueryForm.vue'
 import { getBalanceRechargeOrders } from '@/api/balance'
+import { createPaymentRefund } from '@/api/purchase'
 import type { BalanceRechargeOrder } from '@/types/balance'
 import type { PaymentMethod, PaymentStatus } from '@/types/purchase'
 
 const message = useMessage()
 const loading = ref(false)
 const tableData = ref<BalanceRechargeOrder[]>([])
+const refundVisible = ref(false)
+const refundSubmitting = ref(false)
+const currentRow = ref<BalanceRechargeOrder | null>(null)
+const refundReason = ref('')
 
 const searchForm = reactive<{
   keyword: string
@@ -82,19 +116,21 @@ const methodOptions = [
 ]
 
 const columns: DataTableColumns<BalanceRechargeOrder> = [
-  { title: 'ID', key: 'id', width: 80 },
   { title: '充值单号', key: 'rechargeNo', width: 170 },
   {
     title: '客户信息',
     key: 'customerName',
-    minWidth: 220,
+    width: 180,
     render: row => h('div', [
       h('div', { style: 'font-weight: 600;' }, row.customerName),
       h('div', { style: 'color: #999; font-size: 12px;' }, `编码: ${row.customerCode}`),
       h('div', { style: 'color: #999; font-size: 12px;' }, row.customerPhone || '-'),
     ]),
   },
-  { title: '金额', key: 'amount', width: 100, render: row => `¥${Number(row.amount).toFixed(2)}` },
+  { title: '实充金额', key: 'amount', width: 100, render: row => `¥${Number(row.amount).toFixed(2)}` },
+  { title: '赠送金额', key: 'bonusAmount', width: 100, render: row => Number(row.bonusAmount || 0) > 0 ? `¥${Number(row.bonusAmount).toFixed(2)}` : '-' },
+  { title: '到账金额', key: 'arrivalAmount', width: 100, render: row => `¥${Number(row.arrivalAmount).toFixed(2)}` },
+  { title: '活动名称', key: 'activityName', width: 160, render: row => row.activityName || '-' },
   { title: '支付方式', key: 'methodText', width: 120 },
   {
     title: '状态',
@@ -109,8 +145,46 @@ const columns: DataTableColumns<BalanceRechargeOrder> = [
   { title: '商户单号', key: 'outTradeNo', width: 220, render: row => row.outTradeNo || '-' },
   { title: '微信单号', key: 'thirdTradeNo', width: 220, render: row => row.thirdTradeNo || '-' },
   { title: '第三方状态', key: 'thirdStatus', width: 140, render: row => row.thirdStatus || '-' },
+  {
+    title: '退款状态',
+    key: 'refundStatus',
+    width: 120,
+    render: row => row.refundStatusText
+      ? h(
+        NTag,
+        {
+          size: 'small',
+          type: row.refundStatus === 'SUCCESS'
+            ? 'success'
+            : row.refundStatus === 'PROCESSING'
+              ? 'warning'
+              : row.refundStatus === 'ABNORMAL'
+                ? 'error'
+                : 'default',
+        },
+        { default: () => row.refundStatusText || '-' },
+      )
+      : '-',
+  },
   { title: '支付时间', key: 'paidAt', width: 180, render: row => formatDateTime(row.paidAt || '') },
   { title: '创建时间', key: 'createdAt', width: 180, render: row => formatDateTime(row.createdAt) },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 120,
+    fixed: 'right',
+    render: row => h(NSpace, { wrap: false }, {
+      default: () => [
+        row.canRefund
+          ? h(NButton, {
+            text: true,
+            type: 'warning',
+            onClick: () => openRefundModal(row),
+          }, { default: () => '退款' })
+          : null,
+      ],
+    }),
+  },
 ]
 
 async function loadData() {
@@ -143,6 +217,34 @@ function handleReset() {
   searchForm.method = 'WECHAT'
   pagination.page = 1
   loadData()
+}
+
+function openRefundModal(row: BalanceRechargeOrder) {
+  currentRow.value = row
+  refundReason.value = ''
+  refundVisible.value = true
+}
+
+async function handleCreateRefund() {
+  if (!currentRow.value) {
+    return
+  }
+
+  refundSubmitting.value = true
+  try {
+    await createPaymentRefund(
+      currentRow.value.id,
+      { reason: refundReason.value.trim() || undefined },
+      'RECHARGE',
+    )
+    message.success('充值退款申请已提交')
+    refundVisible.value = false
+    await loadData()
+  } catch (error: any) {
+    message.error(error.message || '发起充值退款失败')
+  } finally {
+    refundSubmitting.value = false
+  }
 }
 
 function formatDateTime(value: string) {

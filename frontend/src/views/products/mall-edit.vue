@@ -143,6 +143,15 @@ const formData = reactive({
   images: [] as string[],
 })
 
+const normalizeNumberInputValue = (value: unknown, fallback: number | null = 0) => {
+  if (value === null || value === undefined || value === '') {
+    return fallback
+  }
+
+  const normalized = Number(value)
+  return Number.isFinite(normalized) ? normalized : fallback
+}
+
 const skuColumns = computed<DataTableColumns<MallSkuForm>>(() => [
   {
     title: 'SKU编码',
@@ -168,7 +177,6 @@ const skuColumns = computed<DataTableColumns<MallSkuForm>>(() => [
       value: row.salePrice,
       min: 0,
       precision: 2,
-      placeholder: String(row.baseSalePrice ?? ''),
       onUpdateValue: (value: number | null) => {
         row.salePrice = value ?? undefined
       },
@@ -182,7 +190,6 @@ const skuColumns = computed<DataTableColumns<MallSkuForm>>(() => [
       value: row.marketPrice,
       min: 0,
       precision: 2,
-      placeholder: String(row.baseMarketPrice ?? ''),
       onUpdateValue: (value: number | null) => {
         row.marketPrice = value ?? undefined
       },
@@ -290,10 +297,10 @@ const loadProduct = async () => {
       skuId: sku.id,
       skuCode: sku.skuCode,
       specs: sku.specs,
-      baseSalePrice: sku.salePrice,
-      baseMarketPrice: sku.marketPrice,
-      salePrice: sku.mallInfo?.salePrice ?? sku.salePrice,
-      marketPrice: sku.mallInfo?.marketPrice ?? sku.marketPrice,
+      baseSalePrice: normalizeNumberInputValue(sku.salePrice, 0) ?? 0,
+      baseMarketPrice: normalizeNumberInputValue(sku.marketPrice, null) ?? undefined,
+      salePrice: normalizeNumberInputValue(sku.mallInfo?.salePrice, null) ?? undefined,
+      marketPrice: normalizeNumberInputValue(sku.mallInfo?.marketPrice, null) ?? undefined,
       image: extractFileObjectKey(sku.mallInfo?.image ?? sku.image) || undefined,
     })
   })

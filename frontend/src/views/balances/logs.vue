@@ -1,13 +1,12 @@
 <template>
-  <div class="page-container">
-    <n-card title="余额流水" class="page-card">
-      <n-form inline :model="searchForm" class="search-form">
+  <div class="p-4">
+    <n-card class="mb-4" content-style="padding-bottom: 0;">
+      <QueryForm :model="searchForm">
         <n-form-item label="关键词">
           <n-input
             v-model:value="searchForm.keyword"
             placeholder="客户名称/编码/手机号/单号"
             clearable
-            style="width: 240px"
           />
         </n-form-item>
         <n-form-item label="类型">
@@ -16,14 +15,6 @@
             :options="typeOptions"
             placeholder="全部类型"
             clearable
-            style="width: 180px"
-          />
-        </n-form-item>
-        <n-form-item label="账户ID">
-          <n-input-number
-            v-model:value="searchForm.accountId"
-            clearable
-            style="width: 140px"
           />
         </n-form-item>
         <n-form-item>
@@ -32,8 +23,10 @@
             <n-button @click="handleReset">重置</n-button>
           </n-space>
         </n-form-item>
-      </n-form>
+      </QueryForm>
+    </n-card>
 
+    <n-card>
       <n-data-table
         :columns="columns"
         :data="tableData"
@@ -51,7 +44,8 @@
 import { h, onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import type { DataTableColumns } from 'naive-ui';
-import { NTag, useMessage } from 'naive-ui';
+import { NButton, NSpace, NTag, useMessage } from 'naive-ui';
+import QueryForm from '@/components/common/QueryForm.vue';
 import { getBalanceLogs } from '@/api/balance';
 import type { BalanceLog, BalanceLogType } from '@/types/balance';
 
@@ -87,12 +81,9 @@ const typeOptions = [
 ];
 
 const columns: DataTableColumns<BalanceLog> = [
-  { title: '流水ID', key: 'id', width: 90 },
-  { title: '账户ID', key: 'accountId', width: 90 },
   {
     title: '客户信息',
     key: 'customer',
-    minWidth: 220,
     render(row) {
       return h('div', [
         h('div', { style: 'font-weight: 600;' }, row.customerName),
@@ -104,7 +95,6 @@ const columns: DataTableColumns<BalanceLog> = [
   {
     title: '类型',
     key: 'typeText',
-    width: 120,
     render(row) {
       const type = row.type === 'ADJUST_DECREASE' ? 'warning' : row.type === 'ADJUST_INCREASE' ? 'success' : 'default';
       return h(NTag, { type, size: 'small' }, { default: () => row.typeText });
@@ -113,37 +103,37 @@ const columns: DataTableColumns<BalanceLog> = [
   {
     title: '变动金额',
     key: 'changeAmount',
-    width: 120,
     render: row => `¥${Number(row.changeAmount).toFixed(2)}`,
+  },
+  {
+    title: '赠送金额',
+    key: 'bonusAmount',
+    render: row => Number(row.bonusAmount || 0) > 0 ? `¥${Number(row.bonusAmount).toFixed(2)}` : '-',
   },
   {
     title: '变动前',
     key: 'balanceBefore',
-    width: 120,
     render: row => `¥${Number(row.balanceBefore).toFixed(2)}`,
   },
   {
     title: '变动后',
     key: 'balanceAfter',
-    width: 120,
     render: row => `¥${Number(row.balanceAfter).toFixed(2)}`,
   },
   {
     title: '业务单号',
     key: 'bizNo',
-    width: 160,
     render: row => row.bizNo || '-',
   },
   {
     title: '备注',
     key: 'remark',
-    minWidth: 180,
+    width: 220,
     render: row => row.remark || '-',
   },
   {
     title: '创建时间',
     key: 'createdAt',
-    width: 180,
     render: row => formatDateTime(row.createdAt),
   },
 ];
@@ -204,8 +194,3 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
-.search-form {
-  margin-bottom: 16px;
-}
-</style>

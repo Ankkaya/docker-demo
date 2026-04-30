@@ -11,7 +11,9 @@ import {
   BalanceLogType,
   CouponReceiveStatus,
   OrderStatus,
+  OrderType,
   PaymentMethod,
+  PaymentRefundStatus,
   PayStatus,
   PaymentStatus,
   PaymentType,
@@ -21,17 +23,20 @@ import { CustomerAddressesService } from '@/domains/customer-addresses/customer-
 import { CartsService } from '@/domains/carts/carts.service';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { MinioService } from '@/infrastructure/minio/minio.service';
+import { CouponAutoGrantService } from '@/domains/coupons/coupon-auto-grant.service';
 import { CreateMallOrderDto, MallOrderSource } from './dto/create-mall-order.dto';
 import {
   MallCreateOrderVo,
   MallOrderDetailVo,
   MallOrderItemVo,
   MallOrderListItemVo,
+  MallOrderListResponseVo,
   MallPayOrderVo,
 } from './vo/mall-order.vo';
 import { PayMallOrderDto } from './dto/pay-mall-order.dto';
 import { QueryMallOrderDto } from './dto/query-mall-order.dto';
 import { WechatMiniProgramPayParams, WechatPayService, WechatTransactionResource } from './wechat-pay.service';
+import { D, addMoney, subMoney, subMoneyClampZero, sumMoney, toYuan, yuanToFen } from '@/common/utils/money';
 
 function generateMallOrderNo(): string {
   const date = new Date();
@@ -47,6 +52,7 @@ function generateMallOrderNo(): string {
 const MALL_ORDER_EXPIRE_MINUTES = 30;
 const EXPIRED_ORDER_SYNC_INTERVAL_MS = 60 * 1000;
 const PENDING_WECHAT_PAYMENT_SYNC_INTERVAL_MS = 5 * 60 * 1000;
+const MAX_AUTO_WECHAT_PAYMENT_QUERY_COUNT = 10;
 
 @Injectable()
 export class MallOrdersService {
@@ -58,6 +64,7 @@ export class MallOrdersService {
     private readonly cartsService: CartsService,
     private readonly minioService: MinioService,
     private readonly wechatPayService: WechatPayService,
+    private readonly couponAutoGrantService: CouponAutoGrantService,
   ) {}
 
   private normalizeSpecs(specs: unknown): Record<string, string> {
@@ -141,6 +148,165 @@ export class MallOrdersService {
     return [...order.payments].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
   }
 
+  private toRefundStatus(status?: string | null) {
+    switch (status) {
+      case 'SUCCESS':
+        return PaymentRefundStatus.SUCCESS;
+      case 'CLOSED':
+        return PaymentRefundStatus.CLOSED;
+      case 'ABNORMAL':
+        return PaymentRefundStatus.ABNORMAL;
+      default:
+        return PaymentRefundStatus.PROCESSING;
+    }
+  }
+
+  private async generateRefundNo() {
+    const now = new Date();
+    const pad = (value: number, length = 2) => String(value).padStart(length, '0');
+    const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const latest = await this.prisma.paymentRefund.findFirst({
+      where: {
+        refundNo: {
+          startsWith: `TK${datePart}`,
+        },
+      },
+      orderBy: {
+        refundNo: 'desc',
+      },
+      select: {
+        refundNo: true,
+      },
+    });
+
+    const sequence = latest ? Number(latest.refundNo.slice(-3)) + 1 : 1;
+    return `TK${datePart}${String(sequence).padStart(3, '0')}`;
+  }
+
+  private async applyMallOrderRefundSuccess(tx: any, order: any, refundAmount: number, refundedAt: Date) {
+    const nextPaid = subMoneyClampZero(order.paid, refundAmount);
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        paid: nextPaid,
+        payStatus: PayStatus.REFUNDED,
+        status: OrderStatus.REFUNDED,
+        cancelDate: refundedAt,
+      },
+    });
+  }
+
+  private async refundMallBalancePayment(tx: any, order: any, payment: any, customerId: number, userId: number) {
+    const amount = Number(payment.amount || 0);
+    const account = await this.ensureBalanceAccount(tx, customerId);
+    const refundNo = await this.generateRefundNo();
+    const refundedAt = new Date();
+    const balanceBefore = D(account.availableBalance);
+    const balanceAfter = balanceBefore.add(amount);
+
+    await tx.balanceAccount.update({
+      where: { id: account.id },
+      data: {
+        availableBalance: balanceAfter,
+        totalRefunded: addMoney(account.totalRefunded, amount),
+      },
+    });
+
+    await tx.balanceLog.create({
+      data: {
+        accountId: account.id,
+        customerId,
+        type: BalanceLogType.REFUND,
+        changeAmount: amount,
+        balanceBefore,
+        balanceAfter,
+        bizType: 'MALL_ORDER_CANCEL',
+        bizId: order.id,
+        bizNo: order.orderNo,
+        remark: '商城订单取消退款',
+        createdBy: userId,
+      },
+    });
+
+    await tx.paymentRefund.create({
+      data: {
+        refundNo,
+        paymentId: payment.id,
+        orderId: order.id,
+        amount,
+        reason: '用户取消已支付未发货订单',
+        status: PaymentRefundStatus.SUCCESS,
+        successAt: refundedAt,
+        createdBy: userId,
+      },
+    });
+
+    await this.applyMallOrderRefundSuccess(tx, order, amount, refundedAt);
+  }
+
+  private async refundMallWechatPayment(tx: any, order: any, payment: any, userId: number) {
+    if (!payment.outTradeNo || !payment.thirdTradeNo || payment.status !== PaymentStatus.COMPLETED) {
+      throw new BadRequestException('当前支付记录暂不支持取消退款');
+    }
+
+    const processingRefund = Array.isArray(payment.refunds)
+      ? payment.refunds.find((item: any) => item.status === PaymentRefundStatus.PROCESSING)
+      : null;
+    if (processingRefund) {
+      throw new BadRequestException('当前订单退款处理中，请稍后查看');
+    }
+
+    const successRefund = Array.isArray(payment.refunds)
+      ? payment.refunds.find((item: any) => item.status === PaymentRefundStatus.SUCCESS)
+      : null;
+    if (successRefund) {
+      throw new BadRequestException('当前订单已退款成功');
+    }
+
+    const refundNo = await this.generateRefundNo();
+    const reason = '用户取消已支付未发货订单';
+    const remote = await this.wechatPayService.createRefund({
+      outTradeNo: payment.outTradeNo,
+      outRefundNo: refundNo,
+      amount: Number(payment.amount),
+      refundAmount: Number(payment.amount),
+      reason,
+    });
+    const nextStatus = this.toRefundStatus(remote.status);
+    const refundedAt = nextStatus === PaymentRefundStatus.SUCCESS && remote.success_time
+      ? new Date(remote.success_time)
+      : new Date();
+
+    await tx.paymentRefund.create({
+      data: {
+        refundNo,
+        paymentId: payment.id,
+        orderId: order.id,
+        amount: payment.amount,
+        reason,
+        status: nextStatus,
+        thirdRefundNo: remote.refund_id || null,
+        thirdStatus: remote.status || null,
+        successAt: nextStatus === PaymentRefundStatus.SUCCESS ? refundedAt : null,
+        createdBy: userId,
+      },
+    });
+
+    if (nextStatus === PaymentRefundStatus.SUCCESS) {
+      await this.applyMallOrderRefundSuccess(tx, order, Number(payment.amount), refundedAt);
+      return;
+    }
+
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        payStatus: PayStatus.REFUNDING,
+        status: OrderStatus.REFUNDING,
+        cancelDate: new Date(),
+      },
+    });
+  }
+
   private buildMallPayOrderVo(order: any, payment: any, paymentConfig?: WechatMiniProgramPayParams | null): MallPayOrderVo {
     return {
       paymentId: payment?.id || null,
@@ -158,39 +324,47 @@ export class MallOrdersService {
   }
 
   private async markOrderPaymentCompleted(tx: any, order: any, payment: any, paidAt: Date) {
-    const shouldUpdateOrder = order.payStatus !== PayStatus.PAID;
-    const nextOrder = shouldUpdateOrder
-      ? await tx.order.update({
-          where: { id: order.id },
-          data: {
-            paid: Number(order.paid) + Number(payment.amount),
-            payStatus: PayStatus.PAID,
-            status: OrderStatus.CONFIRMED,
-            payDate: paidAt,
-          },
-        })
-      : order;
+    const completedOrder = await tx.order.updateMany({
+      where: {
+        id: order.id,
+        payStatus: {
+          not: PayStatus.PAID,
+        },
+      },
+      data: {
+        paid: {
+          increment: Number(payment.amount),
+        },
+        payStatus: PayStatus.PAID,
+        status: OrderStatus.CONFIRMED,
+        payDate: paidAt,
+      },
+    });
 
-    if (shouldUpdateOrder && order.couponReceiveId) {
+    if (completedOrder.count > 0 && order.couponReceiveId) {
       const couponReceive = await tx.couponReceive.findUnique({
         where: { id: order.couponReceiveId },
         select: {
           id: true,
           couponId: true,
-          status: true,
         },
       });
 
       if (couponReceive) {
-        await tx.couponReceive.update({
-          where: { id: couponReceive.id },
+        const claimedCoupon = await tx.couponReceive.updateMany({
+          where: {
+            id: couponReceive.id,
+            status: {
+              not: CouponReceiveStatus.USED,
+            },
+          },
           data: {
             status: CouponReceiveStatus.USED,
             usedAt: paidAt,
           },
         });
 
-        if (couponReceive.status !== CouponReceiveStatus.USED) {
+        if (claimedCoupon.count > 0) {
           await tx.coupon.update({
             where: { id: couponReceive.couponId },
             data: {
@@ -203,7 +377,13 @@ export class MallOrdersService {
       }
     }
 
-    return nextOrder;
+    if (completedOrder.count > 0) {
+      await this.couponAutoGrantService.grantOrderCoupons(tx, order.customerId, order.id, paidAt);
+    }
+
+    return tx.order.findUniqueOrThrow({
+      where: { id: order.id },
+    });
   }
 
   private async ensureBalanceAccount(tx: any, customerId: number) {
@@ -256,8 +436,8 @@ export class MallOrdersService {
         throw new BadRequestException('余额账户已停用');
       }
 
-      const availableBalance = Number(account.availableBalance);
-      if (availableBalance < amount) {
+      const availableBalance = D(account.availableBalance);
+      if (availableBalance.lt(amount)) {
         throw new BadRequestException(`余额不足，当前可用余额${availableBalance.toFixed(2)}元`);
       }
 
@@ -279,12 +459,12 @@ export class MallOrdersService {
         },
       });
 
-      const afterBalance = availableBalance - amount;
+      const afterBalance = subMoney(availableBalance, amount);
       await tx.balanceAccount.update({
         where: { id: account.id },
         data: {
           availableBalance: afterBalance,
-          totalConsumed: Number(account.totalConsumed) + amount,
+          totalConsumed: addMoney(account.totalConsumed, amount),
         },
       });
 
@@ -334,19 +514,50 @@ export class MallOrdersService {
       }
 
       const paidAt = resource.success_time ? new Date(resource.success_time) : new Date();
-      const nextPayment = await tx.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: PaymentStatus.COMPLETED,
-          thirdTradeNo: resource.transaction_id || payment.thirdTradeNo,
-          tradeType: resource.trade_type || payment.tradeType,
-          thirdStatus: resource.trade_state || 'SUCCESS',
-          notifyAt: rawPayload !== undefined ? new Date() : payment.notifyAt,
-          paidAt,
-          failReason: null,
-          notifyPayload: rawPayload !== undefined ? (rawPayload as any) : payment.notifyPayload,
+      const successPaymentData = {
+        status: PaymentStatus.COMPLETED,
+        thirdTradeNo: resource.transaction_id || payment.thirdTradeNo,
+        tradeType: resource.trade_type || payment.tradeType,
+        thirdStatus: resource.trade_state || 'SUCCESS',
+        paidAt,
+        failReason: null,
+        ...(rawPayload !== undefined
+          ? {
+              notifyAt: new Date(),
+              notifyPayload: rawPayload as any,
+            }
+          : {}),
+      };
+
+      const claimedPayment = await tx.payment.updateMany({
+        where: {
+          id: payment.id,
+          status: {
+            not: PaymentStatus.COMPLETED,
+          },
         },
+        data: successPaymentData,
       });
+
+      const nextPayment = claimedPayment.count > 0
+        ? await tx.payment.findUniqueOrThrow({
+            where: { id: payment.id },
+          })
+        : await tx.payment.update({
+            where: { id: payment.id },
+            data: {
+              thirdTradeNo: resource.transaction_id || payment.thirdTradeNo,
+              tradeType: resource.trade_type || payment.tradeType,
+              thirdStatus: resource.trade_state || 'SUCCESS',
+              failReason: null,
+              ...(rawPayload !== undefined
+                ? {
+                    notifyAt: new Date(),
+                    notifyPayload: rawPayload as any,
+                  }
+                : {}),
+            },
+          });
 
       const nextOrder = await this.markOrderPaymentCompleted(tx, payment.order, nextPayment, paidAt);
 
@@ -412,7 +623,7 @@ export class MallOrdersService {
   }
 
   private async closeWechatPaymentIfPending(tx: any, orderId: number) {
-    const payment = await tx.payment.findFirst({
+    const payments = await tx.payment.findMany({
       where: {
         orderId,
         deletedAt: null,
@@ -427,18 +638,28 @@ export class MallOrdersService {
       },
     });
 
-    if (!payment?.outTradeNo) {
+    if (!payments.length) {
       return;
     }
 
-    try {
-      await this.wechatPayService.closeOrder(payment.outTradeNo);
-    } catch (error) {
-      this.logger.warn(`关闭微信支付单失败[${payment.outTradeNo}]: ${error instanceof Error ? error.message : String(error)}`);
+    for (const payment of payments) {
+      if (!payment.outTradeNo) {
+        continue;
+      }
+
+      try {
+        await this.wechatPayService.closeOrder(payment.outTradeNo);
+      } catch (error) {
+        this.logger.warn(`关闭微信支付单失败[${payment.outTradeNo}]: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
 
-    await tx.payment.update({
-      where: { id: payment.id },
+    await tx.payment.updateMany({
+      where: {
+        id: {
+          in: payments.map(item => item.id),
+        },
+      },
       data: {
         status: PaymentStatus.CANCELLED,
         thirdStatus: 'CLOSED',
@@ -511,8 +732,10 @@ export class MallOrdersService {
         customerId,
         type: 'MALL',
         deletedAt: null,
-        status: OrderStatus.PENDING,
         payStatus: PayStatus.UNPAID,
+        status: {
+          notIn: [OrderStatus.CANCELLED, OrderStatus.COMPLETED],
+        },
         expireAt: {
           lte: new Date(),
         },
@@ -533,8 +756,10 @@ export class MallOrdersService {
         where: {
           type: 'MALL',
           deletedAt: null,
-          status: OrderStatus.PENDING,
           payStatus: PayStatus.UNPAID,
+          status: {
+            notIn: [OrderStatus.CANCELLED, OrderStatus.COMPLETED],
+          },
           expireAt: {
             lte: new Date(),
           },
@@ -572,10 +797,19 @@ export class MallOrdersService {
           outTradeNo: {
             not: null,
           },
+          queryCount: {
+            lt: MAX_AUTO_WECHAT_PAYMENT_QUERY_COUNT,
+          },
           order: {
             is: {
               deletedAt: null,
               type: 'MALL',
+              status: {
+                not: OrderStatus.CANCELLED,
+              },
+              payStatus: {
+                not: PayStatus.PAID,
+              },
             },
           },
         },
@@ -595,6 +829,36 @@ export class MallOrdersService {
       for (const payment of pendingPayments) {
         await this.syncWechatPaymentByOrder(payment.order);
       }
+
+      await this.prisma.payment.updateMany({
+        where: {
+          deletedAt: null,
+          method: PaymentMethod.WECHAT,
+          status: PaymentStatus.PENDING,
+          outTradeNo: {
+            not: null,
+          },
+          queryCount: {
+            gte: MAX_AUTO_WECHAT_PAYMENT_QUERY_COUNT,
+          },
+          failReason: null,
+          order: {
+            is: {
+              deletedAt: null,
+              type: 'MALL',
+              status: {
+                not: OrderStatus.CANCELLED,
+              },
+              payStatus: {
+                not: PayStatus.PAID,
+              },
+            },
+          },
+        },
+        data: {
+          failReason: `待支付微信单自动补查已达${MAX_AUTO_WECHAT_PAYMENT_QUERY_COUNT}次，已停止自动查单`,
+        },
+      });
     } catch (error) {
       this.logger.error(`同步待确认微信支付失败: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -625,6 +889,9 @@ export class MallOrdersService {
     if (status === 'receiving') {
       return {
         shipStatus: ShipStatus.SHIPPED,
+        status: {
+          in: [OrderStatus.SHIPPED],
+        },
       };
     }
 
@@ -636,7 +903,9 @@ export class MallOrdersService {
 
     if (status === 'cancelled') {
       return {
-        status: OrderStatus.CANCELLED,
+        status: {
+          in: [OrderStatus.CANCELLED, OrderStatus.REFUNDING, OrderStatus.REFUNDED],
+        },
       };
     }
 
@@ -657,6 +926,15 @@ export class MallOrdersService {
       },
       items: {
         include: {
+          reviews: {
+            where: {
+              deletedAt: null,
+            },
+            select: {
+              id: true,
+              userId: true,
+            },
+          },
           sku: {
             include: {
               product: {
@@ -683,11 +961,33 @@ export class MallOrdersService {
           method: true,
         },
       },
+      shipments: {
+        where: { deletedAt: null },
+        orderBy: {
+          createdAt: 'desc' as const,
+        },
+        take: 1,
+        select: {
+          shipmentNo: true,
+          logisticsCompany: true,
+          trackingNo: true,
+          status: true,
+        },
+      },
     };
   }
 
   private async toMallOrderItemVo(entity: any): Promise<MallOrderItemVo> {
+    const reviewed = Array.isArray(entity.reviews) && entity.reviews.length > 0;
+    const canReview =
+      !reviewed
+      && (
+        entity.order?.status === OrderStatus.COMPLETED
+        || entity.order?.shipStatus === ShipStatus.RECEIVED
+      );
+
     return {
+      orderItemId: entity.id,
       productId: entity.sku?.product?.id || 0,
       skuId: entity.skuId,
       productName: entity.sku?.product?.name || '',
@@ -699,11 +999,21 @@ export class MallOrdersService {
       price: Number(entity.price),
       quantity: entity.quantity,
       amount: Number(entity.amount),
+      reviewed,
+      canReview,
     };
   }
 
   private async toMallOrderListItemVo(entity: any): Promise<MallOrderListItemVo> {
-    const items = await Promise.all(entity.items.map((item: any) => this.toMallOrderItemVo(item)));
+    const items = await Promise.all(entity.items.map((item: any) => this.toMallOrderItemVo({
+      ...item,
+      order: {
+        status: entity.status,
+        shipStatus: entity.shipStatus,
+      },
+    })));
+    const reviewedItemCount = items.filter(item => item.reviewed).length;
+    const pendingReviewItemCount = items.filter(item => item.canReview).length;
     return {
       id: entity.id,
       orderNo: entity.orderNo,
@@ -717,6 +1027,9 @@ export class MallOrdersService {
       paid: Number(entity.paid),
       itemCount: entity.items.reduce((sum: number, item: any) => sum + item.quantity, 0),
       items,
+      hasPendingReview: pendingReviewItemCount > 0,
+      reviewedItemCount,
+      pendingReviewItemCount,
     };
   }
 
@@ -736,10 +1049,19 @@ export class MallOrdersService {
       paymentMethod: entity.payments?.[0]?.method || null,
       couponReceiveId: entity.couponReceiveId || null,
       couponName: entity.couponReceive?.coupon?.name || null,
+      logisticsCompany: entity.shipments?.[0]?.logisticsCompany || null,
+      trackingNo: entity.shipments?.[0]?.trackingNo || null,
+      shipmentNo: entity.shipments?.[0]?.shipmentNo || null,
     };
   }
 
-  private async resolveCouponDiscount(tx: any, customerId: number, couponReceiveId: number | undefined, totalAmount: number) {
+  private async resolveCouponDiscount(
+    tx: any,
+    customerId: number,
+    couponReceiveId: number | undefined,
+    totalAmount: number,
+    orderItems: Array<{ skuId: number; quantity: number; price: number; amount: number }>,
+  ) {
     if (!couponReceiveId) {
       return {
         discount: 0,
@@ -779,19 +1101,112 @@ export class MallOrdersService {
     }
 
     const thresholdAmount = Number(receive.coupon.thresholdAmount || 0);
-    const discountAmount = Number(receive.coupon.discountAmount || 0);
-    if (totalAmount < thresholdAmount) {
+    const eligibleAmount = await this.resolveCouponEligibleAmount(tx, receive.coupon, orderItems);
+    if (eligibleAmount <= 0) {
+      throw new BadRequestException('当前订单中没有商品满足该优惠券使用范围');
+    }
+    if (eligibleAmount < thresholdAmount) {
       throw new BadRequestException(`订单金额未达到优惠券使用门槛：满${thresholdAmount.toFixed(2)}元可用`);
     }
     if (receive.usedOrder?.id && receive.usedOrder.status !== OrderStatus.CANCELLED && !receive.usedOrder.deletedAt) {
       throw new BadRequestException('该优惠券已被其他订单占用');
     }
 
+    const discount = this.calculateCouponDiscount(receive.coupon, eligibleAmount);
+
     return {
-      discount: Math.min(totalAmount, discountAmount),
+      discount: Math.min(totalAmount, discount),
       couponReceiveId: receive.id,
       couponName: receive.coupon.name,
     };
+  }
+
+  private async resolveCouponEligibleAmount(
+    tx: any,
+    coupon: any,
+    orderItems: Array<{ skuId: number; quantity: number; price: number; amount: number }>,
+  ) {
+    if (coupon.useScopeType === 'ALL') {
+      return orderItems.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    }
+
+    const skuIds = orderItems.map(item => item.skuId);
+    const skus = await tx.productSku.findMany({
+      where: {
+        id: { in: skuIds },
+      },
+      select: {
+        id: true,
+        productId: true,
+        product: {
+          select: {
+            categoryId: true,
+            brandId: true,
+          },
+        },
+      },
+    });
+
+    const skuMap = new Map<number, any>(skus.map((item: any) => [item.id, item] as [number, any]));
+    const rule = coupon.useRuleJson && typeof coupon.useRuleJson === 'object'
+      ? coupon.useRuleJson as Record<string, any>
+      : {};
+    const targetIds = new Set<number>(
+      (Array.isArray(
+        coupon.useScopeType === 'CATEGORY'
+          ? rule.categoryIds
+          : coupon.useScopeType === 'BRAND'
+            ? rule.brandIds
+            : coupon.useScopeType === 'PRODUCT'
+              ? rule.productIds
+              : rule.skuIds,
+      )
+        ? (
+            coupon.useScopeType === 'CATEGORY'
+              ? rule.categoryIds
+              : coupon.useScopeType === 'BRAND'
+                ? rule.brandIds
+                : coupon.useScopeType === 'PRODUCT'
+                  ? rule.productIds
+                  : rule.skuIds
+          )
+        : []
+      ).map((item: any) => Number(item)),
+    );
+
+    return orderItems.reduce((sum, item) => {
+      const sku = skuMap.get(item.skuId);
+      if (!sku) {
+        return sum;
+      }
+
+      const matched = coupon.useScopeType === 'CATEGORY'
+        ? targetIds.has(Number(sku.product?.categoryId))
+        : coupon.useScopeType === 'BRAND'
+          ? targetIds.has(Number(sku.product?.brandId))
+          : coupon.useScopeType === 'PRODUCT'
+            ? targetIds.has(Number(sku.productId))
+            : targetIds.has(Number(sku.id));
+
+      return matched ? sum + Number(item.amount || 0) : sum;
+    }, 0);
+  }
+
+  private calculateCouponDiscount(coupon: any, eligibleAmount: number) {
+    if (coupon.type === 'DISCOUNT') {
+      const discountRate = Number(coupon.discountRate || 100);
+      const discount = eligibleAmount * (100 - discountRate) / 100;
+      const maxDiscountAmount = coupon.maxDiscountAmount === null || coupon.maxDiscountAmount === undefined
+        ? null
+        : Number(coupon.maxDiscountAmount);
+      return Math.max(0, maxDiscountAmount === null ? discount : Math.min(discount, maxDiscountAmount));
+    }
+
+    if (coupon.type === 'INSTANT_REDUCTION') {
+      return Math.min(eligibleAmount, Number(coupon.discountAmount || 0));
+    }
+
+    return Math.min(eligibleAmount, Number(coupon.discountAmount || 0));
   }
 
   async create(userId: number, dto: CreateMallOrderDto): Promise<MallCreateOrderVo> {
@@ -824,6 +1239,7 @@ export class MallOrdersService {
           include: {
             sku: {
               include: {
+                mallInfo: true,
                 product: {
                   select: {
                     id: true,
@@ -855,8 +1271,8 @@ export class MallOrdersService {
           orderItems.push({
             skuId: cart.skuId,
             quantity: cart.quantity,
-            price: Number(cart.sku.salePrice),
-            amount: Number(cart.sku.salePrice) * cart.quantity,
+            price: Number(cart.sku.mallInfo?.salePrice ?? cart.sku.salePrice),
+            amount: Number(cart.sku.mallInfo?.salePrice ?? cart.sku.salePrice) * cart.quantity,
           });
           selectedCartIds.push(cart.id);
         }
@@ -877,6 +1293,7 @@ export class MallOrdersService {
               },
             },
             include: {
+              mallInfo: true,
               product: {
                 select: {
                   name: true,
@@ -894,15 +1311,22 @@ export class MallOrdersService {
           orderItems.push({
             skuId: item.skuId,
             quantity: item.quantity,
-            price: Number(sku.salePrice),
-            amount: Number(sku.salePrice) * item.quantity,
+            price: Number(sku.mallInfo?.salePrice ?? sku.salePrice),
+            amount: Number(sku.mallInfo?.salePrice ?? sku.salePrice) * item.quantity,
           });
         }
       }
 
-      const totalAmount = orderItems.reduce((sum, item) => sum + item.amount, 0);
+      // 使用 Decimal 累加避免浮点误差，再转为 number 供优惠券 API 使用
+      const totalAmount = toYuan(sumMoney(orderItems, (item) => item.amount));
       const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
-      const couponDiscount = await this.resolveCouponDiscount(tx, customer.id, dto.couponReceiveId, totalAmount);
+      const couponDiscount = await this.resolveCouponDiscount(
+        tx,
+        customer.id,
+        dto.couponReceiveId,
+        totalAmount,
+        orderItems,
+      );
       const payable = Math.max(0, totalAmount - couponDiscount.discount);
 
       const order = await tx.order.create({
@@ -1016,7 +1440,7 @@ export class MallOrdersService {
       return existing;
     });
 
-    const remainingAmount = Math.max(0, Number(order.payable) - Number(order.paid));
+    const remainingAmount = toYuan(subMoneyClampZero(order.payable, order.paid));
     if (remainingAmount <= 0) {
       throw new BadRequestException('订单无需支付');
     }
@@ -1116,6 +1540,7 @@ export class MallOrdersService {
       },
       select: {
         id: true,
+        amount: true,
       },
     });
 
@@ -1124,6 +1549,15 @@ export class MallOrdersService {
     }
 
     if (resource.trade_state === 'SUCCESS') {
+      // 安全校验：回调金额（分）必须与本地支付单金额一致，防止串单/篡改
+      const expectedFen = yuanToFen(payment.amount);
+      const actualFen = resource.amount?.total;
+      if (actualFen !== expectedFen) {
+        this.logger.error(
+          `微信支付回调金额不一致 outTradeNo=${resource.out_trade_no} 本地=${expectedFen}分 回调=${actualFen}分`,
+        );
+        throw new BadRequestException('回调金额与支付单金额不一致');
+      }
       await this.markWechatPaymentSuccessByOutTradeNo(resource.out_trade_no, resource, JSON.parse(rawBody || '{}'));
       return true;
     }
@@ -1143,27 +1577,48 @@ export class MallOrdersService {
     return true;
   }
 
-  async findAllByUser(userId: number, query: QueryMallOrderDto): Promise<MallOrderListItemVo[]> {
+  async findAllByUser(userId: number, query: QueryMallOrderDto): Promise<MallOrderListResponseVo> {
     const customer = await this.getCustomerByUserId(userId);
+    const page = Number(query.page || 1);
+    const pageSize = Number(query.pageSize || 10);
 
-    const orders = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       await this.syncExpiredOrdersByCustomerId(tx, customer.id);
 
-      return tx.order.findMany({
-        where: {
-          customerId: customer.id,
-          type: 'MALL',
-          deletedAt: null,
-          ...this.buildStatusWhere(query.status),
-        },
-        include: this.getOrderBaseInclude(),
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      const where = {
+        customerId: customer.id,
+        type: OrderType.MALL,
+        deletedAt: null,
+        ...this.buildStatusWhere(query.status),
+      };
+
+      const [total, orders] = await Promise.all([
+        tx.order.count({ where }),
+        tx.order.findMany({
+          where,
+          include: this.getOrderBaseInclude(),
+          orderBy: {
+            createdAt: 'desc',
+          },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+
+      return { total, orders };
     });
 
-    return Promise.all(orders.map(order => this.toMallOrderListItemVo(order)));
+    const data = await Promise.all(result.orders.map(order => this.toMallOrderListItemVo(order)));
+
+    return {
+      data,
+      meta: {
+        page,
+        pageSize,
+        total: result.total,
+        totalPages: Math.ceil(result.total / pageSize),
+      },
+    };
   }
 
   async findOneByUser(userId: number, id: number): Promise<MallOrderDetailVo> {
@@ -1214,8 +1669,12 @@ export class MallOrdersService {
         throw new BadRequestException('订单已取消');
       }
 
-      if (existing.payStatus === PayStatus.PAID) {
-        throw new ForbiddenException('已支付订单暂不支持直接取消');
+      if (existing.status === OrderStatus.REFUNDING || existing.payStatus === PayStatus.REFUNDING) {
+        throw new BadRequestException('当前订单退款处理中');
+      }
+
+      if (existing.status === OrderStatus.REFUNDED || existing.payStatus === PayStatus.REFUNDED) {
+        throw new BadRequestException('当前订单已退款');
       }
 
       if (existing.shipStatus !== ShipStatus.UNSHIPPED) {
@@ -1224,8 +1683,51 @@ export class MallOrdersService {
 
       await this.closeWechatPaymentIfPending(tx, existing.id);
       await this.releaseOrderInventory(tx, existing.id);
+
+      if (existing.payStatus === PayStatus.PAID) {
+        const payment = await tx.payment.findFirst({
+          where: {
+            orderId: existing.id,
+            deletedAt: null,
+            status: PaymentStatus.COMPLETED,
+          },
+          include: {
+            refunds: {
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        if (!payment) {
+          throw new BadRequestException('未找到可退款的支付记录');
+        }
+
+        if (payment.method === PaymentMethod.BALANCE) {
+          await this.refundMallBalancePayment(tx, existing, payment, customer.id, userId);
+        } else if (payment.method === PaymentMethod.WECHAT) {
+          await this.refundMallWechatPayment(tx, existing, payment, userId);
+        } else {
+          throw new BadRequestException('当前支付方式暂不支持取消退款');
+        }
+
+        return tx.order.findFirstOrThrow({
+          where: {
+            id: existing.id,
+            customerId: customer.id,
+            type: 'MALL',
+            deletedAt: null,
+          },
+          include: this.getOrderBaseInclude(),
+        });
+      }
+
       await this.releaseOrderCoupon(tx, existing.id);
-      const updated = await tx.order.update({
+      return tx.order.update({
         where: { id: existing.id },
         data: {
           status: OrderStatus.CANCELLED,
@@ -1233,8 +1735,6 @@ export class MallOrdersService {
         },
         include: this.getOrderBaseInclude(),
       });
-
-      return updated;
     });
 
     return this.toMallOrderDetailVo(order);
@@ -1287,7 +1787,11 @@ export class MallOrdersService {
         throw new NotFoundException('订单不存在');
       }
 
-      if (existing.status !== OrderStatus.CANCELLED) {
+      if (
+        existing.status !== OrderStatus.CANCELLED
+        && existing.status !== OrderStatus.COMPLETED
+        && existing.status !== OrderStatus.REFUNDED
+      ) {
         throw new ForbiddenException('当前订单状态不支持删除');
       }
 

@@ -119,22 +119,22 @@ function closeRegionPicker() {
 
 function validateForm() {
   if (!form.receiverName.trim()) {
-    toast.show('请输入收货人')
+    toast.error('请输入收货人')
     return false
   }
 
   if (!/^1\d{10}$/.test(form.receiverPhone.trim())) {
-    toast.show('请输入有效的手机号')
+    toast.error('请输入有效的手机号')
     return false
   }
 
   if (form.regionCodes.length < 3 || !form.province || !form.city || !form.district) {
-    toast.show('请选择完整的省市区')
+    toast.error('请选择完整的省市区')
     return false
   }
 
   if (!form.address.trim()) {
-    toast.show('请输入详细地址')
+    toast.error('请输入详细地址')
     return false
   }
 
@@ -189,13 +189,13 @@ async function submitForm() {
   try {
     if (editingId.value) {
       await alovaInstance.Patch(`/mall/addresses/${editingId.value}`, buildPayload()).send()
-      toast.show('地址已更新')
+      toast.success('地址已更新')
     }
     else {
       await (Apis.general as any).MallAddressesController_createCurrentUserAddress({
         data: buildPayload(),
       }).send()
-      toast.show('地址已新增')
+      toast.success('地址已新增')
     }
 
     setTimeout(() => {

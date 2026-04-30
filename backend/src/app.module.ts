@@ -13,6 +13,9 @@ import { CustomerAddressesModule } from './domains/customer-addresses/customer-a
 import { CouponsModule } from './domains/coupons/coupons.module';
 import { InventoriesModule } from './domains/inventories/inventories.module';
 import { MenusModule } from './domains/menus/menus.module';
+import { MallHotSearchesModule } from './domains/mall-hot-searches/mall-hot-searches.module';
+import { MallRechargeActivitiesModule } from './domains/mall-recharge-activities/mall-recharge-activities.module';
+import { MallRechargePackagesModule } from './domains/mall-recharge-packages/mall-recharge-packages.module';
 import { OrdersModule } from './domains/orders/orders.module';
 import { PaymentsModule } from './domains/payments/payments.module';
 import { PrinterConfigsModule } from './domains/printer-configs/printer-configs.module';
@@ -28,6 +31,8 @@ import { SaleReturnsModule } from './domains/sale-returns/sale-returns.module';
 import { ShipmentsModule } from './domains/shipments/shipments.module';
 import { SuppliersModule } from './domains/suppliers/suppliers.module';
 import { SystemSettingsModule } from './domains/system-settings/system-settings.module';
+import { SystemLogsModule } from './domains/system-logs/system-logs.module';
+import { UploadRecordsModule } from './domains/upload-records/upload-records.module';
 import { TransfersModule } from './domains/transfers/transfers.module';
 import { UnitsModule } from './domains/units/units.module';
 import { UsersModule } from './domains/users/users.module';
@@ -35,15 +40,20 @@ import { WarehousesModule } from './domains/warehouses/warehouses.module';
 import { IconAssetsModule } from './infrastructure/icon-assets/icon-assets.module';
 import { MinioModule } from './infrastructure/minio/minio.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { RedisModule } from './infrastructure/redis/redis.module';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    RedisModule,
     UsersModule,
     AuthModule,
     PrismaModule,
     RolesModule,
     MenusModule,
+    MallHotSearchesModule,
+    MallRechargeActivitiesModule,
+    MallRechargePackagesModule,
     UnitsModule,
     CategoriesModule,
     BrandsModule,
@@ -74,6 +84,8 @@ import { PrismaModule } from './infrastructure/prisma/prisma.module';
     PrinterConfigsModule,
     IconAssetsModule,
     BannersModule,
+    SystemLogsModule,
+    UploadRecordsModule,
   ],
 })
 export class AppModule {}

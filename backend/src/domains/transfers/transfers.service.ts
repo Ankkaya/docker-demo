@@ -229,14 +229,21 @@ export class TransfersService {
           throw new BadRequestException('库存不足，无法出库');
         }
 
-        // 扣减库存
-        await tx.inventory.update({
-          where: { id: inventory.id },
+        // 原子条件扣减：避免并发下 available 跑负
+        const decResult = await tx.inventory.updateMany({
+          where: {
+            id: inventory.id,
+            quantity: { gte: item.quantity },
+            available: { gte: item.quantity },
+          },
           data: {
             quantity: { decrement: item.quantity },
             available: { decrement: item.quantity },
           },
         });
+        if (decResult.count !== 1) {
+          throw new BadRequestException('库存不足，并发扣减失败');
+        }
 
         // 创建出库流水
         await tx.inventoryLog.create({

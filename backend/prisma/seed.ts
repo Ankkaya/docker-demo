@@ -8,6 +8,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+const mallHotSearchKeywordModel = (prisma as any).mallHotSearchKeyword;
 
 async function main() {
   // ==================== 1. 创建角色 ====================
@@ -160,6 +161,56 @@ async function main() {
       component: 'system-settings/index',
       parentId: 1,
       order: 7,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 9 },
+    update: {
+      name: '系统日志',
+      path: '/system/system-logs',
+      icon: 'log',
+      component: 'system-logs/index',
+      parentId: 1,
+      order: 8,
+      type: 'menu',
+      deletedAt: null,
+      hidden: false,
+    },
+    create: {
+      id: 9,
+      name: '系统日志',
+      path: '/system/system-logs',
+      icon: 'log',
+      component: 'system-logs/index',
+      parentId: 1,
+      order: 8,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 59 },
+    update: {
+      name: '上传记录',
+      path: '/system/upload-records',
+      icon: 'upload',
+      component: 'upload-records/index',
+      parentId: 1,
+      order: 9,
+      type: 'menu',
+      deletedAt: null,
+      hidden: false,
+    },
+    create: {
+      id: 59,
+      name: '上传记录',
+      path: '/system/upload-records',
+      icon: 'upload',
+      component: 'upload-records/index',
+      parentId: 1,
+      order: 9,
       type: 'menu',
     },
   });
@@ -577,6 +628,85 @@ async function main() {
     },
   });
 
+  const paymentCenterMenu = await prisma.menu.upsert({
+    where: { id: 50 },
+    update: {
+      name: '支付中心',
+      path: '/payment-center',
+      icon: 'material-symbols:payments-outline',
+      component: 'Layout',
+      redirect: '/payments',
+      parentId: null,
+      order: 6,
+      alwaysShow: true,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 50,
+      name: '支付中心',
+      path: '/payment-center',
+      icon: 'material-symbols:payments-outline',
+      component: 'Layout',
+      redirect: '/payments',
+      parentId: null,
+      order: 6,
+      alwaysShow: true,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 51 },
+    update: {
+      name: '支付记录',
+      path: '/payments',
+      icon: 'material-symbols:receipt-long-outline',
+      component: 'payments/index',
+      parentId: paymentCenterMenu.id,
+      order: 1,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 51,
+      name: '支付记录',
+      path: '/payments',
+      icon: 'material-symbols:receipt-long-outline',
+      component: 'payments/index',
+      parentId: paymentCenterMenu.id,
+      order: 1,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 52 },
+    update: {
+      name: '退款记录',
+      path: '/payment-refunds',
+      icon: 'return',
+      component: 'payment-refunds/index',
+      parentId: paymentCenterMenu.id,
+      order: 2,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 52,
+      name: '退款记录',
+      path: '/payment-refunds',
+      icon: 'return',
+      component: 'payment-refunds/index',
+      parentId: paymentCenterMenu.id,
+      order: 2,
+      type: 'menu',
+    },
+  });
+
   await prisma.menu.upsert({
     where: { id: 43 },
     update: {
@@ -621,6 +751,106 @@ async function main() {
     },
   });
 
+  await prisma.menu.upsert({
+    where: { id: 54 },
+    update: {
+      name: '充值套餐',
+      path: '/mall-recharge-packages',
+      icon: 'material-symbols:redeem',
+      component: 'mall-recharge-packages/index',
+      parentId: 40,
+      order: 8,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 54,
+      name: '充值套餐',
+      path: '/mall-recharge-packages',
+      icon: 'material-symbols:redeem',
+      component: 'mall-recharge-packages/index',
+      parentId: 40,
+      order: 8,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 55 },
+    update: {
+      name: '充值活动',
+      path: '/mall-recharge-activities',
+      icon: 'coupon',
+      component: 'mall-recharge-activities/index',
+      parentId: 40,
+      order: 9,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 55,
+      name: '充值活动',
+      path: '/mall-recharge-activities',
+      icon: 'coupon',
+      component: 'mall-recharge-activities/index',
+      parentId: 40,
+      order: 9,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 49 },
+    update: {
+      name: '评价管理',
+      path: '/reviews',
+      icon: 'material-symbols:rate-review-outline',
+      component: 'reviews/index',
+      parentId: 40,
+      order: 10,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 49,
+      name: '评价管理',
+      path: '/reviews',
+      icon: 'material-symbols:rate-review-outline',
+      component: 'reviews/index',
+      parentId: 40,
+      order: 10,
+      type: 'menu',
+    },
+  });
+
+  await prisma.menu.upsert({
+    where: { id: 48 },
+    update: {
+      name: '商城配置',
+      path: '/mall-config',
+      icon: 'setting',
+      component: 'mall-config/index',
+      parentId: 40,
+      order: 11,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 48,
+      name: '商城配置',
+      path: '/mall-config',
+      icon: 'setting',
+      component: 'mall-config/index',
+      parentId: 40,
+      order: 11,
+      type: 'menu',
+    },
+  });
+
   const balanceMenu = await prisma.menu.upsert({
     where: { id: 44 },
     update: {
@@ -628,7 +858,7 @@ async function main() {
       path: '/balances',
       icon: 'wallet',
       component: 'Layout',
-      order: 6,
+      order: 7,
       deletedAt: null,
       hidden: false,
       type: 'menu',
@@ -694,20 +924,46 @@ async function main() {
     },
   });
 
+  await prisma.menu.upsert({
+    where: { id: 53 },
+    update: {
+      name: '充值记录',
+      path: '/balances/recharges',
+      icon: 'material-symbols:account-balance-wallet-outline',
+      component: 'balances/recharges',
+      parentId: balanceMenu.id,
+      order: 3,
+      deletedAt: null,
+      hidden: false,
+      type: 'menu',
+    },
+    create: {
+      id: 53,
+      name: '充值记录',
+      path: '/balances/recharges',
+      icon: 'material-symbols:account-balance-wallet-outline',
+      component: 'balances/recharges',
+      parentId: balanceMenu.id,
+      order: 3,
+      type: 'menu',
+    },
+  });
+
   // ==================== 5. 分配菜单给角色 ====================
   await prisma.role.update({
     where: { id: adminRole.id },
     data: {
       menus: {
         set: [
-          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }, { id: 8 }, // 系统管理
+          { id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }, { id: 6 }, { id: 7 }, { id: 8 }, { id: 9 }, { id: 59 }, // 系统管理
           { id: 10 }, { id: 11 }, { id: 12 }, { id: 13 },       // 基础数据
           { id: 14 }, { id: 15 }, { id: 16 },
           { id: 21 }, { id: 22 },                               // 进销存-商品档案/库存查询
           { id: 30 }, { id: 31 }, { id: 32 }, { id: 33 },       // 进销存-采购
           { id: 37 }, { id: 38 }, { id: 39 },                   // 进销存-库存管理（调拨、调整、流水）
-          { id: 40 }, { id: 41 }, { id: 42 }, { id: 43 }, { id: 47 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
-          { id: 44 }, { id: 45 }, { id: 46 },                   // 余额管理
+          { id: 40 }, { id: 41 }, { id: 42 }, { id: 43 }, { id: 47 }, { id: 48 }, { id: 49 }, { id: 54 }, { id: 55 }, { id: 34 }, { id: 35 }, { id: 36 }, // 商城管理
+          { id: 50 }, { id: 51 }, { id: 52 },                   // 支付中心
+          { id: 44 }, { id: 45 }, { id: 46 }, { id: 53 },       // 余额管理
         ],
       },
     },
@@ -768,6 +1024,31 @@ async function main() {
           platformPublicKey: '',
           platformCertPath: '',
         },
+      },
+    });
+  }
+
+  const defaultHotKeywords = [
+    { keyword: '夏季新品', sort: 1 },
+    { keyword: '婴儿连体衣', sort: 2 },
+    { keyword: '纯棉套装', sort: 3 },
+    { keyword: '宝宝裙装', sort: 4 },
+    { keyword: '口水巾', sort: 5 },
+    { keyword: '新生儿礼盒', sort: 6 },
+  ];
+
+  for (const item of defaultHotKeywords) {
+    await mallHotSearchKeywordModel.upsert({
+      where: { keyword: item.keyword },
+      update: {
+        sort: item.sort,
+        isEnabled: true,
+        deletedAt: null,
+      },
+      create: {
+        keyword: item.keyword,
+        sort: item.sort,
+        isEnabled: true,
       },
     });
   }
@@ -1009,7 +1290,7 @@ async function main() {
     code: adminRole.code,
   });
   console.log('-----------------------------------');
-  console.log('System Menus:', ['系统管理', '用户管理', '角色管理', '菜单管理', '系统设置']);
+  console.log('System Menus:', ['系统管理', '用户管理', '角色管理', '菜单管理', '系统设置', '系统日志', '上传记录']);
   console.log('-----------------------------------');
   console.log('Basic Data Menus:', ['基础数据', '计量单位', '商品分类', '品牌管理', '仓库管理', '供应商管理', '客户管理']);
   console.log('-----------------------------------');

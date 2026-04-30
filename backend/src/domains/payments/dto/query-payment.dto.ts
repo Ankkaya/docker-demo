@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PaymentType, PaymentStatus, PaymentMethod } from '@prisma/client';
 
@@ -23,10 +23,9 @@ export class QueryPaymentDto {
   @IsOptional()
   keyword?: string;
 
-  @IsBoolean()
-  @Type(() => Boolean)
+  @IsIn(['SHOPPING', 'RECHARGE'])
   @IsOptional()
-  mallOnly?: boolean;
+  orderSource?: 'SHOPPING' | 'RECHARGE';
 
   @IsInt()
   @IsOptional()

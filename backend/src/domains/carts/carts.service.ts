@@ -11,6 +11,10 @@ export class CartsService {
     private minioService: MinioService,
   ) {}
 
+  private resolveMallSkuSalePrice(sku: { salePrice?: unknown, mallInfo?: { salePrice?: unknown } | null }) {
+    return Number(sku.mallInfo?.salePrice ?? sku.salePrice ?? 0);
+  }
+
   private normalizeSpecs(specs: unknown): Record<string, string> {
     if (Array.isArray(specs)) {
       return specs.reduce((result: Record<string, string>, item: any) => {
@@ -38,41 +42,52 @@ export class CartsService {
       return;
     }
 
-    const inventories = await tx.inventory.findMany({
-      where: {
-        skuId,
-        available: { gt: 0 },
-      },
-      select: {
-        id: true,
-        available: true,
-      },
-      orderBy: [
-        { available: 'desc' },
-        { id: 'asc' },
-      ],
-    });
-
-    const totalAvailable = inventories.reduce((sum: number, item: { available: number }) => sum + item.available, 0);
-    if (totalAvailable < quantity) {
-      throw new BadRequestException('商品库存不足');
-    }
-
+    // 多轮尝试以避免并发下的「读到的可用量已被他人扣减」假阴性失败
     let remaining = quantity;
-    for (const inventory of inventories) {
-      if (remaining <= 0) {
-        break;
+    const maxAttempts = 5;
+    for (let attempt = 0; attempt < maxAttempts && remaining > 0; attempt++) {
+      const inventories = await tx.inventory.findMany({
+        where: {
+          skuId,
+          available: { gt: 0 },
+        },
+        select: {
+          id: true,
+          available: true,
+        },
+        orderBy: [
+          { available: 'desc' },
+          { id: 'asc' },
+        ],
+      });
+
+      const totalAvailable = inventories.reduce((sum: number, item: { available: number }) => sum + item.available, 0);
+      if (totalAvailable < remaining) {
+        throw new BadRequestException('商品库存不足');
       }
 
-      const lockCount = Math.min(inventory.available, remaining);
-      await tx.inventory.update({
-        where: { id: inventory.id },
-        data: {
-          available: { decrement: lockCount },
-          locked: { increment: lockCount },
-        },
-      });
-      remaining -= lockCount;
+      for (const inventory of inventories) {
+        if (remaining <= 0) {
+          break;
+        }
+        const lockCount = Math.min(inventory.available, remaining);
+        // 原子条件扣减：仅当当前 available >= lockCount 时才生效
+        const result = await tx.inventory.updateMany({
+          where: { id: inventory.id, available: { gte: lockCount } },
+          data: {
+            available: { decrement: lockCount },
+            locked: { increment: lockCount },
+          },
+        });
+        if (result.count === 1) {
+          remaining -= lockCount;
+        }
+        // count===0 表示并发被抢占，本轮跳过该行，外层会重新读取 inventories
+      }
+    }
+
+    if (remaining > 0) {
+      throw new BadRequestException('商品库存竞争激烈，锁定失败，请重试');
     }
   }
 
@@ -161,6 +176,7 @@ export class CartsService {
           },
           sku: {
             include: {
+              mallInfo: true,
               product: {
                 select: { id: true, name: true, mainImage: true },
               },
@@ -179,6 +195,7 @@ export class CartsService {
 
     const list: CartItemVo[] = await Promise.all(data.map(async (item) => {
       const totalStock = item.sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
+      const salePrice = this.resolveMallSkuSalePrice(item.sku);
       return {
         id: item.id,
         userId: item.userId,
@@ -190,10 +207,10 @@ export class CartsService {
         productName: item.sku.product.name,
         mainImage: await this.minioService.resolveStoredFileUrl(item.sku.product.mainImage),
         skuImage: await this.minioService.resolveStoredFileUrl(item.sku.image),
-        salePrice: Number(item.sku.salePrice),
+        salePrice,
         quantity: item.quantity,
         selected: item.selected,
-        subtotal: Number(item.sku.salePrice) * item.quantity,
+        subtotal: salePrice * item.quantity,
         stock: totalStock,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
@@ -221,6 +238,7 @@ export class CartsService {
         },
         sku: {
           include: {
+            mallInfo: true,
             product: {
               select: { id: true, name: true, mainImage: true },
             },
@@ -237,6 +255,7 @@ export class CartsService {
     }
 
     const totalStock = cart.sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
+    const salePrice = this.resolveMallSkuSalePrice(cart.sku);
 
     return {
       id: cart.id,
@@ -249,10 +268,10 @@ export class CartsService {
       productName: cart.sku.product.name,
       mainImage: await this.minioService.resolveStoredFileUrl(cart.sku.product.mainImage),
       skuImage: await this.minioService.resolveStoredFileUrl(cart.sku.image),
-      salePrice: Number(cart.sku.salePrice),
+      salePrice,
       quantity: cart.quantity,
       selected: cart.selected,
-      subtotal: Number(cart.sku.salePrice) * cart.quantity,
+      subtotal: salePrice * cart.quantity,
       stock: totalStock,
       createdAt: cart.createdAt,
       updatedAt: cart.updatedAt,
@@ -266,6 +285,7 @@ export class CartsService {
       include: {
         sku: {
           include: {
+            mallInfo: true,
             product: {
               select: { id: true, name: true, mainImage: true },
             },
@@ -283,7 +303,8 @@ export class CartsService {
 
     const list: CartItemVo[] = await Promise.all(carts.map(async (item) => {
       const totalStock = item.sku.inventories.reduce((sum, inv) => sum + inv.available, 0);
-      const subtotal = Number(item.sku.salePrice) * item.quantity;
+      const salePrice = this.resolveMallSkuSalePrice(item.sku);
+      const subtotal = salePrice * item.quantity;
       
       if (item.selected) {
         selectedCount += item.quantity;
@@ -301,7 +322,7 @@ export class CartsService {
         productName: item.sku.product.name,
         mainImage: await this.minioService.resolveStoredFileUrl(item.sku.product.mainImage),
         skuImage: await this.minioService.resolveStoredFileUrl(item.sku.image),
-        salePrice: Number(item.sku.salePrice),
+        salePrice,
         quantity: item.quantity,
         selected: item.selected,
         subtotal,
@@ -575,6 +596,7 @@ export class CartsService {
   // 辅助方法：转换为 CartItemVo
   private async toCartItemVo(cart: any): Promise<CartItemVo> {
     const totalStock = cart.sku.inventories.reduce((sum: number, inv: any) => sum + inv.available, 0);
+    const salePrice = this.resolveMallSkuSalePrice(cart.sku);
     
     return {
       id: cart.id,
@@ -587,10 +609,10 @@ export class CartsService {
       productName: cart.sku.product.name,
       mainImage: await this.minioService.resolveStoredFileUrl(cart.sku.product.mainImage),
       skuImage: await this.minioService.resolveStoredFileUrl(cart.sku.image),
-      salePrice: Number(cart.sku.salePrice),
+      salePrice,
       quantity: cart.quantity,
       selected: cart.selected,
-      subtotal: Number(cart.sku.salePrice) * cart.quantity,
+      subtotal: salePrice * cart.quantity,
       stock: totalStock,
       createdAt: cart.createdAt,
       updatedAt: cart.updatedAt,

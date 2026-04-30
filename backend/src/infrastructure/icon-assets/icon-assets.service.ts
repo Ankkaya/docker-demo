@@ -38,6 +38,8 @@ export class IconAssetsService {
     cart: 'material-symbols:shopping-cart-outline',
     storefront: 'material-symbols:storefront-outline',
     slideshow: 'material-symbols:view-carousel-outline',
+    redeem: 'material-symbols:redeem',
+    upload: 'material-symbols:cloud-upload-outline',
   };
 
   constructor(private readonly minioService: MinioService) {}

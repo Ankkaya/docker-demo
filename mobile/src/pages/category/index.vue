@@ -37,6 +37,7 @@ interface RawCategory {
 interface CategoryCardItem {
   id: number
   name: string
+  image: string
   icon: string
   description: string
   subCategories: {
@@ -92,9 +93,12 @@ function mapSubCategoryItem(category: RawCategory) {
 }
 
 function mapCategoryItem(category: RawCategory, children: RawCategory[], index: number): CategoryCardItem {
+  const image = resolveAssetUrl(category.image)
+
   return {
     id: category.id,
     name: category.name || `分类${index + 1}`,
+    image,
     icon: fallbackCategoryIcons[index] || fallbackCategoryIcons[fallbackCategoryIcons.length - 1],
     description: category.subtitle || category.remark || '精选分类内容',
     subCategories: children.map(mapSubCategoryItem),
@@ -150,11 +154,26 @@ function onSubCategoryClick(subCategory: any) {
   })
 }
 
+function onViewCurrentCategoryAll() {
+  if (!currentCategory.value?.id) {
+    return
+  }
+
+  router.push({
+    name: 'product-list',
+    params: {
+      title: currentCategory.value.name.replace('\n', ' '),
+      categoryId: String(currentCategory.value.id),
+    },
+  })
+}
+
 // 获取当前分类
 const currentCategory = computed(() => {
   return categories.value[activeCategory.value] || categories.value[0] || {
     id: 0,
     name: '',
+    image: '',
     icon: fallbackCategoryIcons[0],
     description: '',
     subCategories: [],
@@ -188,10 +207,26 @@ const currentSubCategories = computed(() => {
           />
           <!-- Icon -->
           <view
-            class="mb-2 size-10 flex items-center justify-center rounded-full transition-all duration-200"
+            class="mb-2 size-10 flex items-center justify-center overflow-hidden rounded-full transition-all duration-200"
             :class="activeCategory === index ? 'bg-[#efb239]/20 text-[#efb239]' : 'bg-slate-100 text-slate-400'"
           >
-            <app-icon :icon="category.icon" :size="20" :color="activeCategory === index ? '#efb239' : '#94a3b8'" />
+            <image
+              v-if="category.image"
+              :src="category.image"
+              class="h-full w-full"
+              mode="aspectFill"
+            />
+            <view
+              v-else
+              class="category-nav__placeholder h-full w-full flex items-center justify-center"
+              :class="activeCategory === index ? 'category-nav__placeholder--active' : 'category-nav__placeholder--idle'"
+            >
+              <wd-icon
+                name="picture"
+                size="16"
+                :color="activeCategory === index ? '#efb239' : '#94a3b8'"
+              />
+            </view>
           </view>
           <!-- Name -->
           <text
@@ -207,12 +242,24 @@ const currentSubCategories = computed(() => {
       <scroll-view scroll-y class="flex-1 p-4">
         <!-- Category Header -->
         <view class="mb-5">
-          <text class="block text-2xl text-slate-900 font-bold">
-            {{ currentCategory.name }}
-          </text>
-          <text class="mt-1 block text-sm text-slate-500">
-            {{ currentCategory.description }}
-          </text>
+          <view class="min-w-0">
+            <view class="flex items-start justify-between gap-3">
+              <text class="min-w-0 flex-1 text-2xl text-slate-900 font-bold leading-tight">
+                {{ currentCategory.name }}
+              </text>
+              <view
+                v-if="currentCategory.id"
+                class="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-[#efb239]/20 bg-white px-3 py-1 text-xs text-[#efb239] font-medium shadow-sm"
+                @click="onViewCurrentCategoryAll"
+              >
+                <text>全部</text>
+                <wd-icon name="arrow-right" size="12" color="#efb239" />
+              </view>
+            </view>
+            <text class="mt-2 block text-sm text-slate-500 leading-5">
+              {{ currentCategory.description }}
+            </text>
+          </view>
         </view>
 
         <!-- Sub Categories Grid -->
@@ -290,5 +337,13 @@ const currentSubCategories = computed(() => {
 /* 保留换行符 */
 .whitespace-pre-line {
   white-space: pre-line;
+}
+
+.category-nav__placeholder--active {
+  background: linear-gradient(135deg, #fff7e6 0%, #fde7b2 100%);
+}
+
+.category-nav__placeholder--idle {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 </style>

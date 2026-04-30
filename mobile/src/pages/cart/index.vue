@@ -32,7 +32,7 @@ interface CartItem {
 const router = useRouter()
 const checkoutStore = useCheckoutStore()
 const userStore = useUserStore()
-const { error: showError } = useGlobalToast()
+const toast = useToast()
 
 const { topAreaHeight, safeAreaInsetsBottom } = usePlatform()
 
@@ -131,11 +131,7 @@ async function loadCart(options: { silent?: boolean } = {}) {
 }
 
 function openLogin() {
-  userStore.openAuthPopup({
-    name: 'cart',
-    path: '/pages/cart/index',
-    isTabbar: true,
-  })
+  userStore.openAuthPopup()
 }
 
 function goShopping() {
@@ -149,7 +145,7 @@ function checkout() {
   }
 
   if (!hasSelectedItems.value) {
-    uni.showToast({ title: '请先选择商品', icon: 'none' })
+    toast.info('请先选择商品')
     return
   }
 
@@ -228,7 +224,7 @@ function changeQuantity(item: CartItem, delta: number) {
     return
   }
   if (delta > 0 && nextQuantity > item.stock) {
-    uni.showToast({ title: '商品库存不足', icon: 'none' })
+    toast.error('商品库存不足')
     return
   }
 
@@ -387,11 +383,11 @@ onShow(() => {
       v-if="isLoggedIn && hasCartItems"
       class="shrink-0 border-t border-[#efb239]/8 bg-white px-4 pb-6 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]"
     >
-      <view class="rounded-[28rpx] bg-[#fffaf0] px-4 py-4">
-        <view class="flex items-center justify-between gap-3">
-          <view class="flex shrink-0 items-center gap-3" @click="toggleAll">
-            <view
-              class="size-6 flex items-center justify-center border rounded-full border-solid text-xs"
+        <view class="rounded-[28rpx] bg-[#fffaf0] px-4 py-4">
+          <view class="flex items-center justify-between gap-3">
+            <view class="flex shrink-0 items-center gap-3" @click="toggleAll">
+              <view
+                class="size-6 flex items-center justify-center border rounded-full border-solid text-xs"
               :class="allSelected ? 'border-[#efb239] bg-[#efb239] text-white' : 'border-[#d6c7a1] bg-white text-transparent'"
             >
               ✓
@@ -399,37 +395,41 @@ onShow(() => {
             <text class="text-sm text-slate-700 font-medium">
               全选
             </text>
+            </view>
+            <view class="flex min-w-0 items-center gap-3">
+              <text class="text-sm text-slate-500">
+                共 {{ cartCount }} 件，已选 {{ selectedCount }} 件
+              </text>
+              <text
+                v-if="allSelected"
+                class="cart-clear-text"
+                :class="!hasSelectedItems || actionLoading ? 'cart-clear-text--disabled' : ''"
+                @click="clearAllItems"
+              >
+                清空
+              </text>
+            </view>
           </view>
-          <text class="text-sm text-slate-500">
-            共 {{ cartCount }} 件，已选 {{ selectedCount }} 件
-          </text>
-        </view>
-        <view class="mt-4 flex items-end justify-between gap-3">
-          <view class="min-w-0 flex-1">
-            <text class="block text-xs text-slate-500">
-              合计金额
-            </text>
-            <text class="mt-1 block text-2xl text-[#efb239] font-bold">
-              ¥{{ totalAmount.toFixed(2) }}
-            </text>
-          </view>
-          <view class="flex shrink-0 items-center gap-2">
-            <app-button :disabled="!hasSelectedItems || actionLoading" type="primary" @click="checkout">
+          <view class="cart-footer-main">
+            <view class="cart-footer-total">
+              <text class="cart-footer-total__label">
+                合计
+              </text>
+              <text class="cart-footer-total__amount">
+                ¥{{ totalAmount.toFixed(2) }}
+              </text>
+            </view>
+            <app-button
+              class="cart-checkout-button"
+              custom-class="cart-checkout-button"
+              :disabled="!hasSelectedItems || actionLoading"
+              type="primary"
+              @click="checkout"
+            >
               去结算
             </app-button>
-            <app-button
-              plain
-              class="cart-clear-button"
-              custom-class="cart-clear-button"
-              :disabled="!hasSelectedItems || actionLoading"
-              :loading="actionLoading"
-              @click="clearAllItems"
-            >
-              清空
-            </app-button>
           </view>
         </view>
-      </view>
     </view>
   </view>
 </template>
@@ -442,28 +442,74 @@ onShow(() => {
   overflow: hidden;
 }
 
-.cart-clear-button {
-  width: auto;
+.cart-clear-text {
+  flex: none;
+  color: #c98500;
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cart-clear-text--disabled {
+  color: #cbd5e1;
+}
+
+.cart-footer-main {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20rpx;
+  margin-top: 26rpx;
+}
+
+.cart-footer-total {
+  display: flex;
   min-width: 0;
+  flex: 1;
+  align-items: baseline;
+  gap: 10rpx;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.cart-footer-total__label {
+  flex: none;
+  color: #64748b;
+  font-size: 24rpx;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.cart-footer-total__amount {
+  min-width: 0;
+  color: #efb239;
+  font-size: 44rpx;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.cart-footer-total__hint {
+  flex: none;
+  color: #94a3b8;
+  font-size: 22rpx;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.cart-checkout-button {
+  min-width: 176rpx;
   flex: none;
 }
 
-:deep(.cart-clear-button) {
+:deep(.cart-checkout-button) {
+  min-width: 176rpx;
   border-radius: 9999px;
-  padding: 0 28rpx;
-  font-size: 28rpx;
-  line-height: 1;
+  font-size: 24rpx;
 }
 
-:deep(.cart-clear-button.is-plain) {
-  border-color: #cbd5e1;
-  background: #fff;
-  color: #334155;
-}
-
-:deep(.cart-clear-button.is-disabled) {
-  border-color: #e2e8f0;
-  background: #f8fafc;
+:deep(.cart-checkout-button.is-disabled) {
+  background: #e2e8f0;
   color: #94a3b8;
 }
 </style>

@@ -17,6 +17,7 @@ import { QueryBalanceRechargeDto } from './dto/query-balance-recharge.dto';
 import { BalanceAccountVo } from './vo/balance-account.vo';
 import { BalanceLogVo } from './vo/balance-log.vo';
 import { BalanceRechargeOrderVo } from './vo/balance-recharge-order.vo';
+import { D, addMoney } from '@/common/utils/money';
 
 @Injectable()
 export class BalancesService {
@@ -154,24 +155,26 @@ export class BalancesService {
         throw new BadRequestException('余额账户已停用，不能调账');
       }
 
-      const before = Number(account.availableBalance);
-      const amount = Number(dto.amount);
-      const changeAmount = dto.direction === BalanceAdjustDirection.INCREASE ? amount : -amount;
-      const after = before + changeAmount;
+      const before = D(account.availableBalance);
+      const amount = D(dto.amount);
+      const changeAmount = dto.direction === BalanceAdjustDirection.INCREASE
+        ? amount
+        : amount.neg();
+      const after = before.add(changeAmount);
 
-      if (after < 0) {
+      if (after.isNegative()) {
         throw new BadRequestException('余额不足，不能扣减');
       }
 
       const data: Prisma.BalanceAccountUpdateInput = {
         availableBalance: after,
-        totalAdjusted: Number(account.totalAdjusted) + changeAmount,
+        totalAdjusted: addMoney(account.totalAdjusted, changeAmount),
       };
 
       if (dto.direction === BalanceAdjustDirection.INCREASE) {
-        data.totalRecharged = Number(account.totalRecharged) + amount;
+        data.totalRecharged = addMoney(account.totalRecharged, amount);
       } else {
-        data.totalConsumed = Number(account.totalConsumed) + amount;
+        data.totalConsumed = addMoney(account.totalConsumed, amount);
       }
 
       const updated = await tx.balanceAccount.update({
@@ -188,6 +191,7 @@ export class BalancesService {
             ? BalanceLogType.ADJUST_INCREASE
             : BalanceLogType.ADJUST_DECREASE,
           changeAmount,
+          bonusAmount: 0,
           balanceBefore: before,
           balanceAfter: after,
           bizType: dto.bizType,
@@ -195,7 +199,7 @@ export class BalancesService {
           bizNo: dto.bizNo,
           remark: dto.remark,
           createdBy: userId,
-        },
+        } as any,
       });
 
       return BalanceAccountVo.fromEntity(updated);
@@ -353,8 +357,33 @@ export class BalancesService {
       this.prisma.balanceRechargeOrder.count({ where }),
     ]);
 
+    const outTradeNos = data
+      .map(item => item.outTradeNo)
+      .filter((value): value is string => !!value);
+
+    const payments = outTradeNos.length
+      ? await this.prisma.payment.findMany({
+          where: {
+            outTradeNo: {
+              in: outTradeNos,
+            },
+            bizType: 'RECHARGE',
+            deletedAt: null,
+          },
+          include: {
+            refunds: {
+              orderBy: {
+                createdAt: 'desc',
+              },
+            },
+          },
+        })
+      : [];
+
+    const refundMap = new Map(payments.map(item => [item.outTradeNo!, item.refunds]));
+
     return {
-      data: BalanceRechargeOrderVo.fromEntities(data),
+      data: BalanceRechargeOrderVo.fromEntities(data, refundMap),
       meta: {
         page,
         pageSize,

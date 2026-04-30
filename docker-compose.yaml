@@ -42,6 +42,23 @@ services:
       retries: 5
       start_period: 10s
 
+  redis:
+    image: redis:8-alpine
+    container_name: demo-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
   backend:
     build:
       context: ./backend
@@ -49,6 +66,8 @@ services:
     container_name: demo-backend
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/docker_demo?schema=public
+      REDIS_URL: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
       PORT: 3001
       FILE_BASE_URL: http://localhost:3001
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
@@ -61,6 +80,8 @@ services:
       MINIO_BUCKET_NAME: docker-demo
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -80,3 +101,4 @@ services:
 volumes:
   db-data:
   minio-data:
+  redis-data:

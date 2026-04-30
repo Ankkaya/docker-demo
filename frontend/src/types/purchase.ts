@@ -96,6 +96,8 @@ export interface Payment {
   type: PaymentType;
   typeText: string;
   bizType: string;
+  orderSource: 'SHOPPING' | 'RECHARGE';
+  orderSourceText: string;
   bizId: number | null;
   orderNo?: string;
   orderType?: string | null;
@@ -106,12 +108,52 @@ export interface Payment {
   statusText: string;
   outTradeNo?: string | null;
   thirdTradeNo?: string | null;
+  tradeType?: string | null;
+  prepayId?: string | null;
   thirdStatus?: string | null;
+  queryCount: number;
+  lastQueryAt?: string | null;
+  notifyAt?: string | null;
   paidAt?: string | null;
+  failReason?: string | null;
+  notifyPayload?: unknown;
+  confirmSource: 'NOTIFY' | 'QUERY' | 'MANUAL' | 'UNKNOWN';
+  confirmSourceText: string;
+  refunds?: PaymentRefund[];
   remark?: string;
   createdBy: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export type PaymentRefundStatus = 'PROCESSING' | 'SUCCESS' | 'CLOSED' | 'ABNORMAL';
+
+export interface PaymentRefund {
+  id: number;
+  refundNo: string;
+  paymentId: number;
+  orderId: number | null;
+  orderNo?: string | null;
+  outTradeNo?: string | null;
+  orderSource: 'SHOPPING' | 'RECHARGE';
+  orderSourceText: string;
+  amount: number;
+  reason?: string;
+  status: PaymentRefundStatus;
+  statusText: string;
+  thirdRefundNo?: string | null;
+  thirdStatus?: string | null;
+  successAt?: string | null;
+  failReason?: string | null;
+  notifyAt?: string | null;
+  notifyPayload?: unknown;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePaymentRefundDto {
+  reason?: string;
 }
 
 // 创建采购订单DTO
@@ -183,7 +225,7 @@ export interface QueryPaymentParams {
   bizType?: string;
   method?: PaymentMethod;
   status?: PaymentStatus;
-  mallOnly?: boolean;
+  orderSource?: 'SHOPPING' | 'RECHARGE';
   page?: number;
   pageSize?: number;
 }

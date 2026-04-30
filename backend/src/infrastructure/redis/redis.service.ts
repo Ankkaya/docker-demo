@@ -112,4 +112,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       throw error;
     }
   }
+
+  async incr(key: string): Promise<number> {
+    return Number(await this.client.incr(key));
+  }
+
+  async expire(key: string, ttl: number): Promise<void> {
+    await this.client.expire(key, ttl);
+  }
+
+  async ttl(key: string): Promise<number> {
+    return Number(await this.client.ttl(key));
+  }
 }

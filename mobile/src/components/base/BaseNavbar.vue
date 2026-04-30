@@ -1,5 +1,6 @@
 <script lang="ts">
 import BaseStatusbar from '@/components/base/BaseStatusbar.vue'
+import { TABBAR_ROUTE_NAMES } from '@/composables/useTabbar'
 
 export default {
   options: {
@@ -12,6 +13,7 @@ export default {
 
 <script lang="ts" setup>
 const route = useRoute()
+const router = useRouter()
 const { navigationBarHeight } = usePlatform()
 
 const defaultNavbarStyle = {
@@ -25,17 +27,25 @@ const titleBarStyle = computed(() => ({
 }))
 
 const iconColor = computed(() => route.baseNavbar?.iconColor || '#efb239')
+const isTabbarPage = computed(() => TABBAR_ROUTE_NAMES.includes(String(route.name || '') as any))
+const shouldGoHome = computed(() => {
+  const pages = getCurrentPages()
+  return pages.length <= 1 && !isTabbarPage.value
+})
 
 const showBackIcon = computed(() => {
-  // 获取页面栈
   const pages = getCurrentPages()
-  // 如果当前页面是第一个页面，不显示返回按钮
-  return pages.length > 1
+  return pages.length > 1 || shouldGoHome.value
 })
 
 const statusBarStyle = computed(() => ({}))
 
 function clickBack() {
+  if (shouldGoHome.value) {
+    router.replaceAll({ name: 'home' })
+    return
+  }
+
   uni.navigateBack()
 }
 </script>

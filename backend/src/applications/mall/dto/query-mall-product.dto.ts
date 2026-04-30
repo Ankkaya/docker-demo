@@ -20,7 +20,7 @@ export class QueryMallProductDto {
   @Type(() => Number)
   brandId?: number;
 
-  @ApiPropertyOptional({ example: 'new', description: '排序: price_asc-价格升序, price_desc-价格降序, new-最新, sales-销量' })
+  @ApiPropertyOptional({ example: 'recommended', description: '排序: recommended-推荐, price_asc-价格升序, price_desc-价格降序, new-最新, sales-销量' })
   @IsString()
   @IsOptional()
   sort?: string;

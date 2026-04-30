@@ -89,8 +89,10 @@ export const getPayments = (params?: PaymentApi.QueryParams) => {
 }
 
 // 获取收付款详情
-export const getPayment = (id: number) => {
-  return api.get<PaymentApi.Detail>(`/payments/${id}`)
+export const getPayment = (id: number, orderSource?: 'SHOPPING' | 'RECHARGE') => {
+  return api.get<PaymentApi.Detail>(`/payments/${id}`, {
+    params: orderSource ? { orderSource } : undefined,
+  })
 }
 
 // 创建收付款记录
@@ -101,6 +103,37 @@ export const createPayment = (data: PaymentApi.CreateParams) => {
 // 确认收付款
 export const confirmPayment = (id: number) => {
   return api.patch<PaymentApi.Confirm>(`/payments/${id}/confirm`)
+}
+
+// 主动查询微信支付状态
+export const queryWechatPayment = (id: number) => {
+  return api.patch<PaymentApi.Sync>(`/payments/${id}/query`)
+}
+
+// 发起退款
+export const createPaymentRefund = (
+  id: number,
+  data: PaymentApi.RefundParams,
+  orderSource?: 'SHOPPING' | 'RECHARGE',
+) => {
+  return api.post<PaymentApi.Refund>(`/payments/${id}/refunds`, data, {
+    params: orderSource ? { orderSource } : undefined,
+  })
+}
+
+// 查询退款状态
+export const queryPaymentRefund = (refundId: number) => {
+  return api.patch<PaymentApi.RefundSync>(`/payments/refunds/${refundId}/query`)
+}
+
+// 获取退款记录列表
+export const getPaymentRefunds = (params?: PaymentApi.RefundQueryParams) => {
+  return api.get<PaymentApi.RefundList>('/payments/refunds', { params })
+}
+
+// 获取退款记录详情
+export const getPaymentRefund = (refundId: number) => {
+  return api.get<PaymentApi.Refund>(`/payments/refunds/${refundId}`)
 }
 
 // 取消收付款

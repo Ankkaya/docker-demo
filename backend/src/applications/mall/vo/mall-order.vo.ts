@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MallOrderItemVo {
+  @ApiProperty({ description: '订单明细ID' })
+  orderItemId: number;
+
   @ApiProperty({ description: '商品ID' })
   productId: number;
 
@@ -27,6 +30,12 @@ export class MallOrderItemVo {
 
   @ApiProperty({ description: '金额' })
   amount: number;
+
+  @ApiProperty({ description: '是否已评价' })
+  reviewed: boolean;
+
+  @ApiProperty({ description: '当前是否可评价' })
+  canReview: boolean;
 }
 
 export class MallOrderListItemVo {
@@ -65,6 +74,37 @@ export class MallOrderListItemVo {
 
   @ApiProperty({ description: '订单商品', type: [MallOrderItemVo] })
   items: MallOrderItemVo[];
+
+  @ApiProperty({ description: '是否还有待评价商品' })
+  hasPendingReview: boolean;
+
+  @ApiProperty({ description: '已评价商品数量' })
+  reviewedItemCount: number;
+
+  @ApiProperty({ description: '待评价商品数量' })
+  pendingReviewItemCount: number;
+}
+
+export class MallOrderListMetaVo {
+  @ApiProperty({ description: '当前页码' })
+  page: number;
+
+  @ApiProperty({ description: '每页数量' })
+  pageSize: number;
+
+  @ApiProperty({ description: '总记录数' })
+  total: number;
+
+  @ApiProperty({ description: '总页数' })
+  totalPages: number;
+}
+
+export class MallOrderListResponseVo {
+  @ApiProperty({ description: '订单列表', type: [MallOrderListItemVo] })
+  data: MallOrderListItemVo[];
+
+  @ApiProperty({ description: '分页信息', type: MallOrderListMetaVo })
+  meta: MallOrderListMetaVo;
 }
 
 export class MallOrderDetailVo extends MallOrderListItemVo {
@@ -103,6 +143,15 @@ export class MallOrderDetailVo extends MallOrderListItemVo {
 
   @ApiProperty({ description: '优惠券名称', nullable: true })
   couponName?: string | null;
+
+  @ApiProperty({ description: '物流公司编码（快递100 公司编码）', nullable: true })
+  logisticsCompany?: string | null;
+
+  @ApiProperty({ description: '物流单号', nullable: true })
+  trackingNo?: string | null;
+
+  @ApiProperty({ description: '发货单号', nullable: true })
+  shipmentNo?: string | null;
 }
 
 export class MallCreateOrderVo {

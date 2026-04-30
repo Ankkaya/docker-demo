@@ -1,7 +1,6 @@
 <template>
-  <div class="page-container">
-    <n-card title="购物车管理" class="page-card">
-      <!-- 搜索栏 -->
+  <div class="p-4">
+    <n-card class="mb-4" content-style="padding-bottom: 0;">
       <QueryForm :model="searchForm" class="search-form">
         <n-form-item label="用户ID">
           <n-input-number
@@ -29,15 +28,17 @@
           </n-space>
         </n-form-item>
       </QueryForm>
+    </n-card>
 
-      <!-- 操作栏 -->
-      <n-space class="page-toolbar toolbar" style="margin-bottom: 16px">
+    <n-card class="mb-4">
+      <n-space class="page-toolbar toolbar">
         <n-button type="error" @click="handleBatchDelete" :disabled="!checkedRowKeys.length">
           批量删除
         </n-button>
       </n-space>
+    </n-card>
 
-      <!-- 数据表格 -->
+    <n-card>
       <n-data-table
         :columns="columns"
         :data="tableData"
@@ -344,7 +345,7 @@ onMounted(() => {
 
 <style scoped>
 .search-form {
-  margin-bottom: 16px;
+
 }
 
 .toolbar {

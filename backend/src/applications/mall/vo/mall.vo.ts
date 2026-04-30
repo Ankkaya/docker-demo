@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BrandVo } from '@/brands/vo';
 import { CategoryVo } from '@/categories/vo';
 import { BannerVo } from '@/domains/banners/vo/banner.vo';
+import { MallHotSearchVo } from '@/domains/mall-hot-searches/vo';
 import { ProductWithRelationsVo } from '@/products/vo';
 
 export class MallCategoryVo extends CategoryVo {
@@ -187,4 +188,18 @@ export class MallHotProductListResponseVo {
     type: [MallHotProductVo],
   })
   list: MallHotProductVo[];
+}
+
+export class MallSearchInitVo {
+  @ApiProperty({
+    description: '热门搜索词列表',
+    type: [MallHotSearchVo],
+  })
+  hotKeywords: MallHotSearchVo[];
+
+  @ApiProperty({
+    description: '推荐分类列表',
+    type: [MallCategoryVo],
+  })
+  recommendCategories: MallCategoryVo[];
 }

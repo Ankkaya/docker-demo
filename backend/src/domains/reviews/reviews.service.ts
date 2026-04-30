@@ -10,6 +10,7 @@ import { MinioService } from '@/infrastructure/minio/minio.service';
 import {
   AuditReviewDto,
   CreateMallReviewDto,
+  CreateMallReviewItemDto,
   QueryMallReviewDto,
   QueryReviewDto,
   ReplyReviewDto,
@@ -147,8 +148,18 @@ export class ReviewsService {
   }
 
   async createMallReview(userId: number, dto: CreateMallReviewDto) {
-    const orderItem = await this.prisma.orderItem.findFirst({
-      where: { id: dto.orderItemId },
+    const payloads = dto.items?.length
+      ? dto.items
+      : [this.normalizeSingleCreatePayload(dto)];
+
+    const orderItemIds = payloads.map(item => item.orderItemId);
+    const uniqueOrderItemIds = new Set(orderItemIds);
+    if (uniqueOrderItemIds.size !== orderItemIds.length) {
+      throw new BadRequestException('同一订单商品不能重复评价');
+    }
+
+    const orderItems = await this.prisma.orderItem.findMany({
+      where: { id: { in: orderItemIds } },
       include: {
         order: {
           include: {
@@ -172,49 +183,63 @@ export class ReviewsService {
       },
     });
 
-    if (!orderItem) {
-      throw new NotFoundException('订单商品不存在');
+    if (orderItems.length !== orderItemIds.length) {
+      throw new NotFoundException('存在无效的订单商品');
     }
 
-    if (orderItem.order.customer.userId !== userId) {
-      throw new BadRequestException('只能评价自己的订单商品');
+    const orderItemsMap = new Map(orderItems.map(item => [item.id, item]));
+    const firstOrderId = orderItems[0].orderId;
+    if (orderItems.some(item => item.orderId !== firstOrderId)) {
+      throw new BadRequestException('仅支持对同一订单下的商品进行批量评价');
     }
 
-    const reviewable =
-      orderItem.order.status === OrderStatus.COMPLETED ||
-      orderItem.order.shipStatus === ShipStatus.RECEIVED;
+    const created = await this.prisma.$transaction(async (tx) => {
+      const result: any[] = [];
 
-    if (!reviewable) {
-      throw new BadRequestException('订单未完成，暂不可评价');
-    }
+      for (const payload of payloads) {
+        const orderItem = orderItemsMap.get(payload.orderItemId);
+        if (!orderItem) {
+          throw new NotFoundException('订单商品不存在');
+        }
 
-    if (orderItem.reviews.length > 0) {
-      throw new ConflictException('该订单商品已评价');
-    }
+        this.ensureReviewableOrderItem(orderItem, userId);
 
-    const images = (dto.images || [])
-      .map(item => this.minioService.normalizeStoredFileReference(item))
-      .filter((item): item is string => Boolean(item));
+        const images = (payload.images || [])
+          .map(item => this.minioService.normalizeStoredFileReference(item))
+          .filter((item): item is string => Boolean(item));
 
-    const review = await this.prisma.review.create({
-      data: {
-        reviewNo: generateReviewNo(),
-        orderId: orderItem.orderId,
-        orderItemId: orderItem.id,
-        productId: orderItem.sku.product.id,
-        skuId: orderItem.skuId,
-        userId,
-        customerId: orderItem.order.customerId,
-        rating: dto.rating,
-        content: dto.content?.trim() || null,
-        images,
-        isAnonymous: dto.isAnonymous ?? false,
-        status: ReviewStatus.PENDING,
-      },
-      include: this.reviewInclude(),
+        const review = await tx.review.create({
+          data: {
+            reviewNo: generateReviewNo(),
+            orderId: orderItem.orderId,
+            orderItemId: orderItem.id,
+            productId: orderItem.sku.product.id,
+            skuId: orderItem.skuId,
+            userId,
+            customerId: orderItem.order.customerId,
+            rating: payload.rating,
+            content: payload.content?.trim() || null,
+            images,
+            isAnonymous: payload.isAnonymous ?? false,
+            status: ReviewStatus.PENDING,
+          },
+          include: this.reviewInclude(),
+        });
+
+        result.push(review);
+      }
+
+      return result;
     });
 
-    return this.toReviewVo(review, true);
+    if (created.length === 1) {
+      return this.toReviewVo(created[0], true);
+    }
+
+    return {
+      list: await Promise.all(created.map(item => this.toReviewVo(item, true))),
+      total: created.length,
+    };
   }
 
   async findMallProductReviews(productId: number, query: QueryMallReviewDto) {
@@ -471,5 +496,37 @@ export class ReviewsService {
       return `${name[0]}*`;
     }
     return `${name[0]}${'*'.repeat(name.length - 2)}${name[name.length - 1]}`;
+  }
+
+  private normalizeSingleCreatePayload(dto: CreateMallReviewDto): CreateMallReviewItemDto {
+    if (!dto.orderItemId || !dto.rating) {
+      throw new BadRequestException('评价参数不完整');
+    }
+
+    return {
+      orderItemId: dto.orderItemId,
+      rating: dto.rating,
+      content: dto.content,
+      images: dto.images,
+      isAnonymous: dto.isAnonymous,
+    };
+  }
+
+  private ensureReviewableOrderItem(orderItem: any, userId: number) {
+    if (orderItem.order.customer.userId !== userId) {
+      throw new BadRequestException('只能评价自己的订单商品');
+    }
+
+    const reviewable =
+      orderItem.order.status === OrderStatus.COMPLETED ||
+      orderItem.order.shipStatus === ShipStatus.RECEIVED;
+
+    if (!reviewable) {
+      throw new BadRequestException('订单未完成，暂不可评价');
+    }
+
+    if (orderItem.reviews.length > 0) {
+      throw new ConflictException('该订单商品已评价');
+    }
   }
 }

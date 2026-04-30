@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
@@ -20,6 +21,9 @@ import {
   MallBalanceSummaryVo,
 } from './vo/mall-balance.vo';
 import { WechatMiniProgramPayParams, WechatPayService, WechatTransactionResource } from './wechat-pay.service';
+import { MallRechargePackagesService } from '@/domains/mall-recharge-packages/mall-recharge-packages.service';
+import { CouponAutoGrantService } from '@/domains/coupons/coupon-auto-grant.service';
+import { D, addMoney, yuanToFen } from '@/common/utils/money';
 
 function generateRechargeBizNo() {
   const now = new Date();
@@ -41,9 +45,13 @@ const PENDING_RECHARGE_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 @Injectable()
 export class MallBalanceService {
+  private readonly logger = new Logger(MallBalanceService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly wechatPayService: WechatPayService,
+    private readonly mallRechargePackagesService: MallRechargePackagesService,
+    private readonly couponAutoGrantService: CouponAutoGrantService,
   ) {}
 
   private async getCustomerByUserId(userId: number) {
@@ -91,6 +99,11 @@ export class MallBalanceService {
     return MallBalanceSummaryVo.fromEntity(account);
   }
 
+  async getRechargePackagesByUserId(userId: number) {
+    const account = await this.ensureAccountByUserId(userId);
+    return this.mallRechargePackagesService.findAvailableForCustomer(account.customerId);
+  }
+
   async getLogsByUserId(userId: number, query: QueryMallBalanceLogDto) {
     const account = await this.ensureAccountByUserId(userId);
     const { page = 1, pageSize = 20, type } = query;
@@ -126,7 +139,15 @@ export class MallBalanceService {
 
   async rechargeByUserId(userId: number, dto: CreateMallBalanceRechargeDto) {
     const account = await this.ensureAccountByUserId(userId);
-    const amount = Number(dto.amount);
+    const rechargePackage = await this.mallRechargePackagesService.resolvePackageForCustomer(account.customerId, dto.packageId);
+    const amount = rechargePackage ? Number(rechargePackage.rechargeAmount) : Number(dto.amount);
+    if (!amount || amount <= 0) {
+      throw new BadRequestException('请输入正确的充值金额');
+    }
+    const activity = rechargePackage
+      ? this.resolveSelectedActivity(rechargePackage.activities || [], dto.activityId)
+      : null;
+    const bonusAmount = Number(activity?.bonusAmount || 0);
     if (dto.method !== PaymentMethod.WECHAT) {
       throw new BadRequestException('当前阶段仅支持微信充值');
     }
@@ -152,11 +173,18 @@ export class MallBalanceService {
         accountId: account.id,
         customerId: account.customerId,
         amount,
+        bonusAmount,
+        packageId: rechargePackage?.id ?? null,
+        packageName: rechargePackage?.name ?? null,
+        activityId: activity?.id ?? null,
+        activityName: activity?.name ?? null,
         method: dto.method,
         outTradeNo: `${rechargeNo}${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`.slice(0, 32),
-        remark: `商城用户${this.getMethodText(dto.method)}充值`,
+        remark: rechargePackage
+          ? `${rechargePackage.name}${activity ? `，活动${activity.name}` : ''}，实充${amount.toFixed(2)}元${bonusAmount > 0 ? `赠送${bonusAmount.toFixed(2)}元` : ''}`
+          : `商城用户${this.getMethodText(dto.method)}充值`,
         createdBy: userId,
-      },
+      } as any,
     });
 
     const created = await this.wechatPayService.createMiniProgramOrder({
@@ -218,6 +246,15 @@ export class MallBalanceService {
     }
 
     if (resource.trade_state === 'SUCCESS') {
+      // 安全校验：回调金额（分）必须与本地充值单金额一致，防止串单/篡改
+      const expectedFen = yuanToFen(rechargeOrder.amount);
+      const actualFen = resource.amount?.total;
+      if (actualFen !== expectedFen) {
+        this.logger.error(
+          `微信充值回调金额不一致 outTradeNo=${resource.out_trade_no} 本地=${expectedFen}分 回调=${actualFen}分`,
+        );
+        throw new BadRequestException('回调金额与充值单金额不一致');
+      }
       await this.markRechargeSuccess(resource.out_trade_no, resource, JSON.parse(rawBody || '{}'));
       return true;
     }
@@ -316,16 +353,19 @@ export class MallBalanceService {
       }
 
       const paidAt = resource.success_time ? new Date(resource.success_time) : new Date();
-      const before = Number(account.availableBalance);
-      const amount = Number(rechargeOrder.amount);
-      const after = before + amount;
+      const before = D(account.availableBalance);
+      const amount = D(rechargeOrder.amount);
+      const bonusAmount = D((rechargeOrder as any).bonusAmount);
+      const changeAmount = amount.add(bonusAmount);
+      const after = before.add(changeAmount);
 
       await tx.balanceAccount.update({
         where: { id: account.id },
         data: {
           availableBalance: after,
-          totalRecharged: Number(account.totalRecharged) + amount,
-        },
+          totalRecharged: addMoney(account.totalRecharged, amount),
+          totalPresented: addMoney((account as any).totalPresented, bonusAmount),
+        } as any,
       });
 
       await tx.balanceLog.create({
@@ -333,7 +373,8 @@ export class MallBalanceService {
           accountId: account.id,
           customerId: rechargeOrder.customerId,
           type: BalanceLogType.RECHARGE,
-          changeAmount: amount,
+          changeAmount,
+          bonusAmount,
           balanceBefore: before,
           balanceAfter: after,
           bizType: 'MALL_RECHARGE',
@@ -341,10 +382,10 @@ export class MallBalanceService {
           bizNo: rechargeOrder.rechargeNo,
           remark: rechargeOrder.remark,
           createdBy: rechargeOrder.createdBy,
-        },
+        } as any,
       });
 
-      return tx.balanceRechargeOrder.update({
+      const updatedRechargeOrder = await tx.balanceRechargeOrder.update({
         where: { id: rechargeOrder.id },
         data: {
           status: PaymentStatus.COMPLETED,
@@ -356,14 +397,24 @@ export class MallBalanceService {
           notifyPayload: rawPayload !== undefined ? (rawPayload as any) : rechargeOrder.notifyPayload,
         },
       });
+
+      await this.couponAutoGrantService.grantRechargeCoupons(tx, rechargeOrder.customerId, rechargeOrder.id, paidAt);
+
+      return updatedRechargeOrder;
     });
   }
 
   private toRechargeVo(entity: any, availableBalance: string, paymentConfig?: WechatMiniProgramPayParams | null): MallBalanceRechargeVo {
+    const amount = Number(entity.amount || 0);
+    const bonusAmount = Number(entity.bonusAmount || 0);
     return {
       id: entity.id,
       accountId: entity.accountId,
-      amount: Number(entity.amount).toFixed(2),
+      amount: amount.toFixed(2),
+      bonusAmount: bonusAmount.toFixed(2),
+      arrivalAmount: (amount + bonusAmount).toFixed(2),
+      packageName: entity.packageName || null,
+      activityName: entity.activityName || null,
       method: entity.method,
       availableBalance,
       rechargeNo: entity.rechargeNo,
@@ -385,5 +436,22 @@ export class MallBalanceService {
       BALANCE: '余额',
     };
     return map[method];
+  }
+
+  private resolveSelectedActivity(activities: any[], activityId?: number | null) {
+    if (!Array.isArray(activities) || !activities.length) {
+      return null;
+    }
+
+    if (activityId === undefined || activityId === null) {
+      return activities[0] || null;
+    }
+
+    const matched = activities.find(item => Number(item.id) === Number(activityId));
+    if (!matched) {
+      throw new BadRequestException('当前充值活动不可用，请刷新后重试');
+    }
+
+    return matched;
   }
 }
