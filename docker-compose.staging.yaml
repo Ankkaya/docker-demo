@@ -1,29 +1,32 @@
 # 测试环境覆盖配置
 # 使用方式: docker compose -f docker-compose.yaml -f docker-compose.staging.yaml up -d
 #
-# 同一台服务器部署测试+正式时，端口必须错开：
-#   测试环境: DB 5433, MinIO 9002/9003, Backend 3002, Frontend 8081
-#   正式环境: DB 不暴露, MinIO 9000, Backend 3001, Frontend 8080
+# 测试与正式环境部署在不同服务器时，端口与正式环境保持一致：
+#   Backend 3001, Frontend 8080, MinIO 9000/9001
 
 services:
   db:
     container_name: staging-db
     environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-staging_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?测试环境必须设置 DB_PASSWORD}
     ports: !override
-      - "5433:5432"
+      - "5432:5432"
 
   backend:
     container_name: staging-backend
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:staging_password@db:5432/docker_demo?schema=public}
-      FILE_BASE_URL: ${FILE_BASE_URL:-https://stage-docker-demo.ankkaya.top}
-      JWT_SECRET: ${JWT_SECRET:-staging-jwt-secret}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      DATABASE_URL: ${DATABASE_URL:?测试环境必须设置 DATABASE_URL}
+      FILE_BASE_URL: ${FILE_BASE_URL:?测试环境必须设置 FILE_BASE_URL}
+      JWT_SECRET: ${JWT_SECRET:?测试环境必须设置 JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?测试环境必须设置 JWT_REFRESH_SECRET}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?测试环境必须设置 REDIS_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?测试环境必须设置 MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?测试环境必须设置 MINIO_SECRET_KEY}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-true}
+      CORS_ORIGINS: ${CORS_ORIGINS:?测试环境必须设置 CORS_ORIGINS}
       NODE_ENV: staging
     ports: !override
-      - "3002:3001"
+      - "3001:3001"
     restart: unless-stopped
 
   frontend:
@@ -34,14 +37,20 @@ services:
       args:
         VITE_MODE: staging
     ports: !override
-      - "8081:8080"
+      - "8080:8080"
     restart: unless-stopped
 
   minio:
     container_name: staging-minio
     environment:
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?测试环境必须设置 MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?测试环境必须设置 MINIO_ROOT_PASSWORD}
     ports: !override
-      - "9002:9000"
-      - "9003:9001"
+      - "9000:9000"
+      - "9001:9001"
     restart: unless-stopped
+
+  redis:
+    container_name: staging-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?测试环境必须设置 REDIS_PASSWORD}

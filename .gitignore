@@ -16,3 +16,11 @@ backend/prisma/exports/*.sql
 .env
 .env.local
 .env.*.local
+backend/.env.local
+backend/.env.*.local
+frontend/.env.local
+frontend/.env.*.local
+mobile/.env.local
+mobile/.env.*.local
+mobile/keys/*.key
+mobile/keys/*.pem

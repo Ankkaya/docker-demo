@@ -16,9 +16,13 @@ services:
       DATABASE_URL: ${DATABASE_URL:?正式环境必须设置 DATABASE_URL}
       FILE_BASE_URL: ${FILE_BASE_URL:?正式环境必须设置 FILE_BASE_URL}
       JWT_SECRET: ${JWT_SECRET:?正式环境必须设置 JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?正式环境必须设置 JWT_REFRESH_SECRET}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?正式环境必须设置 REDIS_PASSWORD}
       NODE_ENV: production
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?正式环境必须设置 MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?正式环境必须设置 MINIO_SECRET_KEY}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:?正式环境必须设置 CORS_ORIGINS}
     restart: always
     deploy:
       resources:
@@ -41,9 +45,14 @@ services:
   minio:
     container_name: prod-minio
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?正式环境必须设置 MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?正式环境必须设置 MINIO_ROOT_PASSWORD}
     # 正式环境不暴露 MinIO 控制台到外部
     ports: !override
       - "9000:9000"
     restart: always
+
+  redis:
+    container_name: prod-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?正式环境必须设置 REDIS_PASSWORD}

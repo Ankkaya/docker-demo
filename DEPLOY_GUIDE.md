@@ -18,30 +18,37 @@
         └─→ Deploy Production ⚠️ 需人工审批后部署到正式环境
 ```
 
-### 同一台服务器双环境端口分配
+### 不同服务器双环境端口分配
 
 | 服务 | 测试环境端口 | 正式环境端口 |
 |------|------------|------------|
-| PostgreSQL | 5433 | 不暴露 |
-| Backend API | 3002 | 3001 |
-| Frontend | 8081 | 8080 |
-| MinIO API | 9002 | 9000 |
-| MinIO Console | 9003 | 不暴露 |
+| PostgreSQL | 5432 | 不暴露 |
+| Backend API | 3001 | 3001 |
+| Frontend | 8080 | 8080 |
+| MinIO API | 9000 | 9000 |
+| MinIO Console | 9001 | 不暴露 |
 
 ### 访问地址
 
 | 环境 | 前台 | 后台 API |
 |------|------|---------|
-| 测试 | `http://服务器IP:8081` | `http://服务器IP:3002/api/docs` |
-| 正式 | `http://服务器IP:8080` | `http://服务器IP:3001/api/docs` |
+| 测试 | `http://测试服务器IP:8080` | `http://测试服务器IP:3001/health` |
+| 正式 | `http://生产服务器IP:8080` | `http://生产服务器IP:3001/health` |
 
 ---
 
 ## 二、GitHub 仓库配置（必做）
 
-### 2.1 配置 Environment（仅正式环境需要）
+### 2.1 配置 Environment
 
 进入仓库 **Settings → Environments**，创建：
+
+#### staging 环境
+| 配置项 | 值 |
+|--------|---|
+| Name | `staging` |
+| Required reviewers | 不勾选 |
+| Deployment branch | `main` |
 
 #### production 环境
 | 配置项 | 值 |
@@ -51,33 +58,42 @@
 | Wait timer | 建议 1 分钟（给反悔时间） |
 | Deployment branch | `master` |
 
-> 测试环境不需要创建 Environment，直接使用仓库级 Secrets 自动部署。
+> 测试和正式部署到不同服务器时，必须用 GitHub Environment 隔离两套 Secrets。
 
-### 2.2 配置 Secrets（仓库级，两个环境共用）
+### 2.2 配置 Secrets（按 Environment 分别配置）
 
-进入仓库 **Settings → Secrets and variables → Actions**，添加仓库级 Secrets：
+进入仓库 **Settings → Environments → staging / production → Environment secrets**，分别添加 Secrets。
+
+#### staging 环境
 
 | Secret 名称 | 说明 | 示例值 |
 |-------------|------|--------|
-| `SERVER_HOST` | 服务器 IP | `123.45.67.89` |
+| `SERVER_HOST` | 测试服务器 IP | `123.45.67.89` |
+| `SERVER_USER` | SSH 用户名 | `ubuntu` |
+| `SSH_PASSWORD` | SSH 登录密码 | `你的测试服务器SSH密码` |
+| `SSH_TARGET_DIR` | 测试服务器项目部署目录 | `/home/ubuntu/docker-demo` |
+
+#### production 环境
+
+| Secret 名称 | 说明 | 示例值 |
+|-------------|------|--------|
+| `SERVER_HOST` | 生产服务器 IP | `123.45.67.89` |
 | `SERVER_USER` | SSH 用户名 | `ubuntu` |
 | `SSH_PRIVATE_KEY` | SSH 私钥 | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `SSH_TARGET_DIR` | 项目部署父目录 | `/home/ubuntu/docker-demo` |
+| `SSH_TARGET_DIR` | 生产服务器项目部署目录 | `/home/ubuntu/docker-demo` |
 
-> 两个环境共用一套 Secrets，workflow 自动拼接子目录：
-> - 测试环境 → `$SSH_TARGET_DIR/staging`
-> - 正式环境 → `$SSH_TARGET_DIR/production`
+> staging 当前使用密码登录；production 仍推荐使用私钥登录，并保留审批保护。
 
-### 2.3 生成 SSH 密钥对（如未配置）
+### 2.3 生成 production SSH 密钥对（如未配置）
 
 ```bash
 # 在本地生成密钥
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/actions_deploy
 
-# 将公钥添加到服务器的 authorized_keys
+# 将公钥添加到生产服务器的 authorized_keys
 ssh-copy-id -i ~/.ssh/actions_deploy.pub ubuntu@你的服务器IP
 
-# 将私钥内容复制到 GitHub Secrets（SSH_PRIVATE_KEY）
+# 将私钥内容复制到 production Environment Secrets（SSH_PRIVATE_KEY）
 cat ~/.ssh/actions_deploy
 ```
 
@@ -99,42 +115,53 @@ docker compose version
 ### 3.2 创建目录结构
 
 ```bash
-mkdir -p /home/ubuntu/docker-demo/staging
-mkdir -p /home/ubuntu/docker-demo/production
+mkdir -p /home/ubuntu/docker-demo
 ```
 
 ### 3.3 创建测试环境 .env
 
 ```bash
-cat > /home/ubuntu/docker-demo/staging/.env << 'EOF'
+cat > /home/ubuntu/docker-demo/.env << 'EOF'
 # ====== 数据库 ======
-DB_PASSWORD=staging_db_pass_123
-DATABASE_URL=postgresql://postgres:staging_db_pass_123@db:5432/docker_demo?schema=public
+DB_PASSWORD=测试数据库强密码
+DATABASE_URL=postgresql://postgres:测试数据库强密码@db:5432/docker_demo?schema=public
+
+# ====== Redis ======
+REDIS_PASSWORD=测试Redis强密码
 
 # ====== 应用 ======
-JWT_SECRET=staging-jwt-secret-for-test-only
-FILE_BASE_URL=http://你的服务器IP:3002
+JWT_SECRET=测试JWT密钥至少32位随机字符
+JWT_REFRESH_SECRET=测试Refresh密钥至少32位随机字符
+FILE_BASE_URL=http://测试服务器IP:3001
+ENABLE_SWAGGER=true
+CORS_ORIGINS=http://测试服务器IP:8080
 
 # ====== MinIO ======
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin123
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin123
+MINIO_ROOT_USER=测试MinIO管理员
+MINIO_ROOT_PASSWORD=测试MinIO强密码
+MINIO_ACCESS_KEY=测试MinIO访问Key
+MINIO_SECRET_KEY=测试MinIO访问Secret
 EOF
-chmod 600 /home/ubuntu/docker-demo/staging/.env
+chmod 600 /home/ubuntu/docker-demo/.env
 ```
 
 ### 3.4 创建正式环境 .env
 
 ```bash
-cat > /home/ubuntu/docker-demo/production/.env << 'EOF'
+cat > /home/ubuntu/docker-demo/.env << 'EOF'
 # ====== 数据库 ======
 DB_PASSWORD=你的正式数据库强密码
 DATABASE_URL=postgresql://postgres:你的正式数据库强密码@db:5432/docker_demo?schema=public
 
+# ====== Redis ======
+REDIS_PASSWORD=你的正式Redis强密码
+
 # ====== 应用 ======
 JWT_SECRET=你的正式JWT密钥至少32位随机字符
+JWT_REFRESH_SECRET=你的正式Refresh密钥至少32位随机字符
 FILE_BASE_URL=https://你的正式域名
+ENABLE_SWAGGER=false
+CORS_ORIGINS=https://你的正式域名
 
 # ====== MinIO ======
 MINIO_ROOT_USER=minioadmin
@@ -142,7 +169,7 @@ MINIO_ROOT_PASSWORD=你的MinIO强密码
 MINIO_ACCESS_KEY=你的MinIO访问Key
 MINIO_SECRET_KEY=你的MinIO访问Secret
 EOF
-chmod 600 /home/ubuntu/docker-demo/production/.env
+chmod 600 /home/ubuntu/docker-demo/.env
 ```
 
 ### 3.5 添加 GitHub Deploy Key（用于 git clone）
@@ -193,7 +220,7 @@ git push origin master
 | `backend/.env.development` | 后端开发环境配置 |
 | `backend/.env.staging` | 后端测试环境配置 |
 | `backend/.env.production` | 后端正式环境配置 |
-| `docker-compose.staging.yaml` | 测试环境 Docker 编排覆盖（端口错开） |
+| `docker-compose.staging.yaml` | 测试环境 Docker 编排覆盖（独立服务器，端口与生产一致） |
 | `docker-compose.production.yaml` | 正式环境 Docker 编排覆盖（安全加固） |
 | `.github/workflows/ci.yml` | CI 工作流（所有分支） |
 | `.github/workflows/deploy-staging.yml` | 测试环境部署工作流 |

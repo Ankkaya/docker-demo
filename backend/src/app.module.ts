@@ -41,6 +41,7 @@ import { IconAssetsModule } from './infrastructure/icon-assets/icon-assets.modul
 import { MinioModule } from './infrastructure/minio/minio.module';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -87,5 +88,6 @@ import { RedisModule } from './infrastructure/redis/redis.module';
     SystemLogsModule,
     UploadRecordsModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

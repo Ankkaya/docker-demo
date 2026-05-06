@@ -32,10 +32,10 @@ docker compose -f docker-compose.yaml -f docker-compose.staging.yaml up -d
 
 echo "=== 健康检查 ==="
 for i in $(seq 1 20); do
-  if curl -sf http://localhost:3001/api/docs > /dev/null 2>&1; then
+  if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
     echo "✅ 测试环境部署成功!"
-    echo "前端: http://43.139.44.156:8081"
-    echo "后端: http://43.139.44.156:3002/api/docs"
+    echo "前端: http://43.139.44.156:8080"
+    echo "后端健康检查: http://43.139.44.156:3001/health"
     exit 0
   fi
   echo "等待后端启动... ($i/20)"
