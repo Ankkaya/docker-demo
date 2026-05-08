@@ -10,7 +10,7 @@ import { constants, generateKeyPairSync, privateDecrypt } from 'crypto';
  *
  * 前端加密格式约定：
  *   plaintext = `${password}::${timestamp}`
- *   ciphertext = base64( RSA_OAEP_encrypt(publicKey, plaintext) )
+ *   ciphertext = base64( RSA-OAEP-SHA256_encrypt(publicKey, plaintext) )
  */
 @Injectable()
 export class CryptoKeysService implements OnModuleInit {
@@ -53,7 +53,7 @@ export class CryptoKeysService implements OnModuleInit {
 
   /**
    * 解密登录密文，返回明文密码
-   * @param cipherBase64 前端 jsencrypt 输出的 base64 字符串
+   * @param cipherBase64 前端 Web Crypto 输出的 base64 字符串
    * @returns 明文密码
    */
   decryptLoginPayload(cipherBase64: string): string {
@@ -64,9 +64,12 @@ export class CryptoKeysService implements OnModuleInit {
     let plain: string;
     try {
       const buf = Buffer.from(cipherBase64, 'base64');
-      // 兼容 jsencrypt 默认的 PKCS#1 v1.5 padding
       plain = privateDecrypt(
-        { key: this.privateKey, padding: constants.RSA_PKCS1_PADDING },
+        {
+          key: this.privateKey,
+          padding: constants.RSA_PKCS1_OAEP_PADDING,
+          oaepHash: 'sha256',
+        },
         buf,
       ).toString('utf8');
     } catch (err) {
