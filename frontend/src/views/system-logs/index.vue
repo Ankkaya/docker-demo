@@ -4,7 +4,7 @@
       <n-tabs type="line" animated v-model:value="activeTab">
         <n-tab-pane name="operation" tab="操作审计日志">
           <n-card class="mb-4" content-style="padding-bottom: 0;">
-            <QueryForm :model="operationSearch">
+            <QueryForm :model="operationSearch" @search="handleOperationSearch">
               <n-form-item label="模块">
                 <n-input v-model:value="operationSearch.module" placeholder="模块" clearable />
               </n-form-item>
@@ -32,7 +32,7 @@
 
         <n-tab-pane name="login" tab="登录安全日志">
           <n-card class="mb-4" content-style="padding-bottom: 0;">
-            <QueryForm :model="loginSearch">
+            <QueryForm :model="loginSearch" @search="handleLoginSearch">
               <n-form-item label="类型">
                 <n-select v-model:value="loginSearch.type" :options="loginTypeOptions" placeholder="类型" clearable />
               </n-form-item>

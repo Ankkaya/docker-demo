@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <n-card class="mb-4" content-style="padding-bottom: 0;">
-      <QueryForm :model="searchForm">
+      <QueryForm :model="searchForm" @search="handleSearch">
         <n-form-item label="关键词">
           <n-input v-model:value="searchForm.keyword" placeholder="充值单号/商户单号/微信单号/客户信息" clearable />
         </n-form-item>

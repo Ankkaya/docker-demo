@@ -4,7 +4,7 @@
       <n-tabs type="line" animated>
         <n-tab-pane name="templates" tab="优惠券模板">
           <n-card class="mb-4" content-style="padding-bottom: 0;">
-            <QueryForm :model="couponSearchForm">
+            <QueryForm :model="couponSearchForm" @search="handleCouponSearch">
               <n-form-item label="关键词">
                 <n-input v-model:value="couponSearchForm.keyword" placeholder="名称/模板编码" clearable />
               </n-form-item>
@@ -35,7 +35,7 @@
 
         <n-tab-pane name="receives" tab="发放记录">
           <n-card class="mb-4" content-style="padding-bottom: 0;">
-            <QueryForm :model="receiveSearchForm">
+            <QueryForm :model="receiveSearchForm" @search="handleReceiveSearch">
               <n-form-item label="关键词">
                 <n-input v-model:value="receiveSearchForm.keyword" placeholder="客户/券名/模板编码" clearable />
               </n-form-item>

@@ -2,7 +2,7 @@
   <div class="p-4">
     <!-- 搜索栏 -->
     <n-card class="mb-4" content-style="padding-bottom: 0;">
-      <QueryForm :model="searchForm">
+      <QueryForm :model="searchForm" @search="handleSearch">
         <n-form-item label="调整单号">
           <n-input v-model:value="searchForm.adjustNo" placeholder="调整单号" clearable />
         </n-form-item>

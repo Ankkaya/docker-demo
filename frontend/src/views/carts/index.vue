@@ -1,7 +1,7 @@
 <template>
   <div class="p-4">
     <n-card class="mb-4" content-style="padding-bottom: 0;">
-      <QueryForm :model="searchForm" class="search-form">
+      <QueryForm :model="searchForm" @search="handleSearch" class="search-form">
         <n-form-item label="用户ID">
           <n-input-number
             v-model:value="searchForm.userId"
