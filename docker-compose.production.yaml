@@ -25,6 +25,8 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?正式环境必须设置 MINIO_SECRET_KEY}
       ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
       CORS_ORIGINS: ${CORS_ORIGINS:?正式环境必须设置 CORS_ORIGINS}
+    ports: !override
+      - "127.0.0.1:3001:3001"
     restart: always
     deploy:
       resources:
@@ -38,6 +40,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_MODE: production
+    ports: !override
+      - "127.0.0.1:8080:8080"
     restart: always
     deploy:
       resources:
@@ -49,12 +53,13 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?正式环境必须设置 MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?正式环境必须设置 MINIO_ROOT_PASSWORD}
-    # 正式环境不暴露 MinIO 控制台到外部
-    ports: !override
-      - "9000:9000"
+    # 正式环境不暴露 MinIO 到宿主机，只允许容器网络内访问
+    ports: !override []
     restart: always
 
   redis:
     container_name: prod-redis
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?正式环境必须设置 REDIS_PASSWORD}
+    # 正式环境不暴露 Redis 到宿主机，只允许容器网络内访问
+    ports: !override []
