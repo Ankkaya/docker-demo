@@ -368,7 +368,8 @@ export class PurchaseReceiptsService {
           });
         }
 
-        // 创建入库流水
+        // 创建入库流水（带成本，便于后续退货反向加权与毛利分析）
+        const inUnitCost = Number(item.price);
         await tx.inventoryLog.create({
           data: {
             type: 'IN_PURCHASE',
@@ -377,6 +378,8 @@ export class PurchaseReceiptsService {
             quantity: item.quantity,
             before: beforeQty,
             after: afterQty,
+            unitCost: inUnitCost,
+            costAmount: inUnitCost * item.quantity,
             bizType: 'PURCHASE',
             bizId: receipt.id,
             bizNo: receipt.receiptNo,

@@ -938,6 +938,190 @@ export class PaymentsService {
     });
   }
 
+  /**
+   * 商城订单部分/全额退款（用于售后退货等场景，事务内调用）
+   * - 自动从订单关联支付单按支付方式分支：BALANCE 即时回退 + 流水；WECHAT 调微信原路退（PROCESSING 时 order 进入 REFUNDING）
+   * - 校验累计退款 + 单笔不超出可退余额
+   * - 退款 SUCCESS 时通过 applyRefundSuccess 同步 order.paid 与 payStatus（部分退款保留 PAID）
+   */
+  async createMallOrderRefundInTx(
+    tx: Prisma.TransactionClient,
+    orderId: number,
+    refundAmount: number,
+    options: {
+      reason: string;
+      bizType: string;
+      bizId: number;
+      bizNo: string;
+      userId: number;
+    },
+  ): Promise<void> {
+    if (!(refundAmount > 0)) {
+      throw new BadRequestException('退款金额必须大于 0');
+    }
+
+    const order = await tx.order.findFirst({
+      where: { id: orderId, deletedAt: null },
+    });
+    if (!order) {
+      throw new NotFoundException('订单不存在');
+    }
+
+    if (moneyGt(refundAmount, order.paid)) {
+      throw new BadRequestException(`退款金额超过订单已付金额(已付:${Number(order.paid).toFixed(2)})`);
+    }
+
+    const payment = await tx.payment.findFirst({
+      where: {
+        orderId,
+        deletedAt: null,
+        status: PaymentStatus.COMPLETED,
+      },
+      include: {
+        refunds: { orderBy: { createdAt: 'desc' } },
+        order: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!payment) {
+      throw new BadRequestException('未找到可退款的支付记录');
+    }
+
+    // 累计已退/在途退款，避免超额退款
+    const refundedSum = (payment.refunds || [])
+      .filter((r: any) => r.status === PaymentRefundStatus.SUCCESS || r.status === PaymentRefundStatus.PROCESSING)
+      .reduce((acc: any, r: any) => addMoney(acc, r.amount), D(0));
+    const remainingRefundable = subMoneyClampZero(payment.amount, refundedSum);
+    if (moneyGt(refundAmount, remainingRefundable)) {
+      throw new BadRequestException(
+        `退款金额超过支付单可退余额(可退:${Number(remainingRefundable).toFixed(2)})`,
+      );
+    }
+
+    if (payment.method === PaymentMethod.BALANCE) {
+      await this.refundOrderByBalanceInTx(tx, order, payment, refundAmount, options);
+      return;
+    }
+    if (payment.method === PaymentMethod.WECHAT) {
+      await this.refundOrderByWechatInTx(tx, order, payment, refundAmount, options);
+      return;
+    }
+    throw new BadRequestException('当前支付方式暂不支持退款');
+  }
+
+  private async refundOrderByBalanceInTx(
+    tx: Prisma.TransactionClient,
+    order: any,
+    payment: any,
+    refundAmount: number,
+    options: { reason: string; bizType: string; bizId: number; bizNo: string; userId: number },
+  ) {
+    const account = await tx.balanceAccount.findUnique({
+      where: { customerId: order.customerId },
+    });
+    if (!account) {
+      throw new BadRequestException('未找到客户余额账户，无法退款');
+    }
+
+    const refundNo = await this.generateRefundNo();
+    const refundedAt = new Date();
+    const balanceBefore = D(account.availableBalance);
+    const balanceAfter = balanceBefore.add(refundAmount);
+
+    await tx.balanceAccount.update({
+      where: { id: account.id },
+      data: {
+        availableBalance: balanceAfter,
+        totalRefunded: addMoney(account.totalRefunded, refundAmount),
+      },
+    });
+
+    await tx.balanceLog.create({
+      data: {
+        accountId: account.id,
+        customerId: order.customerId,
+        type: BalanceLogType.REFUND,
+        changeAmount: refundAmount,
+        balanceBefore,
+        balanceAfter,
+        bizType: options.bizType,
+        bizId: options.bizId,
+        bizNo: options.bizNo,
+        remark: options.reason,
+        createdBy: options.userId,
+      },
+    });
+
+    await tx.paymentRefund.create({
+      data: {
+        refundNo,
+        paymentId: payment.id,
+        orderId: order.id,
+        amount: refundAmount,
+        reason: options.reason,
+        status: PaymentRefundStatus.SUCCESS,
+        successAt: refundedAt,
+        createdBy: options.userId,
+      },
+    });
+
+    await this.applyRefundSuccess(tx, { ...payment, order }, refundAmount, refundedAt);
+  }
+
+  private async refundOrderByWechatInTx(
+    tx: Prisma.TransactionClient,
+    order: any,
+    payment: any,
+    refundAmount: number,
+    options: { reason: string; bizType: string; bizId: number; bizNo: string; userId: number },
+  ) {
+    if (!payment.outTradeNo || !payment.thirdTradeNo) {
+      throw new BadRequestException('当前支付记录缺少微信交易号，无法发起原路退');
+    }
+
+    const refundNo = await this.generateRefundNo();
+    const remote = await this.wechatPayService.createRefund({
+      outTradeNo: payment.outTradeNo,
+      outRefundNo: refundNo,
+      amount: Number(payment.amount),
+      refundAmount,
+      reason: options.reason,
+    });
+    const nextStatus = this.toRefundStatus(remote.status);
+    const refundedAt = nextStatus === PaymentRefundStatus.SUCCESS && remote.success_time
+      ? new Date(remote.success_time)
+      : new Date();
+
+    await tx.paymentRefund.create({
+      data: {
+        refundNo,
+        paymentId: payment.id,
+        orderId: order.id,
+        amount: refundAmount,
+        reason: options.reason,
+        status: nextStatus,
+        thirdRefundNo: remote.refund_id || null,
+        thirdStatus: remote.status || null,
+        successAt: nextStatus === PaymentRefundStatus.SUCCESS ? refundedAt : null,
+        createdBy: options.userId,
+      },
+    });
+
+    if (nextStatus === PaymentRefundStatus.SUCCESS) {
+      await this.applyRefundSuccess(tx, { ...payment, order }, refundAmount, refundedAt);
+      return;
+    }
+
+    // 异步处理中：仅标记订单进入 REFUNDING；最终成败由微信退款回调/主动查询触发 applyRefundSuccess
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        payStatus: PayStatus.REFUNDING,
+        status: OrderStatus.REFUNDING,
+      },
+    });
+  }
+
   private async applyRefundSuccess(tx: Prisma.TransactionClient, payment: any, refundAmount: number, refundedAt: Date) {
     if (payment.bizType === 'RECHARGE') {
       await this.applyRechargeRefundSuccess(tx, payment, refundAmount);
@@ -949,12 +1133,14 @@ export class PaymentsService {
     }
 
     const nextPaid = subMoneyClampZero(payment.order.paid, refundAmount);
+    const isFullyRefunded = D(nextPaid).isZero();
     await tx.order.update({
       where: { id: payment.orderId },
       data: {
         paid: nextPaid,
-        payStatus: PayStatus.REFUNDED,
-        status: OrderStatus.REFUNDED,
+        // 部分退款下保留 PAID/状态不变；全额退款才置为 REFUNDED
+        payStatus: isFullyRefunded ? PayStatus.REFUNDED : PayStatus.PAID,
+        ...(isFullyRefunded ? { status: OrderStatus.REFUNDED } : {}),
       },
     });
   }

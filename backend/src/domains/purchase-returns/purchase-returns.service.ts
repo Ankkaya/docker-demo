@@ -368,7 +368,17 @@ export class PurchaseReturnsService {
 
       // 如果审核通过，扣减库存和应付金额
       if (newStatus === ReturnStatus.APPROVED) {
-        // 1. 扣减库存
+        // 1. 扣减库存（同时反向加权重算 SKU.costPrice，避免账面均价漂移）
+        // 取关联入库单明细，作为退出的"原成本基准"
+        const receiptItems = await tx.purchaseReceiptItem.findMany({
+          where: { receiptId: existing.receiptId },
+          select: { skuId: true, price: true },
+        });
+        const receiptCostMap = new Map<number, number>();
+        for (const ri of receiptItems) {
+          receiptCostMap.set(ri.skuId, Number(ri.price));
+        }
+
         for (const item of existing.items) {
           const inventory = await tx.inventory.findUnique({
             where: {
@@ -408,7 +418,26 @@ export class PurchaseReturnsService {
               );
             }
 
-            // 创建出库流水
+            // 反向加权重算 SKU.costPrice：
+            //   newAvg = (oldQty * oldAvg - returnQty * receiptUnitCost) / (oldQty - returnQty)
+            // 用关联入库单的入库单价作为成本基准，缺失时回退到当前 SKU.costPrice（不再变化）
+            const sku = await tx.productSku.findUnique({
+              where: { id: item.skuId },
+              select: { costPrice: true },
+            });
+            const oldAvg = Number(sku?.costPrice || 0);
+            const receiptUnitCost = receiptCostMap.get(item.skuId) ?? oldAvg;
+            const remainingQty = beforeQty - item.quantity;
+            const numerator = beforeQty * oldAvg - item.quantity * receiptUnitCost;
+            const newAvg = remainingQty > 0
+              ? Math.max(0, numerator / remainingQty)
+              : 0;
+            await tx.productSku.update({
+              where: { id: item.skuId },
+              data: { costPrice: newAvg },
+            });
+
+            // 创建出库流水（带成本，按入库单价回退）
             await tx.inventoryLog.create({
               data: {
                 type: 'OUT_PURCHASE_RETURN',
@@ -417,6 +446,8 @@ export class PurchaseReturnsService {
                 quantity: -item.quantity,
                 before: beforeQty,
                 after: afterQty,
+                unitCost: receiptUnitCost,
+                costAmount: -receiptUnitCost * item.quantity,
                 bizType: 'PURCHASE_RETURN',
                 bizId: existing.id,
                 bizNo: existing.returnNo,
