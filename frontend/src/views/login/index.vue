@@ -13,6 +13,7 @@
         :rules="rules"
         label-placement="top"
         size="large"
+        @keydown.enter.prevent="handleLogin"
       >
         <n-form-item label="用户名" path="username">
           <n-input v-model:value="form.username" name="username" placeholder="请输入用户名" autocomplete="username" />
@@ -75,6 +76,7 @@ const rules: FormRules = {
 }
 
 const handleLogin = async () => {
+  if (authStore.loading) return
   if (!formRef.value) return
 
   await formRef.value.validate(async (errors) => {

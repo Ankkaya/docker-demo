@@ -48,28 +48,69 @@
         </n-space>
       </template>
     </n-modal>
+
+    <!-- 分配权限抽屉 -->
+    <n-drawer
+      v-model:show="permissionDialogVisible"
+      placement="right"
+      width="620px"
+    >
+      <n-drawer-content
+        :title="`分配权限${currentRoleName ? ` - ${currentRoleName}` : ''}`"
+        closable
+      >
+        <n-spin :show="permissionLoading">
+          <n-tree
+            v-if="menuTreeOptions.length > 0"
+            block-line
+            checkable
+            cascade
+            default-expand-all
+            :data="menuTreeOptions"
+            :checked-keys="selectedMenuIds"
+            @update:checked-keys="handleMenuCheckedKeysUpdate"
+          />
+          <n-empty v-else description="暂无可分配菜单" />
+        </n-spin>
+        <template #footer>
+          <n-space justify="end">
+            <n-button @click="permissionDialogVisible = false">取消</n-button>
+            <n-button type="primary" :loading="permissionSubmitLoading" @click="handleSaveMenus">
+              保存
+            </n-button>
+          </n-space>
+        </template>
+      </n-drawer-content>
+    </n-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from 'vue'
-import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
+import { ref, reactive, onMounted, h, computed } from 'vue'
+import type { DataTableColumns, FormInst, FormRules, TreeOption } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace } from 'naive-ui'
 import dayjs from 'dayjs'
-import { getRoles, createRole, updateRole, deleteRole } from '@/api/roles'
-import type { Role } from '@/types'
+import { getRoles, createRole, updateRole, deleteRole, getRoleMenus, assignRoleMenus } from '@/api/roles'
+import { getMenus } from '@/api/menu'
+import type { Role, Menu } from '@/types'
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
 const loading = ref(false)
 const submitLoading = ref(false)
+const permissionLoading = ref(false)
+const permissionSubmitLoading = ref(false)
 const dialogVisible = ref(false)
+const permissionDialogVisible = ref(false)
 const isEdit = ref(false)
 const roles = ref<Role[]>([])
+const menus = ref<Menu[]>([])
+const selectedMenuIds = ref<number[]>([])
 const formRef = ref<FormInst>()
 const currentRoleId = ref<number>()
+const currentRoleName = ref('')
 
 const form = reactive({
   name: '',
@@ -86,6 +127,18 @@ const rules: FormRules = {
     { pattern: /^[a-z0-9_]+$/, message: '只能包含小写字母、数字和下划线', trigger: 'blur' }
   ]
 }
+
+const convertToTreeOptions = (list: Menu[]): TreeOption[] => {
+  return list.map((menu) => ({
+    label: menu.name,
+    key: menu.id,
+    children: menu.children && menu.children.length > 0
+      ? convertToTreeOptions(menu.children)
+      : undefined
+  }))
+}
+
+const menuTreeOptions = computed<TreeOption[]>(() => convertToTreeOptions(menus.value))
 
 // 表格列定义
 const createColumns = (): DataTableColumns<Role> => {
@@ -112,6 +165,11 @@ const createColumns = (): DataTableColumns<Role> => {
             h(NButton, {
               text: true,
               type: 'primary',
+              onClick: () => handleAssignMenus(row)
+            }, { default: () => '分配权限' }),
+            h(NButton, {
+              text: true,
+              type: 'primary',
               onClick: () => handleEdit(row)
             }, { default: () => '编辑' }),
             h(NButton, {
@@ -122,7 +180,7 @@ const createColumns = (): DataTableColumns<Role> => {
           ]
         })
       }
-    }, 2)
+    }, 3)
   ])
 }
 
@@ -160,6 +218,47 @@ const handleEdit = (role: Role) => {
   form.code = role.code
   form.description = role.description || ''
   dialogVisible.value = true
+}
+
+const handleAssignMenus = async (role: Role) => {
+  currentRoleId.value = role.id
+  currentRoleName.value = role.name
+  selectedMenuIds.value = []
+  permissionDialogVisible.value = true
+  permissionLoading.value = true
+
+  try {
+    const [allMenus, assignedMenus] = await Promise.all([
+      getMenus(),
+      getRoleMenus(role.id, 'flat')
+    ])
+    menus.value = allMenus
+    selectedMenuIds.value = assignedMenus.map((menu) => menu.id)
+  } catch (error: any) {
+    message.error(error.message || '获取权限信息失败')
+  } finally {
+    permissionLoading.value = false
+  }
+}
+
+const handleMenuCheckedKeysUpdate = (keys: Array<string | number>) => {
+  selectedMenuIds.value = keys.map(Number)
+}
+
+const handleSaveMenus = async () => {
+  if (!currentRoleId.value) return
+
+  permissionSubmitLoading.value = true
+  try {
+    await assignRoleMenus(currentRoleId.value, selectedMenuIds.value)
+    message.success('权限分配成功')
+    permissionDialogVisible.value = false
+    fetchRoles()
+  } catch (error: any) {
+    message.error(error.message || '权限分配失败')
+  } finally {
+    permissionSubmitLoading.value = false
+  }
 }
 
 const handleDelete = (role: Role) => {

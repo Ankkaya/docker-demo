@@ -13,9 +13,10 @@ This is a **full-stack Mall + Inventory Management System (商城+进销存系�
 - ✅ v1.0 Finance: Payment records / Receivables & Payables / Customer Balance Account & Logs / Recharge Packages & Activities
 - ✅ v1.0 Marketing: Coupons (issue/claim/exchange-code/use scope) / Banners / Mall hot searches
 - ✅ v1.0 Mall (C-side): Product browse / Favorites / Browse history / Cart with **stock locking** / WeChat MiniProgram pay / Balance pay / Reviews
-- ✅ v1.0 File Storage: MinIO object storage integration / Icon assets
+- ✅ v1.0 File Storage: MinIO object storage integration / Icon assets / Upload audit records
 - ✅ v1.0 Printing: Print templates / Printers / Printer configs (label & receipt printing pipeline)
-- 🚧 v1.0 Mobile App: Uni-app based mobile frontend (In development)
+- ✅ v1.0 Observability: Operation logs (OperationLogInterceptor) / Upload records
+- ✅ v1.0 Mobile App: Uni-app based mobile frontend — 21 pages covering home/search/category/product-detail/cart/order list+detail/payment/review/balance+recharge/coupon/address/user profile
 
 **Language:** Chinese (zh-CN) - Code comments and documentation are primarily in Chinese.
 
@@ -41,7 +42,9 @@ This is a **full-stack Mall + Inventory Management System (商城+进销存系�
 
 ## Project Structure
 
-> **Architecture note:** Backend follows a layered split — `applications/` (面向特定前端的编排层，目前只有 `mall/`) + `domains/` (按业务领域聚合的模块，~37 个) + `infrastructure/` (技术基础设施) + `common/` (横切关注点：异常过滤器、响应拦截器)。所有领域模块都通过 Prisma 直接访问 DB，没有独立 Repository 层。
+> **Architecture note:** Backend follows a layered split — `applications/` (面向特定前端的编排层，目前只有 `mall/`) + `domains/` (按业务领域聚合的模块，**39 个**) + `infrastructure/` (技术基础设施) + `common/` (横切关注点：异常过滤器、响应拦截器、操作日志拦截器)。所有领域模块都通过 Prisma 直接访问 DB，没有独立 Repository 层。
+>
+> **为什么有 `applications/mall`：** 商城 C 端下单一次要同时触碰订单 / 购物车库存锁 / 优惠券 / 余额 / 微信支付 / 支付记录 6 个领域。让任一 domain 承担编排会造成跨域依赖和膨胀，因此抽一个应用层 `mall/` 只负责「组装用例 + 跨域事务包裹 + 拼装 C 端视角 VO」，不持有任何表、不实现业务规则。B 端管理后台的 CRUD 走纯 domain，不进入这层。
 
 ```
 docker-demo/
@@ -93,7 +96,9 @@ docker-demo/
 │   │   │   ├── mall-user-products/        # 用户专享/定向商品池
 │   │   │   ├── print-templates/    # 打印模板（标签/小票）
 │   │   │   ├── printers/           # 打印机设备
-│   │   │   └── printer-configs/    # 打印机绑定与默认配置
+│   │   │   ├── printer-configs/    # 打印机绑定与默认配置
+│   │   │   ├── system-logs/        # 系统操作日志（由 OperationLogInterceptor 写入）
+│   │   │   └── upload-records/     # MinIO 上传记录审计
 │   │   ├── infrastructure/
 │   │   │   ├── prisma/             # PrismaService（全局）
 │   │   │   ├── redis/              # Redis 服务
@@ -101,9 +106,9 @@ docker-demo/
 │   │   │   └── icon-assets/        # 图标资源服务
 │   │   ├── common/
 │   │   │   ├── filters/            # HttpExceptionFilter（统一错误响应）
-│   │   │   └── interceptors/       # TransformInterceptor（统一成功响应）
+│   │   │   └── interceptors/       # TransformInterceptor（统一成功响应）+ OperationLogInterceptor（写 SystemLog）
 │   │   ├── app.module.ts           # Root module（@nestjs/schedule 全局开启）
-│   │   └── main.ts                 # Bootstrap：CORS、Swagger、全局管道/过滤器/拦截器
+│   │   └── main.ts                 # Bootstrap：CORS、双 Swagger 入口（admin/mall）、全局管道/过滤器/拦截器、弱密钥断言
 │   ├── prisma/
 │   │   ├── schema.prisma   # Database schema definition
 │   │   ├── seed.ts         # Initial data seeding script
@@ -116,50 +121,81 @@ docker-demo/
 │   │   ├── api/            # API request modules
 │   │   │   ├── adjustment.ts   # [v1.0] 库存调整 API
 │   │   │   ├── auth.ts         # Authentication API
+│   │   │   ├── balance.ts      # [v1.0] 余额账户与流水 API
+│   │   │   ├── banner.ts       # [v1.0] 商城轮播 API
 │   │   │   ├── brand.ts        # [v1.0] 品牌 API
 │   │   │   ├── cart.ts         # [v1.0] 购物车 API
 │   │   │   ├── category.ts     # [v1.0] 商品分类 API
+│   │   │   ├── coupon.ts       # [v1.0] 优惠券 API
 │   │   │   ├── customer.ts     # [v1.0] 客户 API
 │   │   │   ├── file.ts         # [v1.0] 文件上传 API
 │   │   │   ├── inventory.ts    # [v1.0] 库存 API
+│   │   │   ├── mall-hot-search.ts          # [v1.0] 热搜词 API
+│   │   │   ├── mall-recharge-activity.ts   # [v1.0] 充值活动 API
+│   │   │   ├── mall-recharge-package.ts    # [v1.0] 充值套餐 API
 │   │   │   ├── menu.ts         # Menu API
 │   │   │   ├── order.ts        # [v1.0] 销售订单 API
+│   │   │   ├── print-template.ts   # [v1.0] 打印模板 API
+│   │   │   ├── printer.ts          # [v1.0] 打印机 API
+│   │   │   ├── printer-config.ts   # [v1.0] 打印机配置 API
 │   │   │   ├── product.ts      # [v1.0] 商品 API
 │   │   │   ├── purchase.ts     # [v1.0] 采购 API
 │   │   │   ├── request.ts      # Axios instance config
+│   │   │   ├── review.ts       # [v1.0] 商品评价 API
 │   │   │   ├── roles.ts        # Role API
 │   │   │   ├── supplier.ts     # [v1.0] 供应商 API
+│   │   │   ├── system-logs.ts      # [v1.0] 系统操作日志 API
+│   │   │   ├── system-setting.ts   # [v1.0] 系统配置 API
 │   │   │   ├── transfer.ts     # [v1.0] 库存调拨 API
 │   │   │   ├── unit.ts         # [v1.0] 计量单位 API
+│   │   │   ├── upload-records.ts   # [v1.0] 上传记录审计 API
 │   │   │   ├── user.ts         # User API
 │   │   │   └── warehouse.ts    # [v1.0] 仓库 API
 │   │   ├── views/          # Page components
 │   │   │   ├── adjustments/    # [v1.0] 库存调整页面
+│   │   │   ├── balances/       # [v1.0] 余额账户/流水页面
+│   │   │   ├── banners/        # [v1.0] 商城轮播管理
 │   │   │   ├── brands/         # [v1.0] 品牌管理页面
 │   │   │   ├── carts/          # [v1.0] 购物车页面
 │   │   │   ├── categories/     # [v1.0] 商品分类页面
+│   │   │   ├── coupons/        # [v1.0] 优惠券管理
 │   │   │   ├── customers/      # [v1.0] 客户管理页面
 │   │   │   ├── inventories/    # [v1.0] 库存查询页面
 │   │   │   ├── inventory-logs/ # [v1.0] 库存流水页面
 │   │   │   ├── layout/         # Layout components
 │   │   │   ├── login/          # Login page
+│   │   │   ├── mall-config/    # [v1.0] 商城配置聚合页
+│   │   │   ├── mall-products/  # [v1.0] 商城商品管理（区别于 B 端 products）
+│   │   │   ├── mall-recharge-activities/   # [v1.0] 充值活动管理
+│   │   │   ├── mall-recharge-packages/     # [v1.0] 充值套餐管理
 │   │   │   ├── menus/          # Menu management page
 │   │   │   ├── orders/         # [v1.0] 销售订单页面
+│   │   │   ├── payment-refunds/    # [v1.0] 支付退款管理
+│   │   │   ├── payments/           # [v1.0] 收付款记录
+│   │   │   ├── print-templates/    # [v1.0] 打印模板
+│   │   │   ├── printer-configs/    # [v1.0] 打印机配置
+│   │   │   ├── printers/           # [v1.0] 打印机管理
 │   │   │   ├── products/       # [v1.0] 商品管理页面
 │   │   │   ├── purchase-receipts/  # [v1.0] 采购入库页面
 │   │   │   ├── purchase-returns/   # [v1.0] 采购退货页面
 │   │   │   ├── purchases/      # [v1.0] 采购订单页面
+│   │   │   ├── reviews/        # [v1.0] 商品评价审核
 │   │   │   ├── roles/          # Role management page
 │   │   │   ├── sale-returns/   # [v1.0] 销售退货页面
 │   │   │   ├── shipments/      # [v1.0] 发货管理页面
 │   │   │   ├── suppliers/      # [v1.0] 供应商管理页面
+│   │   │   ├── system-logs/    # [v1.0] 系统操作日志
+│   │   │   ├── system-settings/    # [v1.0] 系统配置
 │   │   │   ├── transfers/      # [v1.0] 库存调拨页面
 │   │   │   ├── units/          # [v1.0] 计量单位页面
+│   │   │   ├── upload-records/ # [v1.0] 上传记录审计
 │   │   │   ├── users/          # User management page
 │   │   │   └── warehouses/     # [v1.0] 仓库管理页面
 │   │   ├── components/     # Reusable components
+│   │   ├── composables/    # Vue composables
 │   │   ├── constants/      # Constants
 │   │   ├── router/         # Vue Router configuration
+│   │   ├── services/       # Business services (print pipeline, etc.)
 │   │   ├── store/          # Pinia stores
 │   │   ├── styles/         # Global styles
 │   │   ├── theme/          # Theme configuration
@@ -171,27 +207,44 @@ docker-demo/
 │   ├── nginx.conf          # Nginx configuration
 │   ├── vite.config.ts      # Vite configuration
 │   └── package.json
-├── mobile/                 # [v1.0] Uni-app Mobile Frontend
+├── mobile/                 # [v1.0] Uni-app Mobile Frontend (商城 C 端)
 │   ├── src/
-│   │   ├── pages/          # Main pages
-│   │   ├── subPages/       # Sub-pages
+│   │   ├── pages/          # 21 个主页面：home/search/category/product-list/product-detail
+│   │   │                   #   /cart/order-list/order-detail/order-payment/order-review
+│   │   │                   #   /review-list/coupons/coupon-center/balance/balance-recharge
+│   │   │                   #   /favorites/history/address/user/about/index
+│   │   ├── subPages/       # 分包页面
 │   │   ├── components/     # Components
 │   │   ├── composables/    # Vue composables
+│   │   ├── config/         # Runtime config
+│   │   ├── customize-tab-bar/ # 自定义 tabBar
 │   │   ├── layouts/        # Page layouts
-│   │   ├── api/            # API modules
+│   │   ├── api/            # API modules (Alova)
+│   │   ├── router/         # wot-design-uni router
 │   │   ├── store/          # Pinia stores
 │   │   ├── utils/          # Utilities
 │   │   ├── static/         # Static assets
+│   │   ├── subAsyncEcharts/, subEcharts/   # 图表分包
+│   │   ├── uni_modules/    # uni-app 第三方组件
 │   │   ├── App.vue         # App root
 │   │   └── main.ts         # Entry point
 │   ├── package.json
 │   ├── vite.config.ts
 │   └── manifest.json       # Uni-app manifest
-├── docker-compose.yaml     # Full stack orchestration
+├── docker-compose.yaml                 # 基础服务（本地开发默认）
+├── docker-compose.staging.yaml         # 测试环境 override（敏感值从 .env 注入）
+├── docker-compose.production.yaml      # 正式环境 override（敏感值从 .env 注入）
 ├── start-local.sh          # Local dev startup (Linux/Mac)
 ├── start-local.ps1         # Local dev startup (Windows)
+├── deploy_staging.sh       # 服务器端部署脚本
+├── .env.example            # 统一环境变量模板
+├── DEPLOY_GUIDE.md         # 部署操作指南
+├── ENVIRONMENT_VARIABLES.md    # 环境变量管理规范
+├── PRODUCTION_RELEASE_CHECKLIST.md # 生产发布核对清单
 ├── .github/workflows/      # CI/CD workflows
-│   └── deploy.yml
+│   ├── ci.yml                  # PR/push 构建 + 测试
+│   ├── deploy-staging.yml      # main 分支自动部署 staging
+│   └── deploy-production.yml   # master 分支部署 production（带审批）
 ├── .claude/                # AI assistant configuration
 │   ├── rules/              # Rule documents
 │   └── skills/             # Skill definitions
@@ -297,22 +350,32 @@ pnpm build:mp-weixin     # Build for WeChat mini-program
 
 ### Docker Compose Commands
 
+项目使用 base + override 三段式 compose 配置，敏感值通过服务器上的 `.env` 注入（参考 `.env.example`）。
+
 ```bash
-# Start all services
-docker-compose up -d
+# 本地开发（使用 base compose，含本地默认弱密钥）
+docker compose up -d
 
-# View logs
-docker-compose logs -f backend
+# 测试环境（base + staging override）
+docker compose -f docker-compose.yaml -f docker-compose.staging.yaml up -d
 
-# Restart specific service
-docker-compose restart backend
+# 正式环境（base + production override，缺少关键变量会 fail fast）
+docker compose -f docker-compose.yaml -f docker-compose.production.yaml up -d
 
-# Stop all services
-docker-compose down
+# 查看日志
+docker compose logs -f backend
 
-# Rebuild after dependency changes
-docker-compose up -d --build
+# 重启单个服务
+docker compose restart backend
+
+# 停止
+docker compose down
+
+# 依赖变更后重建
+docker compose up -d --build
 ```
+
+> 重要：`docker-compose.production.yaml` 与 `staging.yaml` 使用 `${VAR:?错误提示}` 强制注入敏感值（JWT_SECRET / DB_PASSWORD / REDIS_PASSWORD / MINIO_*），服务器上未配置 `.env` 时 `docker compose up` 会直接失败。后端 `main.ts:validateRuntimeEnv` 额外在 `NODE_ENV=production|staging` 时断言 JWT_SECRET 为强密钥，弱密钥会导致应用启动失败。
 
 ---
 
@@ -860,6 +923,13 @@ Error responses (via `HttpExceptionFilter`):
 | `/payments` | GET/POST | Payment records | Yes |
 | `/payments/stats/payable` | GET | Payable stats | Yes |
 | `/payments/stats/receivable` | GET | Receivable stats | Yes |
+| `/payments/refunds` | GET/POST | 支付退款记录（含微信退款子表） | Yes |
+
+#### System & Observability (v1.0)
+| Endpoint | Method | Description | Auth Required |
+|----------|--------|-------------|---------------|
+| `/system-logs` | GET | 操作日志查询（由 OperationLogInterceptor 写入） | Yes |
+| `/upload-records` | GET | 文件上传记录审计 | Yes |
 
 #### File Storage (v1.0)
 | Endpoint | Method | Description | Auth Required |
@@ -911,7 +981,7 @@ Error responses (via `HttpExceptionFilter`):
 | `/printers` | GET/POST/PATCH/DELETE | 打印机设备 | Yes |
 | `/printer-configs` | GET/POST/PATCH | 打印机绑定与默认 | Yes |
 
-Full API documentation available at `/api/docs` when backend is running.
+Full API documentation available at `/api/docs` when backend is running. Swagger 提供双入口（顶部下拉切换）：**后台管理平台** 和 **商城平台**，对应 JSON 分别为 `/api/docs/admin-json` 和 `/api/docs/mall-json`。生产环境默认关闭，可通过 `ENABLE_SWAGGER=true` 开启。
 
 ---
 
@@ -1000,50 +1070,43 @@ As noted in `ENGINEERING_IMPROVEMENTS.md`:
 
 ## Security Considerations
 
-### ⚠️ Known Security Issues
+### 已落地的安全措施
 
-1. **Hardcoded JWT Secret**
-   - Location: `docker-compose.yaml`
-   - Current value: `your-super-secret-jwt-key-change-in-production`
-   - **Action Required:** Change before production deployment
+1. **敏感值通过 env 注入，代码仓库无真实密钥**
+   - 生产/staging 的 `docker-compose.*.yaml` 使用 `${VAR:?错误提示}` 语法，缺失关键变量会 fail fast
+   - 服务器 `.env` 由运维单独维护，不进 git
+   - `.env.example` 作为模板提供给运维
+2. **弱密钥启动拒绝**
+   - `main.ts:assertSafeSecret` 在 `NODE_ENV=production|staging` 时检测 `JWT_SECRET` / `JWT_REFRESH_SECRET`，识别黑名单占位符并要求长度 ≥ 32
+3. **全局请求校验白名单**
+   - `main.ts` 已启用 `ValidationPipe({ whitelist: true, transform: true })`，DTO 未声明的字段会被剥离
+4. **CORS 白名单强制**
+   - `main.ts` 要求 `CORS_ORIGINS` 在生产/staging 下显式配置
+5. **生产不暴露敏感端口**
+   - `docker-compose.production.yaml` 通过 `ports: !override []` 清空 Postgres 端口映射，只暴露 MinIO 9000（对象存储 API）
+6. **生产默认关闭 Swagger**
+   - `ENABLE_SWAGGER=${ENABLE_SWAGGER:-false}` 默认关闭，避免泄露 API schema
+7. **操作审计**
+   - `OperationLogInterceptor` 全局记录所有写操作到 `SystemLog` 表
 
-2. **Database Port Exposed**
-   - PostgreSQL port 5432 is mapped to host
-   - **Risk:** Database accessible from host machine
-   - **Recommended:** Remove `ports` from db service, use `expose` instead
+### ⚠️ 仍需关注的风险
 
-3. **MinIO Default Credentials**
-   - Current credentials: `minioadmin`/`minioadmin123`
-   - **Action Required:** Change for production
-
-4. **Missing Security Middleware**
-   - No Helmet for security headers
-   - No rate limiting
-   - No request body size limits
-
-5. **Default Credentials**
-   - Admin password in seed: `123456`
-   - Database password: `postgres`
-
-### Security Recommendations
-
-```yaml
-# docker-compose.yaml improvements needed
-services:
-  db:
-    # Remove: ports: - "5432:5432"
-    expose:
-      - "5432"  # Only internal network access
-  
-  backend:
-    environment:
-      - JWT_SECRET=${JWT_SECRET}  # Use env var, not hardcoded
-      
-  minio:
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-```
+1. **base `docker-compose.yaml` 中的本地开发弱密钥**
+   - `JWT_SECRET: your-super-secret-jwt-key-change-in-production` 是本地开发默认值
+   - 不走 override 直接 `docker compose up` 是本地开发模式，代码层 `assertSafeSecret` 只在 `NODE_ENV=production|staging` 触发，`development` 模式允许弱密钥
+   - 风险场景：有人把 base compose 搬到内网服务器直接跑，会裸奔。需要在 `DEPLOY_GUIDE.md` 中明确"base 仅限 localhost"
+2. **缺少安全中间件**
+   - 未启用 Helmet（响应头安全加固）
+   - 未启用 `@nestjs/throttler`（`POST /auth/login`、`POST /mall/coupons/exchange`、微信支付回调等接口无限流）
+   - 未设置请求体大小上限（大文件通过 MinIO 直传，仍建议显式限制 `body-parser`）
+3. **MinIO 生产用 root key 做应用访问**
+   - backend 的 `MINIO_ACCESS_KEY/SECRET_KEY` 建议改为 service account（只允许读写 `docker-demo` bucket），与 `MINIO_ROOT_*` 分离
+4. **默认登录凭证**
+   - Admin 初始密码 seed 为 `123456`，生产部署后应立即修改
+5. **密钥轮换预案缺失**
+   - `JWT_SECRET` 轮换时在途 token 会立即全部失效，尚未支持多 key 验签平滑过渡
+6. **测试覆盖近零**
+   - 核心库存事务（`shipments.ship` / `transfers.confirmOut` / `carts.lockSkuInventory`）缺少单测，已修复的并发 bug 没有回归测试保护
 
 ---
 
@@ -1051,49 +1114,36 @@ services:
 
 ### CI/CD Pipeline
 
-GitHub Actions workflow: `.github/workflows/deploy.yml`
+GitHub Actions 三个工作流（`.github/workflows/`）：
 
-**Triggers:**
-- Push to `master` branch
-- Manual workflow dispatch
+| 文件 | 触发 | 作用 |
+|---|---|---|
+| `ci.yml` | push/PR to `main`/`master`/`develop` | 构建 + 测试（使用 postgres service 容器） |
+| `deploy-staging.yml` | push 到 `main` 或手动触发 | SSH 到 staging 服务器拉代码 + `docker compose -f docker-compose.yaml -f docker-compose.staging.yaml build` |
+| `deploy-production.yml` | push 到 `master` 或手动触发 | 带 GitHub Environment `production` 审批流，部署前备份当前镜像标签用于回滚 |
 
-**Pipeline Steps:**
-1. **Build & Test Job:**
-   - Checkout code
-   - Setup pnpm and Node.js 20
-   - Install backend dependencies
-   - Generate Prisma client
-   - Build backend
-   - Run tests (with PostgreSQL service)
-   - Install and build frontend
+**Pipeline Steps（deploy-*.yml 核心流程）：**
+1. SSH 到目标服务器（staging 用 `SSH_PASSWORD`，production 用 `SSH_PRIVATE_KEY`）
+2. 拉取对应分支（staging = main, production = master）到 `SSH_TARGET_DIR`
+3. 使用对应的 override compose 构建镜像
+4. 重启服务（生产前备份镜像标签便于回滚）
 
-2. **Deploy Job:**
-   - SSH to production server
-   - Pull latest code
-   - Build Docker images
-   - Run database migrations
-   - Seed data (if needed)
-   - Start/update all services
-
-### Required Secrets
-
-Configure in GitHub Settings → Secrets:
-
-- `SERVER_HOST` - Production server IP/hostname
-- `SERVER_USER` - SSH username
-- `SSH_PRIVATE_KEY` - SSH private key for deployment
-- `SSH_TARGET_DIR` - Deployment directory on server
+**env 与 secrets 来源**
+- 服务器根目录 `.env` 文件由运维手动维护（不进 git），包含 `JWT_SECRET` / `DB_PASSWORD` / `REDIS_PASSWORD` / `MINIO_*` / `CORS_ORIGINS` 等
+- CI secrets：`SERVER_HOST`、`SERVER_USER`、`SSH_PRIVATE_KEY`（production）/ `SSH_PASSWORD`（staging）、`SSH_TARGET_DIR`，分别绑定到 GitHub Environment `staging` / `production`
 
 ### Production Deployment Checklist
 
-- [ ] Change JWT_SECRET to secure random string
-- [ ] Change MinIO credentials
-- [ ] Remove PostgreSQL port exposure
-- [ ] Configure firewall rules
-- [ ] Setup SSL/TLS certificates
-- [ ] Configure environment-specific variables
-- [ ] Setup log rotation
-- [ ] Configure database backups
+详见根目录 `PRODUCTION_RELEASE_CHECKLIST.md`。关键事项摘录：
+
+- [x] 关键敏感值通过服务器 `.env` 注入（已由 compose override `${VAR:?xxx}` 强制）
+- [x] JWT 弱密钥启动拒绝（已由 `main.ts:assertSafeSecret` 实现）
+- [x] 生产环境不暴露 PostgreSQL 端口到宿主机（已由 `ports: !override []` 实现）
+- [x] 生产环境默认关闭 Swagger（`ENABLE_SWAGGER=false`）
+- [ ] MinIO 建议为 backend 单独建 service account（最小权限），与 root 账号分离
+- [ ] 配置 SSL/TLS 证书（由 nginx 反代或云负载均衡负责）
+- [ ] 配置数据库定时备份
+- [ ] 配置日志轮转
 
 ---
 
@@ -1141,7 +1191,7 @@ server: {
     '/api': {
       target: 'http://localhost:3001',
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\api/, '')
+      rewrite: (path) => path.replace(/^\/api/, '')
     }
   }
 }
@@ -1211,6 +1261,9 @@ docker-compose logs minio
 
 ## References
 
+- [DEPLOY_GUIDE.md](./DEPLOY_GUIDE.md) - 部署操作指南（包含 `.env` 配置细节）
+- [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) - 环境变量管理规范
+- [PRODUCTION_RELEASE_CHECKLIST.md](./PRODUCTION_RELEASE_CHECKLIST.md) - 生产发布核对清单
 - [ENGINEERING_IMPROVEMENTS.md](./ENGINEERING_IMPROVEMENTS.md) - Detailed engineering improvement suggestions (in Chinese)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [NestJS Documentation](https://docs.nestjs.com)

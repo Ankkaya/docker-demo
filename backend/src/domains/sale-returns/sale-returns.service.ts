@@ -9,9 +9,10 @@ import { CreateSaleReturnDto } from './dto/create-sale-return.dto';
 import { UpdateSaleReturnDto } from './dto/update-sale-return.dto';
 import { QuerySaleReturnDto } from './dto/query-sale-return.dto';
 import { AuditSaleReturnDto, AuditAction } from './dto/audit-sale-return.dto';
-import { ReturnStatus, ShipmentStatus, Prisma } from '@prisma/client';
+import { ReturnStatus, ShipmentStatus, Prisma, OrderType } from '@prisma/client';
 import { SaleReturnVo, SaleReturnDetailVo } from './vo/sale-return.vo';
 import { sumMoney, mulMoney, subMoneyClampZero } from '@/common/utils/money';
+import { PaymentsService } from '@/domains/payments/payments.service';
 
 // 生成退货单号
 function generateReturnNo(): string {
@@ -27,7 +28,10 @@ function generateReturnNo(): string {
 
 @Injectable()
 export class SaleReturnsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private paymentsService: PaymentsService,
+  ) {}
 
   // 创建销售退货单
   async create(createDto: CreateSaleReturnDto, userId: number) {
@@ -367,7 +371,17 @@ export class SaleReturnsService {
 
       // 如果审核通过，增加库存和扣减应收金额
       if (newStatus === ReturnStatus.APPROVED) {
-        // 1. 增加库存
+        // 1. 增加库存（按发货时的成本快照正向加权重算 SKU.costPrice）
+        // 取原发货单明细，作为退货入库的"原成本基准"
+        const shipmentItems = await tx.shipmentItem.findMany({
+          where: { shipmentId: existing.shipmentId },
+          select: { skuId: true, costSnapshot: true },
+        });
+        const shipmentCostMap = new Map<number, number | null>();
+        for (const si of shipmentItems) {
+          shipmentCostMap.set(si.skuId, si.costSnapshot != null ? Number(si.costSnapshot) : null);
+        }
+
         for (const item of existing.items) {
           const inventory = await tx.inventory.findUnique({
             where: {
@@ -402,7 +416,26 @@ export class SaleReturnsService {
             });
           }
 
-          // 创建入库流水
+          // 正向加权重算 SKU.costPrice：
+          //   newAvg = (oldQty * oldAvg + returnQty * snapshotCost) / (oldQty + returnQty)
+          // snapshotCost 优先用发货时快照；缺失（历史数据）回退到当前 oldAvg，使均价不漂移
+          const sku = await tx.productSku.findUnique({
+            where: { id: item.skuId },
+            select: { costPrice: true },
+          });
+          const oldAvg = Number(sku?.costPrice || 0);
+          const snapshot = shipmentCostMap.get(item.skuId);
+          const snapshotCost = snapshot != null ? snapshot : oldAvg;
+          const totalQty = beforeQty + item.quantity;
+          const newAvg = totalQty > 0
+            ? (beforeQty * oldAvg + item.quantity * snapshotCost) / totalQty
+            : snapshotCost;
+          await tx.productSku.update({
+            where: { id: item.skuId },
+            data: { costPrice: newAvg },
+          });
+
+          // 创建入库流水（带成本，按发货时快照回入）
           await tx.inventoryLog.create({
             data: {
               type: 'IN_SALE_RETURN',
@@ -411,6 +444,8 @@ export class SaleReturnsService {
               quantity: item.quantity,
               before: beforeQty,
               after: afterQty,
+              unitCost: snapshotCost,
+              costAmount: snapshotCost * item.quantity,
               bizType: 'SALE_RETURN',
               bizId: existing.id,
               bizNo: existing.returnNo,
@@ -420,13 +455,30 @@ export class SaleReturnsService {
           });
         }
 
-        // 2. 扣减销售订单的应收金额（因为退款给客户）
+        // 2. 退款 / 应收冲抵：按订单来源分支
+        //   - MALL（C 端）：原路退微信 / 余额回退，触发 PaymentRefund + 应付冲减
+        //   - SALE（B 端账期模式）：仅减 order.payable，等账期外部冲销
         const order = existing.shipment.order;
-        const newPayable = subMoneyClampZero(order.payable, existing.totalAmount);
-        await tx.order.update({
-          where: { id: order.id },
-          data: { payable: newPayable },
-        });
+        if (order.type === OrderType.MALL) {
+          await this.paymentsService.createMallOrderRefundInTx(
+            tx,
+            order.id,
+            Number(existing.totalAmount),
+            {
+              reason: `商城订单售后退货 ${existing.returnNo}`,
+              bizType: 'MALL_SALE_RETURN',
+              bizId: existing.id,
+              bizNo: existing.returnNo,
+              userId,
+            },
+          );
+        } else {
+          const newPayable = subMoneyClampZero(order.payable, existing.totalAmount);
+          await tx.order.update({
+            where: { id: order.id },
+            data: { payable: newPayable },
+          });
+        }
       }
 
       return updated;

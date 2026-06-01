@@ -386,6 +386,19 @@ export class ShipmentsService {
           );
         }
 
+        // 抓取出库时的成本快照（用于销售退货回入库时按原成本加权重算）
+        const sku = await tx.productSku.findUnique({
+          where: { id: item.skuId },
+          select: { costPrice: true },
+        });
+        const unitCost = Number(sku?.costPrice || 0);
+        const costAmount = -unitCost * item.quantity;
+
+        await tx.shipmentItem.update({
+          where: { id: item.id },
+          data: { costSnapshot: unitCost },
+        });
+
         await tx.inventoryLog.create({
           data: {
             type: 'OUT_SALE',
@@ -394,6 +407,8 @@ export class ShipmentsService {
             quantity: -item.quantity,
             before: beforeQty,
             after: afterQty,
+            unitCost,
+            costAmount,
             bizType: 'SALE',
             bizId: shipment.id,
             bizNo: shipment.shipmentNo,

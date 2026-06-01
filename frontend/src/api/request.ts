@@ -18,6 +18,21 @@ export interface ApiClient {
   delete<T>(url: string, config?: AxiosRequestConfig): Promise<T>
 }
 
+interface ApiErrorLike {
+  response?: {
+    status?: number
+  }
+  config?: Pick<AxiosRequestConfig, 'url'>
+}
+
+const isLoginRequest = (url?: string) => {
+  return !!url && url.split('?')[0].endsWith('/auth/login')
+}
+
+export const shouldRedirectToLoginOnUnauthorized = (error: ApiErrorLike) => {
+  return error.response?.status === 401 && !isLoginRequest(error.config?.url)
+}
+
 // ==================== 创建 Axios 实例 ====================
 const instance: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
@@ -60,12 +75,16 @@ instance.interceptors.response.use(
     
     // 处理HTTP错误
     if (response) {
-      // 优先按 HTTP 状态码处理（特别是 401 需要触发跳转）
+      // 优先按 HTTP 状态码处理（部分 401 需要触发跳转）
       switch (response.status) {
         case 401:
-          localStorage.removeItem('token')
-          window.location.href = '/login'
-          errorMessage = response.data?.message || '登录已过期'
+          if (shouldRedirectToLoginOnUnauthorized(error)) {
+            localStorage.removeItem('token')
+            window.location.href = '/login'
+            errorMessage = response.data?.message || '登录已过期'
+          } else {
+            errorMessage = response.data?.message || '用户名或密码错误'
+          }
           break
         case 403:
           errorMessage = response.data?.message || '没有权限'

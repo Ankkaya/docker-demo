@@ -1,13 +1,37 @@
 <template>
-  <n-form class="query-form transition-theme" label-placement="left" v-bind="$attrs">
+  <n-form
+    class="query-form transition-theme"
+    label-placement="left"
+    v-bind="$attrs"
+    @keydown.enter="handleEnter"
+  >
     <slot />
   </n-form>
 </template>
 
 <script setup lang="ts">
+import { getCurrentInstance } from 'vue'
+
 defineOptions({
   inheritAttrs: false
 })
+
+const emit = defineEmits<{
+  search: []
+}>()
+
+const instance = getCurrentInstance()
+
+const handleEnter = (event: KeyboardEvent) => {
+  if (!instance?.vnode.props?.onSearch) return
+  if (event.isComposing) return
+
+  const target = event.target as HTMLElement | null
+  if (target?.closest('textarea, [contenteditable="true"]')) return
+
+  event.preventDefault()
+  emit('search')
+}
 </script>
 
 <style lang="scss">

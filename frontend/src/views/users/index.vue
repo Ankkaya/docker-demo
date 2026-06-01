@@ -62,6 +62,36 @@
         </n-space>
       </template>
     </n-modal>
+
+    <!-- 分配角色弹窗 -->
+    <n-modal
+      v-model:show="roleDialogVisible"
+      :title="`分配角色${currentUserName ? ` - ${currentUserName}` : ''}`"
+      preset="card"
+      style="width: 520px"
+    >
+      <n-spin :show="roleLoading">
+        <n-checkbox-group v-model:value="selectedRoleIds">
+          <n-space v-if="allRoles.length > 0" vertical>
+            <n-checkbox
+              v-for="role in allRoles"
+              :key="role.id"
+              :value="role.id"
+              :label="`${role.name}（${role.code}）`"
+            />
+          </n-space>
+          <n-empty v-else description="暂无可分配角色" />
+        </n-checkbox-group>
+      </n-spin>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="roleDialogVisible = false">取消</n-button>
+          <n-button type="primary" :loading="roleSubmitLoading" @click="handleSaveRoles">
+            保存
+          </n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -71,19 +101,26 @@ import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { useMessage, useDialog } from 'naive-ui'
 import { NButton, NSpace } from 'naive-ui'
 import dayjs from 'dayjs'
-import { getUsers, createUser, deleteUser } from '@/api/user'
-import type { User, CreateUserDto } from '@/types'
+import { getUsers, createUser, updateUser, deleteUser, getUserRoles, assignUserRoles } from '@/api/user'
+import { getRoles } from '@/api/roles'
+import type { User, Role, CreateUserDto } from '@/types'
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table'
 
 const message = useMessage()
 const dialog = useDialog()
 const loading = ref(false)
 const submitLoading = ref(false)
+const roleLoading = ref(false)
+const roleSubmitLoading = ref(false)
 const dialogVisible = ref(false)
+const roleDialogVisible = ref(false)
 const isEdit = ref(false)
 const users = ref<User[]>([])
+const allRoles = ref<Role[]>([])
+const selectedRoleIds = ref<number[]>([])
 const formRef = ref<FormInst>()
 const currentUserId = ref<number>()
+const currentUserName = ref('')
 
 const pagination = reactive({
   page: 1,
@@ -141,6 +178,11 @@ const createColumns = (): DataTableColumns<User> => {
             h(NButton, {
               text: true,
               type: 'primary',
+              onClick: () => handleAssignRoles(row)
+            }, { default: () => '分配角色' }),
+            h(NButton, {
+              text: true,
+              type: 'primary',
               onClick: () => handleEdit(row)
             }, { default: () => '编辑' }),
             h(NButton, {
@@ -151,7 +193,7 @@ const createColumns = (): DataTableColumns<User> => {
           ]
         })
       }
-    }, 2)
+    }, 3)
   ])
 }
 
@@ -203,6 +245,43 @@ const handleEdit = (user: User) => {
   dialogVisible.value = true
 }
 
+const handleAssignRoles = async (user: User) => {
+  currentUserId.value = user.id
+  currentUserName.value = user.name || user.username
+  selectedRoleIds.value = []
+  roleDialogVisible.value = true
+  roleLoading.value = true
+
+  try {
+    const [roles, assignedRoles] = await Promise.all([
+      getRoles(),
+      getUserRoles(user.id)
+    ])
+    allRoles.value = roles
+    selectedRoleIds.value = assignedRoles.map((role) => role.id)
+  } catch (error: any) {
+    message.error(error.message || '获取角色信息失败')
+  } finally {
+    roleLoading.value = false
+  }
+}
+
+const handleSaveRoles = async () => {
+  if (!currentUserId.value) return
+
+  roleSubmitLoading.value = true
+  try {
+    await assignUserRoles(currentUserId.value, selectedRoleIds.value)
+    message.success('角色分配成功')
+    roleDialogVisible.value = false
+    fetchUsers()
+  } catch (error: any) {
+    message.error(error.message || '角色分配失败')
+  } finally {
+    roleSubmitLoading.value = false
+  }
+}
+
 const handleDelete = (user: User) => {
   dialog.warning({
     title: '提示',
@@ -229,10 +308,12 @@ const handleSubmit = async () => {
       submitLoading.value = true
       try {
         if (isEdit.value) {
-          // 编辑
-          message.info('编辑功能待实现')
+          await updateUser(currentUserId.value!, {
+            email: form.email,
+            name: form.name
+          })
+          message.success('更新成功')
         } else {
-          // 新增
           await createUser(form)
           message.success('创建成功')
         }
