@@ -27,7 +27,7 @@ services:                         # 定义要运行的多个服务（容器）
       DATABASE_URL: postgresql://postgres:postgres@db:5432/docker_demo?schema=public  # 连接 db 服务的数据库 URL
       PORT: 3001                  # 应用监听端口，保持与 main.ts 中一致
       JWT_SECRET: your-secret-key # JWT 签名秘钥，用于生成和验证 Token
-      NODE_ENV: production        # 运行环境设为 production
+      NODE_ENV: development       # 本地运行环境，生产/测试请使用根目录 override 配置
     depends_on:                   # 声明依赖关系
       db:                         # 依赖上面的 db 服务
         condition: service_healthy  # 仅在 db 健康检查通过后才启动 backend

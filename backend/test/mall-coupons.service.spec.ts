@@ -7,6 +7,15 @@ function createPrismaMock() {
     user: {
       findFirst: jest.fn(),
     },
+    customer: {
+      findFirst: jest.fn(),
+    },
+    order: {
+      count: jest.fn(),
+    },
+    balanceRechargeOrder: {
+      count: jest.fn(),
+    },
     couponReceive: {
       count: jest.fn(),
       findMany: jest.fn(),
@@ -25,7 +34,11 @@ function createPrismaMock() {
 describe('MallCouponsService', () => {
   it('returns wallet summary for current user', async () => {
     const prisma = createPrismaMock()
-    prisma.user.findFirst.mockResolvedValue({ customer: { id: 7 } })
+    const customer = { id: 7, createdAt: new Date('2026-04-01T00:00:00.000Z') }
+    prisma.user.findFirst.mockResolvedValue({ customer })
+    prisma.customer.findFirst.mockResolvedValue(customer)
+    prisma.order.count.mockResolvedValue(0)
+    prisma.balanceRechargeOrder.count.mockResolvedValue(0)
     prisma.couponReceive.count
       .mockResolvedValueOnce(2)
       .mockResolvedValueOnce(1)
@@ -43,6 +56,13 @@ describe('MallCouponsService', () => {
         startTime: new Date('2026-04-01T00:00:00.000Z'),
         endTime: new Date('2026-04-30T00:00:00.000Z'),
         description: null,
+        issueScopeType: 'ALL',
+        useScopeType: 'ALL',
+        issueRuleJson: null,
+        useRuleJson: null,
+        sceneType: 'COMMON',
+        validType: 'FIXED',
+        channelScope: [],
         sort: 0,
         isEnabled: true,
       },
@@ -62,15 +82,27 @@ describe('MallCouponsService', () => {
 
   it('claims coupon for current user', async () => {
     const prisma = createPrismaMock()
-    prisma.user.findFirst.mockResolvedValue({ customer: { id: 9 } })
+    prisma.user.findFirst.mockResolvedValue({ customer: { id: 9, createdAt: new Date('2026-04-01T00:00:00.000Z') } })
+    prisma.order.count.mockResolvedValue(0)
+    prisma.balanceRechargeOrder.count.mockResolvedValue(0)
     prisma.$transaction.mockImplementation(async (callback: any) => callback({
       coupon: {
         findFirst: jest.fn().mockResolvedValue({
           id: 5,
           isEnabled: true,
+          isPublic: true,
+          issueType: 'USER_CLAIM',
+          issueScopeType: 'ALL',
+          issueRuleJson: null,
+          validType: 'FIXED',
+          validDelayDays: 0,
+          validDays: null,
           startTime: new Date('2026-04-01T00:00:00.000Z'),
           endTime: new Date('2026-04-30T00:00:00.000Z'),
+          claimStartTime: null,
+          claimEndTime: null,
           perLimit: 2,
+          dailyLimit: null,
           totalCount: 10,
           receivedCount: 1,
         }),

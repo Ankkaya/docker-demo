@@ -71,7 +71,7 @@ services:
       PORT: 3001
       FILE_BASE_URL: http://localhost:3001
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      NODE_ENV: production
+      NODE_ENV: development
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: false

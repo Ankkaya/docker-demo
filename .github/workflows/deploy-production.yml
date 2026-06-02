@@ -1,12 +1,15 @@
 name: Deploy Production
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [master]
   workflow_dispatch:
 
 jobs:
   deploy-production:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     # 正式环境保留 environment 配置，用于审批流程
     environment: production
