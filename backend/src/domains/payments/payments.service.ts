@@ -38,77 +38,63 @@ export class PaymentsService {
   // 创建收付款记录
   async create(createDto: CreatePaymentDto, userId: number) {
     const { type, bizType, bizId, amount, method, remark } = createDto;
+    if (method === PaymentMethod.WECHAT || method === PaymentMethod.BALANCE) {
+      throw new BadRequestException('微信和余额收付款必须由商城支付/退款流程生成');
+    }
+    if (bizType !== 'PURCHASE' && bizType !== 'SALE') {
+      throw new BadRequestException('无效的业务类型');
+    }
+    if (bizType === 'PURCHASE' && type !== PaymentType.PAYMENT) {
+      throw new BadRequestException('采购单只能创建付款记录');
+    }
+    if (bizType === 'SALE' && type !== PaymentType.RECEIPT) {
+      throw new BadRequestException('销售单只能创建收款记录');
+    }
 
-    // 验证业务单据
-    let orderNo = '';
-    if (bizType === 'PURCHASE') {
-      const purchase = await this.prisma.purchase.findFirst({
-        where: { id: bizId, deletedAt: null },
-      });
-      if (!purchase) {
-        throw new NotFoundException('采购订单不存在');
-      }
-      orderNo = purchase.orderNo;
-
-      // 验证付款金额
-      if (type === PaymentType.PAYMENT) {
+    const payment = await this.prisma.serializableTransaction(async (tx) => {
+      if (bizType === 'PURCHASE') {
+        const purchase = await tx.purchase.findFirst({ where: { id: bizId, deletedAt: null } });
+        if (!purchase) throw new NotFoundException('采购订单不存在');
         const remaining = subMoney(purchase.payable, purchase.paid);
         if (moneyGt(amount, remaining)) {
           throw new BadRequestException(`付款金额超过未付金额(未付:${remaining.toFixed(2)})`);
         }
-      }
-    } else if (bizType === 'SALE') {
-      const order = await this.prisma.order.findFirst({
-        where: { id: bizId, deletedAt: null },
-      });
-      if (!order) {
-        throw new NotFoundException('销售订单不存在');
-      }
-      orderNo = order.orderNo;
-
-      // 验证收款金额
-      if (type === PaymentType.RECEIPT) {
+        await tx.purchase.update({ where: { id: bizId }, data: { paid: { increment: amount } } });
+      } else {
+        const order = await tx.order.findFirst({ where: { id: bizId, deletedAt: null } });
+        if (!order) throw new NotFoundException('销售订单不存在');
         const remaining = subMoney(order.payable, order.paid);
         if (moneyGt(amount, remaining)) {
           throw new BadRequestException(`收款金额超过未收金额(未收:${remaining.toFixed(2)})`);
         }
+        const nextPaid = addMoney(order.paid, amount);
+        await tx.order.update({
+          where: { id: bizId },
+          data: {
+            paid: nextPaid,
+            payStatus: moneyLt(nextPaid, order.payable) ? PayStatus.PARTIAL : PayStatus.PAID,
+            payDate: moneyLt(nextPaid, order.payable) ? undefined : new Date(),
+          },
+        });
       }
-    } else {
-      throw new BadRequestException('无效的业务类型');
-    }
 
-    // 创建收付款记录
-    const data: any = {
-      type,
-      bizType,
-      amount,
-      method,
-      status: PaymentStatus.COMPLETED, // 直接完成
-      remark,
-      createdBy: userId,
-    };
-    
-    if (bizType === 'PURCHASE') {
-      data.purchaseId = bizId;
-    } else if (bizType === 'SALE') {
-      data.orderId = bizId;
-    }
-    
-    const payment = await this.prisma.payment.create({
-      data,
-      include: {
-        purchase: { select: { orderNo: true } },
-      },
-    });
-
-    // 更新采购订单的已付金额
-    if (bizType === 'PURCHASE' && type === PaymentType.PAYMENT) {
-      await this.prisma.purchase.update({
-        where: { id: bizId },
-        data: { paid: { increment: amount } },
+      return tx.payment.create({
+        data: {
+          type,
+          bizType,
+          amount,
+          method,
+          status: PaymentStatus.COMPLETED,
+          remark,
+          createdBy: userId,
+          ...(bizType === 'PURCHASE' ? { purchaseId: bizId } : { orderId: bizId }),
+        },
+        include: {
+          purchase: { select: { orderNo: true } },
+          order: { select: { orderNo: true, type: true } },
+        },
       });
-    }
-
+    });
     return PaymentVo.fromEntity(payment);
   }
 
@@ -700,91 +686,80 @@ export class PaymentsService {
 
   // 确认收付款
   async confirm(id: number, userId: number) {
-    const payment = await this.prisma.payment.findFirst({
-      where: { id, deletedAt: null },
-    });
-
-    if (!payment) {
-      throw new NotFoundException('收付款记录不存在');
-    }
-
-    if (payment.status !== PaymentStatus.PENDING) {
-      throw new ForbiddenException('只有待确认的收付款记录可以确认');
-    }
-
-    const updated = await this.prisma.payment.update({
-      where: { id },
-      data: { status: PaymentStatus.COMPLETED },
-      include: {
-        purchase: { select: { orderNo: true } },
-      },
-    });
-
-    // 更新业务单据的已付/已收金额
-    if (payment.bizType === 'PURCHASE' && payment.type === PaymentType.PAYMENT && payment.purchaseId) {
-      await this.prisma.purchase.update({
-        where: { id: payment.purchaseId },
-        data: { paid: { increment: payment.amount } },
+    const updated = await this.prisma.serializableTransaction(async (tx) => {
+      const payment = await tx.payment.findFirst({ where: { id, deletedAt: null } });
+      if (!payment) throw new NotFoundException('收付款记录不存在');
+      if (payment.method === PaymentMethod.WECHAT || payment.method === PaymentMethod.BALANCE) {
+        throw new ForbiddenException('微信和余额收付款不允许手工确认');
+      }
+      const claimed = await tx.payment.updateMany({
+        where: { id, deletedAt: null, status: PaymentStatus.PENDING },
+        data: { status: PaymentStatus.COMPLETED },
       });
-    } else if (payment.bizType === 'SALE' && payment.type === PaymentType.RECEIPT && payment.orderId) {
-      await this.prisma.order.update({
-        where: { id: payment.orderId },
-        data: { paid: { increment: payment.amount } },
-      });
-    }
+      if (claimed.count !== 1) throw new ForbiddenException('只有待确认的收付款记录可以确认');
 
+      if (payment.bizType === 'PURCHASE' && payment.type === PaymentType.PAYMENT && payment.purchaseId) {
+        const purchase = await tx.purchase.findUnique({ where: { id: payment.purchaseId } });
+        if (!purchase || moneyGt(payment.amount, subMoney(purchase.payable, purchase.paid))) {
+          throw new BadRequestException('付款金额超过采购单未付金额');
+        }
+        await tx.purchase.update({ where: { id: payment.purchaseId }, data: { paid: { increment: payment.amount } } });
+      } else if (payment.bizType === 'SALE' && payment.type === PaymentType.RECEIPT && payment.orderId) {
+        const order = await tx.order.findUnique({ where: { id: payment.orderId } });
+        if (!order || moneyGt(payment.amount, subMoney(order.payable, order.paid))) {
+          throw new BadRequestException('收款金额超过销售单未收金额');
+        }
+        const nextPaid = addMoney(order.paid, payment.amount);
+        await tx.order.update({
+          where: { id: payment.orderId },
+          data: { paid: nextPaid, payStatus: moneyLt(nextPaid, order.payable) ? PayStatus.PARTIAL : PayStatus.PAID },
+        });
+      }
+      return tx.payment.findUniqueOrThrow({
+        where: { id },
+        include: { purchase: { select: { orderNo: true } }, order: { select: { orderNo: true, type: true } } },
+      });
+    });
     return PaymentVo.fromEntity(updated);
   }
 
   // 取消收付款
   async cancel(id: number, userId: number) {
-    const payment = await this.prisma.payment.findFirst({
-      where: { id, deletedAt: null },
-    });
+    const updated = await this.prisma.serializableTransaction(async (tx) => {
+      const payment = await tx.payment.findFirst({ where: { id, deletedAt: null } });
+      if (!payment) throw new NotFoundException('收付款记录不存在');
+      if (
+        payment.status === PaymentStatus.COMPLETED
+        && (payment.method === PaymentMethod.WECHAT || payment.method === PaymentMethod.BALANCE)
+      ) {
+        throw new ForbiddenException('已完成的微信/余额收付款必须走原路退款流程');
+      }
+      const claimed = await tx.payment.updateMany({
+        where: { id, deletedAt: null, status: { not: PaymentStatus.CANCELLED } },
+        data: { status: PaymentStatus.CANCELLED },
+      });
+      if (claimed.count !== 1) throw new BadRequestException('收付款记录已取消');
 
-    if (!payment) {
-      throw new NotFoundException('收付款记录不存在');
-    }
-
-    if (payment.status === PaymentStatus.CANCELLED) {
-      throw new BadRequestException('收付款记录已取消');
-    }
-
-    // 如果已确认，需要回滚金额
-    if (payment.status === PaymentStatus.COMPLETED) {
-      if (payment.bizType === 'PURCHASE' && payment.type === PaymentType.PAYMENT && payment.purchaseId) {
-        const purchase = await this.prisma.purchase.findUnique({
-          where: { id: payment.purchaseId },
-        });
-        if (purchase) {
-          const newPaid = subMoneyClampZero(purchase.paid, payment.amount);
-          await this.prisma.purchase.update({
-            where: { id: payment.purchaseId },
-            data: { paid: newPaid },
-          });
-        }
-      } else if (payment.bizType === 'SALE' && payment.type === PaymentType.RECEIPT && payment.orderId) {
-        const order = await this.prisma.order.findUnique({
-          where: { id: payment.orderId },
-        });
-        if (order) {
-          const newPaid = subMoneyClampZero(order.paid, payment.amount);
-          await this.prisma.order.update({
-            where: { id: payment.orderId },
-            data: { paid: newPaid },
-          });
+      if (payment.status === PaymentStatus.COMPLETED) {
+        if (payment.bizType === 'PURCHASE' && payment.type === PaymentType.PAYMENT && payment.purchaseId) {
+          const purchase = await tx.purchase.findUnique({ where: { id: payment.purchaseId } });
+          if (purchase) await tx.purchase.update({ where: { id: payment.purchaseId }, data: { paid: subMoneyClampZero(purchase.paid, payment.amount) } });
+        } else if (payment.bizType === 'SALE' && payment.type === PaymentType.RECEIPT && payment.orderId) {
+          const order = await tx.order.findUnique({ where: { id: payment.orderId } });
+          if (order) {
+            const nextPaid = subMoneyClampZero(order.paid, payment.amount);
+            await tx.order.update({
+              where: { id: payment.orderId },
+              data: { paid: nextPaid, payStatus: nextPaid.isZero() ? PayStatus.UNPAID : PayStatus.PARTIAL },
+            });
+          }
         }
       }
-    }
-
-    const updated = await this.prisma.payment.update({
-      where: { id },
-      data: { status: PaymentStatus.CANCELLED },
-      include: {
-        purchase: { select: { orderNo: true } },
-      },
+      return tx.payment.findUniqueOrThrow({
+        where: { id },
+        include: { purchase: { select: { orderNo: true } }, order: { select: { orderNo: true, type: true } } },
+      });
     });
-
     return PaymentVo.fromEntity(updated);
   }
 
@@ -1025,16 +1000,14 @@ export class PaymentsService {
 
     const refundNo = await this.generateRefundNo();
     const refundedAt = new Date();
-    const balanceBefore = D(account.availableBalance);
-    const balanceAfter = balanceBefore.add(refundAmount);
-
     await tx.balanceAccount.update({
       where: { id: account.id },
       data: {
-        availableBalance: balanceAfter,
-        totalRefunded: addMoney(account.totalRefunded, refundAmount),
+        availableBalance: { increment: refundAmount },
+        totalRefunded: { increment: refundAmount },
       },
     });
+    const updatedAccount = await tx.balanceAccount.findUniqueOrThrow({ where: { id: account.id } });
 
     await tx.balanceLog.create({
       data: {
@@ -1042,8 +1015,8 @@ export class PaymentsService {
         customerId: order.customerId,
         type: BalanceLogType.REFUND,
         changeAmount: refundAmount,
-        balanceBefore,
-        balanceAfter,
+        balanceBefore: D(updatedAccount.availableBalance).sub(refundAmount),
+        balanceAfter: updatedAccount.availableBalance,
         bizType: options.bizType,
         bizId: options.bizId,
         bizNo: options.bizNo,
@@ -1161,19 +1134,22 @@ export class PaymentsService {
     }
 
     const arrivalAmount = addMoney(recharge.amount, recharge.bonusAmount);
-    const before = D(recharge.account.availableBalance);
-    const after = before.sub(arrivalAmount);
-    if (after.isNegative()) {
+    const changed = await tx.balanceAccount.updateMany({
+      where: {
+        id: recharge.accountId,
+        availableBalance: { gte: arrivalAmount },
+      },
+      data: {
+        availableBalance: { decrement: arrivalAmount },
+        totalRecharged: { decrement: refundAmount },
+        totalPresented: { decrement: recharge.bonusAmount },
+      } as any,
+    });
+    if (changed.count !== 1) {
       throw new BadRequestException('当前余额不足，无法完成充值退款回退');
     }
-
-    await tx.balanceAccount.update({
+    const updatedAccount = await tx.balanceAccount.findUniqueOrThrow({
       where: { id: recharge.accountId },
-      data: {
-        availableBalance: after,
-        totalRecharged: subMoneyClampZero(recharge.account.totalRecharged, refundAmount),
-        totalPresented: subMoneyClampZero((recharge.account as any).totalPresented, recharge.bonusAmount),
-      } as any,
     });
 
     await tx.balanceLog.create({
@@ -1183,8 +1159,8 @@ export class PaymentsService {
         type: BalanceLogType.REFUND,
         changeAmount: arrivalAmount.neg(),
         bonusAmount: D(recharge.bonusAmount).neg(),
-        balanceBefore: before,
-        balanceAfter: after,
+        balanceBefore: D(updatedAccount.availableBalance).add(arrivalAmount),
+        balanceAfter: updatedAccount.availableBalance,
         bizType: 'MALL_RECHARGE_REFUND',
         bizId: recharge.id,
         bizNo: recharge.rechargeNo,

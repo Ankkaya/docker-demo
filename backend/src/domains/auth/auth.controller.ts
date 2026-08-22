@@ -2,7 +2,6 @@ import { Controller, Post, Body, Get, UseGuards, Request, Ip, Headers } from '@n
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { CreateUserDto } from '../users/dto/create-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CryptoKeysService } from './services/crypto-keys.service';
 
@@ -18,12 +17,6 @@ export class AuthController {
   @ApiOperation({ summary: '获取登录密码加密公钥（RSA-2048，PKCS1）' })
   getPublicKey() {
     return this.cryptoKeys.getPublicKey();
-  }
-
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  register(@Body() createUserDto: CreateUserDto) {
-    return this.authService.register(createUserDto);
   }
 
   @Post('login')

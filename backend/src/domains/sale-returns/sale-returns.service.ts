@@ -344,11 +344,15 @@ export class SaleReturnsService {
         : ReturnStatus.CANCELLED;
 
     // 使用事务执行审核
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.serializableTransaction(async (tx) => {
       // 更新退货单状态
-      const updated = await tx.saleReturn.update({
-        where: { id },
+      const claimed = await tx.saleReturn.updateMany({
+        where: { id, deletedAt: null, status: ReturnStatus.PENDING },
         data: { status: newStatus },
+      });
+      if (claimed.count !== 1) throw new ForbiddenException('退货单状态已变更，无法重复审核');
+      const updated = await tx.saleReturn.findUniqueOrThrow({
+        where: { id },
         include: {
           shipment: {
             select: {
@@ -501,9 +505,13 @@ export class SaleReturnsService {
       throw new ForbiddenException('只有已审核的退货单可以完成');
     }
 
-    const updated = await this.prisma.saleReturn.update({
-      where: { id },
+    const claimed = await this.prisma.saleReturn.updateMany({
+      where: { id, deletedAt: null, status: ReturnStatus.APPROVED },
       data: { status: ReturnStatus.COMPLETED },
+    });
+    if (claimed.count !== 1) throw new ForbiddenException('只有已审核的退货单可以完成');
+    const updated = await this.prisma.saleReturn.findUniqueOrThrow({
+      where: { id },
       include: {
         shipment: {
           select: {
@@ -537,17 +545,13 @@ export class SaleReturnsService {
       throw new NotFoundException('退货单不存在');
     }
 
-    if (existing.status === ReturnStatus.COMPLETED) {
-      throw new ForbiddenException('已完成的退货单不能取消');
-    }
-
-    if (existing.status === ReturnStatus.CANCELLED) {
-      throw new BadRequestException('退货单已取消');
-    }
-
-    const updated = await this.prisma.saleReturn.update({
-      where: { id },
+    const claimed = await this.prisma.saleReturn.updateMany({
+      where: { id, deletedAt: null, status: ReturnStatus.PENDING },
       data: { status: ReturnStatus.CANCELLED },
+    });
+    if (claimed.count !== 1) throw new ForbiddenException('只有待审核的退货单可以取消');
+    const updated = await this.prisma.saleReturn.findUniqueOrThrow({
+      where: { id },
       include: {
         shipment: {
           select: {

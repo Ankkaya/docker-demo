@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { CustomerJwtAuthGuard } from '@/auth/guards/customer-jwt-auth.guard';
 import { CartsService } from './carts.service';
 import { AddToCartDto, CreateCartDto, QueryCartDto, UpdateCartDto } from './dto';
 
@@ -65,7 +66,7 @@ export class AdminCartsController {
 
 @ApiTags('商城接口/购物车')
 @Controller('carts')
-@UseGuards(JwtAuthGuard)
+@UseGuards(CustomerJwtAuthGuard)
 @ApiBearerAuth()
 export class MallCartsController {
   constructor(private readonly cartsService: CartsService) {}

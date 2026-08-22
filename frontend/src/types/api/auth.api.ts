@@ -10,16 +10,6 @@ export interface LoginParams {
 }
 
 /**
- * 注册请求参数
- */
-export interface RegisterParams {
-  username: string;
-  password: string;
-  email?: string;
-  name?: string;
-}
-
-/**
  * 认证响应数据
  */
 export interface AuthResponse {
@@ -33,8 +23,6 @@ export interface AuthResponse {
 export namespace AuthApi {
   /** 登录 */
   export type Login = AuthResponse;
-  /** 注册 */
-  export type Register = AuthResponse;
   /** 获取当前用户 */
   export type GetCurrentUser = User;
 }

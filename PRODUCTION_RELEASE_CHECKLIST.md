@@ -52,6 +52,7 @@
 - `DATABASE_URL`
 - `JWT_SECRET`
 - `JWT_REFRESH_SECRET`，建议单独配置，不要复用 `JWT_SECRET`
+- `SYSTEM_SETTINGS_ENCRYPTION_KEY`，必须与 JWT 密钥独立，用于加密数据库中的微信密钥/私钥
 - `REDIS_PASSWORD`
 - `MINIO_ROOT_USER`
 - `MINIO_ROOT_PASSWORD`
@@ -63,7 +64,7 @@
 当前项目需要特别注意：
 
 - `docker-compose.yaml` 中存在本地开发默认密码和示例 `JWT_SECRET`，正式环境必须通过 `docker-compose.production.yaml` 和服务器 `.env` 覆盖。
-- `docker-compose.production.yaml` 已强制要求 `DB_PASSWORD`、`DATABASE_URL`、`FILE_BASE_URL`、`JWT_SECRET`、`MINIO_ROOT_PASSWORD`，但 `MINIO_ACCESS_KEY`、`MINIO_SECRET_KEY` 仍有默认值，正式环境应显式设置强随机值。
+- `docker-compose.production.yaml` 已对数据库、Redis、JWT、系统设置加密密钥和 MinIO 敏感变量执行 fail-fast；缺少任一项都不应启动正式环境。
 - `backend/.env.production`、`frontend/.env.production`、`mobile/.env.production` 当前是模板性质，正式构建和部署时必须覆盖为真实生产配置。
 
 ### 1.5 数据库迁移与种子数据

@@ -201,17 +201,10 @@ export class InventoriesService {
     }
 
     const data: Prisma.InventoryUpdateInput = {};
-
-    // 如果修改了库存数量
-    if (dto.quantity !== undefined) {
-      if (dto.quantity < 0) {
-        throw new BadRequestException('库存数量不能为负数');
-      }
-      if (dto.quantity < existing.locked) {
-        throw new BadRequestException('库存数量不能小于锁定数量');
-      }
-      data.quantity = dto.quantity;
-      data.available = dto.quantity - existing.locked;
+    const nextMinStock = dto.minStock ?? existing.minStock;
+    const nextMaxStock = dto.maxStock ?? existing.maxStock;
+    if (nextMaxStock < nextMinStock) {
+      throw new BadRequestException('库存上限不能小于安全库存下限');
     }
 
     if (dto.minStock !== undefined) {
@@ -256,7 +249,11 @@ export class InventoriesService {
     quantity: number,
     minStock?: number,
     maxStock?: number,
+    userId?: number,
   ) {
+    if (maxStock !== undefined && minStock !== undefined && maxStock < minStock) {
+      throw new BadRequestException('库存上限不能小于安全库存下限');
+    }
     // 检查SKU是否存在（过滤已删除的）
     const sku = await this.prisma.productSku.findFirst({
       where: { 
@@ -287,31 +284,53 @@ export class InventoriesService {
       },
     });
 
-    if (existing) {
-      // 更新现有库存
-      const updated = await this.prisma.inventory.update({
-        where: { id: existing.id },
-        data: {
-          quantity: { increment: quantity },
-          available: { increment: quantity },
-        },
+    const result = await this.prisma.serializableTransaction(async (tx) => {
+      const current = await tx.inventory.findUnique({
+        where: { skuId_warehouseId: { skuId, warehouseId } },
       });
-      return InventoryVo.fromEntity(updated);
-    }
+      const before = current?.quantity ?? 0;
+      const inventory = current
+        ? await tx.inventory.update({
+            where: { id: current.id },
+            data: {
+              quantity: { increment: quantity },
+              available: { increment: quantity },
+              ...(minStock !== undefined ? { minStock } : {}),
+              ...(maxStock !== undefined ? { maxStock } : {}),
+            },
+          })
+        : await tx.inventory.create({
+            data: {
+              skuId,
+              warehouseId,
+              quantity,
+              available: quantity,
+              locked: 0,
+              minStock: minStock ?? 0,
+              maxStock: maxStock ?? 999999,
+            },
+          });
 
-    // 创建新库存记录
-    const created = await this.prisma.inventory.create({
-      data: {
-        skuId,
-        warehouseId,
-        quantity,
-        available: quantity,
-        locked: 0,
-        minStock: minStock ?? 0,
-        maxStock: maxStock ?? 999999,
-      },
+      if (quantity > 0) {
+        await tx.inventoryLog.create({
+          data: {
+            type: 'IN_ADJUST',
+            skuId,
+            warehouseId,
+            quantity,
+            before,
+            after: before + quantity,
+            bizType: 'INITIALIZE',
+            bizId: inventory.id,
+            bizNo: `INIT-${inventory.id}`,
+            remark: '库存初始化',
+            createdBy: userId,
+          },
+        });
+      }
+      return inventory;
     });
-    return InventoryVo.fromEntity(created);
+    return InventoryVo.fromEntity(result);
   }
 
   // 库存预警查询

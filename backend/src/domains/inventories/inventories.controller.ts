@@ -8,12 +8,14 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InventoriesService } from './inventories.service';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { QueryInventoryDto, QueryInventoryWarningDto } from './dto/query-inventory.dto';
 import { QueryInventoryLogDto } from './dto/query-inventory-log.dto';
+import { InitializeInventoryDto } from './dto/initialize-inventory.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 
 @ApiTags('后台接口/库存管理')
@@ -60,7 +62,7 @@ export class InventoriesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: '更新库存信息（调整库存、安全库存等）' })
+  @ApiOperation({ summary: '更新库存预警与库位信息' })
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateInventoryDto,
@@ -71,13 +73,8 @@ export class InventoriesController {
   @Post('initialize')
   @ApiOperation({ summary: '初始化库存（为新SKU创建库存记录）' })
   initializeInventory(
-    @Body() dto: {
-      skuId: number;
-      warehouseId: number;
-      quantity: number;
-      minStock?: number;
-      maxStock?: number;
-    },
+    @Body() dto: InitializeInventoryDto,
+    @Request() req,
   ) {
     return this.inventoriesService.initializeInventory(
       dto.skuId,
@@ -85,6 +82,7 @@ export class InventoriesController {
       dto.quantity,
       dto.minStock,
       dto.maxStock,
+      req.user.sub,
     );
   }
 }

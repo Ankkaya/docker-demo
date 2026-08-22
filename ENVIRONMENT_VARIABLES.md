@@ -23,11 +23,10 @@
 - `frontend/Dockerfile` 通过 `ARG VITE_MODE=production` 控制 `pnpm build --mode ${VITE_MODE}`。
 - `mobile/` 已有 `.env.example`、`.env.development`、`.env.staging`、`.env.production`。
 
-### 2.2 需要优化的问题
+### 2.2 已落地的安全基线
 
-- 根目录缺少统一的 `.env.example`，部署变量分散在 compose、后端 env、前端 env、移动端 env 中。
-- `docker-compose.staging.yaml` 中仍有 `staging_password`、`staging-jwt-secret`、`minioadmin123` 等弱默认值。
-- `docker-compose.production.yaml` 中 `MINIO_ACCESS_KEY`、`MINIO_SECRET_KEY` 仍允许弱默认值。
+- 根目录 `.env.example` 已覆盖 Compose 部署的关键变量。
+- staging/production Compose 已对数据库、Redis、JWT、系统设置加密密钥和 MinIO 敏感变量执行 fail-fast。
 - `backend/.env.production` 存在 `CHANGE_ME` 模板值，容易被误当成真实生产配置来源。
 - 后端 CORS 当前为 `app.enableCors()` 全开放，Swagger 当前默认开放，缺少环境变量开关。
 - 前端生产变量当前指向 `http://localhost:3001`，实际生产部署前必须改成公网域名或反向代理路径。
@@ -123,6 +122,7 @@ pnpm build:mp-weixin:production
 | `REDIS_PASSWORD` | 视部署而定 | `***` | Redis 密码 |
 | `JWT_SECRET` | 是 | 长随机字符串 | Access Token 签名密钥 |
 | `JWT_REFRESH_SECRET` | 推荐 | 长随机字符串 | Refresh Token 签名密钥，建议与 `JWT_SECRET` 不同 |
+| `SYSTEM_SETTINGS_ENCRYPTION_KEY` | staging/production 必填 | 独立长随机字符串 | 加密系统设置中的 AppSecret、APIv3 Key、私钥等敏感字段，不得与 JWT 密钥复用 |
 | `JWT_REFRESH_EXPIRES_IN` | 否 | `30d` | Refresh Token 有效期 |
 | `LOGIN_RSA_PUBLIC_KEY` | 否 | PEM 字符串 | 登录加密公钥，支持 `\n` 转义 |
 | `LOGIN_RSA_PRIVATE_KEY` | 否 | PEM 字符串 | 登录解密私钥，支持 `\n` 转义 |
@@ -192,6 +192,7 @@ PORT=3001
 FILE_BASE_URL=https://your-domain.com
 JWT_SECRET=CHANGE_ME_AT_LEAST_32_CHARS
 JWT_REFRESH_SECRET=CHANGE_ME_DIFFERENT_FROM_JWT_SECRET
+SYSTEM_SETTINGS_ENCRYPTION_KEY=CHANGE_ME_INDEPENDENT_RANDOM_KEY
 JWT_REFRESH_EXPIRES_IN=30d
 
 # MinIO
@@ -282,14 +283,14 @@ docker compose -f docker-compose.yaml -f docker-compose.production.yaml up -d
 - PostgreSQL、Redis、MinIO Console 不直接暴露公网。
 - 前端生产变量指向公网域名或 Nginx 反向代理路径，不能保留 `localhost`。
 
-## 8. 落地改造步骤
+## 8. 落地改造记录
 
 ### P0：安全基线
 
-1. 新增根目录 `.env.example`，覆盖 Compose 部署所需变量。
+1. 已新增根目录 `.env.example`，覆盖 Compose 部署所需变量。
 2. 补齐 `.gitignore`：`.env`、`.env.local`、`.env.*.local`、`backend/.env.local`、`frontend/.env.local`、`mobile/.env.local`、小程序上传私钥。
-3. 将 `docker-compose.production.yaml` 中 `MINIO_ACCESS_KEY`、`MINIO_SECRET_KEY` 改为强制要求。
-4. 将 `docker-compose.staging.yaml` 中 `DATABASE_URL`、`JWT_SECRET`、`MINIO_SECRET_KEY`、`MINIO_ROOT_PASSWORD` 等弱默认值改为强制要求。
+3. 已将 `docker-compose.production.yaml` 中的敏感变量改为强制要求。
+4. 已将 `docker-compose.staging.yaml` 中的弱默认值改为强制要求。
 5. 修正 `frontend/.env.production`，不要指向 `http://localhost:3001`。
 
 ### P1：运行时治理
@@ -323,4 +324,3 @@ docker compose -f docker-compose.yaml -f docker-compose.production.yaml up -d
 ### 9.4 测试环境可以长期使用弱默认值
 
 不建议。测试环境通常也连接公网域名和真实三方服务，弱数据库、Redis、MinIO、JWT 密钥会导致数据泄露和越权风险。
-

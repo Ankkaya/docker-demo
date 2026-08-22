@@ -38,7 +38,7 @@ export class OperationLogInterceptor implements NestInterceptor {
         try {
           await this.prisma.operationLog.create({
             data: {
-              userId: user?.userId,
+              userId: user?.sub ?? user?.userId,
               username: user?.username,
               module,
               action,
@@ -102,17 +102,22 @@ export class OperationLogInterceptor implements NestInterceptor {
   }
 
   private sanitizeBody(body: any): any {
+    if (Array.isArray(body)) {
+      return body.map(item => this.sanitizeBody(item));
+    }
     if (!body || typeof body !== 'object') {
       return body;
     }
-    // 脱敏密码等敏感字段
-    const sensitive = ['password', 'token', 'secret', 'creditCard', 'idCard'];
-    const result = { ...body };
-    for (const key of Object.keys(result)) {
-      if (sensitive.some(s => key.toLowerCase().includes(s))) {
-        result[key] = '***';
-      }
-    }
-    return result;
+
+    const sensitive = ['password', 'token', 'secret', 'privatekey', 'apiv3key', 'creditcard', 'idcard'];
+    return Object.fromEntries(
+      Object.entries(body).map(([key, value]) => {
+        const normalizedKey = key.toLowerCase();
+        if (sensitive.some(item => normalizedKey.includes(item))) {
+          return [key, '***'];
+        }
+        return [key, this.sanitizeBody(value)];
+      }),
+    );
   }
 }

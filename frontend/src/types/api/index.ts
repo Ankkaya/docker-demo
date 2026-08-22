@@ -13,7 +13,7 @@ export type {
 } from './common.api';
 
 // 认证 API 类型
-export type { AuthApi, LoginParams, RegisterParams, AuthResponse } from './auth.api';
+export type { AuthApi, LoginParams, AuthResponse } from './auth.api';
 
 // 用户 API 类型
 export type {

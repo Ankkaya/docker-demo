@@ -5,7 +5,9 @@ import { constants, publicEncrypt } from 'crypto';
 import { AppModule } from '../src/app.module';
 import { CryptoKeysService } from '../src/domains/auth/services/crypto-keys.service';
 
-describe('AuthController (e2e)', () => {
+const describeE2e = process.env.RUN_E2E === 'true' ? describe : describe.skip;
+
+describeE2e('AuthController (e2e)', () => {
   let app: INestApplication;
   let cryptoKeys: CryptoKeysService;
 

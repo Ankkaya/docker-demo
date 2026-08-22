@@ -201,16 +201,14 @@ export class MallOrdersService {
     const account = await this.ensureBalanceAccount(tx, customerId);
     const refundNo = await this.generateRefundNo();
     const refundedAt = new Date();
-    const balanceBefore = D(account.availableBalance);
-    const balanceAfter = balanceBefore.add(amount);
-
     await tx.balanceAccount.update({
       where: { id: account.id },
       data: {
-        availableBalance: balanceAfter,
-        totalRefunded: addMoney(account.totalRefunded, amount),
+        availableBalance: { increment: amount },
+        totalRefunded: { increment: amount },
       },
     });
+    const updatedAccount = await tx.balanceAccount.findUniqueOrThrow({ where: { id: account.id } });
 
     await tx.balanceLog.create({
       data: {
@@ -218,8 +216,8 @@ export class MallOrdersService {
         customerId,
         type: BalanceLogType.REFUND,
         changeAmount: amount,
-        balanceBefore,
-        balanceAfter,
+        balanceBefore: D(updatedAccount.availableBalance).sub(amount),
+        balanceAfter: updatedAccount.availableBalance,
         bizType: 'MALL_ORDER_CANCEL',
         bizId: order.id,
         bizNo: order.orderNo,
@@ -387,16 +385,10 @@ export class MallOrdersService {
   }
 
   private async ensureBalanceAccount(tx: any, customerId: number) {
-    const existing = await tx.balanceAccount.findUnique({
+    return tx.balanceAccount.upsert({
       where: { customerId },
-    });
-
-    if (existing) {
-      return existing;
-    }
-
-    return tx.balanceAccount.create({
-      data: {
+      update: {},
+      create: {
         customerId,
         status: BalanceAccountStatus.ACTIVE,
       },
@@ -404,7 +396,7 @@ export class MallOrdersService {
   }
 
   private async payOrderByBalance(userId: number, customerId: number, order: any, amount: number) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.serializableTransaction(async (tx) => {
       const latestOrder = await tx.order.findFirst({
         where: {
           id: order.id,
@@ -436,14 +428,30 @@ export class MallOrdersService {
         throw new BadRequestException('余额账户已停用');
       }
 
-      const availableBalance = D(account.availableBalance);
-      if (availableBalance.lt(amount)) {
-        throw new BadRequestException(`余额不足，当前可用余额${availableBalance.toFixed(2)}元`);
-      }
-
       await this.closeWechatPaymentIfPending(tx, latestOrder.id);
 
       const paidAt = new Date();
+      const deducted = await tx.balanceAccount.updateMany({
+        where: {
+          id: account.id,
+          status: BalanceAccountStatus.ACTIVE,
+          availableBalance: { gte: amount },
+        },
+        data: {
+          availableBalance: { decrement: amount },
+          totalConsumed: { increment: amount },
+        },
+      });
+      if (deducted.count !== 1) {
+        const latestAccount = await tx.balanceAccount.findUnique({ where: { id: account.id } });
+        throw new BadRequestException(
+          `余额不足，当前可用余额${D(latestAccount?.availableBalance).toFixed(2)}元`,
+        );
+      }
+
+      const updatedAccount = await tx.balanceAccount.findUniqueOrThrow({
+        where: { id: account.id },
+      });
       const payment = await tx.payment.create({
         data: {
           type: PaymentType.RECEIPT,
@@ -459,23 +467,14 @@ export class MallOrdersService {
         },
       });
 
-      const afterBalance = subMoney(availableBalance, amount);
-      await tx.balanceAccount.update({
-        where: { id: account.id },
-        data: {
-          availableBalance: afterBalance,
-          totalConsumed: addMoney(account.totalConsumed, amount),
-        },
-      });
-
       await tx.balanceLog.create({
         data: {
           accountId: account.id,
           customerId,
           type: BalanceLogType.CONSUME,
           changeAmount: amount,
-          balanceBefore: availableBalance,
-          balanceAfter: afterBalance,
+          balanceBefore: D(updatedAccount.availableBalance).add(amount),
+          balanceAfter: updatedAccount.availableBalance,
           bizType: 'MALL_ORDER',
           bizId: latestOrder.id,
           bizNo: latestOrder.orderNo,
@@ -1400,7 +1399,7 @@ export class MallOrdersService {
   async pay(userId: number, id: number, dto: PayMallOrderDto): Promise<MallPayOrderVo> {
     const customer = await this.getCustomerByUserId(userId);
 
-    const order = await this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.serializableTransaction(async (tx) => {
       const existing = await tx.order.findFirst({
         where: {
           id,
@@ -1624,7 +1623,7 @@ export class MallOrdersService {
   async findOneByUser(userId: number, id: number): Promise<MallOrderDetailVo> {
     const customer = await this.getCustomerByUserId(userId);
 
-    const order = await this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.serializableTransaction(async (tx) => {
       await this.syncExpiredOrdersByCustomerId(tx, customer.id);
 
       return tx.order.findFirst({
@@ -1648,7 +1647,7 @@ export class MallOrdersService {
   async cancel(userId: number, id: number): Promise<MallOrderDetailVo> {
     const customer = await this.getCustomerByUserId(userId);
 
-    const order = await this.prisma.$transaction(async (tx) => {
+    const order = await this.prisma.serializableTransaction(async (tx) => {
       await this.syncExpiredOrdersByCustomerId(tx, customer.id);
 
       const existing = await tx.order.findFirst({

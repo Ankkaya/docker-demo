@@ -328,7 +328,7 @@ export class MallBalanceService {
     resource: Partial<WechatTransactionResource>,
     rawPayload?: unknown,
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.serializableTransaction(async (tx) => {
       const rechargeOrder = await tx.balanceRechargeOrder.findFirst({
         where: {
           outTradeNo,
@@ -344,49 +344,12 @@ export class MallBalanceService {
         return rechargeOrder;
       }
 
-      const account = await tx.balanceAccount.findUnique({
-        where: { id: rechargeOrder.accountId },
-      });
-
-      if (!account) {
-        throw new NotFoundException('余额账户不存在');
-      }
-
       const paidAt = resource.success_time ? new Date(resource.success_time) : new Date();
-      const before = D(account.availableBalance);
-      const amount = D(rechargeOrder.amount);
-      const bonusAmount = D((rechargeOrder as any).bonusAmount);
-      const changeAmount = amount.add(bonusAmount);
-      const after = before.add(changeAmount);
-
-      await tx.balanceAccount.update({
-        where: { id: account.id },
-        data: {
-          availableBalance: after,
-          totalRecharged: addMoney(account.totalRecharged, amount),
-          totalPresented: addMoney((account as any).totalPresented, bonusAmount),
-        } as any,
-      });
-
-      await tx.balanceLog.create({
-        data: {
-          accountId: account.id,
-          customerId: rechargeOrder.customerId,
-          type: BalanceLogType.RECHARGE,
-          changeAmount,
-          bonusAmount,
-          balanceBefore: before,
-          balanceAfter: after,
-          bizType: 'MALL_RECHARGE',
-          bizId: rechargeOrder.id,
-          bizNo: rechargeOrder.rechargeNo,
-          remark: rechargeOrder.remark,
-          createdBy: rechargeOrder.createdBy,
-        } as any,
-      });
-
-      const updatedRechargeOrder = await tx.balanceRechargeOrder.update({
-        where: { id: rechargeOrder.id },
+      const claimed = await tx.balanceRechargeOrder.updateMany({
+        where: {
+          id: rechargeOrder.id,
+          status: PaymentStatus.PENDING,
+        },
         data: {
           status: PaymentStatus.COMPLETED,
           thirdTradeNo: resource.transaction_id || rechargeOrder.thirdTradeNo,
@@ -397,10 +360,53 @@ export class MallBalanceService {
           notifyPayload: rawPayload !== undefined ? (rawPayload as any) : rechargeOrder.notifyPayload,
         },
       });
+      if (claimed.count !== 1) {
+        return tx.balanceRechargeOrder.findUniqueOrThrow({ where: { id: rechargeOrder.id } });
+      }
+
+      const account = await tx.balanceAccount.findUnique({
+        where: { id: rechargeOrder.accountId },
+      });
+
+      if (!account) {
+        throw new NotFoundException('余额账户不存在');
+      }
+
+      const before = D(account.availableBalance);
+      const amount = D(rechargeOrder.amount);
+      const bonusAmount = D((rechargeOrder as any).bonusAmount);
+      const changeAmount = amount.add(bonusAmount);
+      await tx.balanceAccount.update({
+        where: { id: account.id },
+        data: {
+          availableBalance: { increment: changeAmount },
+          totalRecharged: { increment: amount },
+          totalPresented: { increment: bonusAmount },
+        } as any,
+      });
+
+      const updatedAccount = await tx.balanceAccount.findUniqueOrThrow({ where: { id: account.id } });
+
+      await tx.balanceLog.create({
+        data: {
+          accountId: account.id,
+          customerId: rechargeOrder.customerId,
+          type: BalanceLogType.RECHARGE,
+          changeAmount,
+          bonusAmount,
+          balanceBefore: before,
+          balanceAfter: updatedAccount.availableBalance,
+          bizType: 'MALL_RECHARGE',
+          bizId: rechargeOrder.id,
+          bizNo: rechargeOrder.rechargeNo,
+          remark: rechargeOrder.remark,
+          createdBy: rechargeOrder.createdBy,
+        } as any,
+      });
 
       await this.couponAutoGrantService.grantRechargeCoupons(tx, rechargeOrder.customerId, rechargeOrder.id, paidAt);
 
-      return updatedRechargeOrder;
+      return tx.balanceRechargeOrder.findUniqueOrThrow({ where: { id: rechargeOrder.id } });
     });
   }
 

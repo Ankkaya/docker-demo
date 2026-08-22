@@ -27,7 +27,7 @@ function createPrismaMock() {
       findFirst: jest.fn(),
       update: jest.fn(),
     },
-    $transaction: jest.fn(),
+    serializableTransaction: jest.fn(),
   }
 }
 
@@ -85,7 +85,7 @@ describe('MallCouponsService', () => {
     prisma.user.findFirst.mockResolvedValue({ customer: { id: 9, createdAt: new Date('2026-04-01T00:00:00.000Z') } })
     prisma.order.count.mockResolvedValue(0)
     prisma.balanceRechargeOrder.count.mockResolvedValue(0)
-    prisma.$transaction.mockImplementation(async (callback: any) => callback({
+    prisma.serializableTransaction.mockImplementation(async (callback: any) => callback({
       coupon: {
         findFirst: jest.fn().mockResolvedValue({
           id: 5,

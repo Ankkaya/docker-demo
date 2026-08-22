@@ -26,15 +26,7 @@ export interface LoginDto {
   password: string
 }
 
-// 注册请求
-export interface RegisterDto {
-  username: string
-  password: string
-  email?: string
-  name?: string
-}
-
-// 登录/注册响应
+// 登录响应
 export interface AuthResponse {
   user: User
   token: string

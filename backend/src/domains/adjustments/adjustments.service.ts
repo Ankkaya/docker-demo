@@ -191,39 +191,36 @@ export class AdjustmentsService {
       throw new NotFoundException('调整单不存在');
     }
 
-    if (adjustment.status !== AdjustmentStatus.PENDING) {
-      throw new BadRequestException('调整单状态不正确，只能对待审核状态的调整单进行审核');
-    }
-
-    await this.prisma.adjustment.update({
-      where: { id },
+    const claimed = await this.prisma.adjustment.updateMany({
+      where: { id, deletedAt: null, status: AdjustmentStatus.PENDING },
       data: { status: AdjustmentStatus.APPROVED },
     });
+    if (claimed.count !== 1) {
+      throw new BadRequestException('调整单状态不正确，只能对待审核状态的调整单进行审核');
+    }
 
     return this.findOne(id);
   }
 
   // 完成调整单（执行库存调整）
   async complete(id: number, userId: number) {
-    const adjustment = await this.prisma.adjustment.findFirst({
-      where: { id, deletedAt: null },
-      include: { items: true },
-    });
+    await this.prisma.serializableTransaction(async (tx) => {
+      const adjustment = await tx.adjustment.findFirst({
+        where: { id, deletedAt: null },
+        include: { items: true },
+      });
+      if (!adjustment) {
+        throw new NotFoundException('调整单不存在');
+      }
+      const claimed = await tx.adjustment.updateMany({
+        where: { id, deletedAt: null, status: AdjustmentStatus.APPROVED },
+        data: { status: AdjustmentStatus.COMPLETED },
+      });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('调整单状态不正确，只能对已审核状态的调整单执行调整');
+      }
 
-    if (!adjustment) {
-      throw new NotFoundException('调整单不存在');
-    }
-
-    if (adjustment.status !== AdjustmentStatus.APPROVED) {
-      throw new BadRequestException('调整单状态不正确，只能对已审核状态的调整单执行调整');
-    }
-
-    // 事务处理：调整库存，创建库存流水
-    await this.prisma.$transaction(async (tx) => {
       for (const item of adjustment.items) {
-        // 如果差异为0，跳过
-        if (item.diffQty === 0) continue;
-
         const inventory = await tx.inventory.findUnique({
           where: {
             skuId_warehouseId: {
@@ -235,6 +232,14 @@ export class AdjustmentsService {
 
         const beforeQty = inventory?.quantity || 0;
         const afterQty = item.actualQty;
+        const diffQty = afterQty - beforeQty;
+        if (diffQty === 0) continue;
+
+        if (inventory && item.actualQty < inventory.locked) {
+          throw new BadRequestException(
+            `SKU(ID:${item.skuId})实盘数量不能小于已锁定数量(${inventory.locked})`,
+          );
+        }
 
         if (inventory) {
           // 更新库存
@@ -259,13 +264,13 @@ export class AdjustmentsService {
         }
 
         // 创建库存流水
-        const logType: InventoryType = item.diffQty > 0 ? 'IN_ADJUST' : 'OUT_ADJUST';
+        const logType: InventoryType = diffQty > 0 ? 'IN_ADJUST' : 'OUT_ADJUST';
         await tx.inventoryLog.create({
           data: {
             type: logType,
             skuId: item.skuId,
             warehouseId: adjustment.warehouseId,
-            quantity: item.diffQty,
+            quantity: diffQty,
             before: beforeQty,
             after: afterQty,
             bizType: 'ADJUST',
@@ -277,11 +282,6 @@ export class AdjustmentsService {
         });
       }
 
-      // 更新调整单状态
-      await tx.adjustment.update({
-        where: { id },
-        data: { status: AdjustmentStatus.COMPLETED },
-      });
     });
 
     return this.findOne(id);
@@ -297,14 +297,17 @@ export class AdjustmentsService {
       throw new NotFoundException('调整单不存在');
     }
 
-    if (adjustment.status === AdjustmentStatus.COMPLETED) {
-      throw new BadRequestException('已完成的调整单不能取消');
-    }
-
-    await this.prisma.adjustment.update({
-      where: { id },
+    const cancelled = await this.prisma.adjustment.updateMany({
+      where: {
+        id,
+        deletedAt: null,
+        status: { in: [AdjustmentStatus.PENDING, AdjustmentStatus.APPROVED] },
+      },
       data: { status: AdjustmentStatus.CANCELLED },
     });
+    if (cancelled.count !== 1) {
+      throw new BadRequestException('只有待审核或已审核的调整单可以取消');
+    }
 
     return this.findOne(id);
   }

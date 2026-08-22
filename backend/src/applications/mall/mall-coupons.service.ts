@@ -121,7 +121,7 @@ export class MallCouponsService {
   async claimByUserId(userId: number, couponId: number) {
     const customer = await this.getCustomerProfileByUserId(userId);
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.serializableTransaction(async (tx) => {
       const now = new Date();
       const coupon = await tx.coupon.findFirst({
         where: {
@@ -281,7 +281,7 @@ export class MallCouponsService {
       throw new BadRequestException('兑换码不能为空');
     }
 
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.serializableTransaction(async (tx) => {
       const now = new Date();
       const exchangeCode = await (tx as any).couponExchangeCode.findFirst({
         where: {
@@ -354,14 +354,17 @@ export class MallCouponsService {
         },
       });
 
-      await (tx as any).couponExchangeCode.update({
-        where: { id: exchangeCode.id },
+      const claimed = await (tx as any).couponExchangeCode.updateMany({
+        where: { id: exchangeCode.id, status: 'UNUSED', deletedAt: null },
         data: {
           status: 'USED',
           customerId: customer.id,
           usedAt: now,
         },
       });
+      if (claimed.count !== 1) {
+        throw new BadRequestException('兑换码已被使用或状态已变更');
+      }
 
       await tx.coupon.update({
         where: { id: coupon.id },

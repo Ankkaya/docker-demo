@@ -3,6 +3,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Min,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
@@ -14,6 +15,7 @@ class AdjustmentItemDto {
   skuId: number;
 
   @IsInt({ message: '实盘数量必须是整数' })
+  @Min(0, { message: '实盘数量不能为负数' })
   actualQty: number;
 }
 

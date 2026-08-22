@@ -255,6 +255,10 @@ export class OrdersService {
       throw new NotFoundException('订单不存在');
     }
 
+    if (existing.type === 'MALL') {
+      throw new ForbiddenException('商城订单不允许通过后台通用接口修改');
+    }
+
     if (existing.status !== OrderStatus.PENDING) {
       throw new ForbiddenException('只有待处理的订单可以修改');
     }
@@ -335,13 +339,19 @@ export class OrdersService {
       throw new NotFoundException('订单不存在');
     }
 
-    if (existing.status !== OrderStatus.PENDING) {
-      throw new ForbiddenException('只有待处理的订单可以确认');
+    if (existing.type === 'MALL') {
+      throw new ForbiddenException('商城订单由支付流程自动确认');
     }
 
-    const updated = await this.prisma.order.update({
-      where: { id },
+    const claimed = await this.prisma.order.updateMany({
+      where: { id, deletedAt: null, status: OrderStatus.PENDING },
       data: { status: OrderStatus.CONFIRMED },
+    });
+    if (claimed.count !== 1) {
+      throw new ForbiddenException('只有待处理的订单可以确认');
+    }
+    const updated = await this.prisma.order.findUniqueOrThrow({
+      where: { id },
       include: {
         customer: { select: { id: true, name: true } },
         items: {
@@ -369,20 +379,30 @@ export class OrdersService {
       throw new NotFoundException('订单不存在');
     }
 
-    if (existing.status === OrderStatus.COMPLETED) {
-      throw new ForbiddenException('已完成的订单不能取消');
+    if (existing.type === 'MALL') {
+      throw new ForbiddenException('商城订单必须通过商城取消/退款流程处理');
     }
 
-    if (existing.status === OrderStatus.CANCELLED) {
-      throw new BadRequestException('订单已取消');
+    const cancellable: OrderStatus[] = [OrderStatus.PENDING, OrderStatus.CONFIRMED];
+    if (!cancellable.includes(existing.status) || existing.shipStatus !== 'UNSHIPPED') {
+      throw new ForbiddenException('只有未发货的待处理或已确认订单可以取消');
     }
+    const activeShipment = await this.prisma.shipment.findFirst({
+      where: { orderId: id, deletedAt: null, status: { not: 'CANCELLED' } },
+      select: { id: true },
+    });
+    if (activeShipment) throw new ForbiddenException('订单已有有效发货单，请先处理发货单');
 
-    const updated = await this.prisma.order.update({
-      where: { id },
+    const claimed = await this.prisma.order.updateMany({
+      where: { id, deletedAt: null, status: { in: cancellable }, shipStatus: 'UNSHIPPED' },
       data: {
         status: OrderStatus.CANCELLED,
         ...( { cancelDate: new Date() } as any ),
       },
+    });
+    if (claimed.count !== 1) throw new ForbiddenException('订单状态已变更，无法取消');
+    const updated = await this.prisma.order.findUniqueOrThrow({
+      where: { id },
       include: {
         customer: { select: { id: true, name: true } },
         items: {
@@ -410,9 +430,18 @@ export class OrdersService {
       throw new NotFoundException('订单不存在');
     }
 
-    if (existing.status === OrderStatus.COMPLETED) {
-      throw new ForbiddenException('已完成的订单不能删除');
+    if (existing.type === 'MALL') {
+      throw new ForbiddenException('商城订单不允许通过后台通用接口删除');
     }
+
+    if (existing.status !== OrderStatus.PENDING && existing.status !== OrderStatus.CANCELLED) {
+      throw new ForbiddenException('只有待处理或已取消的订单可以删除');
+    }
+    const activeShipment = await this.prisma.shipment.findFirst({
+      where: { orderId: id, deletedAt: null, status: { not: 'CANCELLED' } },
+      select: { id: true },
+    });
+    if (activeShipment) throw new ForbiddenException('已创建发货单的订单不能删除');
 
     await this.prisma.order.update({
       where: { id },

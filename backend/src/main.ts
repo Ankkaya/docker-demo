@@ -84,6 +84,7 @@ function validateRuntimeEnv(): void {
   assertRequiredEnv('CORS_ORIGINS');
   assertSafeSecret('JWT_SECRET');
   assertSafeSecret('JWT_REFRESH_SECRET');
+  assertSafeSecret('SYSTEM_SETTINGS_ENCRYPTION_KEY');
 }
 
 async function bootstrap() {

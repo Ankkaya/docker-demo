@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, Menu } from '@/types'
-import { login as loginApi, register as registerApi } from '@/api/auth'
+import { login as loginApi } from '@/api/auth'
 import { getCurrentUser, getUserMenus } from '@/api/user'
 import router from '@/router'
 import { encryptPassword } from '@/utils/crypto'
@@ -20,23 +20,6 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const cipher = await encryptPassword(password)
       const res = await loginApi({ username, password: cipher })
-      token.value = res.token
-      user.value = res.user
-      localStorage.setItem('token', res.token)
-      await fetchMenus()
-      return true
-    } catch (error) {
-      return false
-    } finally {
-      loading.value = false
-    }
-  }
-
-  // 注册（注册接口暂未启用 RSA 加密，沿用明文）
-  const register = async (username: string, password: string, name?: string) => {
-    loading.value = true
-    try {
-      const res = await registerApi({ username, password, name })
       token.value = res.token
       user.value = res.user
       localStorage.setItem('token', res.token)
@@ -95,7 +78,6 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isLoggedIn,
     login,
-    register,
     fetchUser,
     fetchMenus,
     logout,

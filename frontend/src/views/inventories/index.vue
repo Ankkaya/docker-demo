@@ -95,8 +95,8 @@
     <!-- 编辑库存弹窗 -->
     <SmartFormContainer
       v-model:show="editModalVisible"
-      title="调整库存"
-      :form-item-count="6"
+      title="编辑库存设置"
+      :form-item-count="5"
       modal-width="500px"
       :drawer-width="680"
     >
@@ -109,9 +109,6 @@
         </n-form-item>
         <n-form-item label="当前库存">
           <span>{{ editForm.currentQuantity }}</span>
-        </n-form-item>
-        <n-form-item label="调整后库存">
-          <n-input-number v-model:value="editForm.quantity" :min="0" style="width: 200px" />
         </n-form-item>
         <n-form-item label="安全库存">
           <n-input-number v-model:value="editForm.minStock" :min="0" style="width: 200px" />
@@ -216,7 +213,6 @@ const editForm = reactive({
   skuName: '',
   warehouseName: '',
   currentQuantity: 0,
-  quantity: 0,
   minStock: 0,
   location: '',
 });
@@ -498,7 +494,6 @@ const handleEdit = (row: InventoryRow) => {
   editForm.skuName = row.sku?.product?.name || row.productName || '-';
   editForm.warehouseName = row.warehouse?.name || row.warehouseName || '-';
   editForm.currentQuantity = row.quantity;
-  editForm.quantity = row.quantity;
   editForm.minStock = row.minStock;
   editForm.location = row.location || '';
   editModalVisible.value = true;
@@ -508,16 +503,15 @@ const handleEdit = (row: InventoryRow) => {
 const handleSaveInventory = async () => {
   try {
     await updateInventory(editForm.id, {
-      quantity: editForm.quantity,
       minStock: editForm.minStock,
       location: editForm.location,
     });
-    message.success('调整成功');
+    message.success('设置已更新');
     editModalVisible.value = false;
     loadData();
     loadStats();
   } catch (error) {
-    message.error('调整失败');
+    message.error('更新失败');
   }
 };
 

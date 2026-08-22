@@ -121,7 +121,6 @@ export function getInventoryLogs(params: {
 export function updateInventory(
   id: number,
   data: {
-    quantity?: number;
     minStock?: number;
     maxStock?: number;
     location?: string;

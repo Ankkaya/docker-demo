@@ -141,7 +141,7 @@ export class BalancesService {
   }
 
   async adjustAccount(id: number, dto: AdjustBalanceDto, userId: number) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.serializableTransaction(async (tx) => {
       const account = await tx.balanceAccount.findUnique({
         where: { id },
         include: this.accountInclude,
@@ -160,26 +160,28 @@ export class BalancesService {
       const changeAmount = dto.direction === BalanceAdjustDirection.INCREASE
         ? amount
         : amount.neg();
-      const after = before.add(changeAmount);
-
-      if (after.isNegative()) {
+      const changed = await tx.balanceAccount.updateMany({
+        where: {
+          id: account.id,
+          status: BalanceAccountStatus.ACTIVE,
+          ...(dto.direction === BalanceAdjustDirection.DECREASE
+            ? { availableBalance: { gte: amount } }
+            : {}),
+        },
+        data: {
+          availableBalance: { increment: changeAmount },
+          totalAdjusted: { increment: changeAmount },
+          ...(dto.direction === BalanceAdjustDirection.INCREASE
+            ? { totalRecharged: { increment: amount } }
+            : { totalConsumed: { increment: amount } }),
+        },
+      });
+      if (changed.count !== 1) {
         throw new BadRequestException('余额不足，不能扣减');
       }
 
-      const data: Prisma.BalanceAccountUpdateInput = {
-        availableBalance: after,
-        totalAdjusted: addMoney(account.totalAdjusted, changeAmount),
-      };
-
-      if (dto.direction === BalanceAdjustDirection.INCREASE) {
-        data.totalRecharged = addMoney(account.totalRecharged, amount);
-      } else {
-        data.totalConsumed = addMoney(account.totalConsumed, amount);
-      }
-
-      const updated = await tx.balanceAccount.update({
+      const updated = await tx.balanceAccount.findUniqueOrThrow({
         where: { id: account.id },
-        data,
         include: this.accountInclude,
       });
 
@@ -193,7 +195,7 @@ export class BalancesService {
           changeAmount,
           bonusAmount: 0,
           balanceBefore: before,
-          balanceAfter: after,
+          balanceAfter: updated.availableBalance,
           bizType: dto.bizType,
           bizId: dto.bizId,
           bizNo: dto.bizNo,

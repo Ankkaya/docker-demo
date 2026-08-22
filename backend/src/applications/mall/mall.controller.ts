@@ -21,7 +21,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { CustomerJwtAuthGuard as JwtAuthGuard } from '@/auth/guards/customer-jwt-auth.guard';
 import { PaymentsService } from '@/domains/payments/payments.service';
 import { MallService } from './mall.service';
 import { QueryMallProductDto } from './dto/query-mall-product.dto';

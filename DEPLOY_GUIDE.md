@@ -132,6 +132,7 @@ REDIS_PASSWORD=测试Redis强密码
 # ====== 应用 ======
 JWT_SECRET=测试JWT密钥至少32位随机字符
 JWT_REFRESH_SECRET=测试Refresh密钥至少32位随机字符
+SYSTEM_SETTINGS_ENCRYPTION_KEY=测试环境独立的至少32位随机字符
 FILE_BASE_URL=http://测试服务器IP:3001
 ENABLE_SWAGGER=true
 CORS_ORIGINS=http://测试服务器IP:8080
@@ -159,6 +160,7 @@ REDIS_PASSWORD=你的正式Redis强密码
 # ====== 应用 ======
 JWT_SECRET=你的正式JWT密钥至少32位随机字符
 JWT_REFRESH_SECRET=你的正式Refresh密钥至少32位随机字符
+SYSTEM_SETTINGS_ENCRYPTION_KEY=你的正式系统设置加密密钥至少32位随机字符
 FILE_BASE_URL=https://你的正式域名
 ENABLE_SWAGGER=false
 CORS_ORIGINS=https://你的正式域名

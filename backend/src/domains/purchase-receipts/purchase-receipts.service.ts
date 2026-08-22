@@ -86,81 +86,54 @@ export class PurchaseReceiptsService {
   // 创建入库单
   async create(createDto: CreateReceiptDto, userId: number) {
     const { purchaseId, items, remark } = createDto;
-
-    // 验证采购订单
-    const purchase = await this.prisma.purchase.findFirst({
-      where: { id: purchaseId, deletedAt: null },
-      include: {
-        items: true,
-        supplier: { select: { id: true, name: true } },
-      },
-    });
-
-    if (!purchase) {
-      throw new NotFoundException('采购订单不存在');
-    }
-
-    if (purchase.status !== PurchaseStatus.APPROVED && purchase.status !== PurchaseStatus.PARTIAL) {
-      throw new ForbiddenException('只能对已审核或部分入库的采购订单创建入库单');
-    }
-
     if (!items || items.length === 0) {
       throw new BadRequestException('入库商品不能为空');
     }
-
-    // 验证入库数量是否超过待入库数量
-    for (const item of items) {
-      const purchaseItem = purchase.items.find((pi) => pi.skuId === item.skuId);
-      if (!purchaseItem) {
-        throw new BadRequestException(`商品SKU(ID:${item.skuId})不在采购订单中`);
-      }
-      const pendingQty = purchaseItem.quantity - purchaseItem.received;
-      if (item.quantity > pendingQty) {
-        throw new BadRequestException(
-          `商品SKU(ID:${item.skuId})入库数量超过待入库数量(待入库:${pendingQty})`,
-        );
-      }
-    }
-
-    // 计算总金额
     const totalAmount = sumMoney(items, (item) => mulMoney(item.price, item.quantity));
+    const receipt = await this.prisma.serializableTransaction(async (tx) => {
+      const purchase = await tx.purchase.findFirst({
+        where: { id: purchaseId, deletedAt: null },
+        include: { items: true },
+      });
+      if (!purchase) throw new NotFoundException('采购订单不存在');
+      if (purchase.status !== PurchaseStatus.APPROVED && purchase.status !== PurchaseStatus.PARTIAL) {
+        throw new ForbiddenException('只能对已审核或部分入库的采购订单创建入库单');
+      }
 
-    // 创建入库单
-    const receipt = await this.prisma.purchaseReceipt.create({
-      data: {
-        receiptNo: generateReceiptNo(),
-        purchaseId,
-        warehouseId: purchase.warehouseId,
-        totalAmount,
-        status: ReceiptStatus.PENDING,
-        remark,
-        createdBy: userId,
-        items: {
-          create: items.map((item) => ({
-            skuId: item.skuId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+      const allocated = await tx.purchaseReceiptItem.groupBy({
+        by: ['skuId'],
+        where: {
+          receipt: { purchaseId, deletedAt: null, status: ReceiptStatus.PENDING },
         },
-      },
-      include: {
-        purchase: {
-          select: {
-            orderNo: true,
-            supplier: { select: { name: true } },
-          },
+        _sum: { quantity: true },
+      });
+      const allocatedBySku = new Map(allocated.map((row) => [row.skuId, row._sum.quantity ?? 0]));
+      for (const item of items) {
+        const purchaseItem = purchase.items.find((pi) => pi.skuId === item.skuId);
+        if (!purchaseItem) throw new BadRequestException(`商品SKU(ID:${item.skuId})不在采购订单中`);
+        const remaining = purchaseItem.quantity - purchaseItem.received - (allocatedBySku.get(item.skuId) ?? 0);
+        if (item.quantity > remaining) {
+          throw new BadRequestException(`商品SKU(ID:${item.skuId})入库数量超过可分配数量(可分配:${remaining})`);
+        }
+      }
+
+      return tx.purchaseReceipt.create({
+        data: {
+          receiptNo: generateReceiptNo(),
+          purchaseId,
+          warehouseId: purchase.warehouseId,
+          totalAmount,
+          status: ReceiptStatus.PENDING,
+          remark,
+          createdBy: userId,
+          items: { create: items.map((item) => ({ skuId: item.skuId, quantity: item.quantity, price: item.price })) },
         },
-        warehouse: { select: { id: true, name: true } },
-        items: {
-          include: {
-            sku: {
-              include: {
-                product: { select: { id: true, name: true } },
-              },
-            },
-          },
+        include: {
+          purchase: { select: { orderNo: true, supplier: { select: { name: true } } } },
+          warehouse: { select: { id: true, name: true } },
+          items: { include: { sku: { include: { product: { select: { id: true, name: true } } } } } },
         },
-      },
+      });
     });
 
     return ReceiptDetailVo.fromEntity(receipt);
@@ -274,11 +247,17 @@ export class PurchaseReceiptsService {
     }
 
     // 使用事务执行入库操作
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.serializableTransaction(async (tx) => {
       // 1. 更新入库单状态
-      const updatedReceipt = await tx.purchaseReceipt.update({
-        where: { id },
+      const claimed = await tx.purchaseReceipt.updateMany({
+        where: { id, deletedAt: null, status: ReceiptStatus.PENDING },
         data: { status: ReceiptStatus.RECEIVED },
+      });
+      if (claimed.count !== 1) {
+        throw new ForbiddenException('只有待入库的入库单可以确认入库');
+      }
+      const updatedReceipt = await tx.purchaseReceipt.findUniqueOrThrow({
+        where: { id },
         include: {
           purchase: {
             select: {
@@ -445,10 +424,13 @@ export class PurchaseReceiptsService {
       throw new BadRequestException('入库单已取消');
     }
 
-    await this.prisma.purchaseReceipt.update({
-      where: { id },
+    const cancelled = await this.prisma.purchaseReceipt.updateMany({
+      where: { id, deletedAt: null, status: ReceiptStatus.PENDING },
       data: { status: ReceiptStatus.CANCELLED },
     });
+    if (cancelled.count !== 1) {
+      throw new BadRequestException('只有待入库的入库单可以取消');
+    }
 
     return { success: true };
   }

@@ -37,96 +37,48 @@ export class ShipmentsService {
 
   async create(createDto: CreateShipmentDto, userId: number) {
     const { orderId, items, logisticsCompany, trackingNo, remark } = createDto;
-
-    const order = await this.prisma.order.findFirst({
-      where: { id: orderId, deletedAt: null },
-      include: {
-        items: true,
-        customer: { select: { id: true, name: true } },
-      },
-    });
-
-    if (!order) {
-      throw new NotFoundException('订单不存在');
-    }
-
-    if (order.status !== OrderStatus.CONFIRMED || order.shipStatus !== ShipStatus.UNSHIPPED) {
-      throw new ForbiddenException('只能对待发货订单创建发货单');
-    }
-
     if (!items || items.length === 0) {
       throw new BadRequestException('发货商品不能为空');
     }
-
-    const existingShipment = await this.prisma.shipment.findFirst({
-      where: {
-        orderId,
-        deletedAt: null,
-      },
-    });
-
-    if (existingShipment) {
-      throw new BadRequestException('该订单已创建发货单');
+    if (new Set(items.map((item) => item.skuId)).size !== items.length) {
+      throw new BadRequestException('同一SKU不能在一张发货单中重复');
     }
 
-    const pendingItems = order.items.filter(item => item.quantity - item.shipped > 0);
-    if (pendingItems.length === 0) {
-      throw new BadRequestException('订单中没有可发货商品');
-    }
-
-    if (items.length !== pendingItems.length) {
-      throw new BadRequestException('发货商品必须与订单待发货商品一致');
-    }
-
-    // MALL 订单在创建时已通过 carts.lockSkuInventory 占用 locked，校验时需放宽到 quantity 维度
-    // （locked 已扣减 available，若仍按 available 校验会导致 mall 订单永远发不出去）
-    const isMallOrder = order.type === OrderType.MALL;
-
-    for (const orderItem of pendingItems) {
-      const shipmentItem = items.find(item => item.skuId === orderItem.skuId);
-      if (!shipmentItem) {
-        throw new BadRequestException(`商品SKU(ID:${orderItem.skuId})缺少发货仓库`);
+    const shipment = await this.prisma.serializableTransaction(async (tx) => {
+      const order = await tx.order.findFirst({ where: { id: orderId, deletedAt: null }, include: { items: true } });
+      if (!order) throw new NotFoundException('订单不存在');
+      const canShipStatus = order.status === OrderStatus.CONFIRMED || order.status === OrderStatus.PROCESSING;
+      const canShipProgress = order.shipStatus === ShipStatus.UNSHIPPED || order.shipStatus === ShipStatus.PARTIAL;
+      if (!canShipStatus || !canShipProgress) throw new ForbiddenException('只能对待发货或部分发货订单创建发货单');
+      if (order.type === OrderType.MALL && order.payStatus !== 'PAID') {
+        throw new ForbiddenException('商城订单必须支付完成后才能发货');
       }
 
-      const pendingQty = orderItem.quantity - orderItem.shipped;
-      if (shipmentItem.quantity !== pendingQty) {
-        throw new BadRequestException(
-          `商品SKU(ID:${orderItem.skuId})发货数量必须等于待发货数量(待发货:${pendingQty})`,
-        );
-      }
-
-      const warehouse = await this.prisma.warehouse.findFirst({
-        where: {
-          id: shipmentItem.warehouseId,
-          deletedAt: null,
-          isEnabled: true,
-        },
+      const allocated = await tx.shipmentItem.groupBy({
+        by: ['skuId'],
+        where: { shipment: { orderId, deletedAt: null, status: ShipmentStatus.PENDING } },
+        _sum: { quantity: true },
       });
-      if (!warehouse) {
-        throw new NotFoundException(`仓库(ID:${shipmentItem.warehouseId})不存在或已禁用`);
+      const allocatedBySku = new Map(allocated.map((row) => [row.skuId, row._sum.quantity ?? 0]));
+      const isMallOrder = order.type === OrderType.MALL;
+      for (const shipmentItem of items) {
+        const orderItem = order.items.find((item) => item.skuId === shipmentItem.skuId);
+        if (!orderItem) throw new BadRequestException(`商品SKU(ID:${shipmentItem.skuId})不在订单中`);
+        const remaining = orderItem.quantity - orderItem.shipped - (allocatedBySku.get(shipmentItem.skuId) ?? 0);
+        if (shipmentItem.quantity > remaining) {
+          throw new BadRequestException(`商品SKU(ID:${shipmentItem.skuId})发货数量超过可分配数量(可分配:${remaining})`);
+        }
+        const warehouse = await tx.warehouse.findFirst({ where: { id: shipmentItem.warehouseId, deletedAt: null, isEnabled: true } });
+        if (!warehouse) throw new NotFoundException(`仓库(ID:${shipmentItem.warehouseId})不存在或已禁用`);
+        const inventory = await tx.inventory.findUnique({ where: { skuId_warehouseId: { skuId: shipmentItem.skuId, warehouseId: shipmentItem.warehouseId } } });
+        const stockOnHand = isMallOrder ? (inventory?.quantity ?? 0) : (inventory?.available ?? 0);
+        if (!inventory || stockOnHand < shipmentItem.quantity) {
+          const label = isMallOrder ? '物理库存' : '可用库存';
+          throw new BadRequestException(`商品SKU(ID:${shipmentItem.skuId})在仓库[${warehouse.name}]${label}不足(${label}:${stockOnHand})`);
+        }
       }
 
-      const inventory = await this.prisma.inventory.findUnique({
-        where: {
-          skuId_warehouseId: {
-            skuId: shipmentItem.skuId,
-            warehouseId: shipmentItem.warehouseId,
-          },
-        },
-      });
-
-      const stockOnHand = isMallOrder
-        ? (inventory?.quantity || 0)
-        : (inventory?.available || 0);
-      if (!inventory || stockOnHand < shipmentItem.quantity) {
-        const label = isMallOrder ? '物理库存' : '可用库存';
-        throw new BadRequestException(
-          `商品SKU(ID:${shipmentItem.skuId})在仓库[${warehouse.name}]${label}不足(${label}:${stockOnHand})`,
-        );
-      }
-    }
-
-    const shipment = await this.prisma.shipment.create({
+      return tx.shipment.create({
       data: {
         shipmentNo: generateShipmentNo(),
         orderId,
@@ -163,6 +115,7 @@ export class ShipmentsService {
           },
         },
       },
+      });
     });
 
     return ShipmentDetailVo.fromEntity(shipment);
@@ -320,13 +273,17 @@ export class ShipmentsService {
       }
     }
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const updatedShipment = await tx.shipment.update({
-        where: { id },
+    const result = await this.prisma.serializableTransaction(async (tx) => {
+      const claimed = await tx.shipment.updateMany({
+        where: { id, deletedAt: null, status: ShipmentStatus.PENDING },
         data: {
           status: ShipmentStatus.SHIPPED,
           warehouseId: shipment.items[0].warehouseId,
         },
+      });
+      if (claimed.count !== 1) throw new ForbiddenException('只有待发货的发货单可以确认发货');
+      const updatedShipment = await tx.shipment.findUniqueOrThrow({
+        where: { id },
         include: {
           warehouse: true,
           order: {
@@ -426,11 +383,14 @@ export class ShipmentsService {
         }
       }
 
+      const currentItems = await tx.orderItem.findMany({ where: { orderId: shipment.orderId } });
+      const allShipped = currentItems.every((item) => item.shipped >= item.quantity);
+      const anyShipped = currentItems.some((item) => item.shipped > 0);
       await tx.order.update({
         where: { id: shipment.orderId },
         data: {
-          shipStatus: ShipStatus.SHIPPED,
-          status: OrderStatus.SHIPPED,
+          shipStatus: allShipped ? ShipStatus.SHIPPED : anyShipped ? ShipStatus.PARTIAL : ShipStatus.UNSHIPPED,
+          status: allShipped ? OrderStatus.SHIPPED : OrderStatus.PROCESSING,
           shipDate: new Date(),
         },
       });
@@ -454,36 +414,33 @@ export class ShipmentsService {
       throw new ForbiddenException('只有已发货的发货单可以确认收货');
     }
 
-    const updated = await this.prisma.shipment.update({
-      where: { id },
-      data: { status: ShipmentStatus.RECEIVED },
-      include: {
-        warehouse: true,
-        order: {
-          select: {
-            orderNo: true,
-            customer: { select: { name: true } },
-          },
-        },
-        items: {
-          include: {
-            warehouse: true,
-            sku: {
-              include: {
-                product: { select: { id: true, name: true } },
-              },
-            },
-          },
-        },
-      },
-    });
+    const updated = await this.prisma.serializableTransaction(async (tx) => {
+      const claimed = await tx.shipment.updateMany({
+        where: { id, deletedAt: null, status: ShipmentStatus.SHIPPED },
+        data: { status: ShipmentStatus.RECEIVED },
+      });
+      if (claimed.count !== 1) throw new ForbiddenException('只有已发货的发货单可以确认收货');
 
-    await this.prisma.order.update({
-      where: { id: shipment.orderId },
-      data: {
-        status: OrderStatus.COMPLETED,
-        receiveDate: new Date(),
-      },
+      const activeShipments = await tx.shipment.findMany({
+        where: { orderId: shipment.orderId, deletedAt: null, status: { not: ShipmentStatus.CANCELLED } },
+        select: { status: true },
+      });
+      const order = await tx.order.findUniqueOrThrow({ where: { id: shipment.orderId } });
+      if (order.shipStatus === ShipStatus.SHIPPED && activeShipments.every((row) => row.status === ShipmentStatus.RECEIVED)) {
+        await tx.order.update({
+          where: { id: shipment.orderId },
+          data: { status: OrderStatus.COMPLETED, shipStatus: ShipStatus.RECEIVED, receiveDate: new Date() },
+        });
+      }
+
+      return tx.shipment.findUniqueOrThrow({
+        where: { id },
+        include: {
+          warehouse: true,
+          order: { select: { orderNo: true, customer: { select: { name: true } } } },
+          items: { include: { warehouse: true, sku: { include: { product: { select: { id: true, name: true } } } } } },
+        },
+      });
     });
 
     return ShipmentDetailVo.fromEntity(updated);

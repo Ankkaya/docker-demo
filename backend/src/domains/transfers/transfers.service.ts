@@ -212,8 +212,12 @@ export class TransfersService {
       throw new BadRequestException('调拨单状态不正确，只能对待出库状态的调拨单进行出库操作');
     }
 
-    // 事务处理：出库扣减库存，创建库存流水
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.serializableTransaction(async (tx) => {
+      const claimed = await tx.transfer.updateMany({
+        where: { id, deletedAt: null, status: TransferStatus.PENDING },
+        data: { status: TransferStatus.OUT },
+      });
+      if (claimed.count !== 1) throw new BadRequestException('调拨单状态已变更，无法重复出库');
       for (const item of transfer.items) {
         // 检查并扣减库存
         const inventory = await tx.inventory.findUnique({
@@ -263,11 +267,6 @@ export class TransfersService {
         });
       }
 
-      // 更新调拨单状态
-      await tx.transfer.update({
-        where: { id },
-        data: { status: TransferStatus.OUT },
-      });
     });
 
     return this.findOne(id);
@@ -288,8 +287,12 @@ export class TransfersService {
       throw new BadRequestException('调拨单状态不正确，只能对已出库状态的调拨单进行入库操作');
     }
 
-    // 事务处理：入库增加库存，创建库存流水
-    await this.prisma.$transaction(async (tx) => {
+    await this.prisma.serializableTransaction(async (tx) => {
+      const claimed = await tx.transfer.updateMany({
+        where: { id, deletedAt: null, status: TransferStatus.OUT },
+        data: { status: TransferStatus.COMPLETED },
+      });
+      if (claimed.count !== 1) throw new BadRequestException('调拨单状态已变更，无法重复入库');
       for (const item of transfer.items) {
         // 查询或创建库存记录
         let inventory = await tx.inventory.findUnique({
@@ -341,11 +344,6 @@ export class TransfersService {
         });
       }
 
-      // 更新调拨单状态
-      await tx.transfer.update({
-        where: { id },
-        data: { status: TransferStatus.COMPLETED },
-      });
     });
 
     return this.findOne(id);
@@ -367,7 +365,12 @@ export class TransfersService {
 
     // 如果已经出库，需要回滚库存
     if (transfer.status === TransferStatus.OUT) {
-      await this.prisma.$transaction(async (tx) => {
+      await this.prisma.serializableTransaction(async (tx) => {
+        const claimed = await tx.transfer.updateMany({
+          where: { id, deletedAt: null, status: TransferStatus.OUT },
+          data: { status: TransferStatus.CANCELLED },
+        });
+        if (claimed.count !== 1) throw new BadRequestException('调拨单状态已变更，无法取消');
         const items = await tx.transferItem.findMany({
           where: { transferId: id },
         });
@@ -411,16 +414,13 @@ export class TransfersService {
           }
         }
 
-        await tx.transfer.update({
-          where: { id },
-          data: { status: TransferStatus.CANCELLED },
-        });
       });
     } else {
-      await this.prisma.transfer.update({
-        where: { id },
+      const cancelled = await this.prisma.transfer.updateMany({
+        where: { id, deletedAt: null, status: TransferStatus.PENDING },
         data: { status: TransferStatus.CANCELLED },
       });
+      if (cancelled.count !== 1) throw new BadRequestException('只有待出库或已出库的调拨单可以取消');
     }
 
     return this.findOne(id);

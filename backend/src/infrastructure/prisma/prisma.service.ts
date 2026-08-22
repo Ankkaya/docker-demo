@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
@@ -41,5 +41,30 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
     await this.pool.end();
     this.logger.log('✅ 数据库连接已断开');
+  }
+
+  /**
+   * 资金、库存状态机使用可串行化事务；遇到 PostgreSQL 写冲突时自动重试。
+   */
+  async serializableTransaction<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+    maxRetries = 3,
+  ): Promise<T> {
+    let attempt = 0;
+    while (true) {
+      try {
+        return await this.$transaction(operation, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          maxWait: 5_000,
+          timeout: 20_000,
+        });
+      } catch (error: any) {
+        attempt += 1;
+        if (error?.code !== 'P2034' || attempt >= maxRetries) {
+          throw error;
+        }
+        this.logger.warn(`可串行化事务发生写冲突，正在重试 (${attempt}/${maxRetries})`);
+      }
+    }
   }
 }

@@ -1,22 +1,18 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateInventoryDto {
-  @ApiPropertyOptional({ example: 100, description: '调整后的库存数量' })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  quantity?: number;
-
   @ApiPropertyOptional({ example: 10, description: '安全库存下限' })
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   @IsOptional()
   @Type(() => Number)
   minStock?: number;
 
   @ApiPropertyOptional({ example: 1000, description: '库存上限' })
-  @IsNumber()
+  @IsInt()
+  @Min(0)
   @IsOptional()
   @Type(() => Number)
   maxStock?: number;
