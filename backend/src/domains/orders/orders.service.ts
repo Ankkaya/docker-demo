@@ -9,7 +9,7 @@ import { CustomerAddressesService } from '@/domains/customer-addresses/customer-
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { QueryOrderDto } from './dto/query-order.dto';
-import { OrderStatus, PayStatus, ShipStatus, Prisma } from '@prisma/client';
+import { OrderStatus, OrderType, PayStatus, ShipStatus, Prisma } from '@prisma/client';
 import { OrderVo, OrderDetailVo } from './vo/order.vo';
 
 // 生成订单号
@@ -150,6 +150,7 @@ export class OrdersService {
     const {
       keyword,
       customerId,
+      type,
       status,
       payStatus,
       shipStatus,
@@ -167,6 +168,10 @@ export class OrdersService {
 
     if (customerId) {
       where.customerId = customerId;
+    }
+
+    if (type) {
+      where.type = type as OrderType;
     }
 
     if (status) {

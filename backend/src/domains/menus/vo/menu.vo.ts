@@ -19,6 +19,9 @@ export class MenuVo {
   @ApiProperty({ description: '组件路径', nullable: true })
   component: string | null;
 
+  @ApiProperty({ description: '权限编码', nullable: true })
+  permission: string | null;
+
   @ApiProperty({ description: '重定向地址', nullable: true })
   redirect: string | null;
 
@@ -48,6 +51,7 @@ export class MenuVo {
       icon: entity.icon,
       iconUrl: entity.iconUrl ?? null,
       component: entity.component,
+      permission: entity.permission ?? null,
       redirect: entity.redirect,
       parentId: entity.parentId,
       order: entity.order,

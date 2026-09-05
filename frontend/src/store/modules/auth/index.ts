@@ -71,6 +71,15 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // 按钮级权限：超级管理员由后端角色编码兜底，其余角色从已分配菜单中的按钮权限判断
+  const hasPermission = (permission: string) => {
+    if (user.value?.roles?.some(role => role.code === 'admin')) return true
+
+    const visit = (items: Menu[]): boolean => items.some(item =>
+      item.permission === permission || (item.children ? visit(item.children) : false))
+    return visit(menus.value)
+  }
+
   return {
     token,
     user,
@@ -80,6 +89,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     fetchUser,
     fetchMenus,
+    hasPermission,
     logout,
     init
   }

@@ -16,6 +16,8 @@ import { ShipmentsService } from './shipments.service';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { QueryShipmentDto } from './dto/query-shipment.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '@/auth/guards/permission.guard';
+import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
 
 @ApiTags('后台接口/发货管理')
 @Controller('shipments')
@@ -25,6 +27,8 @@ export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
 
   @Post()
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('trade:shipment:create')
   @ApiOperation({ summary: '创建发货单（为每个SKU指定发货仓库）' })
   create(@Body() createDto: CreateShipmentDto, @Req() req: any) {
     return this.shipmentsService.create(createDto, req.user.userId);
@@ -43,18 +47,24 @@ export class ShipmentsController {
   }
 
   @Patch(':id/ship')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('trade:shipment:ship')
   @ApiOperation({ summary: '确认发货' })
   ship(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     return this.shipmentsService.ship(id, req.user.userId);
   }
 
   @Patch(':id/receive')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('trade:shipment:receive')
   @ApiOperation({ summary: '确认收货' })
   receive(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     return this.shipmentsService.receive(id, req.user.userId);
   }
 
   @Delete(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('trade:shipment:delete')
   @ApiOperation({ summary: '删除发货单' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.shipmentsService.remove(id);

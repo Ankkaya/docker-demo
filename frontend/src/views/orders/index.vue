@@ -1,5 +1,8 @@
 <template>
   <div class="p-4">
+    <n-alert v-if="mallOnly" class="mb-4" type="info" :show-icon="false">
+      当前仅展示商城订单。商城订单由支付流程自动确认，后台通用销售订单操作不可用。
+    </n-alert>
     <!-- 搜索栏 -->
     <n-card class="mb-4" content-style="padding-bottom: 0;">
       <QueryForm :model="searchForm" @search="handleSearch">
@@ -24,7 +27,7 @@
     <!-- 操作栏 -->
     <n-card class="mb-4">
       <n-space>
-        <n-button type="primary" @click="handleCreate">新增销售订单</n-button>
+        <n-button v-if="!mallOnly && authStore.hasPermission('sale:order:create')" type="primary" @click="handleCreate">新增销售订单</n-button>
       </n-space>
     </n-card>
 
@@ -51,8 +54,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, h, onMounted } from 'vue';
+import { ref, reactive, h, onMounted, computed } from 'vue';
 import { NButton, NSpace, NTag, NPopconfirm, useMessage } from 'naive-ui';
+import { useRoute } from 'vue-router';
+import { useAuthStore } from '@/store';
 import type { DataTableColumns } from 'naive-ui';
 import QueryForm from '@/components/common/QueryForm.vue';
 import { getOrders, deleteOrder, confirmOrder, cancelOrder } from '@/api/order';
@@ -65,6 +70,9 @@ import type { Customer } from '@/types/basic-data';
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 
 const message = useMessage();
+const authStore = useAuthStore();
+const route = useRoute();
+const mallOnly = computed(() => route.path === '/mall/orders');
 
 // 搜索表单
 const searchForm = reactive({
@@ -186,23 +194,27 @@ const columns: DataTableColumns<Order> = autoFitTableColumns([
       );
 
       // 待处理状态的操作
-      if (row.status === 'PENDING') {
-        buttons.push(
-          h(NButton, { size: 'small', type: 'primary', onClick: () => handleEdit(row) }, { default: () => '编辑' }),
-          h(NButton, { size: 'small', type: 'success', onClick: () => handleConfirm(row) }, { default: () => '确认' }),
-          h(
+      if (!mallOnly.value && row.status === 'PENDING') {
+        if (authStore.hasPermission('sale:order:update')) {
+          buttons.push(h(NButton, { size: 'small', type: 'primary', onClick: () => handleEdit(row) }, { default: () => '编辑' }));
+        }
+        if (authStore.hasPermission('sale:order:confirm')) {
+          buttons.push(h(NButton, { size: 'small', type: 'success', onClick: () => handleConfirm(row) }, { default: () => '确认' }));
+        }
+        if (authStore.hasPermission('sale:order:delete')) {
+          buttons.push(h(
             NPopconfirm,
             { onPositiveClick: () => handleDelete(row) },
             {
               trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
               default: () => '确定删除该订单吗？',
             }
-          )
-        );
+          ));
+        }
       }
 
       // 已确认/处理中状态的操作
-      if (row.status === 'CONFIRMED' || row.status === 'PROCESSING') {
+      if (!mallOnly.value && authStore.hasPermission('sale:order:cancel') && (row.status === 'CONFIRMED' || row.status === 'PROCESSING')) {
         buttons.push(
           h(NButton, { size: 'small', type: 'warning', onClick: () => handleCancel(row) }, { default: () => '取消' })
         );
@@ -222,6 +234,7 @@ const loadData = async () => {
       keyword: searchForm.keyword || undefined,
       customerId: searchForm.customerId || undefined,
       status: searchForm.status || undefined,
+      type: mallOnly.value ? 'MALL' : undefined,
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
@@ -236,7 +249,7 @@ const loadData = async () => {
 const loadCustomers = async () => {
   try {
     const res = await getCustomers();
-    const list = (res as any).data || [];
+    const list = Array.isArray(res) ? res : ((res as any)?.data || []);
     customerOptions.value = list
       .filter((c: Customer) => c.isEnabled)
       .map((c: Customer) => ({

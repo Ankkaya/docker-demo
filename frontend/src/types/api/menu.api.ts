@@ -11,6 +11,7 @@ export interface CreateMenuParams {
   icon?: string;
   iconUrl?: string;
   component?: string;
+  permission?: string;
   redirect?: string;
   parentId?: number;
   order?: number;

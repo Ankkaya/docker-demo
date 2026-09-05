@@ -17,6 +17,10 @@ export class QueryOrderDto {
 
   @IsString()
   @IsOptional()
+  type?: 'SALE' | 'MALL';
+
+  @IsString()
+  @IsOptional()
   payStatus?: string;
 
   @IsString()

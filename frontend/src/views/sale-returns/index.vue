@@ -232,8 +232,8 @@ const loadData = async () => {
       page: pagination.page,
       pageSize: pagination.pageSize,
     });
-    returnList.value = res.data.data;
-    pagination.itemCount = res.data.meta.total;
+    returnList.value = res.data;
+    pagination.itemCount = res.meta.total;
   } finally {
     loading.value = false;
   }
@@ -243,7 +243,7 @@ const loadData = async () => {
 const loadCustomers = async () => {
   try {
     const res: any = await getCustomers();
-    const list = res.data.data || [];
+    const list = res.data || [];
     customerOptions.value = list
       .filter((c: Customer) => c.isEnabled)
       .map((c: Customer) => ({

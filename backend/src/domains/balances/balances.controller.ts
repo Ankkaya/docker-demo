@@ -11,6 +11,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '@/auth/guards/permission.guard';
+import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
 import { BalancesService } from './balances.service';
 import { AdjustBalanceDto } from './dto/adjust-balance.dto';
 import { CreateBalanceAccountDto } from './dto/create-balance-account.dto';
@@ -26,6 +28,8 @@ export class BalancesController {
   constructor(private readonly balancesService: BalancesService) {}
 
   @Post('accounts')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('member:balance:create')
   @ApiOperation({ summary: '开通余额账户' })
   createAccount(@Body() dto: CreateBalanceAccountDto) {
     return this.balancesService.createAccount(dto);
@@ -44,6 +48,8 @@ export class BalancesController {
   }
 
   @Post('accounts/:id/adjust')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('member:balance:adjust')
   @ApiOperation({ summary: '余额调账' })
   adjustAccount(
     @Param('id', ParseIntPipe) id: number,

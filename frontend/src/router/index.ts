@@ -296,6 +296,19 @@ const router = createRouter({
     },
     // ==================== 商城管理模块 ====================
     {
+      path: '/mall/orders',
+      component: () => import('@/views/layout/index.vue'),
+      meta: { title: '商城订单' },
+      children: [
+        {
+          path: '',
+          name: 'mall-order-list',
+          component: () => import('@/views/orders/index.vue'),
+          meta: { title: '商城订单' }
+        }
+      ]
+    },
+    {
       path: '/carts',
       component: () => import('@/views/layout/index.vue'),
       meta: { title: '购物车管理' },

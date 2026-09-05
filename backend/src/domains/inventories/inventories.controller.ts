@@ -1,5 +1,6 @@
 import {
   Controller,
+  BadRequestException,
   Get,
   Post,
   Patch,
@@ -33,8 +34,17 @@ export class InventoriesController {
 
   @Get('stats')
   @ApiOperation({ summary: '获取库存汇总统计' })
-  getStats(@Query('warehouseId', ParseIntPipe) warehouseId?: number) {
-    return this.inventoriesService.getInventoryStats(warehouseId);
+  getStats(@Query('warehouseId') warehouseId?: string) {
+    if (warehouseId === undefined || warehouseId === '') {
+      return this.inventoriesService.getInventoryStats();
+    }
+
+    const parsedWarehouseId = Number(warehouseId);
+    if (!Number.isInteger(parsedWarehouseId) || parsedWarehouseId <= 0) {
+      throw new BadRequestException('warehouseId 必须是正整数');
+    }
+
+    return this.inventoriesService.getInventoryStats(parsedWarehouseId);
   }
 
   @Get('warnings')

@@ -180,12 +180,12 @@ const handleCancel = () => emit('cancel');
 
 onMounted(async () => {
   const [customersRes, productsRes] = await Promise.all([getCustomers(), getProducts()]);
-  const customers = (customersRes as any).data || [];
+  const customers = Array.isArray(customersRes) ? customersRes : ((customersRes as any)?.data || []);
   customerOptions.value = customers.map((c: any) => ({
     label: c.name,
     value: c.id,
   })) || [];
-  const products = (productsRes as any).data || [];
+  const products = Array.isArray(productsRes) ? productsRes : ((productsRes as any)?.data || []);
   skuOptions.value = products.flatMap((p: any) => 
     (p.skus || []).map((s: any) => ({
       label: `${p.name} - ${Object.entries(s.specs || {}).map(([k, v]) => `${k}:${v}`).join(',')}`,

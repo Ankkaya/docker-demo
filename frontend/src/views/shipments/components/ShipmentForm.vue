@@ -171,7 +171,7 @@ async function loadOrderDetail(orderId: number) {
         try {
           const skuInventory = await getSkuInventories(item.skuId);
           item.warehouseOptions = (skuInventory.inventories || []).map(inventory => ({
-            label: `${inventory.warehouseName}（可用库存：${inventory.available}）`,
+            label: `${(inventory as any).warehouse?.name || inventory.warehouseName || `仓库${inventory.warehouseId}`}（可用库存：${inventory.available}）`,
             value: inventory.warehouseId,
             disabled: inventory.available < item.quantity,
           }));

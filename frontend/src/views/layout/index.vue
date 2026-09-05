@@ -107,11 +107,15 @@ const renderIcon = (menu?: Pick<Menu, 'icon' | 'iconUrl'>) => {
 
 // 将后端菜单转换为 Naive UI 菜单选项
 const mapMenuToOption = (menu: Menu): MenuOption => {
+  const visibleChildren = menu.children?.filter(item => !item.hidden && item.type !== 'button')
+
   return {
     label: menu.name,
     key: menu.path || String(menu.id),
     icon: renderIcon(menu),
-    children: menu.children?.map(mapMenuToOption)
+    ...(visibleChildren?.length
+      ? { children: visibleChildren.map(mapMenuToOption) }
+      : {})
   }
 }
 
@@ -126,7 +130,7 @@ const menuOptions = computed<MenuOption[]>(() => {
   console.log('Raw menus from store:', authStore.menus)
 
   const dynamicOptions = authStore.menus
-    .filter(menu => !menu.hidden)
+    .filter(menu => !menu.hidden && menu.type !== 'button')
     .map(mapMenuToOption)
 
   console.log('Processed menu options:', dynamicOptions)

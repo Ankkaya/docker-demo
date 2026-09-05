@@ -110,6 +110,7 @@ import { h, onMounted, reactive, ref } from 'vue'
 import type { DataTableColumns, FormInst, FormRules } from 'naive-ui'
 import { NButton, NImage, NSpace, NTag, useDialog, useMessage } from 'naive-ui'
 import QueryForm from '@/components/common/QueryForm.vue'
+import { useAuthStore } from '@/store'
 import {
   auditReview,
   deleteReview,
@@ -122,6 +123,7 @@ import {
 
 const message = useMessage()
 const dialog = useDialog()
+const authStore = useAuthStore()
 
 const loading = ref(false)
 const tableData = ref<ReviewItem[]>([])
@@ -206,28 +208,28 @@ const columns: DataTableColumns<ReviewItem> = [
     render: row => h(NSpace, { wrap: false }, {
       default: () => [
         h(NButton, { text: true, type: 'info', onClick: () => handleViewDetail(row.id) }, { default: () => '详情' }),
-        h(NButton, {
+        ...(authStore.hasPermission('product:comment:audit') ? [h(NButton, {
           text: true,
           type: 'success',
           disabled: row.status === 'APPROVED',
           onClick: () => handleAudit(row.id, 'APPROVED'),
-        }, { default: () => '通过' }),
-        h(NButton, {
+        }, { default: () => '通过' })] : []),
+        ...(authStore.hasPermission('product:comment:audit') ? [h(NButton, {
           text: true,
           type: 'warning',
           disabled: row.status === 'REJECTED',
           onClick: () => handleAudit(row.id, 'REJECTED'),
-        }, { default: () => '拒绝' }),
-        h(NButton, {
+        }, { default: () => '拒绝' })] : []),
+        ...(authStore.hasPermission('product:comment:reply') ? [h(NButton, {
           text: true,
           type: 'primary',
           onClick: () => openReply(row),
-        }, { default: () => row.replyContent ? '修改回复' : '回复' }),
-        h(NButton, {
+        }, { default: () => row.replyContent ? '修改回复' : '回复' })] : []),
+        ...(authStore.hasPermission('product:comment:delete') ? [h(NButton, {
           text: true,
           type: 'error',
           onClick: () => handleDelete(row),
-        }, { default: () => '删除' }),
+        }, { default: () => '删除' })] : []),
       ],
     }),
   },

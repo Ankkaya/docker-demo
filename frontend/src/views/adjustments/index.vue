@@ -427,10 +427,10 @@ async function loadData() {
   loading.value = true;
   try {
     const res: any = await getAdjustments(searchForm);
-    adjustmentList.value = res.data.data;
-    pagination.itemCount = res.data.meta.total;
-    pagination.page = res.data.meta.page;
-    pagination.pageSize = res.data.meta.pageSize;
+    adjustmentList.value = res.data;
+    pagination.itemCount = res.meta.total;
+    pagination.page = res.meta.page;
+    pagination.pageSize = res.meta.pageSize;
   } finally {
     loading.value = false;
   }
@@ -439,7 +439,7 @@ async function loadData() {
 // 加载仓库选项
 async function loadWarehouses() {
   const res: any = await getWarehouses();
-  warehouseOptions.value = res.data.data.map((w: Warehouse) => ({
+  warehouseOptions.value = res.data.map((w: Warehouse) => ({
     label: w.name,
     value: w.id,
   }));

@@ -42,6 +42,14 @@ export class CreateMenuDto {
   component?: string;
 
   @ApiPropertyOptional({
+    example: 'mall:order:query',
+    description: '按钮权限编码；菜单/iframe 类型可不填',
+  })
+  @IsString()
+  @IsOptional()
+  permission?: string;
+
+  @ApiPropertyOptional({
     example: '',
     description: '重定向地址，当访问该菜单时自动跳转到指定地址',
   })

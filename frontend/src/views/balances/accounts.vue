@@ -28,7 +28,7 @@
 
     <n-card class="mb-4">
       <n-space>
-        <n-button type="primary" @click="openCreateModal">开通余额账户</n-button>
+        <n-button v-if="authStore.hasPermission('member:balance:create')" type="primary" @click="openCreateModal">开通余额账户</n-button>
         <n-button @click="router.push('/balances/recharges')">充值单</n-button>
       </n-space>
     </n-card>
@@ -106,9 +106,11 @@ import { createBalanceAccount, adjustBalanceAccount, getBalanceAccounts } from '
 import { getCustomers } from '@/api/customer';
 import type { Customer } from '@/types/basic-data';
 import type { BalanceAccount, BalanceAccountStatus } from '@/types/balance';
+import { useAuthStore } from '@/store';
 
 const message = useMessage();
 const router = useRouter();
+const authStore = useAuthStore();
 
 const loading = ref(false);
 const tableData = ref<BalanceAccount[]>([]);
@@ -227,7 +229,7 @@ const columns: DataTableColumns<BalanceAccount> = [
     render(row) {
       return h(NSpace, null, {
         default: () => [
-          h(
+          ...(authStore.hasPermission('member:balance:adjust') ? [h(
             NButton,
             {
               size: 'small',
@@ -235,7 +237,7 @@ const columns: DataTableColumns<BalanceAccount> = [
               onClick: () => openAdjustModal(row),
             },
             { default: () => '调账' },
-          ),
+          )] : []),
           h(
             NButton,
             {

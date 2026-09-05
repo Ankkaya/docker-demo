@@ -58,6 +58,7 @@ model Menu {
   path        String?
   icon        String?
   component   String?
+  permission  String?     // 按钮权限编码，例如 mall:order:query
   redirect    String?
   parentId    Int?
   order       Int       @default(0)

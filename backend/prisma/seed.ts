@@ -44,6 +44,7 @@ async function main() {
     path?: string | null;
     icon?: string;
     component?: string;
+    permission?: string;
     redirect?: string | null;
     parentId?: number | null;
     order: number;
@@ -59,7 +60,7 @@ async function main() {
     { id: 12, name: '商品分类', path: '/basic/categories', icon: 'category', component: 'basic/category/index', parentId: 10, order: 2 },
     { id: 13, name: '品牌管理', path: '/basic/brands', icon: 'brand', component: 'basic/brand/index', parentId: 10, order: 3 },
     { id: 14, name: '仓库管理', path: '/basic/warehouses', icon: 'warehouse', component: 'basic/warehouse/index', parentId: 10, order: 4 },
-    { id: 15, name: '供应商管理', path: '/basic/suppliers', icon: 'supplier', component: 'basic/supplier/index', parentId: 10, order: 5 },
+    { id: 15, name: '供应商管理', path: '/basic/suppliers', icon: 'supplier', component: 'basic/supplier/index', parentId: 10, order: 5, hidden: true },
     { id: 16, name: '客户管理', path: '/basic/customers', icon: 'customer', component: 'basic/customer/index', parentId: 10, order: 6 },
 
     // 2. 商品中心
@@ -69,32 +70,33 @@ async function main() {
     { id: 49, name: '评价管理', path: '/reviews', icon: 'material-symbols:rate-review-outline', component: 'reviews/index', parentId: 60, order: 3 },
 
     // 3. 采购管理
-    { id: 61, name: '采购管理', path: '/purchase-mgmt', icon: 'inbound', component: 'Layout', order: 3 },
-    { id: 31, name: '采购订单', path: '/purchases', icon: 'order', component: 'purchases/index', parentId: 61, order: 1 },
-    { id: 32, name: '采购入库', path: '/purchase-receipts', icon: 'inbound', component: 'purchase-receipts/index', parentId: 61, order: 2 },
-    { id: 33, name: '采购退货', path: '/purchase-returns', icon: 'return', component: 'purchase-returns/index', parentId: 61, order: 3 },
+    { id: 61, name: '采购管理', path: '/purchase-mgmt', icon: 'inbound', component: 'Layout', order: 3, hidden: true },
+    { id: 31, name: '采购订单', path: '/purchases', icon: 'order', component: 'purchases/index', parentId: 61, order: 1, hidden: true },
+    { id: 32, name: '采购入库', path: '/purchase-receipts', icon: 'inbound', component: 'purchase-receipts/index', parentId: 61, order: 2, hidden: true },
+    { id: 33, name: '采购退货', path: '/purchase-returns', icon: 'return', component: 'purchase-returns/index', parentId: 61, order: 3, hidden: true },
 
     // 4. 销售管理
     { id: 62, name: '销售管理', path: '/sale-mgmt', icon: 'shipment', component: 'Layout', order: 4 },
-    { id: 34, name: '销售订单', path: '/orders', icon: 'order', component: 'orders/index', parentId: 62, order: 1 },
+    { id: 34, name: '销售订单', path: '/orders', icon: 'order', component: 'orders/index', parentId: 62, order: 1, hidden: true },
     { id: 35, name: '发货管理', path: '/shipments', icon: 'shipment', component: 'shipments/index', parentId: 62, order: 2 },
     { id: 36, name: '销售退货', path: '/sale-returns', icon: 'return', component: 'sale-returns/index', parentId: 62, order: 3 },
-    { id: 41, name: '购物车管理', path: '/carts', icon: 'cart', component: 'carts/index', parentId: 62, order: 4 },
+    { id: 41, name: '购物车管理', path: '/carts', icon: 'cart', component: 'carts/index', parentId: 40, order: 6 },
 
     // 5. 库存管理（复用 id=30，原"进销存"）
     { id: 30, name: '库存管理', path: '/inventory-mgmt', icon: 'inventory-2', component: 'Layout', order: 5 },
     { id: 22, name: '库存查询', path: '/inventories', icon: 'inventory', component: 'inventories/index', parentId: 30, order: 1 },
-    { id: 37, name: '库存调拨', path: '/transfers', icon: 'transfer', component: 'transfers/index', parentId: 30, order: 2 },
-    { id: 38, name: '库存调整', path: '/adjustments', icon: 'adjust', component: 'adjustments/index', parentId: 30, order: 3 },
-    { id: 39, name: '库存流水', path: '/inventory-logs', icon: 'log', component: 'inventory-logs/index', parentId: 30, order: 4 },
+    { id: 37, name: '库存调拨', path: '/transfers', icon: 'transfer', component: 'transfers/index', parentId: 30, order: 2, hidden: true },
+    { id: 38, name: '库存调整', path: '/adjustments', icon: 'adjust', component: 'adjustments/index', parentId: 30, order: 3, hidden: true },
+    { id: 39, name: '库存流水', path: '/inventory-logs', icon: 'log', component: 'inventory-logs/index', parentId: 30, order: 4, hidden: true },
 
-    // 6. 商城运营（复用 id=40，原"商城管理"）
-    { id: 40, name: '商城运营', path: '/mall', icon: 'shopping-cart', component: 'Layout', order: 6 },
-    { id: 43, name: '轮播图管理', path: '/banners', icon: 'slideshow', component: 'banners/index', parentId: 40, order: 1 },
-    { id: 47, name: '优惠券管理', path: '/coupons', icon: 'coupon', component: 'coupons/index', parentId: 40, order: 2 },
-    { id: 54, name: '充值套餐', path: '/mall-recharge-packages', icon: 'material-symbols:redeem', component: 'mall-recharge-packages/index', parentId: 40, order: 3 },
-    { id: 55, name: '充值活动', path: '/mall-recharge-activities', icon: 'coupon', component: 'mall-recharge-activities/index', parentId: 40, order: 4 },
-    { id: 48, name: '商城配置', path: '/mall-config', icon: 'setting', component: 'mall-config/index', parentId: 40, order: 5 },
+    // 6. 商城中心：只承载 C 端运营与交易，进销存能力保持在独立菜单中
+    { id: 40, name: '商城中心', path: '/mall', icon: 'shopping-cart', component: 'Layout', order: 6 },
+    { id: 65, name: '商城订单', path: '/mall/orders', icon: 'order', component: 'orders/index', parentId: 40, order: 1 },
+    { id: 43, name: '轮播图管理', path: '/banners', icon: 'slideshow', component: 'banners/index', parentId: 40, order: 2 },
+    { id: 47, name: '优惠券管理', path: '/coupons', icon: 'coupon', component: 'coupons/index', parentId: 40, order: 3 },
+    { id: 54, name: '充值套餐', path: '/mall-recharge-packages', icon: 'material-symbols:redeem', component: 'mall-recharge-packages/index', parentId: 40, order: 4 },
+    { id: 55, name: '充值活动', path: '/mall-recharge-activities', icon: 'coupon', component: 'mall-recharge-activities/index', parentId: 40, order: 5 },
+    { id: 48, name: '热搜词', path: '/mall-config', icon: 'search', component: 'mall-config/index', parentId: 40, order: 6 },
 
     // 7. 财务中心（合并原"支付中心 50" + "余额管理 44"）
     { id: 63, name: '财务中心', path: '/finance', icon: 'material-symbols:payments-outline', component: 'Layout', order: 7, alwaysShow: true },
@@ -105,10 +107,10 @@ async function main() {
     { id: 53, name: '充值记录', path: '/balances/recharges', icon: 'material-symbols:account-balance-wallet-outline', component: 'balances/recharges', parentId: 63, order: 5 },
 
     // 8. 打印中心（从"系统管理"中拆出）
-    { id: 64, name: '打印中心', path: '/print-center', icon: 'print-template', component: 'Layout', order: 8 },
-    { id: 5, name: '打印模板', path: '/system/print-templates', icon: 'print-template', component: 'print-templates/index', parentId: 64, order: 1 },
-    { id: 6, name: '打印机管理', path: '/system/printers', icon: 'printer', component: 'printers/index', parentId: 64, order: 2 },
-    { id: 7, name: '打印机配置', path: '/system/printer-configs', icon: 'printer-config', component: 'printer-configs/index', parentId: 64, order: 3 },
+    { id: 64, name: '打印中心', path: '/print-center', icon: 'print-template', component: 'Layout', order: 8, hidden: true },
+    { id: 5, name: '打印模板', path: '/system/print-templates', icon: 'print-template', component: 'print-templates/index', parentId: 64, order: 1, hidden: true },
+    { id: 6, name: '打印机管理', path: '/system/printers', icon: 'printer', component: 'printers/index', parentId: 64, order: 2, hidden: true },
+    { id: 7, name: '打印机配置', path: '/system/printer-configs', icon: 'printer-config', component: 'printer-configs/index', parentId: 64, order: 3, hidden: true },
 
     // 9. 系统管理
     { id: 1, name: '系统管理', path: '/system', icon: 'setting', component: 'Layout', order: 9 },
@@ -118,6 +120,33 @@ async function main() {
     { id: 8, name: '系统设置', path: '/system/settings', icon: 'setting', component: 'system-settings/index', parentId: 1, order: 4 },
     { id: 9, name: '系统日志', path: '/system/system-logs', icon: 'log', component: 'system-logs/index', parentId: 1, order: 5 },
     { id: 59, name: '上传记录', path: '/system/upload-records', icon: 'upload', component: 'upload-records/index', parentId: 1, order: 6 },
+
+    // 按钮权限：菜单树中可分配，侧边栏不会展示 button 类型节点
+    { id: 101, name: '新增商品', parentId: 21, order: 10, type: 'button', permission: 'product:spu:create' },
+    { id: 102, name: '编辑商品', parentId: 21, order: 11, type: 'button', permission: 'product:spu:update' },
+    { id: 103, name: '删除商品', parentId: 21, order: 12, type: 'button', permission: 'product:spu:delete' },
+    { id: 104, name: '编辑商城信息', parentId: 42, order: 10, type: 'button', permission: 'product:spu:update' },
+    { id: 105, name: '审核评价', parentId: 49, order: 10, type: 'button', permission: 'product:comment:audit' },
+    { id: 106, name: '回复评价', parentId: 49, order: 11, type: 'button', permission: 'product:comment:reply' },
+    { id: 107, name: '删除评价', parentId: 49, order: 12, type: 'button', permission: 'product:comment:delete' },
+    { id: 111, name: '新增销售订单', parentId: 34, order: 10, type: 'button', permission: 'sale:order:create' },
+    { id: 112, name: '编辑销售订单', parentId: 34, order: 11, type: 'button', permission: 'sale:order:update' },
+    { id: 113, name: '确认销售订单', parentId: 34, order: 12, type: 'button', permission: 'sale:order:confirm' },
+    { id: 114, name: '取消销售订单', parentId: 34, order: 13, type: 'button', permission: 'sale:order:cancel' },
+    { id: 115, name: '删除销售订单', parentId: 34, order: 14, type: 'button', permission: 'sale:order:delete' },
+    { id: 121, name: '创建发货单', parentId: 35, order: 10, type: 'button', permission: 'trade:shipment:create' },
+    { id: 122, name: '确认发货', parentId: 35, order: 11, type: 'button', permission: 'trade:shipment:ship' },
+    { id: 123, name: '确认收货', parentId: 35, order: 12, type: 'button', permission: 'trade:shipment:receive' },
+    { id: 124, name: '删除发货单', parentId: 35, order: 13, type: 'button', permission: 'trade:shipment:delete' },
+    { id: 131, name: '新增优惠券', parentId: 47, order: 10, type: 'button', permission: 'promotion:coupon:create' },
+    { id: 132, name: '编辑优惠券', parentId: 47, order: 11, type: 'button', permission: 'promotion:coupon:update' },
+    { id: 133, name: '发放优惠券', parentId: 47, order: 12, type: 'button', permission: 'promotion:coupon:send' },
+    { id: 134, name: '生成兑换码', parentId: 47, order: 13, type: 'button', permission: 'promotion:coupon:exchange-code' },
+    { id: 135, name: '删除优惠券', parentId: 47, order: 14, type: 'button', permission: 'promotion:coupon:delete' },
+    { id: 141, name: '开通余额账户', parentId: 45, order: 10, type: 'button', permission: 'member:balance:create' },
+    { id: 142, name: '余额调账', parentId: 45, order: 11, type: 'button', permission: 'member:balance:adjust' },
+    { id: 151, name: '发起退款', parentId: 52, order: 10, type: 'button', permission: 'finance:refund:create' },
+    { id: 152, name: '确认收付款', parentId: 51, order: 10, type: 'button', permission: 'finance:payment:confirm' },
   ];
 
   // 第一遍：先 upsert 所有顶层节点（parentId 为空），再 upsert 子节点，避免 FK 顺序问题
@@ -133,6 +162,7 @@ async function main() {
       path: m.path ?? null,
       icon: m.icon ?? null,
       component: m.component ?? null,
+      permission: m.permission ?? null,
       redirect: m.redirect ?? null,
       parentId: m.parentId ?? null,
       order: m.order,
@@ -507,11 +537,11 @@ async function main() {
   console.log('-----------------------------------');
   console.log('采购管理:', ['采购订单', '采购入库', '采购退货']);
   console.log('-----------------------------------');
-  console.log('销售管理:', ['销售订单', '发货管理', '销售退货', '购物车管理']);
+  console.log('销售管理:', ['销售订单', '发货管理', '销售退货']);
   console.log('-----------------------------------');
   console.log('库存管理:', ['库存查询', '库存调拨', '库存调整', '库存流水']);
   console.log('-----------------------------------');
-  console.log('商城运营:', ['轮播图管理', '优惠券管理', '充值套餐', '充值活动', '商城配置']);
+  console.log('商城中心:', ['商城订单', '轮播图管理', '优惠券管理', '充值套餐', '充值活动', '热搜词', '购物车管理']);
   console.log('-----------------------------------');
   console.log('财务中心:', ['支付记录', '退款记录', '余额账户', '余额流水', '充值记录']);
   console.log('-----------------------------------');

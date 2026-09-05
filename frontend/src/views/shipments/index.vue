@@ -19,7 +19,7 @@
 
     <n-card class="mb-4">
       <n-space>
-        <n-button type="primary" @click="handleCreate">创建发货单</n-button>
+        <n-button v-if="authStore.hasPermission('trade:shipment:create')" type="primary" @click="handleCreate">创建发货单</n-button>
       </n-space>
     </n-card>
 
@@ -44,8 +44,10 @@ import ShipmentForm from './components/ShipmentForm.vue';
 import type { Shipment, ShipmentStatus } from '@/types/purchase';
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
 import { resolveKuaidiCompanyLabel } from '@/constants/kuaidi-companies';
+import { useAuthStore } from '@/store';
 
 const message = useMessage();
+const authStore = useAuthStore();
 
 const searchForm = reactive({ keyword: '', status: null as ShipmentStatus | null });
 const statusOptions = [
@@ -104,12 +106,12 @@ const columns: DataTableColumns<Shipment> = autoFitTableColumns([
           { default: () => '打印' },
         ),
       );
-      if (row.status === 'PENDING') {
+      if (authStore.hasPermission('trade:shipment:ship') && row.status === 'PENDING') {
         buttons.push(
           h(NButton, { size: 'small', type: 'primary', onClick: () => handleShip(row) }, { default: () => '发货' })
         );
       }
-      if (row.status === 'SHIPPED') {
+      if (authStore.hasPermission('trade:shipment:receive') && row.status === 'SHIPPED') {
         buttons.push(
           h(NButton, { size: 'small', type: 'success', onClick: () => handleReceive(row) }, { default: () => '收货' })
         );

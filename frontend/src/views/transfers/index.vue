@@ -485,7 +485,7 @@ async function loadAvailableSkus() {
     
     // 过滤掉已经选择的SKU
     const existingSkuIds = createForm.items.map(i => i.skuId);
-    availableSkuList.value = res.data.data
+    availableSkuList.value = res.data
       .filter((item: any) => !existingSkuIds.includes(item.skuId))
       .map((item: any) => ({
         skuId: item.skuId,
@@ -495,9 +495,9 @@ async function loadAvailableSkus() {
         available: item.available,
       }));
     
-    skuPagination.itemCount = res.data.meta.total;
-    skuPagination.page = res.data.meta.page;
-    skuPagination.pageSize = res.data.meta.pageSize;
+    skuPagination.itemCount = res.meta.total;
+    skuPagination.page = res.meta.page;
+    skuPagination.pageSize = res.meta.pageSize;
   } finally {
     skuLoading.value = false;
   }

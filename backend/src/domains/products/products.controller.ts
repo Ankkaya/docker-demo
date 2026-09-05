@@ -18,6 +18,8 @@ import { UpdateProductMallDto } from './dto/update-product-mall.dto';
 import { UpdateSkuDto } from './dto/update-sku.dto';
 import { QueryProductDto } from './dto/query-product.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '@/auth/guards/permission.guard';
+import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
 
 @ApiTags('后台接口/商品管理')
 @ApiBearerAuth()
@@ -27,6 +29,8 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:spu:create')
   @ApiOperation({ summary: '创建商品（含SKU）' })
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
@@ -45,6 +49,8 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:spu:update')
   @ApiOperation({ summary: '更新商品' })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -60,6 +66,8 @@ export class ProductsController {
   }
 
   @Patch(':id/mall-info')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:spu:update')
   @ApiOperation({ summary: '更新商品商城信息' })
   updateMallInfo(
     @Param('id', ParseIntPipe) id: number,
@@ -69,6 +77,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:spu:delete')
   @ApiOperation({ summary: '删除商品' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.remove(id);
@@ -89,6 +99,8 @@ export class SkusController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Patch(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:sku:update')
   @ApiOperation({ summary: '更新SKU信息' })
   updateSku(
     @Param('id', ParseIntPipe) id: number,
@@ -98,6 +110,8 @@ export class SkusController {
   }
 
   @Patch(':id/price')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:sku:update-price')
   @ApiOperation({ summary: '更新SKU价格' })
   updatePrice(
     @Param('id', ParseIntPipe) id: number,

@@ -27,7 +27,7 @@
     <!-- 商品列表 -->
     <n-card>
       <n-space class="page-toolbar mb-4">
-        <n-button type="primary" @click="handleCreate">新增商品</n-button>
+        <n-button v-if="authStore.hasPermission('product:spu:create')" type="primary" @click="handleCreate">新增商品</n-button>
         <n-button @click="handleInventoryQuery">库存查询</n-button>
       </n-space>
       <n-data-table :columns="columns" :data="productList" :loading="loading" :pagination="pagination" :scroll-x="tableScrollX"
@@ -49,9 +49,11 @@ import type { Product } from '@/types/product';
 import type { Category } from '@/types/basic-data';
 import type { Brand } from '@/types/basic-data';
 import { autoFitTableColumns, createActionColumn, getTableScrollX } from '@/utils/table';
+import { useAuthStore } from '@/store';
 
 const router = useRouter();
 const message = useMessage();
+const authStore = useAuthStore();
 
 // 搜索表单
 const searchForm = reactive({
@@ -158,15 +160,15 @@ const columns: DataTableColumns<Product> = autoFitTableColumns([
     render(row) {
       return h(NSpace, null, {
         default: () => [
-          h(NButton, { size: 'small', onClick: () => handleEdit(row) }, { default: () => '编辑' }),
-          h(
+          ...(authStore.hasPermission('product:spu:update') ? [h(NButton, { size: 'small', onClick: () => handleEdit(row) }, { default: () => '编辑' })] : []),
+          ...(authStore.hasPermission('product:spu:delete') ? [h(
             NPopconfirm,
             { onPositiveClick: () => handleDelete(row) },
             {
               trigger: () => h(NButton, { size: 'small', type: 'error' }, { default: () => '删除' }),
               default: () => '确定要删除该商品吗？',
             }
-          ),
+          )] : []),
         ],
       });
     },

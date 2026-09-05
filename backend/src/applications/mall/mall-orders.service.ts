@@ -18,6 +18,7 @@ import {
   PaymentStatus,
   PaymentType,
   ShipStatus,
+  ShipmentStatus,
 } from '@prisma/client';
 import { CustomerAddressesService } from '@/domains/customer-addresses/customer-addresses.service';
 import { CartsService } from '@/domains/carts/carts.service';
@@ -1742,27 +1743,42 @@ export class MallOrdersService {
   async receive(userId: number, id: number): Promise<MallOrderDetailVo> {
     const customer = await this.getCustomerByUserId(userId);
 
-    const updated = await this.prisma.order.updateMany({
-      where: {
-        id,
-        customerId: customer.id,
-        type: 'MALL',
-        deletedAt: null,
-        status: {
-          not: OrderStatus.CANCELLED,
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.updateMany({
+        where: {
+          id,
+          customerId: customer.id,
+          type: 'MALL',
+          deletedAt: null,
+          status: {
+            not: OrderStatus.CANCELLED,
+          },
+          shipStatus: ShipStatus.SHIPPED,
         },
-        shipStatus: ShipStatus.SHIPPED,
-      },
-      data: {
-        shipStatus: ShipStatus.RECEIVED,
-        status: OrderStatus.COMPLETED,
-        receiveDate: new Date(),
-      },
-    });
+        data: {
+          shipStatus: ShipStatus.RECEIVED,
+          status: OrderStatus.COMPLETED,
+          receiveDate: new Date(),
+        },
+      });
 
-    if (!updated.count) {
-      throw new BadRequestException('当前订单暂不可确认收货');
-    }
+      if (!updated.count) {
+        throw new BadRequestException('当前订单暂不可确认收货');
+      }
+
+      // 商城用户确认收货后，同订单的发货单也必须进入 RECEIVED，
+      // 否则后台销售退货会认为该订单仍未收货。
+      await tx.shipment.updateMany({
+        where: {
+          orderId: id,
+          deletedAt: null,
+          status: ShipmentStatus.SHIPPED,
+        },
+        data: {
+          status: ShipmentStatus.RECEIVED,
+        },
+      });
+    });
 
     return this.findOneByUser(userId, id);
   }

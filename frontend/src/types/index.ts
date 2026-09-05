@@ -77,6 +77,7 @@ export interface Menu {
   icon?: string
   iconUrl?: string
   component?: string
+  permission?: string
   redirect?: string
   parentId?: number
   order: number
@@ -95,6 +96,7 @@ export interface CreateMenuDto {
   icon?: string
   iconUrl?: string
   component?: string
+  permission?: string
   redirect?: string
   parentId?: number
   order?: number
@@ -212,6 +214,7 @@ export namespace OrderApi {
   export interface QueryParams {
     keyword?: string
     customerId?: number
+    type?: import('./purchase').OrderType
     status?: import('./purchase').OrderStatus
     payStatus?: import('./purchase').PayStatus
     shipStatus?: import('./purchase').ShipStatus

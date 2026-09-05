@@ -48,7 +48,7 @@
               立即查单
             </n-button>
             <n-button
-              v-if="canRefundPayment(currentPayment)"
+              v-if="canRefundPayment(currentPayment) && authStore.hasPermission('finance:refund:create')"
               type="warning"
               ghost
               @click="openRefundModal"
@@ -136,6 +136,7 @@ import { h, onMounted, reactive, ref } from 'vue'
 import type { DataTableColumns } from 'naive-ui'
 import { NButton, NSpace, NTag, useMessage } from 'naive-ui'
 import QueryForm from '@/components/common/QueryForm.vue'
+import { useAuthStore } from '@/store'
 import {
   createPaymentRefund,
   getPayment,
@@ -151,6 +152,7 @@ import type {
 } from '@/types/purchase'
 
 const message = useMessage()
+const authStore = useAuthStore()
 const loading = ref(false)
 const tableData = ref<Payment[]>([])
 const detailVisible = ref(false)

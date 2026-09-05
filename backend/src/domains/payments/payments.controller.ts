@@ -18,6 +18,8 @@ import { CreatePaymentRefundDto } from './dto/create-payment-refund.dto';
 import { QueryPaymentDto } from './dto/query-payment.dto';
 import { QueryPaymentRefundDto } from './dto/query-payment-refund.dto';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '@/auth/guards/permission.guard';
+import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
 
 @ApiTags('后台接口/收付款管理')
 @Controller('payments')
@@ -27,6 +29,8 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post()
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('finance:payment:create')
   @ApiOperation({ summary: '创建收付款记录' })
   create(@Body() createDto: CreatePaymentDto, @Req() req: any) {
     return this.paymentsService.create(createDto, req.user.userId);
@@ -74,6 +78,8 @@ export class PaymentsController {
   }
 
   @Post(':id/refunds')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('finance:refund:create')
   @ApiOperation({ summary: '发起微信退款' })
   createRefund(
     @Param('id', ParseIntPipe) id: number,
@@ -91,18 +97,24 @@ export class PaymentsController {
   }
 
   @Patch(':id/confirm')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('finance:payment:confirm')
   @ApiOperation({ summary: '确认收付款' })
   confirm(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     return this.paymentsService.confirm(id, req.user.userId);
   }
 
   @Patch(':id/cancel')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('finance:payment:cancel')
   @ApiOperation({ summary: '取消收付款' })
   cancel(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     return this.paymentsService.cancel(id, req.user.userId);
   }
 
   @Delete(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('finance:payment:delete')
   @ApiOperation({ summary: '删除收付款记录' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.paymentsService.remove(id);

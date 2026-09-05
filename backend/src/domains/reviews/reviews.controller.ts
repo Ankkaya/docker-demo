@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { PermissionGuard } from '@/auth/guards/permission.guard';
+import { RequirePermissions } from '@/auth/decorators/require-permissions.decorator';
 import { ReviewsService } from './reviews.service';
 import { AuditReviewDto, QueryReviewDto, ReplyReviewDto } from './dto';
 
@@ -24,6 +26,8 @@ export class ReviewsController {
   }
 
   @Patch(':id/audit')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:comment:audit')
   @ApiOperation({ summary: '审核评价' })
   audit(
     @Param('id', ParseIntPipe) id: number,
@@ -33,6 +37,8 @@ export class ReviewsController {
   }
 
   @Patch(':id/reply')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:comment:reply')
   @ApiOperation({ summary: '回复评价' })
   reply(
     @Param('id', ParseIntPipe) id: number,
@@ -42,6 +48,8 @@ export class ReviewsController {
   }
 
   @Delete(':id')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions('product:comment:delete')
   @ApiOperation({ summary: '删除评价' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.reviewsService.remove(id);

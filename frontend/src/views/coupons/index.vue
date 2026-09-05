@@ -23,7 +23,7 @@
           <n-card class="mb-4">
             <div class="page-toolbar">
               <n-space>
-                <n-button type="primary" @click="handleCreate">新增优惠券</n-button>
+                <n-button v-if="authStore.hasPermission('promotion:coupon:create')" type="primary" @click="handleCreate">新增优惠券</n-button>
               </n-space>
             </div>
           </n-card>
@@ -344,7 +344,7 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="issueDialogVisible = false">取消</n-button>
-          <n-button type="primary" :loading="issueSubmitting" @click="handleSubmitIssue">确认发放</n-button>
+          <n-button v-if="authStore.hasPermission('promotion:coupon:send')" type="primary" :loading="issueSubmitting" @click="handleSubmitIssue">确认发放</n-button>
         </n-space>
       </template>
     </SmartFormContainer>
@@ -363,11 +363,13 @@ import { getCustomers } from '@/api/customer'
 import { getCategoriesFlat } from '@/api/category'
 import { getBrands } from '@/api/brand'
 import { getProducts } from '@/api/product'
+import { useAuthStore } from '@/store'
 
 type SelectOption = { label: string; value: number }
 
 const message = useMessage()
 const dialog = useDialog()
+const authStore = useAuthStore()
 
 const couponLoading = ref(false)
 const couponSubmitting = ref(false)
@@ -644,6 +646,7 @@ const couponColumns: DataTableColumns<CouponItem> = [
     width: 80,
     render: row => h(NSwitch, {
       value: row.isEnabled,
+      disabled: !authStore.hasPermission('promotion:coupon:update'),
       loading: statusUpdatingIds.value.includes(row.id),
       onUpdateValue: (value: boolean) => handleToggleStatus(row, value),
     }),
@@ -654,13 +657,13 @@ const couponColumns: DataTableColumns<CouponItem> = [
     width: 180,
     render: row => h(NSpace, null, {
       default: () => [
-        h(NButton, { text: true, type: 'primary', onClick: () => handleEdit(row) }, { default: () => '编辑' }),
+        ...(authStore.hasPermission('promotion:coupon:update') ? [h(NButton, { text: true, type: 'primary', onClick: () => handleEdit(row) }, { default: () => '编辑' })] : []),
         h(
           NButton,
-          { text: true, type: 'info', disabled: !row.isEnabled || row.issueType !== 'ADMIN_ASSIGN', onClick: () => handleOpenIssue(row) },
+          { text: true, type: 'info', disabled: !authStore.hasPermission('promotion:coupon:send') || !row.isEnabled || row.issueType !== 'ADMIN_ASSIGN', onClick: () => handleOpenIssue(row) },
           { default: () => '发券' },
         ),
-        h(NButton, { text: true, type: 'error', onClick: () => handleDelete(row) }, { default: () => '删除' }),
+        ...(authStore.hasPermission('promotion:coupon:delete') ? [h(NButton, { text: true, type: 'error', onClick: () => handleDelete(row) }, { default: () => '删除' })] : []),
       ],
     }),
   },

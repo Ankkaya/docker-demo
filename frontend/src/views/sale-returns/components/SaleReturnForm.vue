@@ -218,7 +218,7 @@ const loadReturnableShipments = async (customerId?: number) => {
 const loadCustomers = async () => {
   try {
     const res: any = await getCustomers();
-    const list = res.data.data || [];
+    const list = res.data || [];
     customerOptions.value = list
       .filter((c: Customer) => c.isEnabled)
       .map((c: Customer) => ({

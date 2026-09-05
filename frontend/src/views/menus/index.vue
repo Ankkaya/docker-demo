@@ -22,7 +22,7 @@
     <SmartFormContainer
       v-model:show="dialogVisible"
       :title="isEdit ? '编辑菜单' : '新增菜单'"
-      :form-item-count="9"
+      :form-item-count="10"
       modal-width="600px"
       :drawer-width="760"
     >
@@ -47,6 +47,9 @@
         </n-form-item>
         <n-form-item label="组件路径" path="component" v-if="form.type === 'menu'">
           <n-input v-model:value="form.component" placeholder="如: layout/System/index" />
+        </n-form-item>
+        <n-form-item label="权限编码" path="permission" v-if="form.type === 'button'">
+          <n-input v-model:value="form.permission" placeholder="如: mall:order:query" />
         </n-form-item>
         <n-form-item label="图标" path="icon" v-if="form.type !== 'button'">
           <n-space vertical style="width: 100%">
@@ -151,6 +154,7 @@ const form = reactive<CreateMenuDto>({
   path: '',
   icon: '',
   component: '',
+  permission: '',
   redirect: '',
   parentId: undefined,
   order: 0,
@@ -297,6 +301,7 @@ const handleCreate = (row: Menu | null) => {
   form.path = ''
   form.icon = ''
   form.component = ''
+  form.permission = ''
   form.redirect = ''
   form.parentId = row?.id
   form.order = 0
@@ -315,6 +320,7 @@ const handleEdit = (menu: Menu) => {
   form.path = menu.path || ''
   form.icon = menu.icon || ''
   form.component = menu.component || ''
+  form.permission = menu.permission || ''
   form.redirect = menu.redirect || ''
   form.parentId = menu.parentId
   form.order = menu.order
